@@ -1,6 +1,8 @@
+# 应用服务配置
 server:
   port: 6276
 
+# GORM 数据源
 gorm:
   dataSource:
     default:
@@ -11,3 +13,11 @@ gorm:
       password: "root@1234"
       database: "mask_api"
       logging: true
+
+# Redis 缓存数据
+redis:
+  client:
+    port: 6379
+    host: "192.168.56.101"
+    password: "redis@1234"
+    db: 0
