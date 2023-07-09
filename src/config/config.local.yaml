@@ -1,0 +1,13 @@
+server:
+  port: 6276
+
+gorm:
+  dataSource:
+    default:
+      type: "mysql"
+      host: "192.168.56.101"
+      port: 3306
+      username: "root"
+      password: "root@1234"
+      database: "mask_api"
+      logging: true

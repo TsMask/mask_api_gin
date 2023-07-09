@@ -1,0 +1,56 @@
+package config
+
+import (
+	"mask_api_gin/src/framework/logger"
+
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
+)
+
+// 初始化程序配置
+//
+// configPath 配置文件目录
+func InitConfig(configPath string) {
+	initFlag()
+	initViper(configPath)
+}
+
+// 指定参数绑定
+func initFlag() {
+	// -env prod
+	pflag.String("env", "local", "指定运行环境配置，读取config配置文件 local、prod")
+	pflag.Parse()
+	viper.BindPFlags(pflag.CommandLine)
+}
+
+// 配置文件读取
+//
+// configPath 配置文件目录
+func initViper(configPath string) {
+	env := viper.GetString("env")
+	if env != "local" && env != "prod" {
+		logger.Panicf("无效环境值 %s ，请指定local、prod", env)
+	}
+	logger.Warnf("当期服务环境运行配置 => %s", env)
+
+	// 在当前工作目录中寻找配置
+	viper.AddConfigPath(configPath)
+	// 如果配置文件名中没有扩展名，则需要设置Type
+	viper.SetConfigType("yaml")
+	// 配置文件的名称（无扩展名）
+	viper.SetConfigName("config.default")
+	// 读取默认配置文件
+	if err := viper.ReadInConfig(); err != nil {
+		logger.Panicf("fatal error config default file: %s", err)
+	}
+
+	// 加载运行配置文件合并相同配置
+	if env == "prod" {
+		viper.SetConfigName("config.prod")
+	} else {
+		viper.SetConfigName("config.local")
+	}
+	if err := viper.MergeInConfig(); err != nil {
+		logger.Panicf("fatal error config local file: %s", err)
+	}
+}

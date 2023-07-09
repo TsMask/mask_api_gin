@@ -1,39 +1,100 @@
-# mask_api_gin
+# 基于 Gin 的管理系统后端接口服务
 
-#### 介绍
-{**以下是 Gitee 平台说明，您可以替换此简介**
-Gitee 是 OSCHINA 推出的基于 Git 的代码托管平台（同时支持 SVN）。专为开发者提供稳定、高效、安全的云端软件开发协作平台
-无论是个人、团队、或是企业，都能够用 Gitee 实现代码托管、项目管理、协作开发。企业项目请看 [https://gitee.com/enterprises](https://gitee.com/enterprises)}
+![Build Gin](https://img.shields.io/badge/Build-Gin-green.svg)
+![Release V0.0.1](https://img.shields.io/badge/Release-V0.0.1-orange.svg)
+![License MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
-#### 软件架构
-软件架构说明
+## 介绍
 
+该项目选择 [RuoYi-Vue](https://gitee.com/y_project/RuoYi-Vue) 后端进行重构改造。
 
-#### 安装教程
+基于 `Golang` 的 `Gin` Web框架进行开发，如需进一步了解框架，参见 [Midwayjs](https://gin-gonic.com/zh-cn/docs/quickstart/) 官方文档。
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+## 项目拓展
 
-#### 使用说明
+- `Apifox` 提供mock服务和程序接口文档 => [接口预览](https://mask-api-midwayjs.apifox.cn/)
+- `Element-Vue3` 前端代码仓库地址 => [mask_element_vue3](https://gitee.com/TsMask/mask_element_vue3)
+- `Antd-Vue3` 前端代码仓库地址 => [mask_antd_vue3](https://gitee.com/TsMask/mask_antd_vue3)
+- `Midwayjs-Node` 后端代码仓库地址 => [mask_api_midwayjs](https://gitee.com/TsMask/mask_api_midwayjs)
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+[Antd在线预览](http://124.223.91.248:8102/mask-antd/#/index) or [Element在线预览](http://124.223.91.248:8102/mask-el/#/index)
 
-#### 参与贡献
+## 内置功能
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+1. 用户管理：用户是系统操作者，该功能主要完成系统用户配置。
+2. 部门管理：配置系统组织机构，树结构展现支持数据权限。
+3. 岗位管理：配置系统用户所属担任职务。
+4. 菜单管理：配置系统菜单，操作权限，按钮权限标识等。
+5. 角色管理：角色菜单权限分配、设置角色按机构进行数据范围权限划分。
+6. 字典管理：对系统中经常使用的一些较为固定的数据进行维护。
+7. 参数管理：对系统动态配置常用参数。
+8. 通知公告：系统通知公告信息发布维护。
+9. 操作日志：系统正常操作日志记录和查询；系统异常信息日志记录和查询。
+10. 登录日志：系统登录日志记录查询包含登录异常。
+11. 在线用户：当前系统中活跃用户状态监控。
+12. 调度任务：在线（添加、修改、删除）任务调度包含执行结果日志。
+13. 服务监控：监视当前系统CPU、内存、磁盘、堆栈等相关信息。
+14. 缓存监控：对系统的缓存信息查询，命令统计。
 
+## 项目结构
 
-#### 特技
+```text
+mask_api_gin
+├── script                      目录-程序可用脚本
+├── src                         目录-源代码
+├   ├── assets                  目录-程序内部静态资源文件
+├   ├── config                  目录-程序相关运行参数配置
+├   ├── framework               目录-程序核心通用代码
+├   ├── modules                 目录-业务模块
+├   ├   ├── system              目录-系统内部接口模块
+├   ├   ├   ├── controller      目录-接口路由控制层
+├   ├   ├   ├── model           目录-数据对象模型层
+├   ├   ├   ├── repository      目录-CURD数据存储层
+├   ├   ├   ├── service         目录-业务逻辑服务层
+├   ├   ├   └── system.go       文件-模块路由注册
+├   ├   └── ...
+├   ├── app.go                  文件-程序框架启动核心
+├   └── configuration.go        文件-程序框架配置加载
+├── .gitignore
+├── go.mod                      文件-程序模块依赖
+├── go.sum
+├── LICENSE
+├── main.go                     文件-程序主入口
+└── README.md                   文件-程序说明
+```
 
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+## 快速启动
+
+你需要先安装准备 **开发环境** 后使用 **程序命令**
+
+### 开发环境
+
+| 技术 | 说明 | 版本 |
+| ---- | ---- | ---- |
+| Go | go项目的运行环境 | 1.20+ |
+| Redis | 缓存存储程序 | 6+ |
+| Mysql | 数据存储程序 | 8+ |
+
+程序可用脚本 `script` 目录内含初始化数据库SQL脚本文件
+
+### 程序命令
+
+#### 本地开发-Window/Liunx
+
+```bash
+# 修改配置参数 /src/connfig/config.local.go
+go mod tidy                 # 安装项目所需依赖
+go run main.go              # 开发模式启动项目
+open http://localhost:6275  # 启动成功后得到服务访问地址
+```
+
+#### 生产部署-Liunx
+
+```bash
+# 修改配置参数 /src/connfig/config.prod.go
+go mod tidy             # 安装项目所需依赖
+go build -o main.go     # 构建生产项目代码
+```
+
+> 有任何问题或者建议，可以在 [_Issues_](https://gitee.com/TsMask/mask_api_gin/issues) 或通过QQ群：[_57242844_](https://jq.qq.com/?_wv=1027&k=z6Y4YQcB) 提出想法。  
+> 如果觉得项目对您有帮助，可以来个Star ⭐
