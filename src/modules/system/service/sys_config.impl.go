@@ -1,6 +1,7 @@
 package service
 
 import (
+	"mask_api_gin/src/framework/cache/redis"
 	"mask_api_gin/src/framework/constants/cachekey"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
@@ -28,8 +29,18 @@ func (r *sysConfigImpl) SelectConfigList(sysConfig model.SysConfig) []model.SysC
 // SelectConfigValueByKey 通过参数键名查询参数键值
 func (r *sysConfigImpl) SelectConfigValueByKey(configKey string) string {
 	cacheKey := r.getCacheKey(configKey)
-
-	return r.sysConfigRepository.SelectConfigValueByKey(cacheKey)
+	// 从缓存中读取
+	cacheValue := redis.Get(cacheKey)
+	if cacheValue != "" {
+		return cacheValue
+	}
+	// 无缓存时读取数据放入缓存中
+	configValue := r.sysConfigRepository.SelectConfigValueByKey(configKey)
+	if configValue != "" {
+		redis.Set(cacheKey, configValue)
+		return configValue
+	}
+	return ""
 }
 
 // SelectConfigById 通过配置ID查询参数配置信息
@@ -99,9 +110,31 @@ func (r *sysConfigImpl) getCacheKey(configKey string) string {
 
 // loadingConfigCache 加载参数缓存数据
 func (r *sysConfigImpl) loadingConfigCache(configKey string) {
+	// 查询全部参数
+	if configKey == "*" {
+		sysConfigs := r.SelectConfigList(model.SysConfig{})
+		for _, v := range sysConfigs {
+			key := r.getCacheKey(v.ConfigKey)
+			redis.Del(key)
+			redis.Set(key, v.ConfigValue)
+		}
+		return
+	}
+	// 指定参数
+	if configKey != "" {
+		cacheValue := r.sysConfigRepository.SelectConfigValueByKey(configKey)
+		if cacheValue != "" {
+			key := r.getCacheKey(configKey)
+			redis.Del(key)
+			redis.Set(key, cacheValue)
+		}
+		return
+	}
 }
 
 // clearConfigCache 清空参数缓存数据
-func (r *sysConfigImpl) clearConfigCache(configKey string) int {
-	return 0
+func (r *sysConfigImpl) clearConfigCache(configKey string) bool {
+	key := r.getCacheKey(configKey)
+	keys := redis.GetKeys(key)
+	return redis.DelKeys(keys)
 }

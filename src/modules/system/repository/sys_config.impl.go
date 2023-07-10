@@ -90,8 +90,42 @@ func (r *sysConfigImpl) SelectConfigPage(query map[string]string) map[string]int
 
 // SelectConfigList 查询参数配置列表
 func (r *sysConfigImpl) SelectConfigList(sysConfig model.SysConfig) []model.SysConfig {
-	// 实现具体逻辑
-	return []model.SysConfig{}
+	db := datasource.GetDefaultDB()
+
+	// 查询条件拼接
+	var conditions []string
+	var params []interface{}
+	if sysConfig.ConfigName != "" {
+		conditions = append(conditions, "config_name like concat(?, '%')")
+		params = append(params, sysConfig.ConfigName)
+	}
+	if sysConfig.ConfigType != "" {
+		conditions = append(conditions, "config_type = ?")
+		params = append(params, sysConfig.ConfigType)
+	}
+	if sysConfig.ConfigKey != "" {
+		conditions = append(conditions, "config_key like concat(?, '%')")
+		params = append(params, sysConfig.ConfigKey)
+	}
+	if sysConfig.CreateTime > 0 {
+		conditions = append(conditions, "create_time >= ?")
+		params = append(params, sysConfig.CreateTime)
+	}
+
+	// 构建查询条件语句
+	whereSql := ""
+	if len(conditions) > 0 {
+		whereSql += " where " + strings.Join(conditions, " and ")
+	}
+
+	// 查询数据
+	var config []model.SysConfig
+	querySql := selectSql + whereSql
+	queryRes := db.Raw(querySql, params...).Scan(&config)
+	if queryRes.Error != nil {
+		logger.Errorf("queryRes err %v", queryRes.Error)
+	}
+	return config
 }
 
 // SelectConfigValueByKey 通过参数键名查询参数键值
