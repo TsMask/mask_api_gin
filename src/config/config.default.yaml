@@ -75,3 +75,33 @@ user:
   # 管理员列表
   adminList:
     - "1"
+
+# char 字符验证码配置
+charCaptcha:
+  # 宽度
+  width: 120
+  # 高度
+  height: 40
+  # 干扰线条的数量
+  noise: 4
+  # 验证码的字符是否有颜色，默认没有，如果设定了背景，则默认有
+  color: true
+  # 验证码图片背景颜色
+  background: "#fafafa"
+  # 验证码长度
+  size: 4
+  # 验证码字符
+  chars: "023456789abcdefghjkmnprstuvwxyz"
+
+# math 数值计算码配置
+mathCaptcha:
+  # 宽度
+  width: 120
+  # 高度
+  height: 40
+  #  干扰线条的数量
+  noise: 4
+  #  验证码的字符是否有颜色，默认没有，如果设定了背景，则默认有
+  color: true
+  # 验证码图片背景颜色
+  background: "#fafafa"
