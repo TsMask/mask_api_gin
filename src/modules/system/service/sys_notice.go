@@ -4,6 +4,9 @@ import "mask_api_gin/src/modules/system/model"
 
 // ISysNotice 公告 服务层接口
 type ISysNotice interface {
+	// SelectNoticePage 分页查询公告列表
+	SelectNoticePage(query map[string]string) map[string]interface{}
+
 	// SelectNoticeList 查询公告列表
 	SelectNoticeList(sysNotice model.SysNotice) []model.SysNotice
 
