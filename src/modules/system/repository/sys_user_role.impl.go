@@ -2,10 +2,15 @@ package repository
 
 import "mask_api_gin/src/modules/system/model"
 
-// 用户与角色关联表 数据层处理
-var SysUserRoleImpl = new(sysUserRoleImpl)
+// SysUserRoleImpl 用户与角色关联表 数据层处理
+var SysUserRoleImpl = &sysUserRoleImpl{
+	selectSql: "",
+}
 
-type sysUserRoleImpl struct{}
+type sysUserRoleImpl struct {
+	// 查询视图对象SQL
+	selectSql string
+}
 
 // CountUserRoleByRoleId 通过角色ID查询角色使用数量
 func (r *sysUserRoleImpl) CountUserRoleByRoleId(roleId string) int {
