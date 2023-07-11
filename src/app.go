@@ -1,8 +1,7 @@
 package src
 
 import (
-	"mask_api_gin/src/framework/datasource"
-	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/middleware"
 	"mask_api_gin/src/modules/common"
 	"mask_api_gin/src/modules/monitor"
 	"mask_api_gin/src/modules/system"
@@ -25,6 +24,9 @@ func initAppEngine() *gin.Engine {
 	} else {
 		app = gin.Default()
 	}
+
+	// 全局中间件
+	app.Use(middleware.LoggerMiddleware())
 
 	// 静态目录
 	fsDefault := viper.GetStringMapString("staticFile.default")
@@ -55,7 +57,7 @@ func initModulesRoute(app *gin.Engine) {
 }
 
 // 运行服务程序
-func RunServer() {
+func RunServer() error {
 	app := initAppEngine()
 	initModulesRoute(app)
 
@@ -64,8 +66,5 @@ func RunServer() {
 	addr := ":" + viper.GetString("server.port")
 
 	// 启动服务
-	if err := app.Run(addr); err != nil {
-		datasource.Close()
-		logger.Panicf("error: %s", err)
-	}
+	return app.Run(addr)
 }
