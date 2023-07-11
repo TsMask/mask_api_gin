@@ -11,6 +11,7 @@ import (
 // Setup 模块路由注册
 func Setup(router *gin.Engine) {
 	logger.Infof("开始加载 ====> system 模块路由")
+
 	// 启动时需要的初始参数
 	InitLoad()
 
