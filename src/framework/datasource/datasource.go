@@ -54,7 +54,7 @@ func loadDialect() {
 // 载入连接日志配置
 func loadLogger() gormLog.Interface {
 	newLogger := gormLog.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags), // 将日志输出到控制台
+		log.New(os.Stdout, "[GORM] ", log.LstdFlags), // 将日志输出到控制台
 		gormLog.Config{
 			SlowThreshold:        time.Second,  // Slow SQL 阈值
 			LogLevel:             gormLog.Info, // 日志级别 Silent不输出任何日志
