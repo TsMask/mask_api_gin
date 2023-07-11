@@ -1,18 +1,21 @@
 package monitor
 
 import (
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/monitor/controller"
 
 	"github.com/gin-gonic/gin"
 )
 
-// 模块路由注册
+// Setup 模块路由注册
 func Setup(router *gin.Engine) {
+	logger.Infof("开始加载 ====> monitor 模块路由")
+
+	// 启动时需要的初始参数
+	InitLoad()
+
 	// 服务器监控
-	serverGroup := router.Group("/monitor/server")
-	{
-		serverGroup.GET("/", controller.Server.Info)
-	}
+	router.GET("/monitor/server", controller.Server.Info)
 
 	// 调度任务日志信息
 	jobLogGroup := router.Group("/monitor/jobLog")
@@ -28,4 +31,8 @@ func Setup(router *gin.Engine) {
 		// 调度任务日志清空
 		jobLogGroup.DELETE("/clean", controller.SysJobLog.Clean)
 	}
+}
+
+// InitLoad 初始参数
+func InitLoad() {
 }
