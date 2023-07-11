@@ -23,10 +23,10 @@ type ISysRole interface {
 	SelectRolesByUserName(userName string) []model.SysRole
 
 	// CheckUniqueRoleName 校验角色名称是否唯一
-	CheckUniqueRoleName(roleName string) (string, error)
+	CheckUniqueRoleName(roleName string) string
 
 	// CheckUniqueRoleKey 校验角色权限是否唯一
-	CheckUniqueRoleKey(roleKey string) (string, error)
+	CheckUniqueRoleKey(roleKey string) string
 
 	// UpdateRole 修改角色信息
 	UpdateRole(sysRole model.SysRole) int
