@@ -13,6 +13,7 @@ var SysConfigImpl = &sysConfigImpl{
 }
 
 type sysConfigImpl struct {
+	// 参数配置表
 	sysConfigRepository repository.ISysConfig
 }
 

@@ -10,12 +10,14 @@ import (
 )
 
 // SysConfigImpl 参数配置表 数据层处理
-var SysConfigImpl = new(sysConfigImpl)
+var SysConfigImpl = &sysConfigImpl{
+	selectSql: "select config_id, config_name, config_key, config_value, config_type, create_by, create_time, update_by, update_time, remark from sys_config",
+}
 
-// 查询视图对象SQL
-var selectSql = "select config_id, config_name, config_key, config_value, config_type, create_by, create_time, update_by, update_time, remark from sys_config"
-
-type sysConfigImpl struct{}
+type sysConfigImpl struct {
+	// 查询视图对象SQL
+	selectSql string
+}
 
 // SelectDictDataPage 分页查询参数配置列表数据
 func (r *sysConfigImpl) SelectConfigPage(query map[string]string) map[string]interface{} {
@@ -75,7 +77,7 @@ func (r *sysConfigImpl) SelectConfigPage(query map[string]string) map[string]int
 
 	// 查询数据
 	var sysConfig []model.SysConfig
-	querySql := selectSql + whereSql + pageSql
+	querySql := r.selectSql + whereSql + pageSql
 	queryRes := db.Raw(querySql, params...).Scan(&sysConfig)
 	if queryRes.Error != nil {
 		logger.Errorf("queryRes err %v", queryRes.Error)
@@ -120,7 +122,7 @@ func (r *sysConfigImpl) SelectConfigList(sysConfig model.SysConfig) []model.SysC
 
 	// 查询数据
 	var config []model.SysConfig
-	querySql := selectSql + whereSql
+	querySql := r.selectSql + whereSql
 	queryRes := db.Raw(querySql, params...).Scan(&config)
 	if queryRes.Error != nil {
 		logger.Errorf("queryRes err %v", queryRes.Error)
@@ -131,7 +133,7 @@ func (r *sysConfigImpl) SelectConfigList(sysConfig model.SysConfig) []model.SysC
 // SelectConfigValueByKey 通过参数键名查询参数键值
 func (r *sysConfigImpl) SelectConfigValueByKey(configKey string) string {
 	// 实现具体逻辑
-	return ""
+	return r.selectSql
 }
 
 // SelectConfigById 通过配置ID查询参数配置信息
