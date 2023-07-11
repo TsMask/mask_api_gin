@@ -11,6 +11,8 @@ func main() {
 	runtime.GOMAXPROCS(nuCPU)
 	fmt.Printf("Running with %d CPUs\n", nuCPU)
 
-	src.Configuration()
-	src.RunServer()
+	src.ConfigurationInit()
+	if err := src.RunServer(); err != nil {
+		src.ConfigurationClose()
+	}
 }
