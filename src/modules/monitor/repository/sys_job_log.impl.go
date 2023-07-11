@@ -9,13 +9,15 @@ import (
 	"strings"
 )
 
-// 调度任务日志信息 数据层处理
-var SysJobLogImpl = new(sysJobLogImpl)
+// SysJobLogImpl 调度任务日志表 数据层处理
+var SysJobLogImpl = &sysJobLogImpl{
+	selectSql: "select job_log_id, job_name, job_group, invoke_target, target_params, job_msg, status, create_time from sys_job_log",
+}
 
-// 查询视图对象SQL
-var selectSysJobLogSql = "select job_log_id, job_name, job_group, invoke_target, target_params, job_msg, status, create_time from sys_job_log"
-
-type sysJobLogImpl struct{}
+type sysJobLogImpl struct {
+	// 查询视图对象SQL
+	selectSql string
+}
 
 // 分页查询调度任务日志集合
 func (r *sysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]interface{} {
@@ -79,7 +81,7 @@ func (r *sysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]int
 
 	// 查询数据
 	var sysJobLog []model.SysJobLog
-	querySql := selectSysJobLogSql + whereSql + pageSql
+	querySql := r.selectSql + whereSql + pageSql
 	queryRes := db.Raw(querySql, params...).Scan(&sysJobLog)
 	if queryRes.Error != nil {
 		logger.Errorf("SelectJobLogPage queryRes err %v", queryRes.Error)
@@ -124,7 +126,7 @@ func (r *sysJobLogImpl) SelectJobLogList(sysJobLog model.SysJobLog) []model.SysJ
 
 	// 查询数据
 	var results []model.SysJobLog
-	querySql := selectSysJobLogSql + whereSql
+	querySql := r.selectSql + whereSql
 	queryRes := db.Raw(querySql, params...).Scan(&results)
 	if queryRes.Error != nil {
 		logger.Errorf("SelectJobLogPage queryRes err %v", queryRes.Error)
@@ -138,7 +140,7 @@ func (r *sysJobLogImpl) SelectJobLogById(jobLogId string) model.SysJobLog {
 
 	// 查询数据
 	var result model.SysJobLog
-	querySql := selectSysJobLogSql + " where job_log_id = ?"
+	querySql := r.selectSql + " where job_log_id = ?"
 	queryRes := db.Raw(querySql, jobLogId).Scan(&result)
 	if queryRes.Error != nil {
 		logger.Errorf("SelectJobLogById queryRes err %v", queryRes.Error)

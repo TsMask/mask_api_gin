@@ -1,6 +1,8 @@
 package model
 
-// 定时任务调度日志表 sys_job_log
+import "mask_api_gin/src/framework/utils/date"
+
+// SysJobLog 定时任务调度日志表 sys_job_log
 type SysJobLog struct {
 	// 日志序号
 	JobLogID string `json:"jobLogId"`
@@ -17,5 +19,18 @@ type SysJobLog struct {
 	// 执行状态（0失败 1正常）
 	Status string `json:"status"`
 	// 创建时间
-	CreateTime string `json:"createTime"`
+	CreateTime int64 `json:"createTime"`
+}
+
+// NewSysJobLog 实例化函数
+func NewSysJobLog(jobName string, jobGroup string, invokeTarget string, targetParams string, status string, msg string) *SysJobLog {
+	return &SysJobLog{
+		JobName:      jobName,
+		JobGroup:     jobGroup,
+		InvokeTarget: invokeTarget,
+		TargetParams: targetParams,
+		Status:       status,
+		JobMsg:       msg,
+		CreateTime:   date.NowTimestamp(),
+	}
 }
