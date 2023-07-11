@@ -1,6 +1,7 @@
 package common
 
 import (
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/common/controller"
 
 	"github.com/gin-gonic/gin"
@@ -8,14 +9,19 @@ import (
 
 // 模块路由注册
 func Setup(router *gin.Engine) {
-	// 根路由组
-	indexGroup := router.Group("/")
-	{
-		// 路由主页
-		indexGroup.GET("/", controller.Index.Handler)
-		// 获取验证码
-		indexGroup.GET("/captchaImage", controller.Captcha.CaptchaImage)
-	}
+	logger.Infof("开始加载 ====> common 模块路由")
+
+	// 路由主页
+	router.GET("/", controller.Index.Handler)
+
+	// 验证码操作处理
+	router.GET("/captchaImage", controller.Captcha.Image)
+
+	// 账号身份操作处理
+	router.POST("/login", controller.Account.Login)
+	router.GET("/getInfo", controller.Account.Info)
+	router.GET("/getRouters", controller.Account.Router)
+	router.POST("/logout", controller.Account.Logout)
 
 	// 通用请求
 	commonGroup := router.Group("/common")
