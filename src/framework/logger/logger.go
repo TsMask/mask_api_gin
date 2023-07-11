@@ -3,56 +3,49 @@ package logger
 import (
 	"fmt"
 	"log"
-	"path/filepath"
-	"runtime"
+	"os"
 )
 
 const (
-	info int = iota
-	debug
-	error
-	warn
+	// Silent silent log level
+	Silent int = iota
+	// Info info log level
+	Info
+	// Warn warn log level
+	Warn
+	// Error error log level
+	Error
 )
 
 var logMapping = map[int]string{
-	0: "INFO",
-	1: "DEBUG",
-	2: "ERROR",
-	3: "WARN",
+	0: "silent",
+	1: "info",
+	2: "warn",
+	3: "error",
 }
 
 func logWithLevel(level int, format string, v ...interface{}) {
-	if level < 0 {
+	if level <= Silent {
 		return
 	}
 
-	// 文件行号
-	_, file, line, _ := runtime.Caller(2)
-	file = filepath.Base(file)
-	prefix := fmt.Sprintf("%s [%s:%d] ", logMapping[level], file, line)
-
-	log.SetPrefix(prefix)       // 设置日志前缀
-	log.SetFlags(log.LstdFlags) // 设置日期和时间格式
-
-	log.Printf(format+"\n", v...)
+	stdLog := log.New(os.Stdout, "["+logMapping[level]+"] ", log.LstdFlags|log.Lshortfile)
+	stdLog.Output(3, fmt.Sprintf(format, v...))
 }
 
 func Infof(format string, v ...interface{}) {
-	logWithLevel(info, format, v...)
-}
-
-func Debugf(format string, v ...interface{}) {
-	logWithLevel(debug, format, v...)
-}
-
-func Errorf(format string, v ...interface{}) {
-	logWithLevel(error, format, v...)
+	logWithLevel(Info, format, v...)
 }
 
 func Warnf(format string, v ...interface{}) {
-	logWithLevel(warn, format, v...)
+	logWithLevel(Warn, format, v...)
 }
 
+func Errorf(format string, v ...interface{}) {
+	logWithLevel(Error, format, v...)
+}
+
+// Panicf 抛出错误并退出程序
 func Panicf(format string, v ...interface{}) {
 	log.Fatalf(format, v...)
 }
