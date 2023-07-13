@@ -2,13 +2,13 @@ package controller
 
 import (
 	"mask_api_gin/src/framework/cache/redis"
+	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/constants/cachekey"
 	"mask_api_gin/src/framework/constants/captcha"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/model/result"
-	"mask_api_gin/src/framework/service/ctx"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/modules/system/service"
+	systemService "mask_api_gin/src/modules/system/service"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,12 +17,12 @@ import (
 
 // 验证码操作处理
 var Captcha = &captchaController{
-	sysConfigService: service.SysConfigImpl,
+	sysConfigService: systemService.SysConfigImpl,
 }
 
 type captchaController struct {
 	// 参数配置服务
-	sysConfigService service.ISysConfig
+	sysConfigService systemService.ISysConfig
 }
 
 // 获取验证码
@@ -50,7 +50,7 @@ func (s *captchaController) Image(c *gin.Context) {
 	// 从数据库配置获取验证码类型 math 数值计算 char 字符验证
 	captchaType := s.sysConfigService.SelectConfigValueByKey("sys.account.captchaType")
 	if captchaType == captcha.TYPE_MATH {
-		math := ctx.Config("mathCaptcha").(map[string]interface{})
+		math := config.Get("mathCaptcha").(map[string]interface{})
 		driverCaptcha := &base64Captcha.DriverMath{
 			//Height png height in pixel.
 			Height: math["height"].(int),
@@ -74,13 +74,13 @@ func (s *captchaController) Image(c *gin.Context) {
 		} else {
 			data["uuid"] = id
 			data["img"] = item.EncodeB64string()
-			expiration := captcha.EXPIRATION * time.Millisecond
+			expiration := captcha.EXPIRATION * time.Second
 			verifyKey = cachekey.CAPTCHA_CODE_KEY + id
 			redis.SetByExpire(verifyKey, answer, expiration)
 		}
 	}
 	if captchaType == captcha.TYPE_CHAR {
-		char := ctx.Config("charCaptcha").(map[string]interface{})
+		char := config.Get("charCaptcha").(map[string]interface{})
 		driverCaptcha := &base64Captcha.DriverString{
 			//Height png height in pixel.
 			Height: char["height"].(int),
@@ -115,7 +115,7 @@ func (s *captchaController) Image(c *gin.Context) {
 	}
 
 	// 本地开发下返回验证码结果，方便接口调试
-	if ctx.Env() == "local" {
+	if config.Env() == "local" {
 		text := redis.Get(verifyKey)
 		data["text"] = text
 		c.JSON(200, result.Ok(data))
