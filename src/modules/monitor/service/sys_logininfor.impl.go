@@ -27,7 +27,7 @@ func (s *sysLogininforImpl) SelectLogininforList(sysLogininfor model.SysLogininf
 
 // InsertLogininfor 新增系统登录日志
 func (s *sysLogininforImpl) InsertLogininfor(sysLogininfor model.SysLogininfor) string {
-	return ""
+	return s.sysLogininforService.InsertLogininfor(sysLogininfor)
 }
 
 // DeleteLogininforByIds 批量删除系统登录日志
@@ -38,4 +38,18 @@ func (s *sysLogininforImpl) DeleteLogininforByIds(infoIds []string) int64 {
 // CleanLogininfor 清空系统登录日志
 func (s *sysLogininforImpl) CleanLogininfor() error {
 	return nil
+}
+
+// NewLogininfor 生成系统登录日志
+func (s *sysLogininforImpl) NewLogininfor(userName, status, msg string, ilobArgs ...string) string {
+	sysLogininfor := model.SysLogininfor{
+		IPAddr:        ilobArgs[0],
+		LoginLocation: ilobArgs[1],
+		OS:            ilobArgs[2],
+		Browser:       ilobArgs[3],
+		UserName:      userName,
+		Status:        status,
+		Msg:           msg,
+	}
+	return s.InsertLogininfor(sysLogininfor)
 }

@@ -18,4 +18,7 @@ type ISysLogininfor interface {
 
 	// CleanLogininfor 清空系统登录日志
 	CleanLogininfor() error
+
+	// NewLogininfor 生成系统登录日志
+	NewLogininfor(userName, status, msg string, ilobArgs ...string) string
 }
