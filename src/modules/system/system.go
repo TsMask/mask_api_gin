@@ -15,6 +15,12 @@ func Setup(router *gin.Engine) {
 	// 启动时需要的初始参数
 	InitLoad()
 
+	// 用户信息
+	sysUserGroup := router.Group("/system/user")
+	{
+		sysUserGroup.GET("/list", controller.SysUser.List)
+	}
+
 	// 参数配置信息
 	sysConfigGroup := router.Group("/system/config")
 	{
