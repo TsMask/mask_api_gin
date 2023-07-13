@@ -87,6 +87,16 @@ func Get(key string) string {
 	return value
 }
 
+// 判断是否存在
+func Has(keys ...string) bool {
+	ctx := context.Background()
+	exists, err := rdb.Exists(ctx, keys...).Result()
+	if err != nil {
+		return false
+	}
+	return exists >= 1
+}
+
 // 设置缓存数据
 func Set(key string, value interface{}) bool {
 	ctx := context.Background()
