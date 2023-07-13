@@ -2,9 +2,14 @@ package controller
 
 import (
 	"fmt"
+	"mask_api_gin/src/framework/constants/common"
+	"mask_api_gin/src/framework/constants/token"
 	"mask_api_gin/src/framework/model/result"
-	"mask_api_gin/src/modules/common/model"
-	"mask_api_gin/src/modules/common/service"
+	"mask_api_gin/src/framework/service/ctx"
+	tokenService "mask_api_gin/src/framework/service/token"
+	commonModel "mask_api_gin/src/modules/common/model"
+	commonService "mask_api_gin/src/modules/common/service"
+	monitorService "mask_api_gin/src/modules/monitor/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -12,26 +17,75 @@ import (
 
 // 账号身份操作处理
 var Account = &accountController{
-	accountService: service.AccountImpl,
+	accountService:       commonService.AccountImpl,
+	sysLogininforService: monitorService.SysLogininforImpl,
 }
 
 type accountController struct {
 	// 账号身份操作服务
-	accountService service.IAccount
+	accountService commonService.IAccount
+	// 系统登录访问
+	sysLogininforService monitorService.ISysLogininfor
 }
 
 // 系统登录
 //
 // POST /login
 func (s *accountController) Login(c *gin.Context) {
-	var loginBody model.LoginBody
+	var loginBody commonModel.LoginBody
 	if err := c.ShouldBindJSON(&loginBody); err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
 	}
 
-	c.JSON(200, result.Ok(map[string]interface{}{
-		"data": loginBody,
+	// 必要字段
+	if loginBody.Username == "" || loginBody.Password == "" {
+		c.JSON(200, result.Err(nil))
+		return
+	}
+
+	// 当前请求信息
+	ipaddr, location := ctx.ClientIP(c)
+	os, browser := ctx.UaOsBrowser(c)
+
+	// 校验验证码
+	err := s.accountService.ValidateCaptcha(
+		loginBody.Username,
+		loginBody.Code,
+		loginBody.UUID,
+	)
+	// 根据错误信息，创建系统访问记录
+	if err != nil {
+		msg := err.Error() + " " + loginBody.Code
+		s.sysLogininforService.NewLogininfor(
+			loginBody.Username, common.STATUS_NO, msg,
+			ipaddr, location, os, browser,
+		)
+		c.JSON(200, result.ErrMsg(err.Error()))
+		return
+	}
+
+	// 登录用户信息
+	loginUser, err := s.accountService.LoginByUsername(loginBody.Username, loginBody.Password)
+	if err != nil {
+		c.JSON(200, result.ErrMsg(err.Error()))
+		return
+	}
+
+	// 生成令牌，创建系统访问记录
+	tokenStr := tokenService.Create(&loginUser, ipaddr, location, os, browser)
+	if tokenStr == "" {
+		c.JSON(200, result.Err(nil))
+		return
+	} else {
+		s.sysLogininforService.NewLogininfor(
+			loginBody.Username, common.STATUS_YES, "登录成功",
+			ipaddr, location, os, browser,
+		)
+	}
+
+	c.JSON(200, result.OkData(map[string]interface{}{
+		token.RESPONSE_FIELD: tokenStr,
 	}))
 }
 
