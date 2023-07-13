@@ -3,12 +3,12 @@ package datasource
 import (
 	"fmt"
 	"log"
+	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/logger"
 	"os"
 	"regexp"
 	"time"
 
-	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	gormLog "gorm.io/gorm/logger"
@@ -29,7 +29,7 @@ var dialects = make(map[string]dialectInfo)
 // 载入数据库连接
 func loadDialect() {
 	// 读取数据源配置
-	datasource := viper.GetStringMap("gorm.datasource")
+	datasource := config.Get("gorm.datasource").(map[string]interface{})
 	for key, value := range datasource {
 		item := value.(map[string]interface{})
 		// 数据库类型对应的数据库连接
@@ -111,7 +111,7 @@ func Close() {
 
 // 获取默认数据源
 func DefaultDB() *gorm.DB {
-	source := viper.GetString("gorm.defaultDataSourceName")
+	source := config.Get("gorm.defaultDataSourceName").(string)
 	return dbMap[source]
 }
 

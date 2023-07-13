@@ -1,6 +1,8 @@
 package src
 
 import (
+	"fmt"
+	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/middleware"
 	"mask_api_gin/src/modules/common"
 	"mask_api_gin/src/modules/monitor"
@@ -17,7 +19,7 @@ func initAppEngine() *gin.Engine {
 	// 禁止控制台日志输出的颜色
 	gin.DisableConsoleColor()
 	// 根据运行环境注册引擎
-	if viper.GetString("env") == "prod" {
+	if config.Env() == "prod" {
 		gin.SetMode(gin.ReleaseMode)
 		app = gin.New()
 		app.Use(gin.Recovery())
@@ -62,8 +64,8 @@ func RunServer() error {
 	initModulesRoute(app)
 
 	// 读取服务配置
-	app.ForwardedByClientIP = viper.GetBool("server.proxy")
-	addr := ":" + viper.GetString("server.port")
+	app.ForwardedByClientIP = config.Get("server.proxy").(bool)
+	addr := fmt.Sprintf(":%d", config.Get("server.port").(int))
 
 	// 启动服务
 	return app.Run(addr)

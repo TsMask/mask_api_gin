@@ -3,11 +3,11 @@ package redis
 import (
 	"context"
 	"fmt"
+	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/logger"
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/spf13/viper"
 )
 
 // Redis连接实例
@@ -16,7 +16,7 @@ var rdb *redis.Client
 // 连接Redis实例
 func Connect() {
 	ctx := context.Background()
-	client := viper.GetStringMap("redis.client")
+	client := config.Get("redis.client").(map[string]interface{})
 	address := fmt.Sprintf("%s:%d", client["host"], client["port"])
 	// 创建连接
 	rdb = redis.NewClient(&redis.Options{
