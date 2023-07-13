@@ -54,3 +54,31 @@ func initViper(configPath string) {
 		logger.Panicf("fatal error config local file: %s", err)
 	}
 }
+
+// Env 获取运行服务环境
+// local prod
+func Env() string {
+	return viper.GetString("env")
+}
+
+// Get 获取配置信息
+//
+// Get("pkg.name")
+func Get(key string) interface{} {
+	return viper.Get(key)
+}
+
+// IsAdmin 用户是否为管理员
+func IsAdmin(userID string) bool {
+	if userID == "" {
+		return false
+	}
+	// 从本地配置获取user信息
+	admins := Get("user.adminList").([]interface{})
+	for _, s := range admins {
+		if s.(string) == userID {
+			return true
+		}
+	}
+	return false
+}
