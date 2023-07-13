@@ -1,13 +1,20 @@
 package repo
 
 import (
+	"fmt"
 	"mask_api_gin/src/framework/logger"
 	"reflect"
 	"strconv"
 	"strings"
 )
 
-// 分页页码记录数
+// DataScopeSQL 系统角色数据范围过滤SQL字符串
+func DataScopeSQL(deptAlias, userAlias string) string {
+	dataScopeSQL := ""
+	return dataScopeSQL
+}
+
+// PageNumSize 分页页码记录数
 func PageNumSize(pageNum, pageSize string) (int, int) {
 	// 记录起始索引
 	num, err := strconv.Atoi(pageNum)
@@ -37,7 +44,49 @@ func PageNumSize(pageNum, pageSize string) (int, int) {
 	return num - 1, size
 }
 
-// 转换记录结果
+// SetFieldValue 判断结构体内是否存在指定字段并设置值
+func SetFieldValue(obj interface{}, fieldName string, value interface{}) {
+	// 获取结构体的反射值
+	userValue := reflect.ValueOf(obj)
+
+	// 获取字段的反射值
+	fieldValue := userValue.Elem().FieldByName(fieldName)
+
+	// 检查字段是否存在
+	if fieldValue.IsValid() && fieldValue.CanSet() {
+		// 获取字段的类型
+		fieldType := fieldValue.Type()
+
+		// 转换传入的值类型为字段类型
+		switch fieldType.Kind() {
+		case reflect.String:
+			fieldValue.SetString(fmt.Sprintf("%v", value))
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			intValue, err := strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)
+			if err != nil {
+				intValue = 0
+			}
+			fieldValue.SetInt(intValue)
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			uintValue, err := strconv.ParseUint(fmt.Sprintf("%v", value), 10, 64)
+			if err != nil {
+				uintValue = 0
+			}
+			fieldValue.SetUint(uintValue)
+		case reflect.Float32, reflect.Float64:
+			floatValue, err := strconv.ParseFloat(fmt.Sprintf("%v", value), 64)
+			if err != nil {
+				floatValue = 0
+			}
+			fieldValue.SetFloat(floatValue)
+		default:
+			// 设置字段的值
+			fieldValue.Set(reflect.ValueOf(value).Convert(fieldValue.Type()))
+		}
+	}
+}
+
+// 转换记录结果 TODO
 func ConvertResultRows(results interface{}) []interface{} {
 	s := reflect.ValueOf(results)
 	if s.Kind() != reflect.Slice {
