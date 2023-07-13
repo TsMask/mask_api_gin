@@ -37,9 +37,9 @@ jwt:
   # 令牌密钥
   secret: "abcdefghijklmnopqrstuvwxyz"
   # 令牌有效期（默认120分钟）
-  expiresIn: "120"
+  expiresIn: 120
   # 验证令牌有效期，相差不足xx分钟，自动刷新缓存
-  jwtRefreshIn: "20m"
+  jwtRefreshIn: 20
 
 # GORM 数据源
 gorm:
