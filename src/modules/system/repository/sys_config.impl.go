@@ -21,7 +21,7 @@ type sysConfigImpl struct {
 
 // SelectDictDataPage 分页查询参数配置列表数据
 func (r *sysConfigImpl) SelectConfigPage(query map[string]string) map[string]interface{} {
-	db := datasource.GetDefaultDB()
+	db := datasource.DefaultDB()
 
 	// 查询条件拼接
 	var conditions []string
@@ -92,7 +92,7 @@ func (r *sysConfigImpl) SelectConfigPage(query map[string]string) map[string]int
 
 // SelectConfigList 查询参数配置列表
 func (r *sysConfigImpl) SelectConfigList(sysConfig model.SysConfig) []model.SysConfig {
-	db := datasource.GetDefaultDB()
+	db := datasource.DefaultDB()
 
 	// 查询条件拼接
 	var conditions []string

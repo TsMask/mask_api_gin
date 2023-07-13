@@ -21,7 +21,7 @@ type sysJobLogImpl struct {
 
 // 分页查询调度任务日志集合
 func (r *sysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]interface{} {
-	db := datasource.GetDefaultDB()
+	db := datasource.DefaultDB()
 
 	// 查询条件拼接
 	var conditions []string
@@ -96,7 +96,7 @@ func (r *sysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]int
 
 // 查询调度任务日志集合
 func (r *sysJobLogImpl) SelectJobLogList(sysJobLog model.SysJobLog) []model.SysJobLog {
-	db := datasource.GetDefaultDB()
+	db := datasource.DefaultDB()
 
 	// 查询条件拼接
 	var conditions []string
@@ -136,7 +136,7 @@ func (r *sysJobLogImpl) SelectJobLogList(sysJobLog model.SysJobLog) []model.SysJ
 
 // 通过调度ID查询调度任务日志信息
 func (r *sysJobLogImpl) SelectJobLogById(jobLogId string) model.SysJobLog {
-	db := datasource.GetDefaultDB()
+	db := datasource.DefaultDB()
 
 	// 查询数据
 	var result model.SysJobLog
@@ -150,7 +150,7 @@ func (r *sysJobLogImpl) SelectJobLogById(jobLogId string) model.SysJobLog {
 
 // 新增调度任务日志信息
 func (r *sysJobLogImpl) InsertJobLog(sysJobLog model.SysJobLog) string {
-	db := datasource.GetDefaultDB()
+	db := datasource.DefaultDB()
 
 	// 参数拼接
 	paramMap := make(map[string]interface{})
@@ -205,7 +205,7 @@ func (r *sysJobLogImpl) InsertJobLog(sysJobLog model.SysJobLog) string {
 
 // 批量删除调度任务日志信息
 func (r *sysJobLogImpl) DeleteJobLogByIds(jobLogIds []string) int64 {
-	db := datasource.GetDefaultDB()
+	db := datasource.DefaultDB()
 
 	// 构建执行语句
 	sql := "delete from sys_job_log where job_log_id in (?)"
@@ -220,7 +220,7 @@ func (r *sysJobLogImpl) DeleteJobLogByIds(jobLogIds []string) int64 {
 
 // 清空调度任务日志
 func (r *sysJobLogImpl) CleanJobLog() error {
-	db := datasource.GetDefaultDB()
+	db := datasource.DefaultDB()
 
 	return db.Exec("truncate table sys_job_log").Error
 }
