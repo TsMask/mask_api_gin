@@ -3,8 +3,8 @@ package repository
 import (
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/service/repo"
 	"mask_api_gin/src/framework/utils/date"
+	repoUtils "mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 )
@@ -70,7 +70,7 @@ func (r *sysConfigImpl) SelectConfigPage(query map[string]string) map[string]int
 	}
 
 	// 分页
-	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := repoUtils.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -83,7 +83,7 @@ func (r *sysConfigImpl) SelectConfigPage(query map[string]string) map[string]int
 		logger.Errorf("queryRes err %v", queryRes.Error)
 	}
 
-	rows := repo.ConvertResultRows(sysConfig)
+	rows := repoUtils.ConvertResultRows(sysConfig)
 	return map[string]interface{}{
 		"total": total,
 		"rows":  rows,

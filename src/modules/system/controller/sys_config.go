@@ -2,7 +2,7 @@ package controller
 
 import (
 	"mask_api_gin/src/framework/model/result"
-	"mask_api_gin/src/framework/service/ctx"
+	ctxUtils "mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
@@ -34,7 +34,7 @@ func (s *sysConfig) Export(c *gin.Context) {
 // GET /list
 func (s *sysConfig) List(c *gin.Context) {
 	// 查询参数转换map
-	querys := ctx.QueryMapString(c)
+	querys := ctxUtils.QueryMapString(c)
 	list := s.sysConfigService.SelectConfigPage(querys)
 	c.JSON(200, result.Ok(list))
 }

@@ -3,8 +3,8 @@ package repository
 import (
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/service/repo"
 	"mask_api_gin/src/framework/utils/date"
+	repoUtils "mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/monitor/model"
 	"strings"
 )
@@ -59,7 +59,7 @@ func (r *sysLogininforImpl) InsertLogininfor(sysLogininfor model.SysLogininfor) 
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repo.KeyValuePlaceholder(paramMap)
+	keys, placeholder, values := repoUtils.KeyValuePlaceholder(paramMap)
 	sql := "insert into sys_logininfor (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
 
 	// 开启事务

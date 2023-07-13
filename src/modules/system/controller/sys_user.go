@@ -2,8 +2,8 @@ package controller
 
 import (
 	"mask_api_gin/src/framework/model/result"
-	"mask_api_gin/src/framework/service/ctx"
-	"mask_api_gin/src/framework/service/repo"
+	ctxUtils "mask_api_gin/src/framework/utils/ctx"
+	repoUtils "mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/service"
 
 	"github.com/gin-gonic/gin"
@@ -26,8 +26,8 @@ type sysUserController struct {
 // GET /list
 func (s *sysUserController) List(c *gin.Context) {
 	// 查询参数转换map
-	querys := ctx.QueryMapString(c)
-	dataScopeSQL := repo.DataScopeSQL("d", "u")
+	querys := ctxUtils.QueryMapString(c)
+	dataScopeSQL := repoUtils.DataScopeSQL("d", "u")
 	list := s.sysUserService.SelectUserPage(querys, dataScopeSQL)
 	c.JSON(200, result.Ok(list))
 }

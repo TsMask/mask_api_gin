@@ -3,9 +3,9 @@ package repository
 import (
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/service/repo"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
+	repoUtils "mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 )
@@ -85,13 +85,13 @@ func (r *sysUserImpl) convertResultRows(rows []map[string]interface{}) []model.S
 
 		for key, value := range row {
 			if keyMapper, ok := r.sysUserMap[key]; ok {
-				repo.SetFieldValue(&sysUser, keyMapper, value)
+				repoUtils.SetFieldValue(&sysUser, keyMapper, value)
 			}
 			if keyMapper, ok := r.sysDeptMap[key]; ok {
-				repo.SetFieldValue(&sysDept, keyMapper, value)
+				repoUtils.SetFieldValue(&sysDept, keyMapper, value)
 			}
 			if keyMapper, ok := r.sysRoleMap[key]; ok {
-				repo.SetFieldValue(&sysRole, keyMapper, value)
+				repoUtils.SetFieldValue(&sysRole, keyMapper, value)
 			}
 		}
 
@@ -171,7 +171,7 @@ func (r *sysUserImpl) SelectUserPage(query map[string]string, dataScopeSQL strin
 	}
 
 	// 分页
-	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := repoUtils.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -257,7 +257,7 @@ func (r *sysUserImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL 
 	}
 
 	// 分页
-	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := repoUtils.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)

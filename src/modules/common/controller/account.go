@@ -2,11 +2,11 @@ package controller
 
 import (
 	"fmt"
-	"mask_api_gin/src/framework/constants/common"
-	"mask_api_gin/src/framework/constants/token"
+	commonConstants "mask_api_gin/src/framework/constants/common"
+	tokenConstants "mask_api_gin/src/framework/constants/token"
 	"mask_api_gin/src/framework/model/result"
-	"mask_api_gin/src/framework/service/ctx"
-	tokenService "mask_api_gin/src/framework/service/token"
+	ctxUtils "mask_api_gin/src/framework/utils/ctx"
+	tokenUtils "mask_api_gin/src/framework/utils/token"
 	commonModel "mask_api_gin/src/modules/common/model"
 	commonService "mask_api_gin/src/modules/common/service"
 	monitorService "mask_api_gin/src/modules/monitor/service"
@@ -45,8 +45,8 @@ func (s *accountController) Login(c *gin.Context) {
 	}
 
 	// 当前请求信息
-	ipaddr, location := ctx.ClientIP(c)
-	os, browser := ctx.UaOsBrowser(c)
+	ipaddr, location := ctxUtils.ClientIP(c)
+	os, browser := ctxUtils.UaOsBrowser(c)
 
 	// 校验验证码
 	err := s.accountService.ValidateCaptcha(
@@ -58,7 +58,7 @@ func (s *accountController) Login(c *gin.Context) {
 	if err != nil {
 		msg := err.Error() + " " + loginBody.Code
 		s.sysLogininforService.NewLogininfor(
-			loginBody.Username, common.STATUS_NO, msg,
+			loginBody.Username, commonConstants.STATUS_NO, msg,
 			ipaddr, location, os, browser,
 		)
 		c.JSON(200, result.ErrMsg(err.Error()))
@@ -73,19 +73,19 @@ func (s *accountController) Login(c *gin.Context) {
 	}
 
 	// 生成令牌，创建系统访问记录
-	tokenStr := tokenService.Create(&loginUser, ipaddr, location, os, browser)
+	tokenStr := tokenUtils.Create(&loginUser, ipaddr, location, os, browser)
 	if tokenStr == "" {
 		c.JSON(200, result.Err(nil))
 		return
 	} else {
 		s.sysLogininforService.NewLogininfor(
-			loginBody.Username, common.STATUS_YES, "登录成功",
+			loginBody.Username, commonConstants.STATUS_YES, "登录成功",
 			ipaddr, location, os, browser,
 		)
 	}
 
 	c.JSON(200, result.OkData(map[string]interface{}{
-		token.RESPONSE_FIELD: tokenStr,
+		tokenConstants.RESPONSE_FIELD: tokenStr,
 	}))
 }
 

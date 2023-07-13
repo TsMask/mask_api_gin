@@ -3,8 +3,8 @@ package repository
 import (
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/service/repo"
 	"mask_api_gin/src/framework/utils/date"
+	repoUtils "mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/monitor/model"
 	"strings"
 )
@@ -74,7 +74,7 @@ func (r *sysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]int
 	}
 
 	// 分页
-	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := repoUtils.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " order by job_log_id desc limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -87,7 +87,7 @@ func (r *sysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]int
 		logger.Errorf("SelectJobLogPage queryRes err %v", queryRes.Error)
 	}
 
-	rows := repo.ConvertResultRows(sysJobLog)
+	rows := repoUtils.ConvertResultRows(sysJobLog)
 	return map[string]interface{}{
 		"total": total,
 		"rows":  rows,
@@ -178,7 +178,7 @@ func (r *sysJobLogImpl) InsertJobLog(sysJobLog model.SysJobLog) string {
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repo.KeyValuePlaceholder(paramMap)
+	keys, placeholder, values := repoUtils.KeyValuePlaceholder(paramMap)
 	sql := "insert into sys_job_log (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
 
 	// 开启事务
