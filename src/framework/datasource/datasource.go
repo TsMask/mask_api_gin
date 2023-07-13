@@ -5,6 +5,7 @@ import (
 	"log"
 	"mask_api_gin/src/framework/logger"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/spf13/viper"
@@ -109,12 +110,50 @@ func Close() {
 }
 
 // 获取默认数据源
-func GetDefaultDB() *gorm.DB {
+func DefaultDB() *gorm.DB {
 	source := viper.GetString("gorm.defaultDataSourceName")
 	return dbMap[source]
 }
 
 // 获取数据源
-func GetDB(source string) *gorm.DB {
+func DB(source string) *gorm.DB {
 	return dbMap[source]
+}
+
+// RawDB 原生查询语句
+func RawDB(source string, sql string, parameters []interface{}) ([]map[string]interface{}, error) {
+	// 数据源
+	db := DefaultDB()
+	if source != "" {
+		db = DB(source)
+	}
+	// 使用正则表达式替换连续的空白字符为单个空格
+	fmtSql := regexp.MustCompile(`\s+`).ReplaceAllString(sql, " ")
+
+	logger.Infof("sql=> %v", fmtSql)
+	logger.Infof("parameters=> %v", parameters)
+	// 查询结果
+	var rows []map[string]interface{}
+	res := db.Raw(fmtSql, parameters...).Scan(&rows)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return rows, nil
+}
+
+// ExecDB 原生执行语句
+func ExecDB(source string, sql string, parameters []interface{}) (int64, error) {
+	// 数据源
+	db := DefaultDB()
+	if source != "" {
+		db = DB(source)
+	}
+	// 使用正则表达式替换连续的空白字符为单个空格
+	fmtSql := regexp.MustCompile(`\s+`).ReplaceAllString(sql, " ")
+	// 执行结果
+	res := db.Exec(fmtSql, parameters...)
+	if res.Error != nil {
+		return 0, res.Error
+	}
+	return res.RowsAffected, nil
 }
