@@ -1,4 +1,4 @@
-package constants
+package menu
 
 // 系统菜单常量信息
 
