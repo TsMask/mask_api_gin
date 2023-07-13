@@ -7,17 +7,17 @@ type ISysUser interface {
 	// SelectUserPage 根据条件分页查询用户列表
 	SelectUserPage(query map[string]string, dataScopeSQL string) map[string]interface{}
 
-	// SelectUserList 根据条件查询用户列表
-	SelectUserList(sysUser model.SysUser, dataScopeSQL string) []model.SysUser
-
 	// SelectAllocatedPage 根据条件分页查询分配用户角色列表
 	SelectAllocatedPage(query map[string]string, dataScopeSQL string) map[string]interface{}
 
-	// SelectUserByUserName 通过用户名查询用户
-	SelectUserByUserName(userName string) model.SysUser
+	// SelectUserList 根据条件查询用户列表
+	SelectUserList(sysUser model.SysUser, dataScopeSQL string) []model.SysUser
 
 	// SelectUserById 通过用户ID查询用户
-	SelectUserById(userId string) model.SysUser
+	SelectUserById(userID string) model.SysUser
+
+	// SelectUserByUserName 通过用户登录账号查询用户
+	SelectUserByUserName(userName string) model.SysUser
 
 	// InsertUser 新增用户信息
 	InsertUser(sysUser model.SysUser) string

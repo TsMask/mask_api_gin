@@ -17,7 +17,7 @@ type sysUserImpl struct {
 
 // SelectUserPage 根据条件分页查询用户列表
 func (r *sysUserImpl) SelectUserPage(query map[string]string, dataScopeSQL string) map[string]interface{} {
-	return map[string]interface{}{}
+	return r.sysConfigRepository.SelectUserPage(query, dataScopeSQL)
 }
 
 // SelectUserList 根据条件查询用户列表
@@ -32,12 +32,12 @@ func (r *sysUserImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL 
 
 // SelectUserByUserName 通过用户名查询用户
 func (r *sysUserImpl) SelectUserByUserName(userName string) model.SysUser {
-	return model.SysUser{}
+	return r.sysConfigRepository.SelectUserByUserName(userName)
 }
 
 // SelectUserById 通过用户ID查询用户
 func (r *sysUserImpl) SelectUserById(userId string) model.SysUser {
-	return model.SysUser{}
+	return r.sysConfigRepository.SelectUserById(userId)
 }
 
 // InsertUser 新增用户信息
