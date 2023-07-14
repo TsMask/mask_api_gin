@@ -1,15 +1,15 @@
 package controller
 
 import (
+	"mask_api_gin/src/framework/config"
+	commonConstants "mask_api_gin/src/framework/constants/common"
+	tokenConstants "mask_api_gin/src/framework/constants/token"
+	"mask_api_gin/src/framework/model/result"
+	ctxUtils "mask_api_gin/src/framework/utils/ctx"
+	tokenUtils "mask_api_gin/src/framework/utils/token"
 	commonModel "mask_api_gin/src/modules/common/model"
 	commonService "mask_api_gin/src/modules/common/service"
 	monitorService "mask_api_gin/src/modules/monitor/service"
-	"mask_api_gin/src/pkg/config"
-	commonConstants "mask_api_gin/src/pkg/constants/common"
-	tokenConstants "mask_api_gin/src/pkg/constants/token"
-	"mask_api_gin/src/pkg/model/result"
-	ctxUtils "mask_api_gin/src/pkg/utils/ctx"
-	tokenUtils "mask_api_gin/src/pkg/utils/token"
 
 	"github.com/gin-gonic/gin"
 )

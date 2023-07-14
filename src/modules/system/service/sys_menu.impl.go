@@ -1,9 +1,9 @@
 package service
 
 import (
+	frameworkModel "mask_api_gin/src/framework/model"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
-	pkgModel "mask_api_gin/src/pkg/model"
 )
 
 // SysMenuImpl 菜单 数据层处理
@@ -87,6 +87,6 @@ func (r *sysMenuImpl) CheckUniqueMenuPath(path string) string {
 }
 
 // BuildRouteMenus 构建前端路由所需要的菜单
-func (r *sysMenuImpl) BuildRouteMenus([]model.SysMenu) []pkgModel.Router {
-	return []pkgModel.Router{}
+func (r *sysMenuImpl) BuildRouteMenus([]model.SysMenu) []frameworkModel.Router {
+	return []frameworkModel.Router{}
 }

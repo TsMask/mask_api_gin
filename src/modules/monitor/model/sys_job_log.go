@@ -1,6 +1,6 @@
 package model
 
-import "mask_api_gin/src/pkg/utils/date"
+import "mask_api_gin/src/framework/utils/date"
 
 // SysJobLog 定时任务调度日志表 sys_job_log
 type SysJobLog struct {

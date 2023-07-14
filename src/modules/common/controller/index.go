@@ -2,8 +2,8 @@ package controller
 
 import (
 	"fmt"
-	"mask_api_gin/src/pkg/config"
-	"mask_api_gin/src/pkg/model/result"
+	"mask_api_gin/src/framework/config"
+	"mask_api_gin/src/framework/model/result"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,8 +17,8 @@ type indexController struct{}
 //
 // GET /
 func (s *indexController) Handler(c *gin.Context) {
-	name := config.Get("pkg.name").(string)
-	version := config.Get("pkg.version").(string)
+	name := config.Get("framework.name").(string)
+	version := config.Get("framework.version").(string)
 	str := "欢迎使用%s后台管理框架，当前版本：%s，请通过前端管理地址访问。"
 	c.JSON(200, result.OkMsg(fmt.Sprintf(str, name, version)))
 }

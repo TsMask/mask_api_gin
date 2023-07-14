@@ -1,9 +1,9 @@
 package system
 
 import (
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/controller"
 	"mask_api_gin/src/modules/system/service"
-	"mask_api_gin/src/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 )

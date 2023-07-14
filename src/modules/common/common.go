@@ -1,9 +1,9 @@
 package common
 
 import (
+	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/middleware"
 	"mask_api_gin/src/modules/common/controller"
-	"mask_api_gin/src/pkg/logger"
-	"mask_api_gin/src/pkg/middleware"
 
 	"github.com/gin-gonic/gin"
 )

@@ -1,14 +1,14 @@
 package controller
 
 import (
+	"mask_api_gin/src/framework/cache/redis"
+	"mask_api_gin/src/framework/config"
+	"mask_api_gin/src/framework/constants/cachekey"
+	"mask_api_gin/src/framework/constants/captcha"
+	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/model/result"
+	"mask_api_gin/src/framework/utils/parse"
 	systemService "mask_api_gin/src/modules/system/service"
-	"mask_api_gin/src/pkg/cache/redis"
-	"mask_api_gin/src/pkg/config"
-	"mask_api_gin/src/pkg/constants/cachekey"
-	"mask_api_gin/src/pkg/constants/captcha"
-	"mask_api_gin/src/pkg/logger"
-	"mask_api_gin/src/pkg/model/result"
-	"mask_api_gin/src/pkg/utils/parse"
 	"time"
 
 	"github.com/gin-gonic/gin"

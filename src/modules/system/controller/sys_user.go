@@ -1,10 +1,10 @@
 package controller
 
 import (
+	"mask_api_gin/src/framework/model/result"
+	ctxUtils "mask_api_gin/src/framework/utils/ctx"
+	repoUtils "mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/service"
-	"mask_api_gin/src/pkg/model/result"
-	ctxUtils "mask_api_gin/src/pkg/utils/ctx"
-	repoUtils "mask_api_gin/src/pkg/utils/repo"
 
 	"github.com/gin-gonic/gin"
 )

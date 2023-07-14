@@ -1,7 +1,7 @@
 package service
 
 import (
-	"mask_api_gin/src/pkg/model"
+	"mask_api_gin/src/framework/model"
 )
 
 // 账号身份操作服务 服务层接口

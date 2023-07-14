@@ -1,10 +1,10 @@
 package repository
 
 import (
+	"mask_api_gin/src/framework/datasource"
+	"mask_api_gin/src/framework/logger"
+	repoUtils "mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
-	"mask_api_gin/src/pkg/datasource"
-	"mask_api_gin/src/pkg/logger"
-	repoUtils "mask_api_gin/src/pkg/utils/repo"
 )
 
 // SysRoleImpl 角色表 数据层处理
