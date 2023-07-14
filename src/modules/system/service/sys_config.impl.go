@@ -1,8 +1,8 @@
 package service
 
 import (
-	"mask_api_gin/src/framework/cache/redis"
 	"mask_api_gin/src/framework/constants/cachekey"
+	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )

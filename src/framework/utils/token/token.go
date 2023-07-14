@@ -3,11 +3,11 @@ package token
 import (
 	"encoding/json"
 	"errors"
-	redisCahe "mask_api_gin/src/framework/cache/redis"
 	"mask_api_gin/src/framework/config"
 	cachekeyConstants "mask_api_gin/src/framework/constants/cachekey"
 	tokenConstants "mask_api_gin/src/framework/constants/token"
 	"mask_api_gin/src/framework/logger"
+	redisCahe "mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/generate"
 	"mask_api_gin/src/framework/vo"

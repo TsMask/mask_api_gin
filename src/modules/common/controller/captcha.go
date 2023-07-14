@@ -1,11 +1,11 @@
 package controller
 
 import (
-	"mask_api_gin/src/framework/cache/redis"
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/constants/cachekey"
 	"mask_api_gin/src/framework/constants/captcha"
 	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo/result"
 	systemService "mask_api_gin/src/modules/system/service"
