@@ -2,11 +2,11 @@ package src
 
 import (
 	"fmt"
+	"mask_api_gin/src/framework/config"
+	"mask_api_gin/src/framework/middleware"
 	"mask_api_gin/src/modules/common"
 	"mask_api_gin/src/modules/monitor"
 	"mask_api_gin/src/modules/system"
-	"mask_api_gin/src/pkg/config"
-	"mask_api_gin/src/pkg/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"

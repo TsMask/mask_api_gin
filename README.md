@@ -44,7 +44,7 @@ mask_api_gin
 ├── src                         目录-源代码
 ├   ├── assets                  目录-程序内部静态资源文件
 ├   ├── config                  目录-程序相关运行参数配置
-├   ├── pkg                     目录-程序核心通用代码
+├   ├── framework               目录-程序核心通用代码
 ├   ├── modules                 目录-业务模块
 ├   ├   ├── system              目录-系统内部接口模块
 ├   ├   ├   ├── controller      目录-接口路由控制层
