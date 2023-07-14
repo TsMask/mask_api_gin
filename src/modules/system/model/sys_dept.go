@@ -1,5 +1,7 @@
 package model
 
+import frameworkModel "mask_api_gin/src/framework/model"
+
 // SysDept 部门对象 sys_dept
 type SysDept struct {
 	// 部门ID
@@ -35,4 +37,20 @@ type SysDept struct {
 
 	// 子部门列表
 	Children []SysDept `json:"children,omitempty"`
+}
+
+// SysDeptTreeSelect 使用给定的 SysDept 对象解析为 TreeSelect 对象
+func SysDeptTreeSelect(sysDept SysDept) frameworkModel.TreeSelect {
+	t := frameworkModel.TreeSelect{}
+	t.ID = sysDept.DeptID
+	t.Label = sysDept.DeptName
+
+	if len(sysDept.Children) > 0 {
+		for _, dept := range sysDept.Children {
+			child := SysDeptTreeSelect(dept)
+			t.Children = append(t.Children, child)
+		}
+	}
+
+	return t
 }
