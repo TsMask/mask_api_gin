@@ -1,9 +1,9 @@
 package src
 
 import (
-	"mask_api_gin/src/framework/cache/redis"
-	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/datasource"
+	"mask_api_gin/src/pkg/cache/redis"
+	"mask_api_gin/src/pkg/config"
+	"mask_api_gin/src/pkg/datasource"
 )
 
 // 配置中心初始加载
