@@ -3,10 +3,12 @@ package parse
 import (
 	"image/color"
 	"reflect"
+	"regexp"
 	"strconv"
+	"strings"
 )
 
-// 解析数值型
+// Number 解析数值型
 func Number(str interface{}) int64 {
 	switch str := str.(type) {
 	case string:
@@ -27,7 +29,7 @@ func Number(str interface{}) int64 {
 	}
 }
 
-// 解析布尔型
+// Boolean 解析布尔型
 func Boolean(str interface{}) bool {
 	switch str := str.(type) {
 	case string:
@@ -50,7 +52,19 @@ func Boolean(str interface{}) bool {
 	}
 }
 
-// 数组内字符串去重
+// 解析首字母转大写
+//
+// 字符串 abc_123!@# 结果 Abc_123
+func ParseFirstUpper(str string) string {
+	if len(str) == 0 {
+		return str
+	}
+	reg := regexp.MustCompile(`[^_\w]+`)
+	str = reg.ReplaceAllString(str, "")
+	return strings.ToUpper(str[:1]) + str[1:]
+}
+
+// RemoveDuplicates 数组内字符串去重
 func RemoveDuplicates(ids []string) []string {
 	uniqueIDs := make(map[string]bool)
 	uniqueIDSlice := make([]string, 0, len(ids))
@@ -65,7 +79,7 @@ func RemoveDuplicates(ids []string) []string {
 	return uniqueIDSlice
 }
 
-// 解析颜色 #fafafa
+// Color 解析颜色 #fafafa
 func Color(colorStr string) *color.RGBA {
 	// 去除 # 号
 	colorStr = colorStr[1:]
