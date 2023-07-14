@@ -1,5 +1,5 @@
 # 项目信息
-pkg:
+framework:
   name: "mask_api_gin"
   version: "0.0.2"
 
