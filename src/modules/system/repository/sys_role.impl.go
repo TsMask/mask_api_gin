@@ -17,7 +17,7 @@ var SysRoleImpl = &sysRoleImpl{
 	left join sys_user u on u.user_id = ur.user_id
 	left join sys_dept d on u.dept_id = d.dept_id`,
 
-	sysRoleMap: map[string]string{
+	resultMap: map[string]string{
 		"role_id":             "RoleID",
 		"role_name":           "RoleName",
 		"role_key":            "RoleKey",
@@ -38,26 +38,22 @@ var SysRoleImpl = &sysRoleImpl{
 type sysRoleImpl struct {
 	// 查询视图对象SQL
 	selectSql string
-	// 角色信息实体映射
-	sysRoleMap map[string]string
+	// 结果字段与实体映射
+	resultMap map[string]string
 }
 
 // convertResultRows 将结果记录转实体结果组
 func (r *sysRoleImpl) convertResultRows(rows []map[string]interface{}) []model.SysRole {
 	arr := make([]model.SysRole, 0)
-
 	for _, row := range rows {
 		sysRole := model.SysRole{}
-
 		for key, value := range row {
-			if keyMapper, ok := r.sysRoleMap[key]; ok {
+			if keyMapper, ok := r.resultMap[key]; ok {
 				repoUtils.SetFieldValue(&sysRole, keyMapper, value)
 			}
 		}
-
 		arr = append(arr, sysRole)
 	}
-
 	return arr
 }
 
