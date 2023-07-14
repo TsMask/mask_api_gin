@@ -1,12 +1,12 @@
 package repository
 
 import (
-	"mask_api_gin/src/framework/datasource"
-	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/date"
-	"mask_api_gin/src/framework/utils/parse"
-	repoUtils "mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
+	"mask_api_gin/src/pkg/datasource"
+	"mask_api_gin/src/pkg/logger"
+	"mask_api_gin/src/pkg/utils/date"
+	"mask_api_gin/src/pkg/utils/parse"
+	repoUtils "mask_api_gin/src/pkg/utils/repo"
 	"strings"
 )
 
@@ -76,7 +76,7 @@ type sysUserImpl struct {
 
 // convertResultRows 将结果记录转实体结果组
 func (r *sysUserImpl) convertResultRows(rows []map[string]interface{}) []model.SysUser {
-	sysUsers := make([]model.SysUser, 0)
+	arr := make([]model.SysUser, 0)
 	for _, row := range rows {
 		sysUser := model.SysUser{}
 		sysDept := model.SysDept{}
@@ -100,10 +100,10 @@ func (r *sysUserImpl) convertResultRows(rows []map[string]interface{}) []model.S
 			sysUser.Roles = append(sysUser.Roles, sysRole)
 		}
 
-		sysUsers = append(sysUsers, sysUser)
+		arr = append(arr, sysUser)
 	}
 
-	return sysUsers
+	return arr
 }
 
 // SelectUserPage 根据条件分页查询用户列表

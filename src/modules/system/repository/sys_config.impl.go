@@ -1,11 +1,11 @@
 package repository
 
 import (
-	"mask_api_gin/src/framework/datasource"
-	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/date"
-	repoUtils "mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
+	"mask_api_gin/src/pkg/datasource"
+	"mask_api_gin/src/pkg/logger"
+	"mask_api_gin/src/pkg/utils/date"
+	repoUtils "mask_api_gin/src/pkg/utils/repo"
 	"strings"
 )
 

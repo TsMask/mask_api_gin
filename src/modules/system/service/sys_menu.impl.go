@@ -3,16 +3,17 @@ package service
 import (
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
+	pkgModel "mask_api_gin/src/pkg/model"
 )
 
 // SysMenuImpl 菜单 数据层处理
 var SysMenuImpl = &sysMenuImpl{
-	sysUserRepository: repository.SysUserImpl,
+	sysMenuRepository: repository.SysMenuImpl,
 }
 
 type sysMenuImpl struct {
-	// 用户服务
-	sysUserRepository repository.ISysUser
+	// 菜单服务
+	sysMenuRepository repository.ISysMenu
 }
 
 // SelectMenuList 查询系统菜单列表
@@ -27,7 +28,7 @@ func (r *sysMenuImpl) SelectMenuPermsByRoleId(roleId string) []string {
 
 // SelectMenuPermsByUserId 根据用户ID查询权限
 func (r *sysMenuImpl) SelectMenuPermsByUserId(userId string) []string {
-	return []string{}
+	return r.sysMenuRepository.SelectMenuPermsByUserId(userId)
 }
 
 // SelectMenuTreeByUserId 根据用户ID查询菜单
@@ -72,5 +73,20 @@ func (r *sysMenuImpl) DeleteMenuById(menuId string) int {
 
 // CheckUniqueMenuName 校验菜单名称是否唯一
 func (r *sysMenuImpl) CheckUniqueMenuName(menuName, parentId string) string {
-	return ""
+	return r.sysMenuRepository.CheckUniqueMenu(model.SysMenu{
+		MenuName: menuName,
+		ParentID: parentId,
+	})
+}
+
+// CheckUniqueMenuPath 校验路由地址是否唯一（针对目录和菜单）
+func (r *sysMenuImpl) CheckUniqueMenuPath(path string) string {
+	return r.sysMenuRepository.CheckUniqueMenu(model.SysMenu{
+		Path: path,
+	})
+}
+
+// BuildRouteMenus 构建前端路由所需要的菜单
+func (r *sysMenuImpl) BuildRouteMenus([]model.SysMenu) []pkgModel.Router {
+	return []pkgModel.Router{}
 }
