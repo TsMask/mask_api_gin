@@ -3,41 +3,57 @@ package service
 import (
 	"errors"
 	"fmt"
-	"mask_api_gin/src/framework/cache/redis"
-	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/constants/cachekey"
-	"mask_api_gin/src/framework/constants/common"
-	"mask_api_gin/src/framework/model"
-	"mask_api_gin/src/framework/service/permission"
-	"mask_api_gin/src/framework/utils/crypto"
-	"mask_api_gin/src/framework/utils/parse"
 	monitorService "mask_api_gin/src/modules/monitor/service"
 	systemService "mask_api_gin/src/modules/system/service"
+	"mask_api_gin/src/pkg/cache/redis"
+	"mask_api_gin/src/pkg/config"
+	adminConstants "mask_api_gin/src/pkg/constants/admin"
+	"mask_api_gin/src/pkg/constants/cachekey"
+	"mask_api_gin/src/pkg/constants/common"
+	"mask_api_gin/src/pkg/model"
+	"mask_api_gin/src/pkg/utils/crypto"
+	"mask_api_gin/src/pkg/utils/parse"
 	"time"
 )
 
 // 账号身份操作服务 业务层处理
 var AccountImpl = &accountImpl{
-	sysUserService:       systemService.SysUserImpl,
 	sysLogininforService: monitorService.SysLogininforImpl,
+	sysUserService:       systemService.SysUserImpl,
 	sysConfigService:     systemService.SysConfigImpl,
+	sysRoleService:       systemService.SysRoleImpl,
+	sysMenuService:       systemService.SysMenuImpl,
 }
 
 type accountImpl struct {
-	// 用户信息服务
-	sysUserService systemService.ISysUser
 	// 系统登录访问信息服务
 	sysLogininforService monitorService.ISysLogininfor
+	// 用户信息服务
+	sysUserService systemService.ISysUser
 	// 参数配置服务
 	sysConfigService systemService.ISysConfig
+	// 角色服务
+	sysRoleService systemService.ISysRole
+	// 菜单服务
+	sysMenuService systemService.ISysMenu
 }
 
-// Logout 登出清除Token
-func (s *accountImpl) Logout(token string) {}
-
-// CreateToken 创建用户登录令牌
-func (s *accountImpl) CreateToken(model.LoginUser) string {
-	return ""
+// ValidateCaptcha 校验验证码
+func (s *accountImpl) ValidateCaptcha(username, code, uuid string) error {
+	// 验证码检查，从数据库配置获取验证码开关 true开启，false关闭
+	captchaEnabledStr := s.sysConfigService.SelectConfigValueByKey("sys.account.captchaEnabled")
+	if parse.Boolean(captchaEnabledStr) {
+		verifyKey := cachekey.CAPTCHA_CODE_KEY + uuid
+		captcha := redis.Get(verifyKey)
+		if captcha == "" {
+			return errors.New("验证码已失效")
+		}
+		redis.Del(verifyKey)
+		if captcha != code {
+			return errors.New("验证码错误")
+		}
+	}
+	return nil
 }
 
 // LoginByUsername 登录创建用户信息
@@ -78,7 +94,12 @@ func (s *accountImpl) LoginByUsername(username, password string) (model.LoginUse
 	}
 	// 用户权限组标识
 	isAdmin := config.IsAdmin(sysUser.UserID)
-	loginUser.Permissions = permission.Menu(sysUser.UserID, isAdmin)
+	if isAdmin {
+		loginUser.Permissions = []string{adminConstants.PERMISSION}
+	} else {
+		perms := s.sysMenuService.SelectMenuPermsByUserId(sysUser.UserID)
+		loginUser.Permissions = parse.RemoveDuplicates(perms)
+	}
 	return loginUser, nil
 }
 
@@ -89,24 +110,6 @@ func (s *accountImpl) ClearLoginRecordCache(loginName string) bool {
 		return redis.Del(cacheKey)
 	}
 	return false
-}
-
-// ValidateCaptcha 校验验证码
-func (s *accountImpl) ValidateCaptcha(username, code, uuid string) error {
-	// 验证码检查，从数据库配置获取验证码开关 true开启，false关闭
-	captchaEnabledStr := s.sysConfigService.SelectConfigValueByKey("sys.account.captchaEnabled")
-	if parse.Boolean(captchaEnabledStr) {
-		verifyKey := cachekey.CAPTCHA_CODE_KEY + uuid
-		captcha := redis.Get(verifyKey)
-		if captcha == "" {
-			return errors.New("验证码已失效")
-		}
-		redis.Del(verifyKey)
-		if captcha != code {
-			return errors.New("验证码错误")
-		}
-	}
-	return nil
 }
 
 // passwordRetryCount 密码重试次数
@@ -126,4 +129,28 @@ func (s *accountImpl) passwordRetryCount(username string) (string, int64, time.D
 		return retrykey, int64(maxRetryCount), time.Duration(lockTime) * time.Minute, errors.New(msg)
 	}
 	return retrykey, int64(maxRetryCount), time.Duration(lockTime) * time.Minute, nil
+}
+
+// RoleAndMenuPerms 角色和菜单数据权限 TODO
+func (s *accountImpl) RoleAndMenuPerms(userId string, isAdmin bool) ([]string, []string) {
+	if isAdmin {
+		return []string{adminConstants.ROLE_KEY}, []string{adminConstants.PERMISSION}
+	} else {
+		roles := s.sysRoleService.SelectRolePermsByUserId(userId)
+		perms := s.sysMenuService.SelectMenuPermsByUserId(userId)
+		return parse.RemoveDuplicates(roles), parse.RemoveDuplicates(perms)
+	}
+}
+
+// RouteMenus 前端路由所需要的菜单 TODO
+func (s *accountImpl) RouteMenus(userId string, isAdmin bool) []model.Router {
+	var buildMenus []model.Router
+	if isAdmin {
+		menus := s.sysMenuService.SelectMenuTreeByUserId("")
+		buildMenus = s.sysMenuService.BuildRouteMenus(menus)
+	} else {
+		menus := s.sysMenuService.SelectMenuTreeByUserId(userId)
+		buildMenus = s.sysMenuService.BuildRouteMenus(menus)
+	}
+	return buildMenus
 }

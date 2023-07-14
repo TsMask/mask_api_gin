@@ -1,18 +1,17 @@
 package controller
 
 import (
-	"fmt"
-	commonConstants "mask_api_gin/src/framework/constants/common"
-	tokenConstants "mask_api_gin/src/framework/constants/token"
-	"mask_api_gin/src/framework/model/result"
-	ctxUtils "mask_api_gin/src/framework/utils/ctx"
-	tokenUtils "mask_api_gin/src/framework/utils/token"
 	commonModel "mask_api_gin/src/modules/common/model"
 	commonService "mask_api_gin/src/modules/common/service"
 	monitorService "mask_api_gin/src/modules/monitor/service"
+	"mask_api_gin/src/pkg/config"
+	commonConstants "mask_api_gin/src/pkg/constants/common"
+	tokenConstants "mask_api_gin/src/pkg/constants/token"
+	"mask_api_gin/src/pkg/model/result"
+	ctxUtils "mask_api_gin/src/pkg/utils/ctx"
+	tokenUtils "mask_api_gin/src/pkg/utils/token"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 )
 
 // 账号身份操作处理
@@ -45,7 +44,7 @@ func (s *accountController) Login(c *gin.Context) {
 	}
 
 	// 当前请求信息
-	ipaddr, location := ctxUtils.ClientIP(c)
+	ipaddr, location := ctxUtils.IPAddrLocation(c)
 	os, browser := ctxUtils.UaOsBrowser(c)
 
 	// 校验验证码
@@ -93,25 +92,58 @@ func (s *accountController) Login(c *gin.Context) {
 //
 // GET /getInfo
 func (s *accountController) Info(c *gin.Context) {
-	name := viper.GetString("pkg.name")
-	version := viper.GetString("pkg.version")
-	str := "欢迎使用%s后台管理框架，当前版本：%s，请通过前端管理地址访问。"
-	c.JSON(200, result.OkMsg(fmt.Sprintf(str, name, version)))
+	loginUser, err := ctxUtils.LoginUser(c)
+	if err != nil {
+		c.JSON(401, result.ErrMsg(err.Error()))
+		return
+	}
+
+	// 角色权限集合，管理员拥有所有权限
+	isAdmin := config.IsAdmin(loginUser.UserID)
+	roles, perms := s.accountService.RoleAndMenuPerms(loginUser.UserID, isAdmin)
+
+	c.JSON(200, result.OkData(map[string]interface{}{
+		"user":        loginUser.User,
+		"roles":       roles,
+		"permissions": perms,
+	}))
 }
 
 // 登录用户路由信息
 //
 // GET /getRouters
 func (s *accountController) Router(c *gin.Context) {
-	name := viper.GetString("pkg.name")
-	version := viper.GetString("pkg.version")
-	str := "欢迎使用%s后台管理框架，当前版本：%s，请通过前端管理地址访问。"
-	c.JSON(200, result.OkMsg(fmt.Sprintf(str, name, version)))
+	loginUser, err := ctxUtils.LoginUser(c)
+	if err != nil {
+		c.JSON(401, result.ErrMsg(err.Error()))
+		return
+	}
+
+	// 前端路由，管理员拥有所有
+	isAdmin := config.IsAdmin(loginUser.UserID)
+	buildMenus := s.accountService.RouteMenus(loginUser.UserID, isAdmin)
+	c.JSON(200, result.OkData(buildMenus))
 }
 
 // 系统登出
 //
 // POST /logout
 func (s *accountController) Logout(c *gin.Context) {
+	tokenStr := ctxUtils.Authorization(c)
+	if tokenStr != "" {
+		// 存在token时记录退出信息
+		userName := tokenUtils.Remove(tokenStr)
+		if userName != "" {
+			// 当前请求信息
+			ipaddr, location := ctxUtils.IPAddrLocation(c)
+			os, browser := ctxUtils.UaOsBrowser(c)
+			// 创建系统访问记录
+			s.sysLogininforService.NewLogininfor(
+				userName, commonConstants.STATUS_NO, "退出成功",
+				ipaddr, location, os, browser,
+			)
+		}
+	}
+
 	c.JSON(200, result.OkMsg("退出成功"))
 }

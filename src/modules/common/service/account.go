@@ -1,21 +1,23 @@
 package service
 
-import "mask_api_gin/src/framework/model"
+import (
+	"mask_api_gin/src/pkg/model"
+)
 
 // 账号身份操作服务 服务层接口
 type IAccount interface {
-	// Logout 登出清除token
-	Logout(token string)
-
-	// CreateToken 创建用户登录令牌
-	CreateToken(model.LoginUser) string
+	// ValidateCaptcha 校验验证码
+	ValidateCaptcha(username, code, uuid string) error
 
 	// LoginByUsername 登录生成token
 	LoginByUsername(username, password string) (model.LoginUser, error)
 
-	// ValidateCaptcha 校验验证码
-	ValidateCaptcha(username, code, uuid string) error
-
 	// ClearLoginRecordCache 清除错误记录次数
 	ClearLoginRecordCache(loginName string) bool
+
+	// RoleAndMenuPerms 角色和菜单数据权限
+	RoleAndMenuPerms(userId string, isAdmin bool) ([]string, []string)
+
+	// RouteMenus 前端路由所需要的菜单 TODO
+	RouteMenus(userId string, isAdmin bool) []model.Router
 }
