@@ -8,6 +8,7 @@
 # Local History for Visual Studio Code
 .history/
 
+__debug_*
 logs/
 dist/
 docs/
