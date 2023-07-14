@@ -1,6 +1,9 @@
 package service
 
-import "mask_api_gin/src/modules/system/model"
+import (
+	"mask_api_gin/src/modules/system/model"
+	pkgModel "mask_api_gin/src/pkg/model"
+)
 
 // ISysMenu 菜单 服务层接口
 type ISysMenu interface {
@@ -42,4 +45,7 @@ type ISysMenu interface {
 
 	// CheckUniqueMenuPath 校验路由地址是否唯一（针对目录和菜单）
 	CheckUniqueMenuPath(path string) string
+
+	// BuildRouteMenus 构建前端路由所需要的菜单
+	BuildRouteMenus([]model.SysMenu) []pkgModel.Router
 }

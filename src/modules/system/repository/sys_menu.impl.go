@@ -1,6 +1,11 @@
 package repository
 
-import "mask_api_gin/src/modules/system/model"
+import (
+	"mask_api_gin/src/modules/system/model"
+	"mask_api_gin/src/pkg/datasource"
+	"mask_api_gin/src/pkg/logger"
+	"strings"
+)
 
 // SysMenuImpl 菜单表 数据层处理
 var SysMenuImpl = &sysMenuImpl{
@@ -24,7 +29,25 @@ func (r *sysMenuImpl) SelectMenuPermsByRoleId(roleId string) []string {
 
 // SelectMenuPermsByUserId 根据用户ID查询权限
 func (r *sysMenuImpl) SelectMenuPermsByUserId(userId string) []string {
-	return []string{}
+	querySql := `select distinct m.perms as 'str' from sys_menu m 
+    left join sys_role_menu rm on m.menu_id = rm.menu_id 
+    left join sys_user_role ur on rm.role_id = ur.role_id 
+    left join sys_role r on r.role_id = ur.role_id
+	where m.status = '1' and r.status = '1' and ur.user_id = ? `
+
+	// 查询结果
+	results, err := datasource.RawDB("", querySql, []interface{}{userId})
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return []string{}
+	}
+
+	// 读取结果
+	rows := make([]string, 0)
+	for _, m := range results {
+		rows = append(rows, m["str"].(string))
+	}
+	return rows
 }
 
 // SelectMenuTreeByUserId 根据用户ID查询菜单
@@ -67,12 +90,35 @@ func (r *sysMenuImpl) DeleteMenuById(menuId string) int {
 	return 0
 }
 
-// CheckUniqueMenuName 校验菜单名称是否唯一
-func (r *sysMenuImpl) CheckUniqueMenuName(menuName, parentId string) string {
-	return ""
-}
+// CheckUniqueMenu 校验菜单是否唯一
+func (r *sysMenuImpl) CheckUniqueMenu(sysMenu model.SysMenu) string {
+	// 查询条件拼接
+	var conditions []string
+	var params []interface{}
+	if sysMenu.MenuName != "" {
+		conditions = append(conditions, "menu_name = ?")
+		params = append(params, sysMenu.MenuName)
+	}
+	if sysMenu.ParentID != "" {
+		conditions = append(conditions, "parent_id = ?")
+		params = append(params, sysMenu.ParentID)
+	}
+	if sysMenu.Path != "" {
+		conditions = append(conditions, "path = ?")
+		params = append(params, sysMenu.Path)
+	}
 
-// CheckUniqueMenuPath 校验路由地址是否唯一（针对目录和菜单）
-func (r *sysMenuImpl) CheckUniqueMenuPath(path string) string {
-	return ""
+	// 构建查询条件语句
+	whereSql := ""
+	if len(conditions) > 0 {
+		whereSql += " where " + strings.Join(conditions, " and ")
+	}
+
+	// 查询数据
+	querySql := "select menu_id as 'str' from sys_menu" + whereSql + "limit 1"
+	results, err := datasource.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err %v", err)
+	}
+	return results[0]["str"].(string)
 }

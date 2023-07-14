@@ -37,9 +37,6 @@ type ISysMenu interface {
 	// DeleteMenuById 删除菜单管理信息
 	DeleteMenuById(menuId string) int
 
-	// CheckUniqueMenuName 校验菜单名称是否唯一
-	CheckUniqueMenuName(menuName, parentId string) string
-
-	// CheckUniqueMenuPath 校验路由地址是否唯一（针对目录和菜单）
-	CheckUniqueMenuPath(path string) string
+	// CheckUniqueMenu 校验菜单是否唯一
+	CheckUniqueMenu(sysMenu model.SysMenu) string
 }
