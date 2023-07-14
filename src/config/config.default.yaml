@@ -32,14 +32,14 @@ security:
 
 # JWT 令牌配置
 jwt:
-  # 令牌算法
+  # 令牌算法 HS256 HS384 HS512
   algorithm: "HS512"
   # 令牌密钥
   secret: "abcdefghijklmnopqrstuvwxyz"
   # 令牌有效期（默认120分钟）
   expiresIn: 120
   # 验证令牌有效期，相差不足xx分钟，自动刷新缓存
-  jwtRefreshIn: 20
+  refreshIn: 20
 
 # GORM 数据源
 gorm:
