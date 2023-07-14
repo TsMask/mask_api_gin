@@ -4,21 +4,21 @@ package menu
 
 const (
 	// 组件布局类型-基础布局组件标识
-	MENU_COMPONENT_LAYOUT_BASIC = "BasicLayout"
+	COMPONENT_LAYOUT_BASIC = "BasicLayout"
 	// 组件布局类型-空白布局组件标识
-	MENU_COMPONENT_LAYOUT_BLANK = "BlankLayout"
+	COMPONENT_LAYOUT_BLANK = "BlankLayout"
 	// 组件布局类型-内链接布局组件标识
-	MENU_COMPONENT_LAYOUT_LINK = "LinkLayout"
+	COMPONENT_LAYOUT_LINK = "LinkLayout"
 )
 
 const (
 	// 菜单类型-目录
-	MENU_TYPE_DIR = "D"
+	TYPE_DIR = "D"
 	// 菜单类型-菜单
-	MENU_TYPE_MENU = "M"
+	TYPE_MENU = "M"
 	// 菜单类型-按钮
-	MENU_TYPE_BUTTON = "B"
+	TYPE_BUTTON = "B"
 )
 
 // 菜单内嵌地址标识-带/前缀
-const MENU_PATH_INLINE = "/inline"
+const PATH_INLINE = "/inline"
