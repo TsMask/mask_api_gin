@@ -10,8 +10,8 @@ type ISysRole interface {
 	// SelectRoleList 根据条件查询角色数据
 	SelectRoleList(sysRole model.SysRole, dataScopeSQL string) []model.SysRole
 
-	// SelectRolePermissionByUserId 根据用户ID查询角色
-	SelectRolePermissionByUserId(userId string) []model.SysRole
+	// SelectRolePermsByUserId 根据用户ID查询角色
+	SelectRolePermsByUserId(userId string) []string
 
 	// SelectRoleIdsByUserId 根据用户ID获取拥有角色ID
 	SelectRoleIdsByUserId(userId string) []string
@@ -23,10 +23,10 @@ type ISysRole interface {
 	SelectRolesByUserName(userName string) []model.SysRole
 
 	// CheckUniqueRoleName 校验角色名称是否唯一
-	CheckUniqueRoleName(roleName string) (string, error)
+	CheckUniqueRoleName(roleName string) string
 
 	// CheckUniqueRoleKey 校验角色权限是否唯一
-	CheckUniqueRoleKey(roleKey string) (string, error)
+	CheckUniqueRoleKey(roleKey string) string
 
 	// UpdateRole 修改角色信息
 	UpdateRole(sysRole model.SysRole) int

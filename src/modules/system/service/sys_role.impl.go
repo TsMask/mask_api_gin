@@ -1,15 +1,18 @@
 package service
 
-import "mask_api_gin/src/modules/system/model"
+import (
+	"mask_api_gin/src/modules/system/model"
+	"mask_api_gin/src/modules/system/repository"
+)
 
 // SysRoleImpl 角色 数据层处理
 var SysRoleImpl = &sysRoleImpl{
-	selectSql: "",
+	sysRoleRepository: repository.SysRoleImpl,
 }
 
 type sysRoleImpl struct {
-	// 查询视图对象SQL
-	selectSql string
+	// 角色服务
+	sysRoleRepository repository.ISysRole
 }
 
 // SelectRolePage 根据条件分页查询角色数据
@@ -22,9 +25,16 @@ func (r *sysRoleImpl) SelectRoleList(sysRole model.SysRole, dataScopeSQL string)
 	return []model.SysRole{}
 }
 
-// SelectRolePermissionByUserId 根据用户ID查询角色
-func (r *sysRoleImpl) SelectRolePermissionByUserId(userId string) []model.SysRole {
-	return []model.SysRole{}
+// SelectRolePermsByUserId 根据用户ID查询角色
+func (r *sysRoleImpl) SelectRolePermsByUserId(userId string) []string {
+	perms := r.sysRoleRepository.SelectRolePermsByUserId(userId)
+	arr := []string{}
+	for _, perm := range perms {
+		if perm.RoleKey != "" {
+			arr = append(arr, perm.RoleKey)
+		}
+	}
+	return arr
 }
 
 // SelectRoleIdsByUserId 根据用户ID获取拥有角色ID
