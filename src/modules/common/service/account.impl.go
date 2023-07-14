@@ -146,11 +146,11 @@ func (s *accountImpl) RoleAndMenuPerms(userId string, isAdmin bool) ([]string, [
 func (s *accountImpl) RouteMenus(userId string, isAdmin bool) []vo.Router {
 	var buildMenus []vo.Router
 	if isAdmin {
-		menus := s.sysMenuService.SelectMenuTreeByUserId("")
-		buildMenus = s.sysMenuService.BuildRouteMenus(menus)
+		menus := s.sysMenuService.SelectMenuTreeByUserId("*")
+		buildMenus = s.sysMenuService.BuildRouteMenus(menus, "")
 	} else {
 		menus := s.sysMenuService.SelectMenuTreeByUserId(userId)
-		buildMenus = s.sysMenuService.BuildRouteMenus(menus)
+		buildMenus = s.sysMenuService.BuildRouteMenus(menus, "")
 	}
 	return buildMenus
 }

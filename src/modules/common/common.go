@@ -21,7 +21,7 @@ func Setup(router *gin.Engine) {
 	// 账号身份操作处理
 	router.POST("/login", controller.Account.Login)
 	router.GET("/getInfo", middleware.PreAuthorize(nil), controller.Account.Info)
-	router.GET("/getRouters", controller.Account.Router)
+	router.GET("/getRouters", middleware.PreAuthorize(nil), controller.Account.Router)
 	router.POST("/logout", controller.Account.Logout)
 
 	// 通用请求

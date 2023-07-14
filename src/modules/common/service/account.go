@@ -16,6 +16,6 @@ type IAccount interface {
 	// RoleAndMenuPerms 角色和菜单数据权限
 	RoleAndMenuPerms(userId string, isAdmin bool) ([]string, []string)
 
-	// RouteMenus 前端路由所需要的菜单 TODO
+	// RouteMenus 前端路由所需要的菜单
 	RouteMenus(userId string, isAdmin bool) []vo.Router
 }
