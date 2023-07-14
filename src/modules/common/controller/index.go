@@ -3,7 +3,7 @@ package controller
 import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/model/result"
+	"mask_api_gin/src/framework/vo/result"
 
 	"github.com/gin-gonic/gin"
 )

@@ -8,9 +8,9 @@ import (
 	cachekeyConstants "mask_api_gin/src/framework/constants/cachekey"
 	tokenConstants "mask_api_gin/src/framework/constants/token"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/model"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/generate"
+	"mask_api_gin/src/framework/vo"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
@@ -33,7 +33,7 @@ func Remove(tokenStr string) string {
 }
 
 // Create 令牌生成
-func Create(loginUser *model.LoginUser, ilobArgs ...string) string {
+func Create(loginUser *vo.LoginUser, ilobArgs ...string) string {
 	// 生成用户唯一tokne32位
 	loginUser.UUID = generate.Code(32)
 
@@ -78,7 +78,7 @@ func Create(loginUser *model.LoginUser, ilobArgs ...string) string {
 }
 
 // cacheLoginUser 缓存登录用户信息
-func cacheLoginUser(loginUser *model.LoginUser) {
+func cacheLoginUser(loginUser *vo.LoginUser) {
 	// 计算配置的有效期
 	expTime := config.Get("jwt.expiresIn").(int)
 	expTimestamp := time.Duration(expTime) * time.Minute
@@ -95,7 +95,7 @@ func cacheLoginUser(loginUser *model.LoginUser) {
 }
 
 // RefreshTokenUUID 验证令牌有效期，相差不足20分钟，自动刷新缓存
-func Refresh(loginUser *model.LoginUser) {
+func Refresh(loginUser *vo.LoginUser) {
 	// 相差不足xx分钟，自动刷新缓存
 	refreshTime := config.Get("jwt.refreshIn").(int)
 	refreshTimestamp := time.Duration(refreshTime) * time.Minute
@@ -128,21 +128,21 @@ func Verify(tokenString string) (jwt.MapClaims, error) {
 }
 
 // LoginUser 缓存的登录用户信息
-func LoginUser(claims jwt.MapClaims) model.LoginUser {
+func LoginUser(claims jwt.MapClaims) vo.LoginUser {
 	uuid := claims[tokenConstants.JWT_UUID].(string)
 	tokenKey := cachekeyConstants.LOGIN_TOKEN_KEY + uuid
+	var loginUser vo.LoginUser
 	if redisCahe.Has(tokenKey) {
 		loginUserStr := redisCahe.Get(tokenKey)
 		if loginUserStr == "" {
-			return model.LoginUser{}
+			return loginUser
 		}
-		var loginUser model.LoginUser
 		err := json.Unmarshal([]byte(loginUserStr), &loginUser)
 		if err != nil {
 			logger.Errorf("loginuser info json err : %v", err)
-			return model.LoginUser{}
+			return loginUser
 		}
 		return loginUser
 	}
-	return model.LoginUser{}
+	return loginUser
 }

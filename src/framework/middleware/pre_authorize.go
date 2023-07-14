@@ -4,9 +4,9 @@ import (
 	"fmt"
 	AdminConstants "mask_api_gin/src/framework/constants/admin"
 	commonConstants "mask_api_gin/src/framework/constants/common"
-	"mask_api_gin/src/framework/model/result"
 	ctxUtils "mask_api_gin/src/framework/utils/ctx"
 	tokenUtils "mask_api_gin/src/framework/utils/token"
+	"mask_api_gin/src/framework/vo/result"
 
 	"github.com/gin-gonic/gin"
 )

@@ -8,9 +8,9 @@ import (
 	adminConstants "mask_api_gin/src/framework/constants/admin"
 	"mask_api_gin/src/framework/constants/cachekey"
 	"mask_api_gin/src/framework/constants/common"
-	"mask_api_gin/src/framework/model"
 	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/parse"
+	"mask_api_gin/src/framework/vo"
 	monitorService "mask_api_gin/src/modules/monitor/service"
 	systemService "mask_api_gin/src/modules/system/service"
 	"time"
@@ -57,41 +57,41 @@ func (s *accountImpl) ValidateCaptcha(username, code, uuid string) error {
 }
 
 // LoginByUsername 登录创建用户信息
-func (s *accountImpl) LoginByUsername(username, password string) (model.LoginUser, error) {
+func (s *accountImpl) LoginByUsername(username, password string) (vo.LoginUser, error) {
+	loginUser := vo.LoginUser{}
+
 	// 检查密码重试次数
 	retrykey, retryCount, lockTime, err := s.passwordRetryCount(username)
 	if err != nil {
-		return model.LoginUser{}, err
+		return loginUser, err
 	}
 
 	// 查询用户登录账号
 	sysUser := s.sysUserService.SelectUserByUserName(username)
 	if sysUser.UserName != username {
-		return model.LoginUser{}, errors.New("用户不存在或密码错误")
+		return loginUser, errors.New("用户不存在或密码错误")
 	}
 	if sysUser.DelFlag == common.STATUS_YES {
-		return model.LoginUser{}, errors.New("对不起，您的账号已被删除")
+		return loginUser, errors.New("对不起，您的账号已被删除")
 	}
 	if sysUser.Status == common.STATUS_NO {
-		return model.LoginUser{}, errors.New("用户已封禁，请联系管理员")
+		return loginUser, errors.New("用户已封禁，请联系管理员")
 	}
 
 	// 检验用户密码
 	compareBool := crypto.BcryptCompare(password, sysUser.Password)
 	if !compareBool {
 		redis.SetByExpire(retrykey, retryCount+1, lockTime)
-		return model.LoginUser{}, errors.New("用户不存在或密码错误")
+		return loginUser, errors.New("用户不存在或密码错误")
 	} else {
 		// 清除错误记录次数
 		s.ClearLoginRecordCache(username)
 	}
 
 	// 登录用户信息
-	loginUser := model.LoginUser{
-		UserID: sysUser.UserID,
-		DeptID: sysUser.DeptID,
-		User:   sysUser,
-	}
+	loginUser.UserID = sysUser.UserID
+	loginUser.DeptID = sysUser.DeptID
+	loginUser.User = sysUser
 	// 用户权限组标识
 	isAdmin := config.IsAdmin(sysUser.UserID)
 	if isAdmin {
@@ -143,8 +143,8 @@ func (s *accountImpl) RoleAndMenuPerms(userId string, isAdmin bool) ([]string, [
 }
 
 // RouteMenus 前端路由所需要的菜单 TODO
-func (s *accountImpl) RouteMenus(userId string, isAdmin bool) []model.Router {
-	var buildMenus []model.Router
+func (s *accountImpl) RouteMenus(userId string, isAdmin bool) []vo.Router {
+	var buildMenus []vo.Router
 	if isAdmin {
 		menus := s.sysMenuService.SelectMenuTreeByUserId("")
 		buildMenus = s.sysMenuService.BuildRouteMenus(menus)

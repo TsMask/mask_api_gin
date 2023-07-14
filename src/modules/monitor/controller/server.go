@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"mask_api_gin/src/framework/model/result"
+	"mask_api_gin/src/framework/vo/result"
 
 	"github.com/gin-gonic/gin"
 )

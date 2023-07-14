@@ -1,9 +1,9 @@
 package controller
 
 import (
-	"mask_api_gin/src/framework/model/result"
 	ctxUtils "mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
+	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 	"strings"

@@ -1,7 +1,5 @@
 package model
 
-import frameworkModel "mask_api_gin/src/framework/model"
-
 // SysMenu 菜单权限对象 sys_menu
 type SysMenu struct {
 	// 菜单ID
@@ -45,20 +43,4 @@ type SysMenu struct {
 
 	// 子菜单
 	Children []SysMenu `json:"children,omitempty"`
-}
-
-// SysMenuTreeSelect 使用给定的 SysMenu 对象解析为 TreeSelect 对象
-func SysMenuTreeSelect(sysMenu SysMenu) frameworkModel.TreeSelect {
-	t := frameworkModel.TreeSelect{}
-	t.ID = sysMenu.MenuID
-	t.Label = sysMenu.MenuName
-
-	if len(sysMenu.Children) > 0 {
-		for _, menu := range sysMenu.Children {
-			child := SysMenuTreeSelect(menu)
-			t.Children = append(t.Children, child)
-		}
-	}
-
-	return t
 }

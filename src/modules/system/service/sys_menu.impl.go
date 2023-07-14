@@ -1,7 +1,7 @@
 package service
 
 import (
-	frameworkModel "mask_api_gin/src/framework/model"
+	frameworkModel "mask_api_gin/src/framework/vo"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )

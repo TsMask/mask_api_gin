@@ -4,9 +4,9 @@ import (
 	"errors"
 	"mask_api_gin/src/framework/constants/common"
 	"mask_api_gin/src/framework/constants/token"
-	"mask_api_gin/src/framework/model"
 	"mask_api_gin/src/framework/utils/ip2region"
 	"mask_api_gin/src/framework/utils/ua"
+	"mask_api_gin/src/framework/vo"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -69,10 +69,10 @@ func UaOsBrowser(c *gin.Context) (string, string) {
 }
 
 // LoginUser 登录用户信息
-func LoginUser(c *gin.Context) (model.LoginUser, error) {
+func LoginUser(c *gin.Context) (vo.LoginUser, error) {
 	value, exists := c.Get(common.CTX_LOGIN_USER)
 	if exists {
-		return value.(model.LoginUser), nil
+		return value.(vo.LoginUser), nil
 	}
-	return model.LoginUser{}, errors.New("无效登录用户信息")
+	return vo.LoginUser{}, errors.New("无效登录用户信息")
 }
