@@ -13,5 +13,5 @@ type Router struct {
 	// 重定向地址
 	Redirect string `json:"redirect"`
 	// 子路由
-	Children []Router `json:"children"`
+	Children []Router `json:"children,omitempty"`
 }
