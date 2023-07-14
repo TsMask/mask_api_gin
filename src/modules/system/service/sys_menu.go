@@ -47,5 +47,5 @@ type ISysMenu interface {
 	CheckUniqueMenuPath(path string) string
 
 	// BuildRouteMenus 构建前端路由所需要的菜单
-	BuildRouteMenus([]model.SysMenu) []frameworkModel.Router
+	BuildRouteMenus(sysMenus []model.SysMenu, prefix string) []frameworkModel.Router
 }

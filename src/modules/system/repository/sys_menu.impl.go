@@ -1,8 +1,10 @@
 package repository
 
 import (
+	"mask_api_gin/src/framework/constants/menu"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
+	repoUtils "mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 )
@@ -10,11 +12,49 @@ import (
 // SysMenuImpl 菜单表 数据层处理
 var SysMenuImpl = &sysMenuImpl{
 	selectSql: "",
+	resultMap: map[string]string{
+		"menu_id":     "MenuID",
+		"menu_name":   "MenuName",
+		"parent_name": "ParentName",
+		"parent_id":   "ParentID",
+		"path":        "Path",
+		"menu_sort":   "MenuSort",
+		"component":   "Component",
+		"is_frame":    "IsFrame",
+		"is_cache":    "IsCache",
+		"menu_type":   "MenuType",
+		"visible":     "Visible",
+		"status":      "Status",
+		"perms":       "Perms",
+		"icon":        "Icon",
+		"create_by":   "CreateBy",
+		"create_time": "CreateTime",
+		"update_by":   "UpdateBy",
+		"update_time": "UpdateTime",
+		"remark":      "Remark",
+	},
 }
 
 type sysMenuImpl struct {
 	// 查询视图对象SQL
 	selectSql string
+	// 信息实体映射
+	resultMap map[string]string
+}
+
+// convertResultRows 将结果记录转实体结果组
+func (r *sysMenuImpl) convertResultRows(rows []map[string]interface{}) []model.SysMenu {
+	arr := make([]model.SysMenu, 0)
+	for _, row := range rows {
+		sysMenu := model.SysMenu{}
+		for key, value := range row {
+			if keyMapper, ok := r.resultMap[key]; ok {
+				repoUtils.SetFieldValue(&sysMenu, keyMapper, value)
+			}
+		}
+		arr = append(arr, sysMenu)
+	}
+	return arr
 }
 
 // SelectMenuList 查询系统菜单列表
@@ -52,7 +92,39 @@ func (r *sysMenuImpl) SelectMenuPermsByUserId(userId string) []string {
 
 // SelectMenuTreeByUserId 根据用户ID查询菜单
 func (r *sysMenuImpl) SelectMenuTreeByUserId(userId string) []model.SysMenu {
-	return []model.SysMenu{}
+	var params []interface{}
+	var querySql string
+
+	if userId == "*" {
+		// 管理员全部菜单
+		querySql = `select distinct m.menu_id, m.parent_id, m.menu_name, m.path, m.component, m.visible, m.status, ifnull(m.perms,'') as perms, m.is_frame, m.is_cache, m.menu_type, m.icon, m.menu_sort, m.create_time, m.remark
+		from sys_menu m where m.menu_type in (?,?) and m.status = '1'
+		order by m.parent_id, m.menu_sort`
+		params = append(params, menu.TYPE_DIR)
+		params = append(params, menu.TYPE_MENU)
+	} else {
+		// 用户ID权限
+		querySql = `select distinct m.menu_id, m.parent_id, m.menu_name, m.path, m.component, m.visible, m.status, ifnull(m.perms,'') as perms, m.is_frame, m.is_cache, m.menu_type, m.icon, m.menu_sort, m.create_time, m.remark
+		from sys_menu m
+		left join sys_role_menu rm on m.menu_id = rm.menu_id
+		left join sys_user_role ur on rm.role_id = ur.role_id
+		left join sys_role ro on ur.role_id = ro.role_id
+		left join sys_user u on ur.user_id = u.user_id
+		where u.user_id = ? and m.menu_type in (?,?) and m.status = '1'  AND ro.status = 0
+		order by m.parent_id, m.menu_sort`
+		params = append(params, userId)
+		params = append(params, menu.TYPE_DIR)
+		params = append(params, menu.TYPE_MENU)
+	}
+
+	// 查询结果
+	results, err := datasource.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return []model.SysMenu{}
+	}
+
+	return r.convertResultRows(results)
 }
 
 // SelectMenuListByRoleId 根据角色ID查询菜单树信息
