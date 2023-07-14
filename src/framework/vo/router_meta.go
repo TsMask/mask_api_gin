@@ -1,4 +1,4 @@
-package model
+package vo
 
 // RouterMeta 路由元信息对象
 type RouterMeta struct {

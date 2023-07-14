@@ -1,4 +1,4 @@
-package model
+package vo
 
 import systemModel "mask_api_gin/src/modules/system/model"
 

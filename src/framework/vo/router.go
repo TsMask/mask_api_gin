@@ -1,4 +1,4 @@
-package model
+package vo
 
 // Router 路由信息对象
 type Router struct {
