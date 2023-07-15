@@ -178,7 +178,7 @@ func (r *sysJobLogImpl) InsertJobLog(sysJobLog model.SysJobLog) string {
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repoUtils.KeyValuePlaceholder(paramMap)
+	keys, placeholder, values := repoUtils.KeyPlaceholderValueByInsert(paramMap)
 	sql := "insert into sys_job_log (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
 
 	// 开启事务

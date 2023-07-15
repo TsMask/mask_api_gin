@@ -59,7 +59,7 @@ func (r *sysLogininforImpl) InsertLogininfor(sysLogininfor model.SysLogininfor) 
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repoUtils.KeyValuePlaceholder(paramMap)
+	keys, placeholder, values := repoUtils.KeyPlaceholderValueByInsert(paramMap)
 	sql := "insert into sys_logininfor (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
 
 	// 开启事务
