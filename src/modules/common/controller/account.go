@@ -94,7 +94,10 @@ func (s *accountController) Login(c *gin.Context) {
 func (s *accountController) Info(c *gin.Context) {
 	loginUser, err := ctxUtils.LoginUser(c)
 	if err != nil {
-		c.JSON(401, result.ErrMsg(err.Error()))
+		c.JSON(401, result.Err(map[string]interface{}{
+			"code": 401,
+			"msg":  err.Error(),
+		}))
 		return
 	}
 
@@ -115,7 +118,10 @@ func (s *accountController) Info(c *gin.Context) {
 func (s *accountController) Router(c *gin.Context) {
 	loginUser, err := ctxUtils.LoginUser(c)
 	if err != nil {
-		c.JSON(401, result.ErrMsg(err.Error()))
+		c.JSON(401, result.Err(map[string]interface{}{
+			"code": 401,
+			"msg":  err.Error(),
+		}))
 		return
 	}
 
