@@ -1,7 +1,6 @@
 package ip2region
 
 import (
-	"mask_api_gin/src/framework/constants/common"
 	"mask_api_gin/src/framework/logger"
 	"strings"
 	"time"
@@ -35,7 +34,7 @@ func init() {
 //
 // 国家|区域|省份|城市|ISP
 func RegionSearchByIp(ip string) (string, int, int64) {
-	if ip == "::1" || strings.HasPrefix(ip, common.IP_INNER_ADDR) {
+	if ip == "::1" {
 		return "0|0|0|内网IP|内网IP", 0, 0
 	}
 	tStart := time.Now()
@@ -51,8 +50,8 @@ func RegionSearchByIp(ip string) (string, int, int64) {
 //
 // 218.4.167.70 江苏省 苏州市
 func RealAddressByIp(ip string) string {
-	if ip == "::1" || strings.HasPrefix(ip, common.IP_INNER_ADDR) {
-		return common.IP_INNER_LOCATION
+	if ip == "::1" {
+		return "内网IP"
 	}
 	region, err := searcher.SearchByStr(ip)
 	if err != nil {

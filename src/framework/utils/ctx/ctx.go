@@ -25,14 +25,8 @@ func QueryMapString(c *gin.Context) map[string]string {
 // IPAddrLocation 解析ip地址
 func IPAddrLocation(c *gin.Context) (string, string) {
 	ip := c.ClientIP()
-	ipAddr := ip
-	location := common.IP_INNER_LOCATION
-	if strings.Contains(ip, common.IP_INNER_ADDR) {
-		ipAddr = strings.Replace(ip, common.IP_INNER_ADDR, "", -1)
-	} else {
-		location = ip2region.RealAddressByIp(ip)
-	}
-	return ipAddr, location
+	location := ip2region.RealAddressByIp(ip)
+	return ip, location
 }
 
 // Authorization 解析请求头
