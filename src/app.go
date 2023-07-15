@@ -48,6 +48,14 @@ func initAppEngine() *gin.Engine {
 		})
 	})
 
+	// 路由未找到时
+	app.NoRoute(func(c *gin.Context) {
+		c.JSON(404, gin.H{
+			"code": 404,
+			"msg":  c.Request.RequestURI + " Not Found",
+		})
+	})
+
 	return app
 }
 
