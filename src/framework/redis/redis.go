@@ -13,6 +13,21 @@ import (
 // Redis连接实例
 var rdb *redis.Client
 
+// 声明定义限流脚本命令
+var rateLimitCommand = redis.NewScript(`
+local key = KEYS[1]
+local time = tonumber(ARGV[1])
+local count = tonumber(ARGV[2])
+local current = redis.call('get', key);
+if current and tonumber(current) >= count then
+	return tonumber(current);
+end
+current = redis.call('incr', key)
+if tonumber(current) == 1 then 
+	redis.call('expire', key, time)
+end
+return tonumber(current);`)
+
 // 连接Redis实例
 func Connect() {
 	ctx := context.Background()
@@ -37,6 +52,16 @@ func Close() {
 	if err := rdb.Close(); err != nil {
 		logger.Panicf("fatal error db close: %s", err)
 	}
+}
+
+// 获取键的剩余有效时间（秒）
+func GetExpire(key string) float64 {
+	ctx := context.Background()
+	ttl, err := rdb.TTL(ctx, key).Result()
+	if err != nil {
+		return 0
+	}
+	return ttl.Seconds()
 }
 
 // 获得缓存数据的key列表
@@ -126,4 +151,15 @@ func DelKeys(keys []string) bool {
 	ctx := context.Background()
 	err := rdb.Del(ctx, keys...).Err()
 	return err == nil
+}
+
+// 限流查询并记录
+func RateLimit(limitKey string, time, count int64) int64 {
+	ctx := context.Background()
+	result, err := rateLimitCommand.Run(ctx, rdb, []string{limitKey}, time, count).Result()
+	if err != nil {
+		logger.Errorf("redis lua script err %v", err)
+		return 0
+	}
+	return result.(int64)
 }
