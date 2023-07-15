@@ -2,6 +2,7 @@ package system
 
 import (
 	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/middleware"
 	"mask_api_gin/src/modules/system/controller"
 	"mask_api_gin/src/modules/system/service"
 
@@ -19,6 +20,10 @@ func Setup(router *gin.Engine) {
 	sysUserGroup := router.Group("/system/user")
 	{
 		sysUserGroup.GET("/list", controller.SysUser.List)
+		sysUserGroup.PUT("/changeStatus",
+			middleware.PreAuthorize(nil),
+			controller.SysUser.Status,
+		)
 	}
 
 	// 参数配置信息
