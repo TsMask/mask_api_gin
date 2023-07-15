@@ -326,6 +326,9 @@ func (r *sysUserImpl) SelectUserById(userID string) model.SysUser {
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 	}
+	if len(results) == 0 {
+		return model.SysUser{}
+	}
 	// 转换实体
 	rows := r.convertResultRows(results)
 	return rows[0]

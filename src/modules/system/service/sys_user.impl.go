@@ -1,8 +1,14 @@
 package service
 
 import (
+	"mask_api_gin/src/framework/datasource"
+	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/utils/crypto"
+	"mask_api_gin/src/framework/utils/date"
+	repoUtils "mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
+	"strings"
 )
 
 // SysUserImpl 用户 数据层处理
@@ -37,17 +43,146 @@ func (r *sysUserImpl) SelectUserByUserName(userName string) model.SysUser {
 
 // SelectUserById 通过用户ID查询用户
 func (r *sysUserImpl) SelectUserById(userId string) model.SysUser {
+	if userId == "" {
+		return model.SysUser{}
+	}
 	return r.sysConfigRepository.SelectUserById(userId)
 }
 
 // InsertUser 新增用户信息
 func (r *sysUserImpl) InsertUser(sysUser model.SysUser) string {
-	return ""
+	// 参数拼接
+	paramMap := make(map[string]interface{})
+	if sysUser.UserID != "" {
+		paramMap["user_id"] = sysUser.UserID
+	}
+	if sysUser.DeptID != "" {
+		paramMap["dept_id"] = sysUser.DeptID
+	}
+	if sysUser.UserName != "" {
+		paramMap["user_name"] = sysUser.UserName
+	}
+	if sysUser.NickName != "" {
+		paramMap["nick_name"] = sysUser.NickName
+	}
+	if sysUser.UserType != "" {
+		paramMap["user_type"] = sysUser.UserType
+	}
+	if sysUser.Avatar != "" {
+		paramMap["avatar"] = sysUser.Avatar
+	}
+	if sysUser.Email != "" {
+		paramMap["email"] = sysUser.Email
+	}
+	if sysUser.PhoneNumber != "" {
+		paramMap["phonenumber"] = sysUser.PhoneNumber
+	}
+	if sysUser.Sex != "" {
+		paramMap["sex"] = sysUser.Sex
+	}
+	if sysUser.Password != "" {
+		password := crypto.BcryptHash(sysUser.Password)
+		paramMap["password"] = password
+	}
+	if sysUser.Status != "" {
+		paramMap["status"] = sysUser.Status
+	}
+	if sysUser.Remark != "" {
+		paramMap["remark"] = sysUser.Remark
+	}
+	if sysUser.CreateBy != "" {
+		paramMap["create_by"] = sysUser.CreateBy
+		paramMap["create_time"] = date.NowTimestamp()
+	}
+
+	// 构建执行语句
+	keys, placeholder, values := repoUtils.KeyPlaceholderValueByInsert(paramMap)
+	sql := "insert into sys_user (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+
+	db := datasource.DefaultDB()
+	// 开启事务
+	tx := db.Begin()
+	// 执行插入
+	err := tx.Exec(sql, values...).Error
+	if err != nil {
+		logger.Errorf("insert row : %v", err.Error())
+		tx.Rollback()
+		return err.Error()
+	}
+	// 获取生成的自增 ID
+	var insertedID string
+	err = tx.Raw("select last_insert_id()").Row().Scan(&insertedID)
+	if err != nil {
+		logger.Errorf("insert last id : %v", err.Error())
+		tx.Rollback()
+		return ""
+	}
+	// 提交事务
+	tx.Commit()
+	return insertedID
 }
 
 // UpdateUser 修改用户信息
-func (r *sysUserImpl) UpdateUser(sysUser model.SysUser) int {
-	return 0
+func (r *sysUserImpl) UpdateUser(sysUser model.SysUser) int64 {
+	// 参数拼接
+	paramMap := make(map[string]interface{})
+	if sysUser.DeptID != "" {
+		paramMap["dept_id"] = sysUser.DeptID
+	}
+	if sysUser.UserName != "" {
+		paramMap["user_name"] = sysUser.UserName
+	}
+	if sysUser.NickName != "" {
+		paramMap["nick_name"] = sysUser.NickName
+	}
+	if sysUser.UserType != "" {
+		paramMap["user_type"] = sysUser.UserType
+	}
+	if sysUser.Avatar != "" {
+		paramMap["avatar"] = sysUser.Avatar
+	}
+	if sysUser.Email != "" {
+		paramMap["email"] = sysUser.Email
+	}
+	if sysUser.PhoneNumber != "" {
+		paramMap["phonenumber"] = sysUser.PhoneNumber
+	}
+	if sysUser.Sex != "" {
+		paramMap["sex"] = sysUser.Sex
+	}
+	if sysUser.Password != "" {
+		password := crypto.BcryptHash(sysUser.Password)
+		paramMap["password"] = password
+	}
+	if sysUser.Status != "" {
+		paramMap["status"] = sysUser.Status
+	}
+	if sysUser.Remark != "" {
+		paramMap["remark"] = sysUser.Remark
+	}
+	if sysUser.UpdateBy != "" {
+		paramMap["update_by"] = sysUser.UpdateBy
+		paramMap["update_time"] = date.NowTimestamp()
+	}
+	if sysUser.LoginIP != "" {
+		paramMap["login_ip"] = sysUser.LoginIP
+	}
+	if sysUser.LoginDate > 0 {
+		paramMap["login_date"] = sysUser.LoginDate
+	}
+
+	// 构建执行语句
+	keys, values := repoUtils.KeyValueByUpdate(paramMap)
+	sql := "update sys_user set " + strings.Join(keys, ",") + " where user_id = ?"
+
+	// 执行更新
+	values = append(values, sysUser.UserID)
+	num, err := datasource.ExecDB("", sql, values)
+	if err != nil {
+		logger.Errorf("update row : %v", err.Error())
+		return 0
+	}
+	return num
 }
 
 // DeleteUserByIds 批量删除用户信息
