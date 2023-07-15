@@ -100,8 +100,8 @@ func ConvertResultRows(results interface{}) []interface{} {
 	return rows
 }
 
-// 参数映射键值占位符 keys, placeholder, values
-func KeyValuePlaceholder(m map[string]interface{}) ([]string, string, []interface{}) {
+// 插入-参数映射键值占位符 keys, placeholder, values
+func KeyPlaceholderValueByInsert(m map[string]interface{}) ([]string, string, []interface{}) {
 	// 参数映射的键
 	keys := make([]string, len(m))
 	// 参数映射的值
@@ -118,4 +118,19 @@ func KeyValuePlaceholder(m map[string]interface{}) ([]string, string, []interfac
 		placeholders[i] = "?"
 	}
 	return keys, strings.Join(placeholders, ","), values
+}
+
+// 更新-参数映射键值占位符 keys, values
+func KeyValueByUpdate(m map[string]interface{}) ([]string, []interface{}) {
+	// 参数映射的键
+	keys := make([]string, len(m))
+	// 参数映射的值
+	values := make([]interface{}, len(m))
+	sum := 0
+	for k, v := range m {
+		keys[sum] = k + "=?"
+		values[sum] = v
+		sum++
+	}
+	return keys, values
 }
