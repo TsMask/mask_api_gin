@@ -13,16 +13,45 @@ func Setup(router *gin.Engine) {
 	logger.Infof("开始加载 ====> common 模块路由")
 
 	// 路由主页
-	router.GET("/", controller.Index.Handler)
+	router.GET("/",
+		middleware.RateLimit(map[string]int64{
+			"time":  300,
+			"count": 10,
+			"type":  middleware.LIMIT_IP,
+		}),
+		controller.Index.Handler,
+	)
 
 	// 验证码操作处理
-	router.GET("/captchaImage", controller.Captcha.Image)
+	router.GET(
+		"/captchaImage",
+		middleware.RateLimit(map[string]int64{
+			"time":  300,
+			"count": 60,
+			"type":  middleware.LIMIT_IP,
+		}),
+		controller.Captcha.Image,
+	)
 
 	// 账号身份操作处理
-	router.POST("/login", controller.Account.Login)
+	router.POST("/login",
+		middleware.RateLimit(map[string]int64{
+			"time":  300,
+			"count": 10,
+			"type":  middleware.LIMIT_IP,
+		}),
+		controller.Account.Login,
+	)
 	router.GET("/getInfo", middleware.PreAuthorize(nil), controller.Account.Info)
 	router.GET("/getRouters", middleware.PreAuthorize(nil), controller.Account.Router)
-	router.POST("/logout", controller.Account.Logout)
+	router.POST("/logout",
+		middleware.RateLimit(map[string]int64{
+			"time":  300,
+			"count": 5,
+			"type":  middleware.LIMIT_IP,
+		}),
+		controller.Account.Logout,
+	)
 
 	// 通用请求
 	commonGroup := router.Group("/common")
