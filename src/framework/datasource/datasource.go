@@ -130,8 +130,9 @@ func RawDB(source string, sql string, parameters []interface{}) ([]map[string]in
 	// 使用正则表达式替换连续的空白字符为单个空格
 	fmtSql := regexp.MustCompile(`\s+`).ReplaceAllString(sql, " ")
 
-	logger.Infof("sql=> %v", fmtSql)
-	logger.Infof("parameters=> %v", parameters)
+	// logger.Infof("sql=> %v", fmtSql)
+	// logger.Infof("parameters=> %v", parameters)
+
 	// 查询结果
 	var rows []map[string]interface{}
 	res := db.Raw(fmtSql, parameters...).Scan(&rows)
