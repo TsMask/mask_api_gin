@@ -5,11 +5,11 @@ type SysConfig struct {
 	// 参数主键
 	ConfigID string `json:"configId"`
 	// 参数名称
-	ConfigName string `json:"configName"`
+	ConfigName string `json:"configName"  binding:"required"`
 	// 参数键名
-	ConfigKey string `json:"configKey"`
+	ConfigKey string `json:"configKey"  binding:"required"`
 	// 参数键值
-	ConfigValue string `json:"configValue"`
+	ConfigValue string `json:"configValue"  binding:"required"`
 	// 系统内置（Y是 N否）
 	ConfigType string `json:"configType"`
 	// 创建者

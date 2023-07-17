@@ -33,7 +33,7 @@ type accountController struct {
 func (s *accountController) Login(c *gin.Context) {
 	var loginBody commonModel.LoginBody
 	if err := c.ShouldBindJSON(&loginBody); err != nil {
-		c.JSON(400, result.ErrMsg("参数错误"))
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
@@ -87,10 +87,7 @@ func (s *accountController) Login(c *gin.Context) {
 func (s *accountController) Info(c *gin.Context) {
 	loginUser, err := ctxUtils.LoginUser(c)
 	if err != nil {
-		c.JSON(401, result.Err(map[string]interface{}{
-			"code": 401,
-			"msg":  err.Error(),
-		}))
+		c.JSON(401, result.CodeMsg(401, err.Error()))
 		return
 	}
 
@@ -109,18 +106,11 @@ func (s *accountController) Info(c *gin.Context) {
 //
 // GET /getRouters
 func (s *accountController) Router(c *gin.Context) {
-	loginUser, err := ctxUtils.LoginUser(c)
-	if err != nil {
-		c.JSON(401, result.Err(map[string]interface{}{
-			"code": 401,
-			"msg":  err.Error(),
-		}))
-		return
-	}
+	userID := ctxUtils.LoginUserToUserID(c)
 
 	// 前端路由，管理员拥有所有
-	isAdmin := config.IsAdmin(loginUser.UserID)
-	buildMenus := s.accountService.RouteMenus(loginUser.UserID, isAdmin)
+	isAdmin := config.IsAdmin(userID)
+	buildMenus := s.accountService.RouteMenus(userID, isAdmin)
 	c.JSON(200, result.OkData(buildMenus))
 }
 

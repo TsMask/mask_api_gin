@@ -45,7 +45,7 @@ func (s *sysConfig) List(c *gin.Context) {
 func (s *sysConfig) ConfigKey(c *gin.Context) {
 	configKey := c.Param("configKey")
 	if configKey == "" {
-		c.JSON(200, result.Err(nil))
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 	key := s.sysConfigService.SelectConfigValueByKey(configKey)
@@ -62,7 +62,7 @@ func (s *sysConfig) ConfigKey(c *gin.Context) {
 func (s *sysConfig) Info(c *gin.Context) {
 	configId := c.Param("configId")
 	if configId == "" {
-		c.JSON(200, result.Err(nil))
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 	data := s.sysConfigService.SelectConfigById(configId)
@@ -79,12 +79,12 @@ func (s *sysConfig) Info(c *gin.Context) {
 func (s *sysConfig) Add(c *gin.Context) {
 	var config model.SysConfig
 	if err := c.ShouldBindJSON(&config); err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 	//
 	if config.ConfigID != "" || config.ConfigName == "" || config.ConfigKey == "" || config.ConfigValue == "" {
-		c.JSON(200, result.Err(nil))
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 	// 检查属性值唯一
@@ -110,14 +110,15 @@ func (s *sysConfig) Add(c *gin.Context) {
 func (s *sysConfig) Edit(c *gin.Context) {
 	var config model.SysConfig
 	if err := c.ShouldBindJSON(&config); err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 	//
-	if config.ConfigID == "" || config.ConfigName == "" || config.ConfigKey == "" || config.ConfigValue == "" {
-		c.JSON(200, result.Err(nil))
+	if config.ConfigID == "" {
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
+
 	// 检查属性值唯一
 	uniqueConfigKey := s.sysConfigService.CheckUniqueConfigKey(config)
 	if !uniqueConfigKey {
@@ -148,9 +149,10 @@ func (s *sysConfig) Edit(c *gin.Context) {
 func (s *sysConfig) Remove(c *gin.Context) {
 	configIds := c.Param("configIds")
 	if configIds == "" {
-		c.JSON(200, result.Err(nil))
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
+
 	// 处理字符转id数组
 	ids := strings.Split(configIds, ",")
 	if len(ids) <= 0 {

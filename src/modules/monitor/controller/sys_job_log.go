@@ -44,9 +44,10 @@ func (s *sysJobLog) List(c *gin.Context) {
 func (s *sysJobLog) Info(c *gin.Context) {
 	jobLogId := c.Param("jobLogId")
 	if jobLogId == "" {
-		c.JSON(200, result.Err(nil))
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
+
 	data := s.sysJobLogService.SelectJobLogById(jobLogId)
 	if data.JobLogID == jobLogId {
 		c.JSON(200, result.OkData(data))
@@ -61,9 +62,10 @@ func (s *sysJobLog) Info(c *gin.Context) {
 func (s *sysJobLog) Remove(c *gin.Context) {
 	jobLogIds := c.Param("jobLogIds")
 	if jobLogIds == "" {
-		c.JSON(200, result.Err(nil))
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
+
 	// 处理字符转id数组
 	ids := strings.Split(jobLogIds, ",")
 	if len(ids) <= 0 {

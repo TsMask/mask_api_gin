@@ -43,7 +43,7 @@ func (s *sysUserController) List(c *gin.Context) {
 func (s *sysUserController) Remove(c *gin.Context) {
 	userIds := c.Param("userIds")
 	if userIds == "" {
-		c.JSON(400, result.ErrMsg("参数错误"))
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 	// 处理字符转id数组后去重
@@ -61,22 +61,12 @@ func (s *sysUserController) Remove(c *gin.Context) {
 //
 // PUT /resetPwd
 func (s *sysUserController) ResetPwd(c *gin.Context) {
-	loginUser, err := ctxUtils.LoginUser(c)
-	if err != nil {
-		c.JSON(401, result.Err(map[string]interface{}{
-			"code": 401,
-			"msg":  err.Error(),
-		}))
-		c.Abort() // 停止执行后续的处理函数
-		return
-	}
-
 	var body struct {
 		UserID   string `json:"userId"  binding:"required"`
 		Password string `json:"password"  binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(400, result.ErrMsg("参数错误"))
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
@@ -96,10 +86,11 @@ func (s *sysUserController) ResetPwd(c *gin.Context) {
 		return
 	}
 
+	userName := ctxUtils.LoginUserToUserName(c)
 	sysUser := model.SysUser{
 		UserID:   body.UserID,
 		Password: body.Password,
-		UpdateBy: loginUser.User.UserName,
+		UpdateBy: userName,
 	}
 	rows := s.sysUserService.UpdateUser(sysUser)
 	if rows > 0 {
@@ -113,22 +104,12 @@ func (s *sysUserController) ResetPwd(c *gin.Context) {
 //
 // PUT /changeStatus
 func (s *sysUserController) Status(c *gin.Context) {
-	loginUser, err := ctxUtils.LoginUser(c)
-	if err != nil {
-		c.JSON(401, result.Err(map[string]interface{}{
-			"code": 401,
-			"msg":  err.Error(),
-		}))
-		c.Abort() // 停止执行后续的处理函数
-		return
-	}
-
 	var body struct {
 		UserID string `json:"userId"  binding:"required"`
 		Status string `json:"status"  binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
@@ -142,10 +123,12 @@ func (s *sysUserController) Status(c *gin.Context) {
 		c.JSON(200, result.ErrMsg("变更状态与旧值相等！"))
 		return
 	}
+
+	userName := ctxUtils.LoginUserToUserName(c)
 	sysUser := model.SysUser{
 		UserID:   body.UserID,
 		Status:   body.Status,
-		UpdateBy: loginUser.User.UserName,
+		UpdateBy: userName,
 	}
 	rows := s.sysUserService.UpdateUser(sysUser)
 	if rows > 0 {

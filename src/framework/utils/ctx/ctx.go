@@ -70,3 +70,23 @@ func LoginUser(c *gin.Context) (vo.LoginUser, error) {
 	}
 	return vo.LoginUser{}, errors.New("无效登录用户信息")
 }
+
+// LoginUserToUserID 用户ID-登录用户信息
+func LoginUserToUserID(c *gin.Context) string {
+	value, exists := c.Get(common.CTX_LOGIN_USER)
+	if exists {
+		loginUser := value.(vo.LoginUser)
+		return loginUser.UserID
+	}
+	return ""
+}
+
+// LoginUserToUserName 用户名称-登录用户信息
+func LoginUserToUserName(c *gin.Context) string {
+	value, exists := c.Get(common.CTX_LOGIN_USER)
+	if exists {
+		loginUser := value.(vo.LoginUser)
+		return loginUser.User.UserName
+	}
+	return ""
+}

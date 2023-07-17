@@ -4,6 +4,14 @@ import (
 	"mask_api_gin/src/framework/constants/result"
 )
 
+// CodeMsg 响应结果
+func CodeMsg(code int, msg string) map[string]interface{} {
+	args := make(map[string]interface{})
+	args["code"] = code
+	args["msg"] = msg
+	return args
+}
+
 // 响应成功结果 map[string]interface{}{}
 func Ok(v map[string]interface{}) map[string]interface{} {
 	args := make(map[string]interface{})

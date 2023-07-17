@@ -25,7 +25,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 		// 获取请求头标识信息
 		tokenStr := ctxUtils.Authorization(c)
 		if tokenStr == "" {
-			c.JSON(401, result.ErrMsg("无效身份授权"))
+			c.JSON(401, result.CodeMsg(401, "无效身份授权"))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
@@ -33,7 +33,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 		// 验证令牌
 		claims, err := tokenUtils.Verify(tokenStr)
 		if err != nil {
-			c.JSON(401, result.ErrMsg("无效身份授权"))
+			c.JSON(401, result.CodeMsg(401, "无效身份授权"))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
@@ -41,7 +41,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 		// 获取缓存的用户信息
 		loginUser := tokenUtils.LoginUser(claims)
 		if loginUser.UserID == "" {
-			c.JSON(401, result.ErrMsg("无效身份授权"))
+			c.JSON(401, result.CodeMsg(401, "无效身份授权"))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
@@ -60,7 +60,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 			verifyOk := verifyRolePermission(roles, permissions, options)
 			if !verifyOk {
 				msg := fmt.Sprintf("无权访问 %s %s", c.Request.Method, c.Request.RequestURI)
-				c.JSON(403, result.ErrMsg(msg))
+				c.JSON(403, result.CodeMsg(403, msg))
 				c.Abort() // 停止执行后续的处理函数
 				return
 			}
