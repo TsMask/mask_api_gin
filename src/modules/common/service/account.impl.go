@@ -39,7 +39,7 @@ type accountImpl struct {
 }
 
 // ValidateCaptcha 校验验证码
-func (s *accountImpl) ValidateCaptcha(username, code, uuid string) error {
+func (s *accountImpl) ValidateCaptcha(code, uuid string) error {
 	// 验证码检查，从数据库配置获取验证码开关 true开启，false关闭
 	captchaEnabledStr := s.sysConfigService.SelectConfigValueByKey("sys.account.captchaEnabled")
 	if parse.Boolean(captchaEnabledStr) {
@@ -104,8 +104,8 @@ func (s *accountImpl) LoginByUsername(username, password string) (vo.LoginUser, 
 }
 
 // ClearLoginRecordCache 清除错误记录次数
-func (s *accountImpl) ClearLoginRecordCache(loginName string) bool {
-	cacheKey := cachekey.PWD_ERR_CNT_KEY + loginName
+func (s *accountImpl) ClearLoginRecordCache(username string) bool {
+	cacheKey := cachekey.PWD_ERR_CNT_KEY + username
 	if redis.Has(cacheKey) {
 		return redis.Del(cacheKey)
 	}

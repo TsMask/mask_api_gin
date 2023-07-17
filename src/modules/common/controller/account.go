@@ -33,13 +33,7 @@ type accountController struct {
 func (s *accountController) Login(c *gin.Context) {
 	var loginBody commonModel.LoginBody
 	if err := c.ShouldBindJSON(&loginBody); err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
-		return
-	}
-
-	// 必要字段
-	if loginBody.Username == "" || loginBody.Password == "" {
-		c.JSON(200, result.Err(nil))
+		c.JSON(400, result.ErrMsg("参数错误"))
 		return
 	}
 
@@ -49,7 +43,6 @@ func (s *accountController) Login(c *gin.Context) {
 
 	// 校验验证码
 	err := s.accountService.ValidateCaptcha(
-		loginBody.Username,
 		loginBody.Code,
 		loginBody.UUID,
 	)

@@ -25,8 +25,7 @@ func Setup(router *gin.Engine) {
 		)
 
 		// 验证码操作处理
-		indexGroup.GET(
-			"/captchaImage",
+		indexGroup.GET("/captchaImage",
 			middleware.RateLimit(map[string]int64{
 				"time":  300,
 				"count": 60,
