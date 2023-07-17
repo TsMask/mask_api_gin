@@ -7,6 +7,7 @@ import (
 	"mask_api_gin/src/framework/utils/parse"
 	repoUtils "mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
+	"strconv"
 	"strings"
 )
 
@@ -77,7 +78,8 @@ type sysUserImpl struct {
 // convertResultRows 将结果记录转实体结果组
 func (r *sysUserImpl) convertResultRows(rows []map[string]interface{}) []model.SysUser {
 	arr := make([]model.SysUser, 0)
-	for _, row := range rows {
+	arrKeyIndex := make(map[string]int, 0)
+	for i, row := range rows {
 		sysUser := model.SysUser{}
 		sysDept := model.SysDept{}
 		sysRole := model.SysRole{}
@@ -100,7 +102,19 @@ func (r *sysUserImpl) convertResultRows(rows []map[string]interface{}) []model.S
 			sysUser.Roles = append(sysUser.Roles, sysRole)
 		}
 
-		arr = append(arr, sysUser)
+		one := true
+		for key, index := range arrKeyIndex {
+			if key == sysUser.UserID {
+				arrUser := &arr[index]
+				arrUser.Roles = append(arrUser.Roles, sysUser.Roles...)
+				one = false
+				break
+			}
+		}
+		if one {
+			arr = append(arr, sysUser)
+			arrKeyIndex[sysUser.UserID] = i
+		}
 	}
 
 	return arr
@@ -361,17 +375,40 @@ func (r *sysUserImpl) DeleteUserByIds(userIds []string) int {
 	return 0
 }
 
-// CheckUniqueUserName 校验用户名称是否唯一
-func (r *sysUserImpl) CheckUniqueUserName(userName string) string {
-	return ""
-}
+// CheckUniqueUser 校验用户信息是否唯一
+func (r *sysUserImpl) CheckUniqueUser(sysUser model.SysUser) string {
+	// 查询条件拼接
+	var conditions []string
+	var params []interface{}
+	if sysUser.UserName != "" {
+		conditions = append(conditions, "user_name = ?")
+		params = append(params, sysUser.UserName)
+	}
+	if sysUser.PhoneNumber != "" {
+		conditions = append(conditions, "phonenumber = ?")
+		params = append(params, sysUser.PhoneNumber)
+	}
+	if sysUser.Email != "" {
+		conditions = append(conditions, "email = ?")
+		params = append(params, sysUser.Email)
+	}
 
-// CheckUniquePhone 校验手机号码是否唯一
-func (r *sysUserImpl) CheckUniquePhone(phonenumber string) string {
-	return ""
-}
+	// 构建查询条件语句
+	whereSql := ""
+	if len(conditions) > 0 {
+		whereSql += " where " + strings.Join(conditions, " and ")
+	} else {
+		return ""
+	}
 
-// CheckUniqueEmail 校验email是否唯一
-func (r *sysUserImpl) CheckUniqueEmail(email string) string {
+	// 查询数据
+	querySql := "select user_id as 'str' from sys_user" + whereSql + " limit 1"
+	results, err := datasource.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err %v", err)
+	}
+	if len(results) > 0 {
+		return strconv.FormatInt(results[0]["str"].(int64), 10)
+	}
 	return ""
 }

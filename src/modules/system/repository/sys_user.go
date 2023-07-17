@@ -28,12 +28,6 @@ type ISysUser interface {
 	// DeleteUserByIds 批量删除用户信息
 	DeleteUserByIds(userIds []string) int
 
-	// CheckUniqueUserName 校验用户名称是否唯一
-	CheckUniqueUserName(userName string) string
-
-	// CheckUniquePhone 校验手机号码是否唯一
-	CheckUniquePhone(phonenumber string) string
-
-	// CheckUniqueEmail 校验email是否唯一
-	CheckUniqueEmail(email string) string
+	// CheckUniqueUser 校验用户信息是否唯一
+	CheckUniqueUser(sysUser model.SysUser) string
 }

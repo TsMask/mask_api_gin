@@ -18,12 +18,12 @@ func Setup(router *gin.Engine) {
 
 	// 用户信息
 	sysUserGroup := router.Group("/system/user")
+	sysUserGroup.Use(middleware.PreAuthorize(nil))
 	{
 		sysUserGroup.GET("/list", controller.SysUser.List)
-		sysUserGroup.PUT("/changeStatus",
-			middleware.PreAuthorize(nil),
-			controller.SysUser.Status,
-		)
+		sysUserGroup.DELETE("/:userIds", controller.SysUser.Remove)
+		sysUserGroup.PUT("/resetPwd", controller.SysUser.ResetPwd)
+		sysUserGroup.PUT("/changeStatus", controller.SysUser.Status)
 	}
 
 	// 参数配置信息

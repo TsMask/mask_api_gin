@@ -191,16 +191,34 @@ func (r *sysUserImpl) DeleteUserByIds(userIds []string) int {
 }
 
 // CheckUniqueUserName 校验用户名称是否唯一
-func (r *sysUserImpl) CheckUniqueUserName(userName string) string {
-	return ""
+func (r *sysUserImpl) CheckUniqueUserName(userName, userId string) bool {
+	uniqueId := r.sysConfigRepository.CheckUniqueUser(model.SysUser{
+		UserName: userName,
+	})
+	if uniqueId == userId {
+		return true
+	}
+	return uniqueId == ""
 }
 
 // CheckUniquePhone 校验手机号码是否唯一
-func (r *sysUserImpl) CheckUniquePhone(phonenumber string) string {
-	return ""
+func (r *sysUserImpl) CheckUniquePhone(phonenumber, userId string) bool {
+	uniqueId := r.sysConfigRepository.CheckUniqueUser(model.SysUser{
+		PhoneNumber: phonenumber,
+	})
+	if uniqueId == userId {
+		return true
+	}
+	return uniqueId == ""
 }
 
 // CheckUniqueEmail 校验email是否唯一
-func (r *sysUserImpl) CheckUniqueEmail(email string) string {
-	return ""
+func (r *sysUserImpl) CheckUniqueEmail(email, userId string) bool {
+	uniqueId := r.sysConfigRepository.CheckUniqueUser(model.SysUser{
+		Email: email,
+	})
+	if uniqueId == userId {
+		return true
+	}
+	return uniqueId == ""
 }

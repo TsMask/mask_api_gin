@@ -29,11 +29,11 @@ type ISysUser interface {
 	DeleteUserByIds(userIds []string) int
 
 	// CheckUniqueUserName 校验用户名称是否唯一
-	CheckUniqueUserName(userName string) string
+	CheckUniqueUserName(userName, userId string) bool
 
 	// CheckUniquePhone 校验手机号码是否唯一
-	CheckUniquePhone(phonenumber string) string
+	CheckUniquePhone(phonenumber, userId string) bool
 
 	// CheckUniqueEmail 校验email是否唯一
-	CheckUniqueEmail(email string) string
+	CheckUniqueEmail(email, userId string) bool
 }
