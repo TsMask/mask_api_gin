@@ -127,7 +127,7 @@ func (r *sysMenuImpl) BuildRouteMenus(sysMenus []model.SysMenu, prefix string) [
 //
 // menu 菜单信息
 func (r *sysMenuImpl) getRouteName(menu model.SysMenu) string {
-	routerName := parse.ParseFirstUpper(menu.Path)
+	routerName := parse.FirstUpper(menu.Path)
 	// 路径链接
 	if regular.ValidHttp(menu.Path) {
 		return routerName[:5] + "Link" + menu.MenuID
