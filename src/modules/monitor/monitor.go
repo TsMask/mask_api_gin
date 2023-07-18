@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/middleware"
 	"mask_api_gin/src/modules/monitor/controller"
 
 	"github.com/gin-gonic/gin"
@@ -14,8 +15,13 @@ func Setup(router *gin.Engine) {
 	// 启动时需要的初始参数
 	InitLoad()
 
-	// 服务器监控
-	router.GET("/monitor/server", controller.Server.Info)
+	// 服务器监控信息
+	router.GET("/monitor/server",
+		middleware.PreAuthorize(map[string][]string{
+			"hasPerms": {"monitor:server:info"},
+		}),
+		controller.ServerController.Info,
+	)
 
 	// 调度任务日志信息
 	jobLogGroup := router.Group("/monitor/jobLog")
