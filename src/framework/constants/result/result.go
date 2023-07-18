@@ -7,6 +7,7 @@ const (
 	CODE_ERROR = 500
 	// 响应-msg错误失败
 	MSG_ERROR = "失败"
+
 	// 响应-msg正常成功
 	CODE_SUCCESS = 200
 	// 响应-code正常成功

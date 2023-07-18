@@ -1,8 +1,6 @@
 package admin
 
 // 管理员常量信息
-//
-// src\framework\middleware\pre_authorize.go
 
 // 管理员-系统指定角色ID
 const ROLE_ID = "1"
