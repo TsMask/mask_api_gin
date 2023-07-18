@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"fmt"
 	"image/color"
 	"reflect"
 	"regexp"
@@ -52,16 +53,43 @@ func Boolean(str interface{}) bool {
 	}
 }
 
-// 解析首字母转大写
+// FirstUpper 解析首字母转大写
 //
 // 字符串 abc_123!@# 结果 Abc_123
-func ParseFirstUpper(str string) string {
+func FirstUpper(str string) string {
 	if len(str) == 0 {
 		return str
 	}
 	reg := regexp.MustCompile(`[^_\w]+`)
 	str = reg.ReplaceAllString(str, "")
 	return strings.ToUpper(str[:1]) + str[1:]
+}
+
+// Bit 解析比特位为单位
+func Bit(bit float64) string {
+	var GB, MB, KB string
+
+	if bit > float64(1<<30) {
+		GB = fmt.Sprintf("%0.2f", bit/(1<<30))
+	}
+
+	if bit > float64(1<<20) && bit < (1<<30) {
+		MB = fmt.Sprintf("%.2f", bit/(1<<20))
+	}
+
+	if bit > float64(1<<10) && bit < (1<<20) {
+		KB = fmt.Sprintf("%.2f", bit/(1<<10))
+	}
+
+	if GB != "" {
+		return GB + "GB"
+	} else if MB != "" {
+		return MB + "MB"
+	} else if KB != "" {
+		return KB + "KB"
+	} else {
+		return fmt.Sprintf("%vB", bit)
+	}
 }
 
 // RemoveDuplicates 数组内字符串去重

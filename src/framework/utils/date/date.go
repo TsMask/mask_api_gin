@@ -26,7 +26,7 @@ const (
 func ParseStrToDate(dateStr, formatStr string) time.Time {
 	t, err := time.Parse(formatStr, dateStr)
 	if err != nil {
-		logger.Infof("utils ParseStrToDate err ", err)
+		logger.Infof("utils ParseStrToDate err %v", err)
 		return time.Time{}
 	}
 	return t
@@ -46,7 +46,7 @@ func ParseDateToStr(date interface{}, formatStr string) string {
 		case string:
 			parsedTime, err := time.Parse(formatStr, v)
 			if err != nil {
-				logger.Infof("utils ParseDateToStr err ", err)
+				logger.Infof("utils ParseDateToStr err %v", err)
 				return ""
 			}
 			t = parsedTime
