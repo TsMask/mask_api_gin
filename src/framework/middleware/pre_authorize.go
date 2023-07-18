@@ -13,13 +13,13 @@ import (
 
 // PreAuthorize 用户身份授权认证校验
 //
-// 只需含有其中角色 hasRoles: []string{}
+// 只需含有其中角色 "hasRoles": {"xxx"},
 //
-// 只需含有其中权限 hasPermissions: []string{}
+// 只需含有其中权限 "hasPerms": {"xxx"},
 //
-// 同时匹配其中角色 matchRoles: []string{}
+// 同时匹配其中角色 "matchRoles": {"xxx"},
 //
-// 同时匹配其中权限 matchPermissions: []string{}
+// 同时匹配其中权限 "matchPerms": {"xxx"},
 func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 获取请求头标识信息
@@ -56,8 +56,8 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 			for _, item := range loginUser.User.Roles {
 				roles = append(roles, item.RoleKey)
 			}
-			permissions := loginUser.Permissions
-			verifyOk := verifyRolePermission(roles, permissions, options)
+			perms := loginUser.Permissions
+			verifyOk := verifyRolePermission(roles, perms, options)
 			if !verifyOk {
 				msg := fmt.Sprintf("无权访问 %s %s", c.Request.Method, c.Request.RequestURI)
 				c.JSON(403, result.CodeMsg(403, msg))
@@ -75,12 +75,12 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 //
 // roles 角色字符数组
 //
-// permissions 权限字符数组
+// perms 权限字符数组
 //
 // metadata 装饰器参数身份
-func verifyRolePermission(roles, permissions []string, options map[string][]string) bool {
+func verifyRolePermission(roles, perms []string, options map[string][]string) bool {
 	// 直接放行 管理员角色或任意权限
-	if contains(roles, AdminConstants.ROLE_KEY) || contains(permissions, AdminConstants.PERMISSION) {
+	if contains(roles, AdminConstants.ROLE_KEY) || contains(perms, AdminConstants.PERMISSION) {
 		return true
 	}
 	opts := make([]bool, 0, 4)
@@ -93,9 +93,9 @@ func verifyRolePermission(roles, permissions []string, options map[string][]stri
 	}
 
 	// 只需含有其中权限
-	hasPermission := false
-	if arr, ok := options["hasPermissions"]; ok {
-		hasPermission = some(permissions, arr)
+	hasPerms := false
+	if arr, ok := options["hasPerms"]; ok {
+		hasPerms = some(perms, arr)
 		opts[1] = true
 	}
 
@@ -107,29 +107,29 @@ func verifyRolePermission(roles, permissions []string, options map[string][]stri
 	}
 
 	// 同时匹配其中权限
-	matchPermissions := false
-	if arr, ok := options["matchPermissions"]; ok {
-		matchPermissions = every(permissions, arr)
+	matchPerms := false
+	if arr, ok := options["matchPerms"]; ok {
+		matchPerms = every(perms, arr)
 		opts[3] = true
 	}
 
 	// 同时判断 只需含有其中
 	if opts[0] && opts[1] {
-		return hasRole || hasPermission
+		return hasRole || hasPerms
 	}
 	// 同时判断 匹配其中
 	if opts[2] && opts[3] {
-		return matchRoles && matchPermissions
+		return matchRoles && matchPerms
 	}
 	// 同时判断 含有其中且匹配其中
 	if opts[0] && opts[3] {
-		return hasRole && matchPermissions
+		return hasRole && matchPerms
 	}
 	if opts[1] && opts[2] {
-		return hasPermission && matchRoles
+		return hasPerms && matchRoles
 	}
 
-	return hasRole || hasPermission || matchRoles || matchPermissions
+	return hasRole || hasPerms || matchRoles || matchPerms
 }
 
 // contains 检查字符串数组中是否包含指定的字符串
