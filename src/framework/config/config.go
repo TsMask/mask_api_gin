@@ -2,6 +2,7 @@ package config
 
 import (
 	"mask_api_gin/src/framework/logger"
+	"time"
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -53,12 +54,20 @@ func initViper(configPath string) {
 	if err := viper.MergeInConfig(); err != nil {
 		logger.Panicf("fatal error config local file: %s", err)
 	}
+
+	// 记录程序开始运行的时间点
+	viper.Set("runTime", time.Now())
 }
 
 // Env 获取运行服务环境
 // local prod
 func Env() string {
 	return viper.GetString("env")
+}
+
+// RunTime 程序开始运行的时间
+func RunTime() time.Time {
+	return viper.GetTime("runTime")
 }
 
 // Get 获取配置信息
