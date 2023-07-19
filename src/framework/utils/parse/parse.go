@@ -53,7 +53,7 @@ func Boolean(str interface{}) bool {
 	}
 }
 
-// FirstUpper 解析首字母转大写
+// FirstUpper 首字母转大写
 //
 // 字符串 abc_123!@# 结果 Abc_123
 func FirstUpper(str string) string {
@@ -65,7 +65,7 @@ func FirstUpper(str string) string {
 	return strings.ToUpper(str[:1]) + str[1:]
 }
 
-// Bit 解析比特位为单位
+// Bit 比特位为单位
 func Bit(bit float64) string {
 	var GB, MB, KB string
 
@@ -89,6 +89,21 @@ func Bit(bit float64) string {
 		return KB + "KB"
 	} else {
 		return fmt.Sprintf("%vB", bit)
+	}
+}
+
+// SafeContent 内容值进行安全掩码
+func SafeContent(value string) string {
+	if len(value) < 3 {
+		return strings.Repeat("*", len(value))
+	} else if len(value) < 6 {
+		return string(value[0]) + strings.Repeat("*", len(value)-1)
+	} else if len(value) < 10 {
+		return string(value[0]) + strings.Repeat("*", len(value)-2) + string(value[len(value)-1])
+	} else if len(value) < 15 {
+		return value[:2] + strings.Repeat("*", len(value)-4) + value[len(value)-2:]
+	} else {
+		return value[:3] + strings.Repeat("*", len(value)-6) + value[len(value)-3:]
 	}
 }
 
