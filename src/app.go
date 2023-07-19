@@ -28,7 +28,7 @@ func initAppEngine() *gin.Engine {
 	}
 
 	// 全局中间件
-	app.Use(middleware.LoggerMiddleware())
+	app.Use(middleware.Report())
 
 	// 静态目录
 	fsDefault := viper.GetStringMapString("staticFile.default")

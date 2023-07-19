@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// LoggerMiddleware 用于记录请求处理时间
-func LoggerMiddleware() gin.HandlerFunc {
+// Report 请求响应日志
+func Report() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 
@@ -17,6 +17,6 @@ func LoggerMiddleware() gin.HandlerFunc {
 
 		// 计算请求处理时间，并打印日志
 		duration := time.Since(start)
-		logger.Infof("Request processed in %v\n", duration)
+		logger.Infof("%s %s report end=> %v", c.Request.Method, c.Request.RequestURI, duration)
 	}
 }
