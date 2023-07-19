@@ -3,6 +3,8 @@ package system
 import (
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/middleware"
+	"mask_api_gin/src/framework/middleware/operlog"
+	"mask_api_gin/src/framework/middleware/repeat"
 	"mask_api_gin/src/modules/system/controller"
 	"mask_api_gin/src/modules/system/service"
 
@@ -23,7 +25,11 @@ func Setup(router *gin.Engine) {
 		sysUserGroup.GET("/list", controller.SysUser.List)
 		sysUserGroup.DELETE("/:userIds", controller.SysUser.Remove)
 		sysUserGroup.PUT("/resetPwd", controller.SysUser.ResetPwd)
-		sysUserGroup.PUT("/changeStatus", controller.SysUser.Status)
+		sysUserGroup.PUT("/changeStatus",
+			operlog.OperLog(operlog.OptionNew("用户信息", operlog.BUSINESS_TYPE_UPDATE)),
+			repeat.RepeatSubmit(5),
+			controller.SysUser.Status,
+		)
 	}
 
 	// 参数配置信息
