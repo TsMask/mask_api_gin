@@ -16,50 +16,50 @@ func Setup(router *gin.Engine) {
 	indexGroup := router.Group("/")
 	{
 		indexGroup.GET("/",
-			middleware.RateLimit(map[string]int64{
-				"time":  300,
-				"count": 10,
-				"type":  middleware.LIMIT_IP,
+			middleware.RateLimit(middleware.LimitOption{
+				Time:  300,
+				Count: 10,
+				Type:  middleware.LIMIT_IP,
 			}),
 			controller.Index.Handler,
 		)
 
 		// 验证码操作处理
 		indexGroup.GET("/captchaImage",
-			middleware.RateLimit(map[string]int64{
-				"time":  300,
-				"count": 60,
-				"type":  middleware.LIMIT_IP,
+			middleware.RateLimit(middleware.LimitOption{
+				Time:  300,
+				Count: 60,
+				Type:  middleware.LIMIT_IP,
 			}),
 			controller.Captcha.Image,
 		)
 
 		// 账号身份操作处理
 		indexGroup.POST("/login",
-			middleware.RateLimit(map[string]int64{
-				"time":  300,
-				"count": 10,
-				"type":  middleware.LIMIT_IP,
+			middleware.RateLimit(middleware.LimitOption{
+				Time:  300,
+				Count: 10,
+				Type:  middleware.LIMIT_IP,
 			}),
 			controller.Account.Login,
 		)
 		indexGroup.GET("/getInfo", middleware.PreAuthorize(nil), controller.Account.Info)
 		indexGroup.GET("/getRouters", middleware.PreAuthorize(nil), controller.Account.Router)
 		indexGroup.POST("/logout",
-			middleware.RateLimit(map[string]int64{
-				"time":  300,
-				"count": 5,
-				"type":  middleware.LIMIT_IP,
+			middleware.RateLimit(middleware.LimitOption{
+				Time:  300,
+				Count: 5,
+				Type:  middleware.LIMIT_IP,
 			}),
 			controller.Account.Logout,
 		)
 
 		// 账号注册操作处理
 		indexGroup.POST("/register",
-			middleware.RateLimit(map[string]int64{
-				"time":  300,
-				"count": 10,
-				"type":  middleware.LIMIT_IP,
+			middleware.RateLimit(middleware.LimitOption{
+				Time:  300,
+				Count: 10,
+				Type:  middleware.LIMIT_IP,
 			}),
 			controller.Register.UserName,
 		)
