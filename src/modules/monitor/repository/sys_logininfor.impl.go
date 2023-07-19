@@ -11,12 +11,36 @@ import (
 
 // SysLogininforImpl 系统登录访问表 数据层处理
 var SysLogininforImpl = &sysLogininforImpl{
-	selectSql: "",
+	selectSql: `select 
+	oper_id, title, business_type, method, request_method, operator_type, oper_name, dept_name, 
+	oper_url, oper_ip, oper_location, oper_param, oper_msg, status, oper_time, cost_time
+	from sys_oper_log`,
+
+	resultMap: map[string]string{
+		"oper_id":        "OperId",
+		"title":          "Title",
+		"business_type":  "BusinessType",
+		"method":         "Method",
+		"request_method": "RequestMethod",
+		"operator_type":  "OperatorType",
+		"oper_name":      "OperName",
+		"dept_name":      "DeptName",
+		"oper_url":       "OperUrl",
+		"oper_ip":        "OperIp",
+		"oper_location":  "OperLocation",
+		"oper_param":     "OperParam",
+		"oper_msg":       "OperMsg",
+		"status":         "Status",
+		"oper_time":      "OperTime",
+		"cost_time":      "CostTime",
+	},
 }
 
 type sysLogininforImpl struct {
 	// 查询视图对象SQL
 	selectSql string
+	// 结果字段与实体映射
+	resultMap map[string]string
 }
 
 // SelectLogininforPage 分页查询系统登录日志集合
@@ -31,8 +55,6 @@ func (r *sysLogininforImpl) SelectLogininforList(sysLogininfor model.SysLogininf
 
 // InsertLogininfor 新增系统登录日志
 func (r *sysLogininforImpl) InsertLogininfor(sysLogininfor model.SysLogininfor) string {
-	db := datasource.DefaultDB()
-
 	// 参数拼接
 	paramMap := make(map[string]interface{})
 	paramMap["login_time"] = date.NowTimestamp()
@@ -62,6 +84,7 @@ func (r *sysLogininforImpl) InsertLogininfor(sysLogininfor model.SysLogininfor) 
 	keys, placeholder, values := repoUtils.KeyPlaceholderValueByInsert(paramMap)
 	sql := "insert into sys_logininfor (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
 
+	db := datasource.DefaultDB()
 	// 开启事务
 	tx := db.Begin()
 	// 执行插入
