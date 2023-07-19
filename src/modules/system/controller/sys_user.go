@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 )
 
 // 用户信息
@@ -108,7 +109,7 @@ func (s *sysUserController) Status(c *gin.Context) {
 		UserID string `json:"userId"  binding:"required"`
 		Status string `json:"status"  binding:"required"`
 	}
-	if err := c.ShouldBindJSON(&body); err != nil {
+	if err := c.ShouldBindBodyWith(&body, binding.JSON); err != nil {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
