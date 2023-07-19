@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 )
 
 // QueryMapString 查询参数转换MapString
@@ -20,6 +21,26 @@ func QueryMapString(c *gin.Context) map[string]string {
 		queryParams[key] = values[0]
 	}
 	return queryParams
+}
+
+// RequestParamsMap 请求参数转换Map
+func RequestParamsMap(c *gin.Context) map[string]any {
+	params := make(map[string]interface{})
+	// json
+	c.ShouldBindBodyWith(&params, binding.JSON)
+
+	// 表单
+	bodyParams := c.Request.PostForm
+	for key, value := range bodyParams {
+		params[key] = value[0]
+	}
+
+	// 查询
+	queryParams := c.Request.URL.Query()
+	for key, value := range queryParams {
+		params[key] = value[0]
+	}
+	return params
 }
 
 // IPAddrLocation 解析ip地址
