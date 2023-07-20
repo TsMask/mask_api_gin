@@ -6,12 +6,15 @@ import (
 	"mask_api_gin/src/framework/logger"
 	repoUtils "mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
+	"strconv"
 	"strings"
 )
 
 // SysMenuImpl 菜单表 数据层处理
 var SysMenuImpl = &sysMenuImpl{
-	selectSql: "",
+	selectSql: `select 
+	menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, ifnull(perms,'') as perms, icon, menu_sort, create_time, remark
+	from sys_menu`,
 	resultMap: map[string]string{
 		"menu_id":     "MenuID",
 		"menu_name":   "MenuName",
@@ -38,7 +41,7 @@ var SysMenuImpl = &sysMenuImpl{
 type sysMenuImpl struct {
 	// 查询视图对象SQL
 	selectSql string
-	// 信息实体映射
+	// 结果字段与实体映射
 	resultMap map[string]string
 }
 
@@ -185,12 +188,18 @@ func (r *sysMenuImpl) CheckUniqueMenu(sysMenu model.SysMenu) string {
 	if len(conditions) > 0 {
 		whereSql += " where " + strings.Join(conditions, " and ")
 	}
+	if whereSql == "" {
+		return ""
+	}
 
 	// 查询数据
-	querySql := "select menu_id as 'str' from sys_menu" + whereSql + "limit 1"
+	querySql := "select menu_id as 'str' from sys_menu " + whereSql + " limit 1"
 	results, err := datasource.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err %v", err)
 	}
-	return results[0]["str"].(string)
+	if len(results) > 0 {
+		return strconv.FormatInt(results[0]["str"].(int64), 10)
+	}
+	return ""
 }
