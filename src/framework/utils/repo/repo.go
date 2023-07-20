@@ -8,12 +8,6 @@ import (
 	"strings"
 )
 
-// DataScopeSQL 系统角色数据范围过滤SQL字符串
-func DataScopeSQL(deptAlias, userAlias string) string {
-	dataScopeSQL := ""
-	return dataScopeSQL
-}
-
 // PageNumSize 分页页码记录数
 func PageNumSize(pageNum, pageSize string) (int, int) {
 	// 记录起始索引
@@ -60,7 +54,11 @@ func SetFieldValue(obj interface{}, fieldName string, value interface{}) {
 		// 转换传入的值类型为字段类型
 		switch fieldType.Kind() {
 		case reflect.String:
-			fieldValue.SetString(fmt.Sprintf("%v", value))
+			if value == nil {
+				fieldValue.SetString("")
+			} else {
+				fieldValue.SetString(fmt.Sprintf("%v", value))
+			}
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			intValue, err := strconv.ParseInt(fmt.Sprintf("%v", value), 10, 64)
 			if err != nil {
@@ -98,6 +96,25 @@ func ConvertResultRows(results interface{}) []interface{} {
 		rows[i] = s.Index(i).Interface()
 	}
 	return rows
+}
+
+// ConvertIdsSlice 将 []string 转换为 []interface{}
+func ConvertIdsSlice(ids []string) []interface{} {
+	// 将 []string 转换为 []interface{}
+	arr := make([]interface{}, len(ids))
+	for i, v := range ids {
+		arr[i] = v
+	}
+	return arr
+}
+
+// 查询-参数值的占位符
+func KeyPlaceholderByQuery(sum int) string {
+	placeholders := make([]string, sum)
+	for i := 0; i < sum; i++ {
+		placeholders[i] = "?"
+	}
+	return strings.Join(placeholders, ",")
 }
 
 // 插入-参数映射键值占位符 keys, placeholder, values
