@@ -3,8 +3,9 @@ package repository
 import (
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
-	repoUtils "mask_api_gin/src/framework/utils/repo"
+	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
+	"strings"
 )
 
 // SysRoleImpl 角色表 数据层处理
@@ -49,7 +50,7 @@ func (r *sysRoleImpl) convertResultRows(rows []map[string]interface{}) []model.S
 		sysRole := model.SysRole{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				repoUtils.SetFieldValue(&sysRole, keyMapper, value)
+				repo.SetFieldValue(&sysRole, keyMapper, value)
 			}
 		}
 		arr = append(arr, sysRole)
@@ -64,7 +65,41 @@ func (r *sysRoleImpl) SelectRolePage(query map[string]string, dataScopeSQL strin
 
 // SelectRoleList 根据条件查询角色数据
 func (r *sysRoleImpl) SelectRoleList(sysRole model.SysRole, dataScopeSQL string) []model.SysRole {
-	return []model.SysRole{}
+	// 查询条件拼接
+	var conditions []string
+	var params []interface{}
+	if sysRole.RoleID != "" {
+		conditions = append(conditions, "r.role_id = ?")
+		params = append(params, sysRole.RoleID)
+	}
+	if sysRole.RoleKey != "" {
+		conditions = append(conditions, "r.role_key like concat(?, '%')")
+		params = append(params, sysRole.RoleKey)
+	}
+	if sysRole.RoleName != "" {
+		conditions = append(conditions, "r.role_name like concat(?, '%')")
+		params = append(params, sysRole.RoleName)
+	}
+	if sysRole.Status != "" {
+		conditions = append(conditions, "r.status = ?")
+		params = append(params, sysRole.Status)
+	}
+
+	// 构建查询条件语句
+	whereSql := " where r.del_flag = '0' "
+	if len(conditions) > 0 {
+		whereSql += " and " + strings.Join(conditions, " and ")
+	}
+
+	// 查询数据
+	orderSql := " order by r.role_sort"
+	querySql := r.selectSql + whereSql + dataScopeSQL + orderSql
+	rows, err := datasource.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return []model.SysRole{}
+	}
+	return r.convertResultRows(rows)
 }
 
 // SelectRolePermsByUserId 根据用户ID查询角色
@@ -73,6 +108,7 @@ func (r *sysRoleImpl) SelectRolePermsByUserId(userId string) []model.SysRole {
 	results, err := datasource.RawDB("", querySql, []interface{}{userId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
+		return []model.SysRole{}
 	}
 	return r.convertResultRows(results)
 }

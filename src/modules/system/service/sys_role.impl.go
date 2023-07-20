@@ -22,7 +22,7 @@ func (r *sysRoleImpl) SelectRolePage(query map[string]string, dataScopeSQL strin
 
 // SelectRoleList 根据条件查询角色数据
 func (r *sysRoleImpl) SelectRoleList(sysRole model.SysRole, dataScopeSQL string) []model.SysRole {
-	return []model.SysRole{}
+	return r.sysRoleRepository.SelectRoleList(sysRole, dataScopeSQL)
 }
 
 // SelectRolePermsByUserId 根据用户ID查询角色
