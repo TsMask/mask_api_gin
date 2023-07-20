@@ -11,7 +11,7 @@ type ISysUserRole interface {
 	BatchUserRole(sysUserRoles []model.SysUserRole) int
 
 	// DeleteUserRole 批量删除用户和角色关联
-	DeleteUserRole(userIds []string) int
+	DeleteUserRole(userIds []string) int64
 
 	// DeleteUserRoleInfos 批量取消授权用户角色
 	DeleteUserRoleInfos(roleId string, userIds []string) int
