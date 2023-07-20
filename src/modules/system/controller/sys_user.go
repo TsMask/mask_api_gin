@@ -7,7 +7,6 @@ import (
 	ctxUtils "mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
-	repoUtils "mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
@@ -41,7 +40,7 @@ type sysUserController struct {
 func (s *sysUserController) List(c *gin.Context) {
 	// 查询参数转换map
 	querys := ctxUtils.QueryMapString(c)
-	dataScopeSQL := repoUtils.DataScopeSQL("d", "u")
+	dataScopeSQL := ctxUtils.LoginUserToDataScopeSQL(c, "d", "u")
 	list := s.sysUserService.SelectUserPage(querys, dataScopeSQL)
 	c.JSON(200, result.Ok(list))
 }
