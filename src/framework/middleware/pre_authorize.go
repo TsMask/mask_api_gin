@@ -77,7 +77,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 //
 // perms 权限字符数组
 //
-// metadata 装饰器参数身份
+// options 参数
 func verifyRolePermission(roles, perms []string, options map[string][]string) bool {
 	// 直接放行 管理员角色或任意权限
 	if contains(roles, AdminConstants.ROLE_KEY) || contains(perms, AdminConstants.PERMISSION) {
