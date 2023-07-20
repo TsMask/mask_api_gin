@@ -14,7 +14,7 @@ type ISysPost interface {
 	SelectPostById(postId string) model.SysPost
 
 	// SelectPostListByUserId 根据用户ID获取岗位选择框列表
-	SelectPostListByUserId(userId string) []string
+	SelectPostListByUserId(userId string) []model.SysPost
 
 	// SelectPostsByUserName 查询用户所属岗位组
 	SelectPostsByUserName(userName string) []model.SysPost

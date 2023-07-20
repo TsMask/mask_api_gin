@@ -1,15 +1,18 @@
 package service
 
-import "mask_api_gin/src/modules/system/model"
+import (
+	"mask_api_gin/src/modules/system/model"
+	"mask_api_gin/src/modules/system/repository"
+)
 
 // SysPostImpl 岗位表 数据层处理
 var SysPostImpl = &sysPostImpl{
-	selectSql: "",
+	sysPostRepository: repository.SysPostImpl,
 }
 
 type sysPostImpl struct {
-	// 查询视图对象SQL
-	selectSql string
+	// 岗位服务
+	sysPostRepository repository.ISysPost
 }
 
 // SelectPostPage 查询岗位分页数据集合
@@ -19,7 +22,7 @@ func (r *sysPostImpl) SelectPostPage(query map[string]string) map[string]interfa
 
 // SelectPostList 查询岗位数据集合
 func (r *sysPostImpl) SelectPostList(sysPost model.SysPost) []model.SysPost {
-	return []model.SysPost{}
+	return r.sysPostRepository.SelectPostList(sysPost)
 }
 
 // SelectPostById 通过岗位ID查询岗位信息
@@ -28,8 +31,8 @@ func (r *sysPostImpl) SelectPostById(postId string) model.SysPost {
 }
 
 // SelectPostListByUserId 根据用户ID获取岗位选择框列表
-func (r *sysPostImpl) SelectPostListByUserId(userId string) []string {
-	return []string{}
+func (r *sysPostImpl) SelectPostListByUserId(userId string) []model.SysPost {
+	return r.sysPostRepository.SelectPostListByUserId(userId)
 }
 
 // SelectPostsByUserName 查询用户所属岗位组
