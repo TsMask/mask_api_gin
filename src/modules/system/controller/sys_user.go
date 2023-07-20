@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"fmt"
 	"mask_api_gin/src/framework/config"
+	"mask_api_gin/src/framework/constants/admin"
 	ctxUtils "mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
@@ -20,11 +22,17 @@ import (
 // PATH /system/user
 var SysUser = &sysUserController{
 	sysUserService: service.SysUserImpl,
+	sysRoleService: service.SysRoleImpl,
+	sysPostService: service.SysPostImpl,
 }
 
 type sysUserController struct {
 	// 用户服务
 	sysUserService service.ISysUser
+	// 角色服务
+	sysRoleService service.ISysRole
+	// 岗位服务
+	sysPostService service.ISysPost
 }
 
 // 用户信息列表
@@ -36,6 +44,116 @@ func (s *sysUserController) List(c *gin.Context) {
 	dataScopeSQL := repoUtils.DataScopeSQL("d", "u")
 	list := s.sysUserService.SelectUserPage(querys, dataScopeSQL)
 	c.JSON(200, result.Ok(list))
+}
+
+// 用户信息详情
+//
+// GET /:userId
+func (s *sysUserController) Info(c *gin.Context) {
+	userId := c.Param("userId")
+	if userId == "" {
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
+		return
+	}
+	// 查询系统角色列表
+	dataScopeSQL := ctxUtils.LoginUserToDataScopeSQL(c, "d", "")
+	roles := s.sysRoleService.SelectRoleList(model.SysRole{}, dataScopeSQL)
+
+	// 不是系统指定管理员需要排除其角色
+	if !config.IsAdmin(userId) {
+		rolesFilter := make([]model.SysRole, 0)
+		for _, r := range roles {
+			if r.RoleID != admin.ROLE_ID {
+				rolesFilter = append(rolesFilter, r)
+			}
+		}
+		roles = rolesFilter
+	}
+
+	// 查询系统岗位列表
+	posts := s.sysPostService.SelectPostList(model.SysPost{})
+
+	// 新增用户时，用户ID为0
+	if userId == "0" {
+		c.JSON(200, result.OkData(map[string]interface{}{
+			"user":    map[string]interface{}{},
+			"roleIds": []string{},
+			"postIds": []string{},
+			"roles":   roles,
+			"posts":   posts,
+		}))
+		return
+	}
+
+	// 检查用户是否存在
+	user := s.sysUserService.SelectUserById(userId)
+	if user.UserID != userId {
+		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
+		return
+	}
+
+	// 角色ID组
+	roleIds := make([]string, 0)
+	for _, r := range user.Roles {
+		roleIds = append(roleIds, r.RoleID)
+	}
+
+	// 岗位ID组
+	postIds := make([]string, 0)
+	userPosts := s.sysPostService.SelectPostListByUserId(userId)
+	for _, p := range userPosts {
+		postIds = append(postIds, p.PostID)
+	}
+
+	c.JSON(200, result.OkData(map[string]interface{}{
+		"user":    user,
+		"roleIds": roleIds,
+		"postIds": postIds,
+		"roles":   roles,
+		"posts":   posts,
+	}))
+}
+
+// 用户信息新增
+//
+// POST /
+func (s *sysUserController) Add(c *gin.Context) {
+	userIds := c.Param("userIds")
+	if userIds == "" {
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
+		return
+	}
+	// 处理字符转id数组后去重
+	ids := strings.Split(userIds, ",")
+	uniqueIDs := parse.RemoveDuplicates(ids)
+	rows, err := s.sysUserService.DeleteUserByIds(uniqueIDs)
+	if err != nil {
+		c.JSON(200, result.ErrMsg(err.Error()))
+		return
+	}
+	msg := fmt.Sprintf("删除成功：%d", rows)
+	c.JSON(200, result.OkMsg(msg))
+}
+
+// 用户信息修改
+//
+// POST /
+func (s *sysUserController) Edit(c *gin.Context) {
+	userIds := c.Param("userIds")
+	if userIds == "" {
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
+		return
+	}
+	// 处理字符转id数组后去重
+	ids := strings.Split(userIds, ",")
+	uniqueIDs := parse.RemoveDuplicates(ids)
+	rows, err := s.sysUserService.DeleteUserByIds(uniqueIDs)
+	if err != nil {
+		c.JSON(200, result.ErrMsg(err.Error()))
+		return
+	}
+	msg := fmt.Sprintf("删除成功：%d", rows)
+	c.JSON(200, result.OkMsg(msg))
 }
 
 // 用户信息删除
@@ -50,12 +168,13 @@ func (s *sysUserController) Remove(c *gin.Context) {
 	// 处理字符转id数组后去重
 	ids := strings.Split(userIds, ",")
 	uniqueIDs := parse.RemoveDuplicates(ids)
-	rows := s.sysUserService.DeleteUserByIds(uniqueIDs)
-	if rows > 0 {
-		c.JSON(200, result.Ok(nil))
+	rows, err := s.sysUserService.DeleteUserByIds(uniqueIDs)
+	if err != nil {
+		c.JSON(200, result.ErrMsg(err.Error()))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	msg := fmt.Sprintf("删除成功：%d", rows)
+	c.JSON(200, result.OkMsg(msg))
 }
 
 // 用户重置密码

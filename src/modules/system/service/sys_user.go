@@ -26,7 +26,7 @@ type ISysUser interface {
 	UpdateUser(sysUser model.SysUser) int64
 
 	// DeleteUserByIds 批量删除用户信息
-	DeleteUserByIds(userIds []string) int
+	DeleteUserByIds(userIds []string) (int64, error)
 
 	// CheckUniqueUserName 校验用户名称是否唯一
 	CheckUniqueUserName(userName, userId string) bool

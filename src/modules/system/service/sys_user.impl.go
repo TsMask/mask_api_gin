@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/crypto"
@@ -13,17 +14,23 @@ import (
 
 // SysUserImpl 用户 数据层处理
 var SysUserImpl = &sysUserImpl{
-	sysConfigRepository: repository.SysUserImpl,
+	sysUserRepository:     repository.SysUserImpl,
+	sysUserRoleRepository: repository.SysUserRoleImpl,
+	sysUserPostRepository: repository.SysUserPostImpl,
 }
 
 type sysUserImpl struct {
 	// 用户服务
-	sysConfigRepository repository.ISysUser
+	sysUserRepository repository.ISysUser
+	// 用户与角色服务
+	sysUserRoleRepository repository.ISysUserRole
+	// 用户与岗位服务
+	sysUserPostRepository repository.ISysUserPost
 }
 
 // SelectUserPage 根据条件分页查询用户列表
 func (r *sysUserImpl) SelectUserPage(query map[string]string, dataScopeSQL string) map[string]interface{} {
-	return r.sysConfigRepository.SelectUserPage(query, dataScopeSQL)
+	return r.sysUserRepository.SelectUserPage(query, dataScopeSQL)
 }
 
 // SelectUserList 根据条件查询用户列表
@@ -38,7 +45,7 @@ func (r *sysUserImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL 
 
 // SelectUserByUserName 通过用户名查询用户
 func (r *sysUserImpl) SelectUserByUserName(userName string) model.SysUser {
-	return r.sysConfigRepository.SelectUserByUserName(userName)
+	return r.sysUserRepository.SelectUserByUserName(userName)
 }
 
 // SelectUserById 通过用户ID查询用户
@@ -46,7 +53,11 @@ func (r *sysUserImpl) SelectUserById(userId string) model.SysUser {
 	if userId == "" {
 		return model.SysUser{}
 	}
-	return r.sysConfigRepository.SelectUserById(userId)
+	users := r.sysUserRepository.SelectUserByIds([]string{userId})
+	if len(users) > 0 {
+		return users[0]
+	}
+	return model.SysUser{}
 }
 
 // InsertUser 新增用户信息
@@ -186,13 +197,28 @@ func (r *sysUserImpl) UpdateUser(sysUser model.SysUser) int64 {
 }
 
 // DeleteUserByIds 批量删除用户信息
-func (r *sysUserImpl) DeleteUserByIds(userIds []string) int {
-	return 0
+func (r *sysUserImpl) DeleteUserByIds(userIds []string) (int64, error) {
+	// 检查是否存在
+	users := r.sysUserRepository.SelectUserByIds(userIds)
+	if len(users) <= 0 {
+		return 0, errors.New("没有权限访问用户数据！")
+	}
+	if len(users) == len(userIds) {
+		// 删除用户与角色关联
+		r.sysUserRoleRepository.DeleteUserRole(userIds)
+		// 删除用户与岗位关联
+		r.sysUserPostRepository.DeleteUserPost(userIds)
+		// ... 注意其他userId进行关联的表
+		// 删除用户
+		rows := r.sysUserRepository.DeleteUserByIds(userIds)
+		return rows, nil
+	}
+	return 0, errors.New("删除用户信息失败！")
 }
 
 // CheckUniqueUserName 校验用户名称是否唯一
 func (r *sysUserImpl) CheckUniqueUserName(userName, userId string) bool {
-	uniqueId := r.sysConfigRepository.CheckUniqueUser(model.SysUser{
+	uniqueId := r.sysUserRepository.CheckUniqueUser(model.SysUser{
 		UserName: userName,
 	})
 	if uniqueId == userId {
@@ -203,7 +229,7 @@ func (r *sysUserImpl) CheckUniqueUserName(userName, userId string) bool {
 
 // CheckUniquePhone 校验手机号码是否唯一
 func (r *sysUserImpl) CheckUniquePhone(phonenumber, userId string) bool {
-	uniqueId := r.sysConfigRepository.CheckUniqueUser(model.SysUser{
+	uniqueId := r.sysUserRepository.CheckUniqueUser(model.SysUser{
 		PhoneNumber: phonenumber,
 	})
 	if uniqueId == userId {
@@ -214,7 +240,7 @@ func (r *sysUserImpl) CheckUniquePhone(phonenumber, userId string) bool {
 
 // CheckUniqueEmail 校验email是否唯一
 func (r *sysUserImpl) CheckUniqueEmail(email, userId string) bool {
-	uniqueId := r.sysConfigRepository.CheckUniqueUser(model.SysUser{
+	uniqueId := r.sysUserRepository.CheckUniqueUser(model.SysUser{
 		Email: email,
 	})
 	if uniqueId == userId {

@@ -13,8 +13,8 @@ type ISysUser interface {
 	// SelectUserList 根据条件查询用户列表
 	SelectUserList(sysUser model.SysUser, dataScopeSQL string) []model.SysUser
 
-	// SelectUserById 通过用户ID查询用户
-	SelectUserById(userID string) model.SysUser
+	// SelectUserByIds 通过用户ID查询用户
+	SelectUserByIds(userIds []string) []model.SysUser
 
 	// SelectUserByUserName 通过用户登录账号查询用户
 	SelectUserByUserName(userName string) model.SysUser
@@ -26,7 +26,7 @@ type ISysUser interface {
 	UpdateUser(sysUser model.SysUser) int
 
 	// DeleteUserByIds 批量删除用户信息
-	DeleteUserByIds(userIds []string) int
+	DeleteUserByIds(userIds []string) int64
 
 	// CheckUniqueUser 校验用户信息是否唯一
 	CheckUniqueUser(sysUser model.SysUser) string

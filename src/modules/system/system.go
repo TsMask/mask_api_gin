@@ -19,15 +19,40 @@ func Setup(router *gin.Engine) {
 	InitLoad()
 
 	// 用户信息
-	sysUserGroup := router.Group("/system/user")
-	sysUserGroup.Use(middleware.PreAuthorize(nil))
+	systemUserGroup := router.Group("/system/user")
 	{
-		sysUserGroup.GET("/list", controller.SysUser.List)
-		sysUserGroup.DELETE("/:userIds", controller.SysUser.Remove)
-		sysUserGroup.PUT("/resetPwd", controller.SysUser.ResetPwd)
-		sysUserGroup.PUT("/changeStatus",
+		systemUserGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:list"}}),
+			controller.SysUser.List,
+		)
+		systemUserGroup.GET("/:userId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:query"}}),
+			controller.SysUser.Info,
+		)
+		systemUserGroup.POST("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:add"}}),
+			operlog.OperLog(operlog.OptionNew("用户信息", operlog.BUSINESS_TYPE_INSERT)),
+			controller.SysUser.Add,
+		)
+		systemUserGroup.PUT("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:edit"}}),
 			operlog.OperLog(operlog.OptionNew("用户信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysUser.Edit,
+		)
+		systemUserGroup.DELETE("/:userIds",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:remove"}}),
+			operlog.OperLog(operlog.OptionNew("用户信息", operlog.BUSINESS_TYPE_DELETE)),
+			controller.SysUser.Remove,
+		)
+		systemUserGroup.PUT("/resetPwd",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:resetPwd"}}),
+			operlog.OperLog(operlog.OptionNew("用户信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysUser.ResetPwd,
+		)
+		systemUserGroup.PUT("/changeStatus",
 			repeat.RepeatSubmit(5),
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:edit"}}),
+			operlog.OperLog(operlog.OptionNew("用户信息", operlog.BUSINESS_TYPE_UPDATE)),
 			controller.SysUser.Status,
 		)
 	}

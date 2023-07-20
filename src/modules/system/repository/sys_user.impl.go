@@ -79,6 +79,7 @@ type sysUserImpl struct {
 func (r *sysUserImpl) convertResultRows(rows []map[string]interface{}) []model.SysUser {
 	arr := make([]model.SysUser, 0)
 	arrKeyIndex := make(map[string]int, 0)
+
 	for i, row := range rows {
 		sysUser := model.SysUser{}
 		sysDept := model.SysDept{}
@@ -329,23 +330,23 @@ func (r *sysUserImpl) SelectUserList(sysUser model.SysUser, dataScopeSQL string)
 	rows, err := datasource.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
+		return []model.SysUser{}
 	}
 	return r.convertResultRows(rows)
 }
 
-// SelectUserById 通过用户ID查询用户
-func (r *sysUserImpl) SelectUserById(userID string) model.SysUser {
-	querySql := r.selectSql + " where u.del_flag = '0' and u.user_id = ?"
-	results, err := datasource.RawDB("", querySql, []interface{}{userID})
+// SelectUserByIds 通过用户ID查询用户
+func (r *sysUserImpl) SelectUserByIds(userIds []string) []model.SysUser {
+	placeholder := repoUtils.KeyPlaceholderByQuery(len(userIds))
+	querySql := r.selectSql + " where u.del_flag = '0' and u.user_id in (" + placeholder + ")"
+	parameters := repoUtils.ConvertIdsSlice(userIds)
+	results, err := datasource.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
-	}
-	if len(results) == 0 {
-		return model.SysUser{}
+		return []model.SysUser{}
 	}
 	// 转换实体
-	rows := r.convertResultRows(results)
-	return rows[0]
+	return r.convertResultRows(results)
 }
 
 // SelectUserByUserName 通过用户登录账号查询用户
@@ -354,10 +355,14 @@ func (r *sysUserImpl) SelectUserByUserName(userName string) model.SysUser {
 	results, err := datasource.RawDB("", querySql, []interface{}{userName})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
+		return model.SysUser{}
 	}
 	// 转换实体
 	rows := r.convertResultRows(results)
-	return rows[0]
+	if len(rows) > 0 {
+		return rows[0]
+	}
+	return model.SysUser{}
 }
 
 // InsertUser 新增用户信息
@@ -371,8 +376,16 @@ func (r *sysUserImpl) UpdateUser(sysUser model.SysUser) int {
 }
 
 // DeleteUserByIds 批量删除用户信息
-func (r *sysUserImpl) DeleteUserByIds(userIds []string) int {
-	return 0
+func (r *sysUserImpl) DeleteUserByIds(userIds []string) int64 {
+	placeholder := repoUtils.KeyPlaceholderByQuery(len(userIds))
+	sql := "update sys_user set del_flag = '1' where user_id in (" + placeholder + ")"
+	parameters := repoUtils.ConvertIdsSlice(userIds)
+	results, err := datasource.ExecDB("", sql, parameters)
+	if err != nil {
+		logger.Errorf("update err => %v", err)
+		return 0
+	}
+	return results
 }
 
 // CheckUniqueUser 校验用户信息是否唯一
