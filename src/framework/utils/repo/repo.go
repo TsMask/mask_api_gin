@@ -118,13 +118,13 @@ func KeyPlaceholderByQuery(sum int) string {
 }
 
 // 插入-参数映射键值占位符 keys, placeholder, values
-func KeyPlaceholderValueByInsert(m map[string]interface{}) ([]string, string, []interface{}) {
+func KeyPlaceholderValueByInsert(params map[string]interface{}) ([]string, string, []interface{}) {
 	// 参数映射的键
-	keys := make([]string, len(m))
+	keys := make([]string, len(params))
 	// 参数映射的值
-	values := make([]interface{}, len(m))
+	values := make([]interface{}, len(params))
 	sum := 0
-	for k, v := range m {
+	for k, v := range params {
 		keys[sum] = k
 		values[sum] = v
 		sum++
@@ -138,13 +138,13 @@ func KeyPlaceholderValueByInsert(m map[string]interface{}) ([]string, string, []
 }
 
 // 更新-参数映射键值占位符 keys, values
-func KeyValueByUpdate(m map[string]interface{}) ([]string, []interface{}) {
+func KeyValueByUpdate(params map[string]interface{}) ([]string, []interface{}) {
 	// 参数映射的键
-	keys := make([]string, len(m))
+	keys := make([]string, len(params))
 	// 参数映射的值
-	values := make([]interface{}, len(m))
+	values := make([]interface{}, len(params))
 	sum := 0
-	for k, v := range m {
+	for k, v := range params {
 		keys[sum] = k + "=?"
 		values[sum] = v
 		sum++

@@ -1,12 +1,12 @@
 package repository
 
 import (
+	"fmt"
 	"mask_api_gin/src/framework/constants/menu"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
-	repoUtils "mask_api_gin/src/framework/utils/repo"
+	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
-	"strconv"
 	"strings"
 )
 
@@ -52,7 +52,7 @@ func (r *sysMenuImpl) convertResultRows(rows []map[string]interface{}) []model.S
 		sysMenu := model.SysMenu{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				repoUtils.SetFieldValue(&sysMenu, keyMapper, value)
+				repo.SetFieldValue(&sysMenu, keyMapper, value)
 			}
 		}
 		arr = append(arr, sysMenu)
@@ -199,7 +199,7 @@ func (r *sysMenuImpl) CheckUniqueMenu(sysMenu model.SysMenu) string {
 		logger.Errorf("query err %v", err)
 	}
 	if len(results) > 0 {
-		return strconv.FormatInt(results[0]["str"].(int64), 10)
+		return fmt.Sprintf("%v", results[0]["str"])
 	}
 	return ""
 }
