@@ -9,11 +9,9 @@ import (
 )
 
 // 初始化程序配置
-//
-// configPath 配置文件目录
-func InitConfig(configPath string) {
+func InitConfig() {
 	initFlag()
-	initViper(configPath)
+	initViper()
 }
 
 // 指定参数绑定
@@ -25,9 +23,7 @@ func initFlag() {
 }
 
 // 配置文件读取
-//
-// configPath 配置文件目录
-func initViper(configPath string) {
+func initViper() {
 	env := viper.GetString("env")
 	if env != "local" && env != "prod" {
 		logger.Panicf("无效环境值 %s ，请指定local、prod", env)
@@ -35,7 +31,7 @@ func initViper(configPath string) {
 	logger.Warnf("当期服务环境运行配置 => %s", env)
 
 	// 在当前工作目录中寻找配置
-	viper.AddConfigPath(configPath)
+	viper.AddConfigPath("src/config")
 	// 如果配置文件名中没有扩展名，则需要设置Type
 	viper.SetConfigType("yaml")
 	// 配置文件的名称（无扩展名）

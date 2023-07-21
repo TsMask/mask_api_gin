@@ -9,7 +9,7 @@ import (
 // 配置中心初始加载
 func ConfigurationInit() {
 	// 初始配置参数
-	config.InitConfig("./src/config")
+	config.InitConfig()
 	// 连接数据库实例
 	datasource.Connect()
 	// 连接Redis实例
