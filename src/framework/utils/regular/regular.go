@@ -45,6 +45,33 @@ func ValidPassword(password string) bool {
 	return match
 }
 
+// 判断是否为有效手机号格式，1开头的11位手机号
+func ValidMobile(mobile string) bool {
+	if mobile == "" {
+		return false
+	}
+	pattern := `^1[3|4|5|6|7|8|9][0-9]\d{8}$`
+	match, err := regexp.MatchString(pattern, mobile)
+	if err != nil {
+		return false
+	}
+	return match
+}
+
+// 判断是否为有效邮箱格式
+func ValidEmail(email string) bool {
+	if email == "" {
+		return false
+	}
+	pattern := `^(([^<>()\\.,;:\s@"]+(\.[^<>()\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+\.)+[a-zA-Z\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]{2,}))$`
+	re := regexp2.MustCompile(pattern, 0)
+	match, err := re.MatchString(email)
+	if err != nil {
+		return false
+	}
+	return match
+}
+
 // 判断是否为http(s)://开头
 //
 // link 网络链接
