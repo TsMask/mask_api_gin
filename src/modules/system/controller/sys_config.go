@@ -3,14 +3,17 @@ package controller
 import (
 	"fmt"
 	"mask_api_gin/src/framework/utils/ctx"
+	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/xuri/excelize/v2"
 )
 
 // 参数配置信息
@@ -167,5 +170,53 @@ func (s *sysConfig) ConfigKey(c *gin.Context) {
 //
 // POST /export
 func (s *sysConfig) Export(c *gin.Context) {
-	c.JSON(200, result.OkMsg("export"))
+	// 查询结果，根据查询条件结果，单页最大值限制
+	querys := ctx.BodyJSONMapString(c)
+	data := s.sysConfigService.SelectConfigPage(querys)
+
+	// 导出数据组装
+	fileName := fmt.Sprintf("config_export_%d_%d.xlsx", data["total"], date.NowTimestamp())
+	file := excelize.NewFile()
+	defer func() {
+		if err := file.Close(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+	// 创建一个工作表
+	sheet := "Sheet1"
+	index, err := file.NewSheet(sheet)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	// 设置工作簿的默认工作表
+	file.SetActiveSheet(index)
+	// 设置名为 Sheet1 工作表上 A 到 H 列的宽度为 20
+	file.SetColWidth("Sheet1", "A", "H", 20)
+	// 设置单元格的值
+	file.SetCellValue(sheet, "A1", "参数编号")
+	file.SetCellValue(sheet, "B1", "参数名称")
+	file.SetCellValue(sheet, "C1", "参数键名")
+	file.SetCellValue(sheet, "D1", "参数键值")
+	file.SetCellValue(sheet, "E1", "系统内置")
+
+	for i, row := range data["rows"].([]model.SysConfig) {
+		idx := i + 2
+		file.SetCellValue(sheet, "A"+strconv.Itoa(idx), row.ConfigID)
+		file.SetCellValue(sheet, "B"+strconv.Itoa(idx), row.ConfigName)
+		file.SetCellValue(sheet, "C"+strconv.Itoa(idx), row.ConfigKey)
+		file.SetCellValue(sheet, "D"+strconv.Itoa(idx), row.ConfigValue)
+		if row.ConfigType == "Y" {
+			file.SetCellValue(sheet, "E"+strconv.Itoa(idx), "是")
+		} else {
+			file.SetCellValue(sheet, "E"+strconv.Itoa(idx), "否")
+		}
+	}
+
+	// 根据指定路径保存文件
+	if err := file.SaveAs(fileName); err != nil {
+		fmt.Println(err)
+	}
+	// 导出数据表格
+	c.FileAttachment(fileName, fileName)
 }
