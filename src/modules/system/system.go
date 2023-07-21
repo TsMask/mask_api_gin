@@ -58,16 +58,39 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 参数配置信息
-	sysConfigGroup := router.Group("/system/config")
+	systemConfigGroup := router.Group("/system/config")
 	{
-		sysConfigGroup.GET("/list", controller.SysConfig.List)
-		sysConfigGroup.GET("/:configId", controller.SysConfig.Info)
-		sysConfigGroup.POST("/", controller.SysConfig.Add)
-		sysConfigGroup.PUT("/", controller.SysConfig.Edit)
-		sysConfigGroup.DELETE("/", controller.SysConfig.Remove)
-		sysConfigGroup.POST("/export", controller.SysConfig.Export)
-		sysConfigGroup.GET("/configKey/:configKey", controller.SysConfig.ConfigKey)
-		sysConfigGroup.PUT("/refreshCache", controller.SysConfig.RefreshCache)
+		systemConfigGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:list"}}),
+			controller.SysConfig.List,
+		)
+		systemConfigGroup.GET("/:configId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:query"}}),
+			controller.SysConfig.Info,
+		)
+		systemConfigGroup.POST("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:add"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_INSERT)),
+			controller.SysConfig.Add,
+		)
+		systemConfigGroup.PUT("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:edit"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysConfig.Edit,
+		)
+		systemConfigGroup.DELETE("/:configIds",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:remove"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_DELETE)),
+			controller.SysConfig.Remove,
+		)
+		systemConfigGroup.PUT("/refreshCache",
+			repeat.RepeatSubmit(5),
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:remove"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_CLEAN)),
+			controller.SysConfig.RefreshCache,
+		)
+		systemConfigGroup.GET("/configKey/:configKey", controller.SysConfig.ConfigKey)
+		systemConfigGroup.POST("/export", controller.SysConfig.Export)
 	}
 }
 

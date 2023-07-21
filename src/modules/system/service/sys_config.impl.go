@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"mask_api_gin/src/framework/constants/cachekey"
 	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/modules/system/model"
@@ -46,20 +47,25 @@ func (r *sysConfigImpl) SelectConfigValueByKey(configKey string) string {
 
 // SelectConfigById 通过配置ID查询参数配置信息
 func (r *sysConfigImpl) SelectConfigById(configId string) model.SysConfig {
-	return r.sysConfigRepository.SelectConfigById(configId)
+	if configId == "" {
+		return model.SysConfig{}
+	}
+	configs := r.sysConfigRepository.SelectConfigByIds([]string{configId})
+	if len(configs) > 0 {
+		return configs[0]
+	}
+	return model.SysConfig{}
 }
 
 // CheckUniqueConfigKey 校验参数键名是否唯一
-func (r *sysConfigImpl) CheckUniqueConfigKey(sysConfig model.SysConfig) bool {
-	configId := r.sysConfigRepository.CheckUniqueConfigKey(sysConfig.ConfigKey)
-	if configId == "" {
+func (r *sysConfigImpl) CheckUniqueConfigKey(configKey, configId string) bool {
+	uniqueId := r.sysConfigRepository.CheckUniqueConfig(model.SysConfig{
+		ConfigKey: configKey,
+	})
+	if uniqueId == configId {
 		return true
 	}
-	// 与查询得到的一致
-	if configId == sysConfig.ConfigID {
-		return true
-	}
-	return false
+	return uniqueId == ""
 }
 
 // InsertConfig 新增参数配置
@@ -72,7 +78,7 @@ func (r *sysConfigImpl) InsertConfig(sysConfig model.SysConfig) string {
 }
 
 // UpdateConfig 修改参数配置
-func (r *sysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int {
+func (r *sysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int64 {
 	rows := r.sysConfigRepository.UpdateConfig(sysConfig)
 	if rows > 0 {
 		r.loadingConfigCache(sysConfig.ConfigKey)
@@ -81,21 +87,25 @@ func (r *sysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int {
 }
 
 // DeleteConfigByIds 批量删除参数配置信息
-func (r *sysConfigImpl) DeleteConfigByIds(configIds []string) int {
-	for _, configId := range configIds {
-		// 检查是否存在
-		config := r.sysConfigRepository.SelectConfigById(configId)
-		if config.ConfigID != configId {
-			return 0
-		}
+func (r *sysConfigImpl) DeleteConfigByIds(configIds []string) (int64, error) {
+	// 检查是否存在
+	configs := r.sysConfigRepository.SelectConfigByIds(configIds)
+	if len(configs) <= 0 {
+		return 0, errors.New("没有权限访问参数配置数据！")
+	}
+	for _, config := range configs {
 		// 检查是否为内置参数
 		if config.ConfigType == "Y" {
-			return 0
+			return 0, errors.New(config.ConfigID + " 配置参数属于内置参数，禁止删除！")
 		}
 		// 清除缓存
 		r.clearConfigCache(config.ConfigKey)
 	}
-	return r.sysConfigRepository.DeleteConfigByIds(configIds)
+	if len(configs) == len(configIds) {
+		rows := r.sysConfigRepository.DeleteConfigByIds(configIds)
+		return rows, nil
+	}
+	return 0, errors.New("删除参数配置信息失败！")
 }
 
 // ResetConfigCache 重置参数缓存数据
