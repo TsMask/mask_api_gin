@@ -11,14 +11,14 @@ type ISysNotice interface {
 	SelectNoticeList(sysNotice model.SysNotice) []model.SysNotice
 
 	// SelectNoticeById 查询公告信息
-	SelectNoticeById(noticeId string) model.SysNotice
+	SelectNoticeByIds(noticeIds []string) []model.SysNotice
 
 	// InsertNotice 新增公告
 	InsertNotice(sysNotice model.SysNotice) string
 
 	// UpdateNotice 修改公告
-	UpdateNotice(sysNotice model.SysNotice) int
+	UpdateNotice(sysNotice model.SysNotice) int64
 
 	// DeleteNoticeByIds 批量删除公告信息
-	DeleteNoticeByIds(noticeIds []string) int
+	DeleteNoticeByIds(noticeIds []string) int64
 }

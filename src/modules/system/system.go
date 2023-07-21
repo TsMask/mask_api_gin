@@ -55,6 +55,9 @@ func Setup(router *gin.Engine) {
 			operlog.OperLog(operlog.OptionNew("用户信息", operlog.BUSINESS_TYPE_UPDATE)),
 			controller.SysUser.Status,
 		)
+		// 用户信息列表导入模板下载 TODO
+		// 用户信息列表导入 TODO
+		// 用户信息列表导出 TODO
 	}
 
 	// 参数配置信息
@@ -90,7 +93,39 @@ func Setup(router *gin.Engine) {
 			controller.SysConfig.RefreshCache,
 		)
 		systemConfigGroup.GET("/configKey/:configKey", controller.SysConfig.ConfigKey)
-		systemConfigGroup.POST("/export", controller.SysConfig.Export)
+		systemConfigGroup.POST("/export",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:export"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_EXPORT)),
+			controller.SysConfig.Export,
+		)
+	}
+
+	// 通知公告信息
+	systemNoticeGroup := router.Group("/system/notice")
+	{
+		systemNoticeGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:list"}}),
+			controller.SysNotice.List,
+		)
+		systemNoticeGroup.GET("/:noticeId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:query"}}),
+			controller.SysNotice.Info,
+		)
+		systemNoticeGroup.POST("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:add"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_INSERT)),
+			controller.SysNotice.Add,
+		)
+		systemNoticeGroup.PUT("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:edit"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysNotice.Edit,
+		)
+		systemNoticeGroup.DELETE("/:noticeIds",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:remove"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_DELETE)),
+			controller.SysNotice.Remove,
+		)
 	}
 }
 

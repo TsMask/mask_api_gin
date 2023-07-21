@@ -17,8 +17,8 @@ type ISysNotice interface {
 	InsertNotice(sysNotice model.SysNotice) string
 
 	// UpdateNotice 修改公告
-	UpdateNotice(sysNotice model.SysNotice) int
+	UpdateNotice(sysNotice model.SysNotice) int64
 
 	// DeleteNoticeByIds 批量删除公告信息
-	DeleteNoticeByIds(noticeIds []string) int
+	DeleteNoticeByIds(noticeIds []string) (int64, error)
 }

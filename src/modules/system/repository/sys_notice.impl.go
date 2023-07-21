@@ -1,43 +1,283 @@
 package repository
 
-import "mask_api_gin/src/modules/system/model"
+import (
+	"mask_api_gin/src/framework/datasource"
+	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/utils/date"
+	"mask_api_gin/src/framework/utils/parse"
+	"mask_api_gin/src/framework/utils/repo"
+	"mask_api_gin/src/modules/system/model"
+	"strings"
+)
 
 // SysNoticeImpl 通知公告表 数据层处理
 var SysNoticeImpl = &sysNoticeImpl{
-	selectSql: "",
+	selectSql: `select 
+	notice_id, notice_title, notice_type, notice_content, status, del_flag, 
+	create_by, create_time, update_by, update_time, remark from sys_notice`,
+
+	resultMap: map[string]string{
+		"notice_id":      "NoticeID",
+		"notice_title":   "NoticeTitle",
+		"notice_type":    "NoticeType",
+		"notice_content": "NoticeContent",
+		"status":         "Status",
+		"del_flag":       "DelFlag",
+		"create_by":      "CreateBy",
+		"create_time":    "CreateTime",
+		"update_by":      "UpdateBy",
+		"update_time":    "UpdateTime",
+		"remark":         "Remark",
+	},
 }
 
 type sysNoticeImpl struct {
 	// 查询视图对象SQL
 	selectSql string
+	// 结果字段与实体映射
+	resultMap map[string]string
+}
+
+// convertResultRows 将结果记录转实体结果组
+func (r *sysNoticeImpl) convertResultRows(rows []map[string]interface{}) []model.SysNotice {
+	arr := make([]model.SysNotice, 0)
+	for _, row := range rows {
+		sysNotice := model.SysNotice{}
+		for key, value := range row {
+			if keyMapper, ok := r.resultMap[key]; ok {
+				repo.SetFieldValue(&sysNotice, keyMapper, value)
+			}
+		}
+		arr = append(arr, sysNotice)
+	}
+	return arr
 }
 
 // SelectNoticePage 分页查询公告列表
 func (r *sysNoticeImpl) SelectNoticePage(query map[string]string) map[string]interface{} {
-	return map[string]interface{}{}
+	// 查询条件拼接
+	var conditions []string
+	var params []interface{}
+	if v, ok := query["noticeTitle"]; ok {
+		conditions = append(conditions, "notice_title like concat(?, '%')")
+		params = append(params, v)
+	}
+	if v, ok := query["noticeType"]; ok {
+		conditions = append(conditions, "notice_type = ?")
+		params = append(params, v)
+	}
+	if v, ok := query["createBy"]; ok {
+		conditions = append(conditions, "create_by like concat(?, '%')")
+		params = append(params, v)
+	}
+	if v, ok := query["status"]; ok {
+		conditions = append(conditions, "status = ?")
+		params = append(params, v)
+	}
+	if v, ok := query["beginTime"]; ok {
+		conditions = append(conditions, "create_time >= ?")
+		beginDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
+		params = append(params, beginDate.UnixNano()/1e6)
+	}
+	if v, ok := query["endTime"]; ok {
+		conditions = append(conditions, "create_time <= ?")
+		endDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
+		params = append(params, endDate.UnixNano()/1e6)
+	}
+
+	// 构建查询条件语句
+	whereSql := " where del_flag = '0' "
+	if len(conditions) > 0 {
+		whereSql += " and " + strings.Join(conditions, " and ")
+	}
+
+	// 查询数量 长度为0直接返回
+	totalSql := "select count(1) as 'total' from sys_notice"
+	totalRows, err := datasource.RawDB("", totalSql+whereSql, params)
+	if err != nil {
+		logger.Errorf("total err => %v", err)
+	}
+	total := parse.Number(totalRows[0]["total"])
+	if total <= 0 {
+		return map[string]interface{}{
+			"total": 0,
+			"rows":  []interface{}{},
+		}
+	}
+
+	// 分页
+	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageSql := " limit ?,? "
+	params = append(params, pageNum*pageSize)
+	params = append(params, pageSize)
+
+	// 查询数据
+	querySql := r.selectSql + whereSql + pageSql
+	results, err := datasource.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+	}
+
+	// 转换实体
+	rows := r.convertResultRows(results)
+	return map[string]interface{}{
+		"total": total,
+		"rows":  rows,
+	}
 }
 
 // SelectNoticeList 查询公告列表
 func (r *sysNoticeImpl) SelectNoticeList(sysNotice model.SysNotice) []model.SysNotice {
-	return []model.SysNotice{}
+	// 查询条件拼接
+	var conditions []string
+	var params []interface{}
+	if sysNotice.NoticeTitle != "" {
+		conditions = append(conditions, "notice_title like concat(?, '%')")
+		params = append(params, sysNotice.NoticeTitle)
+	}
+	if sysNotice.NoticeType != "" {
+		conditions = append(conditions, "notice_type = ?")
+		params = append(params, sysNotice.NoticeType)
+	}
+	if sysNotice.CreateBy != "" {
+		conditions = append(conditions, "create_by like concat(?, '%')")
+		params = append(params, sysNotice.CreateBy)
+	}
+	if sysNotice.Status != "" {
+		conditions = append(conditions, "status = ?")
+		params = append(params, sysNotice.Status)
+	}
+
+	// 构建查询条件语句
+	whereSql := " where del_flag = '0' "
+	if len(conditions) > 0 {
+		whereSql += " and " + strings.Join(conditions, " and ")
+	}
+
+	// 查询数据
+	querySql := r.selectSql + whereSql
+	results, err := datasource.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return []model.SysNotice{}
+	}
+
+	// 转换实体
+	return r.convertResultRows(results)
 }
 
-// SelectNoticeById 查询公告信息
-func (r *sysNoticeImpl) SelectNoticeById(noticeId string) model.SysNotice {
-	return model.SysNotice{}
+// SelectNoticeByIds 查询公告信息
+func (r *sysNoticeImpl) SelectNoticeByIds(noticeIds []string) []model.SysNotice {
+	placeholder := repo.KeyPlaceholderByQuery(len(noticeIds))
+	querySql := r.selectSql + " where notice_id in (" + placeholder + ")"
+	parameters := repo.ConvertIdsSlice(noticeIds)
+	results, err := datasource.RawDB("", querySql, parameters)
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return []model.SysNotice{}
+	}
+	// 转换实体
+	return r.convertResultRows(results)
 }
 
 // InsertNotice 新增公告
 func (r *sysNoticeImpl) InsertNotice(sysNotice model.SysNotice) string {
-	return ""
+	// 参数拼接
+	params := make(map[string]interface{})
+	if sysNotice.NoticeTitle != "" {
+		params["notice_title"] = sysNotice.NoticeTitle
+	}
+	if sysNotice.NoticeType != "" {
+		params["notice_type"] = sysNotice.NoticeType
+	}
+	if sysNotice.NoticeContent != "" {
+		params["notice_content"] = sysNotice.NoticeContent
+	}
+	if sysNotice.Status != "" {
+		params["status"] = sysNotice.Status
+	}
+	if sysNotice.Remark != "" {
+		params["remark"] = sysNotice.Remark
+	}
+	if sysNotice.CreateBy != "" {
+		params["create_by"] = sysNotice.CreateBy
+		params["create_time"] = date.NowTimestamp()
+	}
+
+	// 构建执行语句
+	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
+	sql := "insert into sys_notice (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+
+	db := datasource.DefaultDB()
+	// 开启事务
+	tx := db.Begin()
+	// 执行插入
+	err := tx.Exec(sql, values...).Error
+	if err != nil {
+		logger.Errorf("insert row : %v", err.Error())
+		tx.Rollback()
+		return err.Error()
+	}
+	// 获取生成的自增 ID
+	var insertedID string
+	err = tx.Raw("select last_insert_id()").Row().Scan(&insertedID)
+	if err != nil {
+		logger.Errorf("insert last id : %v", err.Error())
+		tx.Rollback()
+		return ""
+	}
+	// 提交事务
+	tx.Commit()
+	return insertedID
 }
 
 // UpdateNotice 修改公告
-func (r *sysNoticeImpl) UpdateNotice(sysNotice model.SysNotice) int {
-	return 0
+func (r *sysNoticeImpl) UpdateNotice(sysNotice model.SysNotice) int64 {
+	// 参数拼接
+	params := make(map[string]interface{})
+	if sysNotice.NoticeTitle != "" {
+		params["notice_title"] = sysNotice.NoticeTitle
+	}
+	if sysNotice.NoticeType != "" {
+		params["notice_type"] = sysNotice.NoticeType
+	}
+	if sysNotice.NoticeContent != "" {
+		params["notice_content"] = sysNotice.NoticeContent
+	}
+	if sysNotice.Status != "" {
+		params["status"] = sysNotice.Status
+	}
+	if sysNotice.Remark != "" {
+		params["remark"] = sysNotice.Remark
+	}
+	if sysNotice.UpdateBy != "" {
+		params["update_by"] = sysNotice.UpdateBy
+		params["update_time"] = date.NowTimestamp()
+	}
+
+	// 构建执行语句
+	keys, values := repo.KeyValueByUpdate(params)
+	sql := "update sys_notice set " + strings.Join(keys, ",") + " where notice_id = ?"
+
+	// 执行更新
+	values = append(values, sysNotice.NoticeID)
+	rows, err := datasource.ExecDB("", sql, values)
+	if err != nil {
+		logger.Errorf("update row : %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // DeleteNoticeByIds 批量删除公告信息
-func (r *sysNoticeImpl) DeleteNoticeByIds(noticeIds []string) int {
-	return 0
+func (r *sysNoticeImpl) DeleteNoticeByIds(noticeIds []string) int64 {
+	placeholder := repo.KeyPlaceholderByQuery(len(noticeIds))
+	sql := "update sys_notice set del_flag = '1' where notice_id in (" + placeholder + ")"
+	parameters := repo.ConvertIdsSlice(noticeIds)
+	results, err := datasource.ExecDB("", sql, parameters)
+	if err != nil {
+		logger.Errorf("update err => %v", err)
+		return 0
+	}
+	return results
 }

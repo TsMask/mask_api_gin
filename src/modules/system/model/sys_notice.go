@@ -3,13 +3,13 @@ package model
 // SysNotice 通知公告对象 sys_notice
 type SysNotice struct {
 	// 公告ID
-	NoticeID int64 `json:"noticeId"`
+	NoticeID string `json:"noticeId"`
 	// 公告标题
-	NoticeTitle string `json:"noticeTitle"`
+	NoticeTitle string `json:"noticeTitle" binding:"required"`
 	// 公告类型（1通知 2公告）
-	NoticeType string `json:"noticeType"`
+	NoticeType string `json:"noticeType" binding:"required"`
 	// 公告内容
-	NoticeContent string `json:"noticeContent"`
+	NoticeContent string `json:"noticeContent" binding:"required"`
 	// 公告状态（0关闭 1正常）
 	Status string `json:"status"`
 	// 删除标志（0代表存在 1代表删除）
