@@ -110,10 +110,11 @@ func SafeContent(value string) string {
 // RemoveDuplicates 数组内字符串去重
 func RemoveDuplicates(ids []string) []string {
 	uniqueIDs := make(map[string]bool)
-	uniqueIDSlice := make([]string, 0, len(ids))
+	uniqueIDSlice := make([]string, 0)
 
 	for _, id := range ids {
-		if _, ok := uniqueIDs[id]; !ok {
+		_, ok := uniqueIDs[id]
+		if !ok || id != "" {
 			uniqueIDs[id] = true
 			uniqueIDSlice = append(uniqueIDSlice, id)
 		}
