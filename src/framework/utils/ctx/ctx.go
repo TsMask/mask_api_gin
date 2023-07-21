@@ -26,6 +26,13 @@ func QueryMapString(c *gin.Context) map[string]string {
 	return queryParams
 }
 
+// BodyJSONMapString JSON参数转换MapString
+func BodyJSONMapString(c *gin.Context) map[string]string {
+	params := make(map[string]string)
+	c.ShouldBindBodyWith(&params, binding.JSON)
+	return params
+}
+
 // RequestParamsMap 请求参数转换Map
 func RequestParamsMap(c *gin.Context) map[string]any {
 	params := make(map[string]interface{})
