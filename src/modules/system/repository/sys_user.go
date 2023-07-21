@@ -23,7 +23,7 @@ type ISysUser interface {
 	InsertUser(sysUser model.SysUser) string
 
 	// UpdateUser 修改用户信息
-	UpdateUser(sysUser model.SysUser) int
+	UpdateUser(sysUser model.SysUser) int64
 
 	// DeleteUserByIds 批量删除用户信息
 	DeleteUserByIds(userIds []string) int64

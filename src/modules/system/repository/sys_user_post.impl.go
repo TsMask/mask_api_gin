@@ -1,10 +1,12 @@
 package repository
 
 import (
+	"fmt"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
+	"strings"
 )
 
 // SysUserPostImpl 用户与岗位关联表 数据层处理
@@ -36,6 +38,16 @@ func (r *sysUserPostImpl) DeleteUserPost(userIds []string) int64 {
 }
 
 // BatchUserPost 批量新增用户岗位信息
-func (r *sysUserPostImpl) BatchUserPost(sysUserPosts []model.SysUserPost) int {
-	return 0
+func (r *sysUserPostImpl) BatchUserPost(sysUserPosts []model.SysUserPost) int64 {
+	keyValues := make([]string, 0)
+	for _, item := range sysUserPosts {
+		keyValues = append(keyValues, fmt.Sprintf("(%s,%s)", item.UserID, item.PostID))
+	}
+	sql := "insert into sys_user_post(user_id, post_id) values " + strings.Join(keyValues, ",")
+	results, err := datasource.ExecDB("", sql, nil)
+	if err != nil {
+		logger.Errorf("delete err => %v", err)
+		return 0
+	}
+	return results
 }

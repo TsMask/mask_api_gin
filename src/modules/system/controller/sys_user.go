@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/constants/admin"
-	ctxUtils "mask_api_gin/src/framework/utils/ctx"
+	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/framework/vo/result"
@@ -38,11 +38,10 @@ type sysUserController struct {
 //
 // GET /list
 func (s *sysUserController) List(c *gin.Context) {
-	// 查询参数转换map
-	querys := ctxUtils.QueryMapString(c)
-	dataScopeSQL := ctxUtils.LoginUserToDataScopeSQL(c, "d", "u")
-	list := s.sysUserService.SelectUserPage(querys, dataScopeSQL)
-	c.JSON(200, result.Ok(list))
+	querys := ctx.QueryMapString(c)
+	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
+	data := s.sysUserService.SelectUserPage(querys, dataScopeSQL)
+	c.JSON(200, result.Ok(data))
 }
 
 // 用户信息详情
@@ -55,7 +54,7 @@ func (s *sysUserController) Info(c *gin.Context) {
 		return
 	}
 	// 查询系统角色列表
-	dataScopeSQL := ctxUtils.LoginUserToDataScopeSQL(c, "d", "")
+	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")
 	roles := s.sysRoleService.SelectRoleList(model.SysRole{}, dataScopeSQL)
 
 	// 不是系统指定管理员需要排除其角色
@@ -117,42 +116,134 @@ func (s *sysUserController) Info(c *gin.Context) {
 //
 // POST /
 func (s *sysUserController) Add(c *gin.Context) {
-	userIds := c.Param("userIds")
-	if userIds == "" {
+	var body model.SysUser
+	err := c.ShouldBindBodyWith(&body, binding.JSON)
+	if err != nil || body.UserID != "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
-	// 处理字符转id数组后去重
-	ids := strings.Split(userIds, ",")
-	uniqueIDs := parse.RemoveDuplicates(ids)
-	rows, err := s.sysUserService.DeleteUserByIds(uniqueIDs)
-	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+
+	// 检查用户登录账号是否唯一
+	uniqueUserName := s.sysUserService.CheckUniqueUserName(body.UserName, "")
+	if !uniqueUserName {
+		msg := fmt.Sprintf("新增用户【%s】失败，登录账号已存在", body.UserName)
+		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
-	msg := fmt.Sprintf("删除成功：%d", rows)
-	c.JSON(200, result.OkMsg(msg))
+
+	// 检查手机号码格式并判断是否唯一
+	if body.PhoneNumber != "" {
+		if regular.ValidMobile(body.PhoneNumber) {
+			uniquePhone := s.sysUserService.CheckUniquePhone(body.PhoneNumber, "")
+			if !uniquePhone {
+				msg := fmt.Sprintf("新增用户【%s】失败，手机号码已存在", body.UserName)
+				c.JSON(200, result.ErrMsg(msg))
+				return
+			}
+		} else {
+			msg := fmt.Sprintf("新增用户【%s】失败，手机号码格式错误", body.UserName)
+			c.JSON(200, result.ErrMsg(msg))
+			return
+		}
+	}
+
+	// 检查邮箱格式并判断是否唯一
+	if body.Email != "" {
+		if regular.ValidEmail(body.Email) {
+			uniqueEmail := s.sysUserService.CheckUniqueEmail(body.Email, "")
+			if !uniqueEmail {
+				msg := fmt.Sprintf("新增用户【%s】失败，邮箱已存在", body.UserName)
+				c.JSON(200, result.ErrMsg(msg))
+				return
+			}
+		} else {
+			msg := fmt.Sprintf("新增用户【%s】失败，邮箱格式错误", body.UserName)
+			c.JSON(200, result.ErrMsg(msg))
+			return
+		}
+	}
+
+	body.CreateBy = ctx.LoginUserToUserName(c)
+	insertId := s.sysUserService.InsertUser(body)
+	if insertId != "" {
+		c.JSON(200, result.Ok(nil))
+		return
+	}
+	c.JSON(200, result.Err(nil))
 }
 
 // 用户信息修改
 //
 // POST /
 func (s *sysUserController) Edit(c *gin.Context) {
-	userIds := c.Param("userIds")
-	if userIds == "" {
+	var body model.SysUser
+	err := c.ShouldBindBodyWith(&body, binding.JSON)
+	if err != nil || body.UserID == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
-	// 处理字符转id数组后去重
-	ids := strings.Split(userIds, ",")
-	uniqueIDs := parse.RemoveDuplicates(ids)
-	rows, err := s.sysUserService.DeleteUserByIds(uniqueIDs)
-	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+
+	// 检查是否管理员用户
+	if config.IsAdmin(body.UserID) {
+		c.JSON(200, result.ErrMsg("不允许操作管理员用户"))
 		return
 	}
-	msg := fmt.Sprintf("删除成功：%d", rows)
-	c.JSON(200, result.OkMsg(msg))
+
+	user := s.sysUserService.SelectUserById(body.UserID)
+	if user.UserID != body.UserID {
+		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
+		return
+	}
+
+	// 检查用户登录账号是否唯一
+	uniqueUserName := s.sysUserService.CheckUniqueUserName(body.UserName, body.UserID)
+	if !uniqueUserName {
+		msg := fmt.Sprintf("修改用户【%s】失败，登录账号已存在", body.UserName)
+		c.JSON(200, result.ErrMsg(msg))
+		return
+	}
+
+	// 检查手机号码格式并判断是否唯一
+	if body.PhoneNumber != "" {
+		if regular.ValidMobile(body.PhoneNumber) {
+			uniquePhone := s.sysUserService.CheckUniquePhone(body.PhoneNumber, body.UserID)
+			if !uniquePhone {
+				msg := fmt.Sprintf("修改用户【%s】失败，手机号码已存在", body.UserName)
+				c.JSON(200, result.ErrMsg(msg))
+				return
+			}
+		} else {
+			msg := fmt.Sprintf("修改用户【%s】失败，手机号码格式错误", body.UserName)
+			c.JSON(200, result.ErrMsg(msg))
+			return
+		}
+	}
+
+	// 检查邮箱格式并判断是否唯一
+	if body.Email != "" {
+		if regular.ValidEmail(body.Email) {
+			uniqueEmail := s.sysUserService.CheckUniqueEmail(body.Email, body.UserID)
+			if !uniqueEmail {
+				msg := fmt.Sprintf("修改用户【%s】失败，邮箱已存在", body.UserName)
+				c.JSON(200, result.ErrMsg(msg))
+				return
+			}
+		} else {
+			msg := fmt.Sprintf("修改用户【%s】失败，邮箱格式错误", body.UserName)
+			c.JSON(200, result.ErrMsg(msg))
+			return
+		}
+	}
+
+	body.UserName = "" // 忽略修改登录用户名称
+	body.Password = "" // 忽略修改密码
+	body.UpdateBy = ctx.LoginUserToUserName(c)
+	rows := s.sysUserService.UpdateUserAndRolePost(body)
+	if rows > 0 {
+		c.JSON(200, result.Ok(nil))
+		return
+	}
+	c.JSON(200, result.Err(nil))
 }
 
 // 用户信息删除
@@ -167,6 +258,10 @@ func (s *sysUserController) Remove(c *gin.Context) {
 	// 处理字符转id数组后去重
 	ids := strings.Split(userIds, ",")
 	uniqueIDs := parse.RemoveDuplicates(ids)
+	if len(uniqueIDs) <= 0 {
+		c.JSON(200, result.Err(nil))
+		return
+	}
 	rows, err := s.sysUserService.DeleteUserByIds(uniqueIDs)
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
@@ -181,10 +276,10 @@ func (s *sysUserController) Remove(c *gin.Context) {
 // PUT /resetPwd
 func (s *sysUserController) ResetPwd(c *gin.Context) {
 	var body struct {
-		UserID   string `json:"userId"  binding:"required"`
-		Password string `json:"password"  binding:"required"`
+		UserID   string `json:"userId" binding:"required"`
+		Password string `json:"password" binding:"required"`
 	}
-	if err := c.ShouldBindJSON(&body); err != nil {
+	if err := c.ShouldBindBodyWith(&body, binding.JSON); err != nil {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
@@ -205,7 +300,7 @@ func (s *sysUserController) ResetPwd(c *gin.Context) {
 		return
 	}
 
-	userName := ctxUtils.LoginUserToUserName(c)
+	userName := ctx.LoginUserToUserName(c)
 	sysUser := model.SysUser{
 		UserID:   body.UserID,
 		Password: body.Password,
@@ -224,8 +319,8 @@ func (s *sysUserController) ResetPwd(c *gin.Context) {
 // PUT /changeStatus
 func (s *sysUserController) Status(c *gin.Context) {
 	var body struct {
-		UserID string `json:"userId"  binding:"required"`
-		Status string `json:"status"  binding:"required"`
+		UserID string `json:"userId" binding:"required"`
+		Status string `json:"status" binding:"required"`
 	}
 	if err := c.ShouldBindBodyWith(&body, binding.JSON); err != nil {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -243,7 +338,7 @@ func (s *sysUserController) Status(c *gin.Context) {
 		return
 	}
 
-	userName := ctxUtils.LoginUserToUserName(c)
+	userName := ctx.LoginUserToUserName(c)
 	sysUser := model.SysUser{
 		UserID:   body.UserID,
 		Status:   body.Status,

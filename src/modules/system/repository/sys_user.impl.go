@@ -1,13 +1,14 @@
 package repository
 
 import (
+	"fmt"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
-	repoUtils "mask_api_gin/src/framework/utils/repo"
+	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
-	"strconv"
 	"strings"
 )
 
@@ -78,9 +79,8 @@ type sysUserImpl struct {
 // convertResultRows 将结果记录转实体结果组
 func (r *sysUserImpl) convertResultRows(rows []map[string]interface{}) []model.SysUser {
 	arr := make([]model.SysUser, 0)
-	arrKeyIndex := make(map[string]int, 0)
 
-	for i, row := range rows {
+	for _, row := range rows {
 		sysUser := model.SysUser{}
 		sysDept := model.SysDept{}
 		sysRole := model.SysRole{}
@@ -88,13 +88,13 @@ func (r *sysUserImpl) convertResultRows(rows []map[string]interface{}) []model.S
 
 		for key, value := range row {
 			if keyMapper, ok := r.sysUserMap[key]; ok {
-				repoUtils.SetFieldValue(&sysUser, keyMapper, value)
+				repo.SetFieldValue(&sysUser, keyMapper, value)
 			}
 			if keyMapper, ok := r.sysDeptMap[key]; ok {
-				repoUtils.SetFieldValue(&sysDept, keyMapper, value)
+				repo.SetFieldValue(&sysDept, keyMapper, value)
 			}
 			if keyMapper, ok := r.sysRoleMap[key]; ok {
-				repoUtils.SetFieldValue(&sysRole, keyMapper, value)
+				repo.SetFieldValue(&sysRole, keyMapper, value)
 			}
 		}
 
@@ -104,9 +104,9 @@ func (r *sysUserImpl) convertResultRows(rows []map[string]interface{}) []model.S
 		}
 
 		one := true
-		for key, index := range arrKeyIndex {
-			if key == sysUser.UserID {
-				arrUser := &arr[index]
+		for i, a := range arr {
+			if a.UserID == sysUser.UserID {
+				arrUser := &arr[i]
 				arrUser.Roles = append(arrUser.Roles, sysUser.Roles...)
 				one = false
 				break
@@ -114,7 +114,6 @@ func (r *sysUserImpl) convertResultRows(rows []map[string]interface{}) []model.S
 		}
 		if one {
 			arr = append(arr, sysUser)
-			arrKeyIndex[sysUser.UserID] = i
 		}
 	}
 
@@ -127,7 +126,7 @@ func (r *sysUserImpl) SelectUserPage(query map[string]string, dataScopeSQL strin
     u.user_id, u.dept_id, u.nick_name, u.user_name, u.email, u.avatar, u.phonenumber, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time, u.remark, d.dept_name, d.leader 
     from sys_user u 
 	left join sys_dept d on u.dept_id = d.dept_id`
-	selectUserTotalSql := `select count(1) as 'total'
+	selectUserTotalSql := `select count(distinct u.user_id) as 'total'
     from sys_user u left join sys_dept d on u.dept_id = d.dept_id`
 
 	// 查询条件拼接
@@ -186,7 +185,7 @@ func (r *sysUserImpl) SelectUserPage(query map[string]string, dataScopeSQL strin
 	}
 
 	// 分页
-	pageNum, pageSize := repoUtils.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -272,7 +271,7 @@ func (r *sysUserImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL 
 	}
 
 	// 分页
-	pageNum, pageSize := repoUtils.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -337,9 +336,9 @@ func (r *sysUserImpl) SelectUserList(sysUser model.SysUser, dataScopeSQL string)
 
 // SelectUserByIds 通过用户ID查询用户
 func (r *sysUserImpl) SelectUserByIds(userIds []string) []model.SysUser {
-	placeholder := repoUtils.KeyPlaceholderByQuery(len(userIds))
+	placeholder := repo.KeyPlaceholderByQuery(len(userIds))
 	querySql := r.selectSql + " where u.del_flag = '0' and u.user_id in (" + placeholder + ")"
-	parameters := repoUtils.ConvertIdsSlice(userIds)
+	parameters := repo.ConvertIdsSlice(userIds)
 	results, err := datasource.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -367,19 +366,145 @@ func (r *sysUserImpl) SelectUserByUserName(userName string) model.SysUser {
 
 // InsertUser 新增用户信息
 func (r *sysUserImpl) InsertUser(sysUser model.SysUser) string {
-	return ""
+	// 参数拼接
+	params := make(map[string]interface{})
+	if sysUser.UserID != "" {
+		params["user_id"] = sysUser.UserID
+	}
+	if sysUser.DeptID != "" {
+		params["dept_id"] = sysUser.DeptID
+	}
+	if sysUser.UserName != "" {
+		params["user_name"] = sysUser.UserName
+	}
+	if sysUser.NickName != "" {
+		params["nick_name"] = sysUser.NickName
+	}
+	if sysUser.UserType != "" {
+		params["user_type"] = sysUser.UserType
+	}
+	if sysUser.Avatar != "" {
+		params["avatar"] = sysUser.Avatar
+	}
+	if sysUser.Email != "" {
+		params["email"] = sysUser.Email
+	}
+	if sysUser.PhoneNumber != "" {
+		params["phonenumber"] = sysUser.PhoneNumber
+	}
+	if sysUser.Sex != "" {
+		params["sex"] = sysUser.Sex
+	}
+	if sysUser.Password != "" {
+		password := crypto.BcryptHash(sysUser.Password)
+		params["password"] = password
+	}
+	if sysUser.Status != "" {
+		params["status"] = sysUser.Status
+	}
+	if sysUser.Remark != "" {
+		params["remark"] = sysUser.Remark
+	}
+	if sysUser.CreateBy != "" {
+		params["create_by"] = sysUser.CreateBy
+		params["create_time"] = date.NowTimestamp()
+	}
+
+	// 构建执行语句
+	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
+	sql := "insert into sys_user (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+
+	db := datasource.DefaultDB()
+	// 开启事务
+	tx := db.Begin()
+	// 执行插入
+	err := tx.Exec(sql, values...).Error
+	if err != nil {
+		logger.Errorf("insert row : %v", err.Error())
+		tx.Rollback()
+		return err.Error()
+	}
+	// 获取生成的自增 ID
+	var insertedID string
+	err = tx.Raw("select last_insert_id()").Row().Scan(&insertedID)
+	if err != nil {
+		logger.Errorf("insert last id : %v", err.Error())
+		tx.Rollback()
+		return ""
+	}
+	// 提交事务
+	tx.Commit()
+	return insertedID
 }
 
 // UpdateUser 修改用户信息
-func (r *sysUserImpl) UpdateUser(sysUser model.SysUser) int {
-	return 0
+func (r *sysUserImpl) UpdateUser(sysUser model.SysUser) int64 {
+	// 参数拼接
+	params := make(map[string]interface{})
+	if sysUser.DeptID != "" {
+		params["dept_id"] = sysUser.DeptID
+	}
+	if sysUser.UserName != "" {
+		params["user_name"] = sysUser.UserName
+	}
+	if sysUser.NickName != "" {
+		params["nick_name"] = sysUser.NickName
+	}
+	if sysUser.UserType != "" {
+		params["user_type"] = sysUser.UserType
+	}
+	if sysUser.Avatar != "" {
+		params["avatar"] = sysUser.Avatar
+	}
+	if sysUser.Email == "" || len(sysUser.Email) > 6 {
+		params["email"] = sysUser.Email
+	}
+	if sysUser.PhoneNumber == "" || len(sysUser.PhoneNumber) >= 11 {
+		params["phonenumber"] = sysUser.PhoneNumber
+	}
+	if sysUser.Sex != "" {
+		params["sex"] = sysUser.Sex
+	}
+	if sysUser.Password != "" {
+		password := crypto.BcryptHash(sysUser.Password)
+		params["password"] = password
+	}
+	if sysUser.Status != "" {
+		params["status"] = sysUser.Status
+	}
+	if sysUser.Remark != "" {
+		params["remark"] = sysUser.Remark
+	}
+	if sysUser.UpdateBy != "" {
+		params["update_by"] = sysUser.UpdateBy
+		params["update_time"] = date.NowTimestamp()
+	}
+	if sysUser.LoginIP != "" {
+		params["login_ip"] = sysUser.LoginIP
+	}
+	if sysUser.LoginDate > 0 {
+		params["login_date"] = sysUser.LoginDate
+	}
+
+	// 构建执行语句
+	keys, values := repo.KeyValueByUpdate(params)
+	sql := "update sys_user set " + strings.Join(keys, ",") + " where user_id = ?"
+
+	// 执行更新
+	values = append(values, sysUser.UserID)
+	rows, err := datasource.ExecDB("", sql, values)
+	if err != nil {
+		logger.Errorf("update row : %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // DeleteUserByIds 批量删除用户信息
 func (r *sysUserImpl) DeleteUserByIds(userIds []string) int64 {
-	placeholder := repoUtils.KeyPlaceholderByQuery(len(userIds))
+	placeholder := repo.KeyPlaceholderByQuery(len(userIds))
 	sql := "update sys_user set del_flag = '1' where user_id in (" + placeholder + ")"
-	parameters := repoUtils.ConvertIdsSlice(userIds)
+	parameters := repo.ConvertIdsSlice(userIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("update err => %v", err)
@@ -415,13 +540,13 @@ func (r *sysUserImpl) CheckUniqueUser(sysUser model.SysUser) string {
 	}
 
 	// 查询数据
-	querySql := "select user_id as 'str' from sys_user" + whereSql + " limit 1"
+	querySql := "select user_id as 'str' from sys_user " + whereSql + " limit 1"
 	results, err := datasource.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err %v", err)
 	}
 	if len(results) > 0 {
-		return strconv.FormatInt(results[0]["str"].(int64), 10)
+		return fmt.Sprintf("%v", results[0]["str"])
 	}
 	return ""
 }

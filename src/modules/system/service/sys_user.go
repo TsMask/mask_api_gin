@@ -25,6 +25,9 @@ type ISysUser interface {
 	// UpdateUser 修改用户信息
 	UpdateUser(sysUser model.SysUser) int64
 
+	// UpdateUserAndRolePost 修改用户信息同时更新角色和岗位
+	UpdateUserAndRolePost(sysUser model.SysUser) int64
+
 	// DeleteUserByIds 批量删除用户信息
 	DeleteUserByIds(userIds []string) (int64, error)
 

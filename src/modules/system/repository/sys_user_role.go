@@ -8,7 +8,7 @@ type ISysUserRole interface {
 	CountUserRoleByRoleId(roleId string) int
 
 	// BatchUserRole 批量新增用户角色信息
-	BatchUserRole(sysUserRoles []model.SysUserRole) int
+	BatchUserRole(sysUserRoles []model.SysUserRole) int64
 
 	// DeleteUserRole 批量删除用户和角色关联
 	DeleteUserRole(userIds []string) int64

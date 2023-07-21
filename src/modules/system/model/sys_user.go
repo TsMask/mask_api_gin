@@ -7,15 +7,15 @@ type SysUser struct {
 	// 部门ID
 	DeptID string `json:"deptId"`
 	// 用户账号
-	UserName string `json:"userName"`
+	UserName string `json:"userName" binding:"required"`
 	// 用户昵称
-	NickName string `json:"nickName"`
+	NickName string `json:"nickName" binding:"required"`
 	// 用户类型（sys系统用户）
 	UserType string `json:"userType"`
 	// 用户邮箱
 	Email string `json:"email"`
 	// 手机号码
-	PhoneNumber string `json:"phonenumber"`
+	PhoneNumber string `json:"phonenumber" binding:"required"`
 	// 用户性别（0未知 1男 2女）
 	Sex string `json:"sex"`
 	// 头像地址
