@@ -25,6 +25,8 @@ func SysMenuTreeSelect(sysMenu systemModel.SysMenu) TreeSelect {
 			child := SysMenuTreeSelect(menu)
 			t.Children = append(t.Children, child)
 		}
+	} else {
+		t.Children = []TreeSelect{}
 	}
 
 	return t
@@ -41,6 +43,8 @@ func SysDeptTreeSelect(sysDept systemModel.SysDept) TreeSelect {
 			child := SysDeptTreeSelect(dept)
 			t.Children = append(t.Children, child)
 		}
+	} else {
+		t.Children = []TreeSelect{}
 	}
 
 	return t
