@@ -4,8 +4,8 @@ import "mask_api_gin/src/modules/system/model"
 
 // ISysRoleMenu 角色与菜单关联表 数据层接口
 type ISysRoleMenu interface {
-	// CheckMenuExistRole 查询菜单使用数量
-	CheckMenuExistRole(menuId string) int
+	// CheckMenuExistRole 查询菜单分配给角色使用数量
+	CheckMenuExistRole(menuId string) int64
 
 	// DeleteRoleMenuByRoleId 通过角色ID删除角色和菜单关联
 	DeleteRoleMenuByRoleId(roleId string) int

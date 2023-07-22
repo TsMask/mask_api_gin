@@ -127,6 +127,42 @@ func Setup(router *gin.Engine) {
 			controller.SysNotice.Remove,
 		)
 	}
+
+	// 菜单信息
+	systemMenuGroup := router.Group("/system/menu")
+	{
+		systemMenuGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:list"}}),
+			controller.SysMenu.List,
+		)
+		systemMenuGroup.GET("/:menuId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:query"}}),
+			controller.SysMenu.Info,
+		)
+		systemMenuGroup.POST("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:add"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_INSERT)),
+			controller.SysMenu.Add,
+		)
+		systemMenuGroup.PUT("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:edit"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysMenu.Edit,
+		)
+		systemMenuGroup.DELETE("/:menuId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:remove"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_DELETE)),
+			controller.SysMenu.Remove,
+		)
+		systemMenuGroup.GET("/treeSelect",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:list"}}),
+			controller.SysMenu.TreeSelect,
+		)
+		systemMenuGroup.GET("/roleMenuTreeSelect/:roleId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:list"}}),
+			controller.SysMenu.RoleMenuTreeSelect,
+		)
+	}
 }
 
 // InitLoad 初始参数

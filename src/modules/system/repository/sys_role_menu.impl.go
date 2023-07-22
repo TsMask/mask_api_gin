@@ -1,6 +1,10 @@
 package repository
 
-import "mask_api_gin/src/modules/system/model"
+import (
+	"mask_api_gin/src/framework/datasource"
+	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/modules/system/model"
+)
 
 // SysRoleMenuImpl 角色与菜单关联表 数据层处理
 var SysRoleMenuImpl = &sysRoleMenuImpl{
@@ -12,8 +16,17 @@ type sysRoleMenuImpl struct {
 	selectSql string
 }
 
-// CheckMenuExistRole 查询菜单使用数量
-func (r *sysRoleMenuImpl) CheckMenuExistRole(menuId string) int {
+// CheckMenuExistRole 查询菜单分配给角色使用数量
+func (r *sysRoleMenuImpl) CheckMenuExistRole(menuId string) int64 {
+	querySql := "select count(1) as 'total' from sys_role_menu where menu_id = ?"
+	results, err := datasource.RawDB("", querySql, []interface{}{menuId})
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return 0
+	}
+	if len(results) > 0 {
+		return results[0]["total"].(int64)
+	}
 	return 0
 }
 

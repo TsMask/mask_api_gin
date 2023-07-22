@@ -7,9 +7,6 @@ type ISysMenu interface {
 	// SelectMenuList 查询系统菜单列表
 	SelectMenuList(sysMenu model.SysMenu, userId string) []model.SysMenu
 
-	// SelectMenuPermsByRoleId 根据角色ID查询权限
-	SelectMenuPermsByRoleId(roleId string) []string
-
 	// SelectMenuPermsByUserId 根据用户ID查询权限
 	SelectMenuPermsByUserId(userId string) []string
 
@@ -19,23 +16,20 @@ type ISysMenu interface {
 	// SelectMenuListByRoleId 根据角色ID查询菜单树信息
 	SelectMenuListByRoleId(roleId string, menuCheckStrictly bool) []string
 
-	// SelectMenuById 根据菜单ID查询信息
-	SelectMenuById(menuId string) model.SysMenu
+	// SelectMenuByIds 根据菜单ID查询信息
+	SelectMenuByIds(menuIds []string) []model.SysMenu
 
-	// HasChildByMenuId 是否存在菜单子节点
-	HasChildByMenuId(menuId string) int
-
-	// CheckMenuExistRole 查询菜单是否存在角色
-	CheckMenuExistRole(menuId string) int
+	// HasChildByMenuId 存在菜单子节点数量
+	HasChildByMenuId(menuId string) int64
 
 	// InsertMenu 新增菜单信息
 	InsertMenu(sysMenu model.SysMenu) string
 
 	// UpdateMenu 修改菜单信息
-	UpdateMenu(sysMenu model.SysMenu) int
+	UpdateMenu(sysMenu model.SysMenu) int64
 
 	// DeleteMenuById 删除菜单管理信息
-	DeleteMenuById(menuId string) int
+	DeleteMenuById(menuId string) int64
 
 	// CheckUniqueMenu 校验菜单是否唯一
 	CheckUniqueMenu(sysMenu model.SysMenu) string

@@ -5,9 +5,9 @@ type SysMenu struct {
 	// 菜单ID
 	MenuID string `json:"menuId"`
 	// 菜单名称
-	MenuName string `json:"menuName"`
+	MenuName string `json:"menuName" binding:"required"`
 	// 父菜单ID 默认0
-	ParentID string `json:"parentId"`
+	ParentID string `json:"parentId" binding:"required"`
 	// 显示顺序
 	MenuSort int `json:"menuSort"`
 	// 路由地址
@@ -19,7 +19,7 @@ type SysMenu struct {
 	// 是否缓存（0不缓存 1缓存）
 	IsCache string `json:"isCache"`
 	// 菜单类型（D目录 M菜单 B按钮）
-	MenuType string `json:"menuType"`
+	MenuType string `json:"menuType" binding:"required"`
 	// 是否显示（0隐藏 1显示）
 	Visible string `json:"visible"`
 	// 菜单状态（0停用 1正常）

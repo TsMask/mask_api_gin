@@ -6,7 +6,7 @@ import (
 	menuConstants "mask_api_gin/src/framework/constants/menu"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
-	frameworkModel "mask_api_gin/src/framework/vo"
+	"mask_api_gin/src/framework/vo"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 	"strings"
@@ -14,22 +14,23 @@ import (
 
 // SysMenuImpl 菜单 数据层处理
 var SysMenuImpl = &sysMenuImpl{
-	sysMenuRepository: repository.SysMenuImpl,
+	sysMenuRepository:     repository.SysMenuImpl,
+	sysRoleMenuRepository: repository.SysRoleMenuImpl,
+	sysRoleRepository:     repository.SysRoleImpl,
 }
 
 type sysMenuImpl struct {
 	// 菜单服务
 	sysMenuRepository repository.ISysMenu
+	// 角色与菜单关联服务
+	sysRoleMenuRepository repository.ISysRoleMenu
+	// 角色服务
+	sysRoleRepository repository.ISysRole
 }
 
 // SelectMenuList 查询系统菜单列表
 func (r *sysMenuImpl) SelectMenuList(sysMenu model.SysMenu, userId string) []model.SysMenu {
-	return []model.SysMenu{}
-}
-
-// SelectMenuPermsByRoleId 根据角色ID查询权限
-func (r *sysMenuImpl) SelectMenuPermsByRoleId(roleId string) []string {
-	return []string{}
+	return r.sysMenuRepository.SelectMenuList(sysMenu, userId)
 }
 
 // SelectMenuPermsByUserId 根据用户ID查询权限
@@ -39,65 +40,98 @@ func (r *sysMenuImpl) SelectMenuPermsByUserId(userId string) []string {
 
 // SelectMenuTreeByUserId 根据用户ID查询菜单
 func (r *sysMenuImpl) SelectMenuTreeByUserId(userId string) []model.SysMenu {
-	return r.sysMenuRepository.SelectMenuTreeByUserId(userId)
+	sysMenus := r.sysMenuRepository.SelectMenuTreeByUserId(userId)
+	return parseDataToTree(sysMenus)
+}
+
+// SelectMenuTreeSelectByUserId 根据用户ID查询菜单树结构信息
+func (r *sysMenuImpl) SelectMenuTreeSelectByUserId(sysMenu model.SysMenu, userId string) []vo.TreeSelect {
+	sysMenus := r.sysMenuRepository.SelectMenuList(sysMenu, userId)
+	menus := parseDataToTree(sysMenus)
+	tree := make([]vo.TreeSelect, 0)
+	for _, menu := range menus {
+		tree = append(tree, vo.SysMenuTreeSelect(menu))
+	}
+	return tree
 }
 
 // SelectMenuListByRoleId 根据角色ID查询菜单树信息
-func (r *sysMenuImpl) SelectMenuListByRoleId(roleId string, menuCheckStrictly bool) []string {
-	return []string{}
+func (r *sysMenuImpl) SelectMenuListByRoleId(roleId string) []string {
+	role := r.sysRoleRepository.SelectRoleById(roleId)
+	if role.RoleID != roleId {
+		return []string{}
+	}
+	return r.sysMenuRepository.SelectMenuListByRoleId(
+		role.RoleID,
+		role.MenuCheckStrictly == "1",
+	)
 }
 
 // SelectMenuById 根据菜单ID查询信息
 func (r *sysMenuImpl) SelectMenuById(menuId string) model.SysMenu {
+	if menuId == "" {
+		return model.SysMenu{}
+	}
+	menus := r.sysMenuRepository.SelectMenuByIds([]string{menuId})
+	if len(menus) > 0 {
+		return menus[0]
+	}
 	return model.SysMenu{}
 }
 
-// HasChildByMenuId 是否存在菜单子节点
-func (r *sysMenuImpl) HasChildByMenuId(menuId string) int {
-	return 0
+// HasChildByMenuId 存在菜单子节点数量
+func (r *sysMenuImpl) HasChildByMenuId(menuId string) int64 {
+	return r.sysMenuRepository.HasChildByMenuId(menuId)
 }
 
 // CheckMenuExistRole 查询菜单是否存在角色
-func (r *sysMenuImpl) CheckMenuExistRole(menuId string) int {
-	return 0
+func (r *sysMenuImpl) CheckMenuExistRole(menuId string) int64 {
+	return r.sysRoleMenuRepository.CheckMenuExistRole(menuId)
 }
 
 // InsertMenu 新增菜单信息
 func (r *sysMenuImpl) InsertMenu(sysMenu model.SysMenu) string {
-	return ""
+	return r.sysMenuRepository.InsertMenu(sysMenu)
 }
 
 // UpdateMenu 修改菜单信息
-func (r *sysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int {
-	return 0
+func (r *sysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int64 {
+	return r.sysMenuRepository.UpdateMenu(sysMenu)
 }
 
 // DeleteMenuById 删除菜单管理信息
-func (r *sysMenuImpl) DeleteMenuById(menuId string) int {
-	return 0
+func (r *sysMenuImpl) DeleteMenuById(menuId string) int64 {
+	return r.sysMenuRepository.DeleteMenuById(menuId)
 }
 
 // CheckUniqueMenuName 校验菜单名称是否唯一
-func (r *sysMenuImpl) CheckUniqueMenuName(menuName, parentId string) string {
-	return r.sysMenuRepository.CheckUniqueMenu(model.SysMenu{
+func (r *sysMenuImpl) CheckUniqueMenuName(menuName, parentId, menuId string) bool {
+	uniqueId := r.sysMenuRepository.CheckUniqueMenu(model.SysMenu{
 		MenuName: menuName,
 		ParentID: parentId,
 	})
+	if uniqueId == menuId {
+		return true
+	}
+	return uniqueId == ""
 }
 
 // CheckUniqueMenuPath 校验路由地址是否唯一（针对目录和菜单）
-func (r *sysMenuImpl) CheckUniqueMenuPath(path string) string {
-	return r.sysMenuRepository.CheckUniqueMenu(model.SysMenu{
+func (r *sysMenuImpl) CheckUniqueMenuPath(path, menuId string) bool {
+	uniqueId := r.sysMenuRepository.CheckUniqueMenu(model.SysMenu{
 		Path: path,
 	})
+	if uniqueId == menuId {
+		return true
+	}
+	return uniqueId == ""
 }
 
 // BuildRouteMenus 构建前端路由所需要的菜单
-func (r *sysMenuImpl) BuildRouteMenus(sysMenus []model.SysMenu, prefix string) []frameworkModel.Router {
-	menus := parseDataToTree(sysMenus)
-	routers := []frameworkModel.Router{}
-	for _, item := range menus {
-		router := frameworkModel.Router{}
+func (r *sysMenuImpl) BuildRouteMenus(sysMenus []model.SysMenu, prefix string) []vo.Router {
+	routers := []vo.Router{}
+	for _, item := range sysMenus {
+		router := vo.Router{}
 		router.Name = r.getRouteName(item)
 		router.Path = r.getRouterPath(item)
 		router.Component = r.getComponent(item)
@@ -194,8 +228,8 @@ func (r *sysMenuImpl) getComponent(menu model.SysMenu) string {
 // 获取路由元信息
 //
 // menu 菜单信息
-func (r *sysMenuImpl) getRouteMeta(menu model.SysMenu) frameworkModel.RouterMeta {
-	meta := frameworkModel.RouterMeta{}
+func (r *sysMenuImpl) getRouteMeta(menu model.SysMenu) vo.RouterMeta {
+	meta := vo.RouterMeta{}
 	if menu.Icon == "#" {
 		meta.Icon = ""
 	} else {
@@ -267,7 +301,7 @@ func (r *sysMenuImpl) getRouteRedirect(cMenus []model.SysMenu, routerPath string
 	return prefix, redirectPath
 }
 
-// parseDataToTree 将数据解析为树结构
+// parseDataToTree 将数据解析为树结构，构建前端所需要下拉树结构
 func parseDataToTree(sysMenus []model.SysMenu) []model.SysMenu {
 	// 节点分组
 	nodesMap := make(map[string][]model.SysMenu)
