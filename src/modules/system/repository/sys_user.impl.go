@@ -422,7 +422,7 @@ func (r *sysUserImpl) InsertUser(sysUser model.SysUser) string {
 	if err != nil {
 		logger.Errorf("insert row : %v", err.Error())
 		tx.Rollback()
-		return err.Error()
+		return ""
 	}
 	// 获取生成的自增 ID
 	var insertedID string

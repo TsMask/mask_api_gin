@@ -213,6 +213,7 @@ func (r *sysConfigImpl) CheckUniqueConfig(sysConfig model.SysConfig) string {
 	results, err := datasource.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err %v", err)
+		return ""
 	}
 	if len(results) > 0 {
 		return fmt.Sprintf("%v", results[0]["str"])
@@ -256,7 +257,7 @@ func (r *sysConfigImpl) InsertConfig(sysConfig model.SysConfig) string {
 	if err != nil {
 		logger.Errorf("insert row : %v", err.Error())
 		tx.Rollback()
-		return err.Error()
+		return ""
 	}
 	// 获取生成的自增 ID
 	var insertedID string
@@ -316,7 +317,7 @@ func (r *sysConfigImpl) DeleteConfigByIds(configIds []string) int64 {
 	parameters := repo.ConvertIdsSlice(configIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
-		logger.Errorf("update err => %v", err)
+		logger.Errorf("delete err => %v", err)
 		return 0
 	}
 	return results
