@@ -1,9 +1,7 @@
 package regular
 
 import (
-	"mask_api_gin/src/framework/constants/common"
 	"regexp"
-	"strings"
 
 	"github.com/dlclark/regexp2"
 )
@@ -79,5 +77,10 @@ func ValidHttp(link string) bool {
 	if link == "" {
 		return false
 	}
-	return strings.HasPrefix(link, common.HTTP) || strings.HasPrefix(link, common.HTTPS)
+	pattern := `^http(s)?:\/\/+`
+	match, err := regexp.MatchString(pattern, link)
+	if err != nil {
+		return false
+	}
+	return match
 }
