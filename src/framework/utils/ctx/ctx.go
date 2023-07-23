@@ -37,7 +37,9 @@ func BodyJSONMapString(c *gin.Context) map[string]string {
 func RequestParamsMap(c *gin.Context) map[string]any {
 	params := make(map[string]interface{})
 	// json
-	c.ShouldBindBodyWith(&params, binding.JSON)
+	if strings.HasPrefix(c.ContentType(), "application/json") {
+		c.ShouldBindBodyWith(&params, binding.JSON)
+	}
 
 	// 表单
 	bodyParams := c.Request.PostForm
