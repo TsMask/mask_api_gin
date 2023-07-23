@@ -23,6 +23,40 @@ staticFile:
 
 # 文件上传
 upload:
+  # 最大上传文件大小，默认为 10mb
+  fileSize: 10
+  # 文件扩展名白名单
+  whitelist:
+    # 图片
+    - ".bmp"
+    - ".webp"
+    - ".gif"
+    - ".jpg"
+    - ".jpeg"
+    - ".png"
+    # word excel powerpoint
+    - ".doc"
+    - ".docx"
+    - ".xls"
+    - ".xlsx"
+    - ".ppt"
+    - ".pptx"
+    # 文本文件
+    - ".html"
+    - ".htm"
+    - ".txt"
+    # pdf
+    - ".pdf"
+    # 压缩文件
+    - ".zip"
+    - ".gz"
+    - ".tgz"
+    - ".gzip"
+    # 音视频格式
+    - ".mp3"
+    - ".mp4"
+    - ".avi"
+    - ".rmvb"
 
 # cors 跨域
 cors:
