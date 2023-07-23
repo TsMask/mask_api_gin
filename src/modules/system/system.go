@@ -18,6 +18,150 @@ func Setup(router *gin.Engine) {
 	// 启动时需要的初始参数
 	InitLoad()
 
+	// 参数配置信息
+	systemConfigGroup := router.Group("/system/config")
+	{
+		systemConfigGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:list"}}),
+			controller.SysConfig.List,
+		)
+		systemConfigGroup.GET("/:configId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:query"}}),
+			controller.SysConfig.Info,
+		)
+		systemConfigGroup.POST("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:add"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_INSERT)),
+			controller.SysConfig.Add,
+		)
+		systemConfigGroup.PUT("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:edit"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysConfig.Edit,
+		)
+		systemConfigGroup.DELETE("/:configIds",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:remove"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_DELETE)),
+			controller.SysConfig.Remove,
+		)
+		systemConfigGroup.PUT("/refreshCache",
+			repeat.RepeatSubmit(5),
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:remove"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_CLEAN)),
+			controller.SysConfig.RefreshCache,
+		)
+		systemConfigGroup.GET("/configKey/:configKey", controller.SysConfig.ConfigKey)
+		systemConfigGroup.POST("/export",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:export"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_EXPORT)),
+			controller.SysConfig.Export,
+		)
+	}
+
+	// 部门信息
+	systemDeptGroup := router.Group("/system/dept")
+	{
+		systemDeptGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:list"}}),
+			controller.SysDept.List,
+		)
+		systemDeptGroup.GET("/:deptId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:query"}}),
+			controller.SysDept.Info,
+		)
+		systemDeptGroup.POST("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:add"}}),
+			operlog.OperLog(operlog.OptionNew("部门信息", operlog.BUSINESS_TYPE_INSERT)),
+			controller.SysDept.Add,
+		)
+		systemDeptGroup.PUT("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:edit"}}),
+			operlog.OperLog(operlog.OptionNew("部门信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysDept.Edit,
+		)
+		systemDeptGroup.DELETE("/:deptId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:remove"}}),
+			operlog.OperLog(operlog.OptionNew("部门信息", operlog.BUSINESS_TYPE_DELETE)),
+			controller.SysDept.Remove,
+		)
+		systemDeptGroup.GET("/list/exclude/:deptId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:list"}}),
+			controller.SysDept.ExcludeChild,
+		)
+		systemDeptGroup.GET("/treeSelect",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:list", "system:user:list"}}),
+			controller.SysDept.TreeSelect,
+		)
+		systemDeptGroup.GET("/list/exclude/:deptId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:query"}}),
+			controller.SysDept.RoleDeptTreeSelect,
+		)
+	}
+
+	// 菜单信息
+	systemMenuGroup := router.Group("/system/menu")
+	{
+		systemMenuGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:list"}}),
+			controller.SysMenu.List,
+		)
+		systemMenuGroup.GET("/:menuId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:query"}}),
+			controller.SysMenu.Info,
+		)
+		systemMenuGroup.POST("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:add"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_INSERT)),
+			controller.SysMenu.Add,
+		)
+		systemMenuGroup.PUT("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:edit"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysMenu.Edit,
+		)
+		systemMenuGroup.DELETE("/:menuId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:remove"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_DELETE)),
+			controller.SysMenu.Remove,
+		)
+		systemMenuGroup.GET("/treeSelect",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:list"}}),
+			controller.SysMenu.TreeSelect,
+		)
+		systemMenuGroup.GET("/roleMenuTreeSelect/:roleId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:list"}}),
+			controller.SysMenu.RoleMenuTreeSelect,
+		)
+	}
+
+	// 通知公告信息
+	systemNoticeGroup := router.Group("/system/notice")
+	{
+		systemNoticeGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:list"}}),
+			controller.SysNotice.List,
+		)
+		systemNoticeGroup.GET("/:noticeId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:query"}}),
+			controller.SysNotice.Info,
+		)
+		systemNoticeGroup.POST("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:add"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_INSERT)),
+			controller.SysNotice.Add,
+		)
+		systemNoticeGroup.PUT("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:edit"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysNotice.Edit,
+		)
+		systemNoticeGroup.DELETE("/:noticeIds",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:remove"}}),
+			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_DELETE)),
+			controller.SysNotice.Remove,
+		)
+	}
+
 	// 个人信息
 	systemUserProfileGroup := router.Group("/system/user/profile")
 	{
@@ -81,110 +225,6 @@ func Setup(router *gin.Engine) {
 		// 用户信息列表导入模板下载 TODO
 		// 用户信息列表导入 TODO
 		// 用户信息列表导出 TODO
-	}
-
-	// 参数配置信息
-	systemConfigGroup := router.Group("/system/config")
-	{
-		systemConfigGroup.GET("/list",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:list"}}),
-			controller.SysConfig.List,
-		)
-		systemConfigGroup.GET("/:configId",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:query"}}),
-			controller.SysConfig.Info,
-		)
-		systemConfigGroup.POST("/",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:add"}}),
-			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_INSERT)),
-			controller.SysConfig.Add,
-		)
-		systemConfigGroup.PUT("/",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:edit"}}),
-			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_UPDATE)),
-			controller.SysConfig.Edit,
-		)
-		systemConfigGroup.DELETE("/:configIds",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:remove"}}),
-			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_DELETE)),
-			controller.SysConfig.Remove,
-		)
-		systemConfigGroup.PUT("/refreshCache",
-			repeat.RepeatSubmit(5),
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:remove"}}),
-			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_CLEAN)),
-			controller.SysConfig.RefreshCache,
-		)
-		systemConfigGroup.GET("/configKey/:configKey", controller.SysConfig.ConfigKey)
-		systemConfigGroup.POST("/export",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:export"}}),
-			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_EXPORT)),
-			controller.SysConfig.Export,
-		)
-	}
-
-	// 通知公告信息
-	systemNoticeGroup := router.Group("/system/notice")
-	{
-		systemNoticeGroup.GET("/list",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:list"}}),
-			controller.SysNotice.List,
-		)
-		systemNoticeGroup.GET("/:noticeId",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:query"}}),
-			controller.SysNotice.Info,
-		)
-		systemNoticeGroup.POST("/",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:add"}}),
-			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_INSERT)),
-			controller.SysNotice.Add,
-		)
-		systemNoticeGroup.PUT("/",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:edit"}}),
-			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_UPDATE)),
-			controller.SysNotice.Edit,
-		)
-		systemNoticeGroup.DELETE("/:noticeIds",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:remove"}}),
-			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_DELETE)),
-			controller.SysNotice.Remove,
-		)
-	}
-
-	// 菜单信息
-	systemMenuGroup := router.Group("/system/menu")
-	{
-		systemMenuGroup.GET("/list",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:list"}}),
-			controller.SysMenu.List,
-		)
-		systemMenuGroup.GET("/:menuId",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:query"}}),
-			controller.SysMenu.Info,
-		)
-		systemMenuGroup.POST("/",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:add"}}),
-			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_INSERT)),
-			controller.SysMenu.Add,
-		)
-		systemMenuGroup.PUT("/",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:edit"}}),
-			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_UPDATE)),
-			controller.SysMenu.Edit,
-		)
-		systemMenuGroup.DELETE("/:menuId",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:remove"}}),
-			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_DELETE)),
-			controller.SysMenu.Remove,
-		)
-		systemMenuGroup.GET("/treeSelect",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:list"}}),
-			controller.SysMenu.TreeSelect,
-		)
-		systemMenuGroup.GET("/roleMenuTreeSelect/:roleId",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:list"}}),
-			controller.SysMenu.RoleMenuTreeSelect,
-		)
 	}
 }
 

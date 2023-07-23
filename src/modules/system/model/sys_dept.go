@@ -5,11 +5,11 @@ type SysDept struct {
 	// 部门ID
 	DeptID string `json:"deptId"`
 	// 父部门ID
-	ParentID string `json:"parentId"`
+	ParentID string `json:"parentId" binding:"required"`
 	// 祖级列表
 	Ancestors string `json:"ancestors"`
 	// 部门名称
-	DeptName string `json:"deptName"`
+	DeptName string `json:"deptName" binding:"required"`
 	// 显示顺序
 	OrderNum int `json:"orderNum"`
 	// 负责人

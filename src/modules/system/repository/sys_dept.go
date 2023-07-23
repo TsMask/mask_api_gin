@@ -20,19 +20,19 @@ type ISysDept interface {
 	SelectNormalChildrenDeptById(deptId string) int
 
 	// HasChildByDeptId 是否存在子节点
-	HasChildByDeptId(deptId string) int
+	HasChildByDeptId(deptId string) int64
 
 	// CheckDeptExistUser 查询部门是否存在用户
-	CheckDeptExistUser(deptId string) int
+	CheckDeptExistUser(deptId string) int64
 
-	// CheckUniqueDeptName 校验部门名称是否唯一
-	CheckUniqueDeptName(deptName string, parentId string) string
+	// CheckUniqueDept 校验部门是否唯一
+	CheckUniqueDept(sysDept model.SysDept) string
 
 	// InsertDept 新增部门信息
 	InsertDept(sysDept model.SysDept) string
 
 	// UpdateDept 修改部门信息
-	UpdateDept(sysDept model.SysDept) int
+	UpdateDept(sysDept model.SysDept) int64
 
 	// UpdateDeptStatusNormal 修改所在部门正常状态
 	UpdateDeptStatusNormal(deptIds []string) int
@@ -41,5 +41,5 @@ type ISysDept interface {
 	UpdateDeptChildren(sysDepts []model.SysDept) int
 
 	// DeleteDeptById 删除部门管理信息
-	DeleteDeptById(deptId string) int
+	DeleteDeptById(deptId string) int64
 }

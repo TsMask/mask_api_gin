@@ -1,6 +1,9 @@
 package service
 
-import "mask_api_gin/src/modules/system/model"
+import (
+	"mask_api_gin/src/framework/vo"
+	"mask_api_gin/src/modules/system/model"
+)
 
 // ISysDept 部门管理 服务层接口
 type ISysDept interface {
@@ -8,7 +11,7 @@ type ISysDept interface {
 	SelectDeptList(sysDept model.SysDept, dataScopeSQL string) []model.SysDept
 
 	// SelectDeptListByRoleId 根据角色ID查询部门树信息
-	SelectDeptListByRoleId(roleId string, deptCheckStrictly bool) []string
+	SelectDeptListByRoleId(roleId string) []string
 
 	// SelectDeptById 根据部门ID查询信息
 	SelectDeptById(deptId string) model.SysDept
@@ -20,19 +23,19 @@ type ISysDept interface {
 	SelectNormalChildrenDeptById(deptId string) int
 
 	// HasChildByDeptId 是否存在子节点
-	HasChildByDeptId(deptId string) int
+	HasChildByDeptId(deptId string) int64
 
 	// CheckDeptExistUser 查询部门是否存在用户
-	CheckDeptExistUser(deptId string) int
+	CheckDeptExistUser(deptId string) int64
 
-	// CheckUniqueDeptName 校验部门名称是否唯一
-	CheckUniqueDeptName(deptName string, parentId string) string
+	// CheckUniqueDeptName 校验同级部门名称是否唯一
+	CheckUniqueDeptName(deptName, parentId, deptId string) bool
 
 	// InsertDept 新增部门信息
 	InsertDept(sysDept model.SysDept) string
 
 	// UpdateDept 修改部门信息
-	UpdateDept(sysDept model.SysDept) int
+	UpdateDept(sysDept model.SysDept) int64
 
 	// UpdateDeptStatusNormal 修改所在部门正常状态
 	UpdateDeptStatusNormal(deptIds []string) int
@@ -41,5 +44,8 @@ type ISysDept interface {
 	UpdateDeptChildren(sysDepts []model.SysDept) int
 
 	// DeleteDeptById 删除部门管理信息
-	DeleteDeptById(deptId string) int
+	DeleteDeptById(deptId string) int64
+
+	// SelectDeptTreeSelect 查询部门树结构信息
+	SelectDeptTreeSelect(sysDept model.SysDept, dataScopeSQL string) []vo.TreeSelect
 }
