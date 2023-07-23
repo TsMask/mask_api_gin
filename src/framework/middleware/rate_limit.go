@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"mask_api_gin/src/framework/constants/cachekey"
 	"mask_api_gin/src/framework/redis"
-	ctxUtils "mask_api_gin/src/framework/utils/ctx"
+	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/vo/result"
 	"strings"
 	"time"
@@ -60,7 +60,7 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 
 		// 用户
 		if option.Type == LIMIT_USER {
-			loginUser, err := ctxUtils.LoginUser(c)
+			loginUser, err := ctx.LoginUser(c)
 			if err != nil {
 				c.JSON(401, result.Err(map[string]interface{}{
 					"code": 401,

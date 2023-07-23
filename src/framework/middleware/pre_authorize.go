@@ -47,7 +47,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 		}
 
 		// 检查刷新有效期后存入上下文
-		tokenUtils.Refresh(&loginUser)
+		tokenUtils.RefreshIn(&loginUser)
 		c.Set(commonConstants.CTX_LOGIN_USER, loginUser)
 
 		// 登录用户角色权限校验
