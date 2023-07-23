@@ -41,13 +41,13 @@ func (r *sysMenuImpl) SelectMenuPermsByUserId(userId string) []string {
 // SelectMenuTreeByUserId 根据用户ID查询菜单
 func (r *sysMenuImpl) SelectMenuTreeByUserId(userId string) []model.SysMenu {
 	sysMenus := r.sysMenuRepository.SelectMenuTreeByUserId(userId)
-	return parseDataToTree(sysMenus)
+	return r.parseDataToTree(sysMenus)
 }
 
 // SelectMenuTreeSelectByUserId 根据用户ID查询菜单树结构信息
 func (r *sysMenuImpl) SelectMenuTreeSelectByUserId(sysMenu model.SysMenu, userId string) []vo.TreeSelect {
 	sysMenus := r.sysMenuRepository.SelectMenuList(sysMenu, userId)
-	menus := parseDataToTree(sysMenus)
+	menus := r.parseDataToTree(sysMenus)
 	tree := make([]vo.TreeSelect, 0)
 	for _, menu := range menus {
 		tree = append(tree, vo.SysMenuTreeSelect(menu))
@@ -55,16 +55,19 @@ func (r *sysMenuImpl) SelectMenuTreeSelectByUserId(sysMenu model.SysMenu, userId
 	return tree
 }
 
-// SelectMenuListByRoleId 根据角色ID查询菜单树信息
+// SelectMenuListByRoleId 根据角色ID查询菜单树信息 TODO
 func (r *sysMenuImpl) SelectMenuListByRoleId(roleId string) []string {
-	role := r.sysRoleRepository.SelectRoleById(roleId)
-	if role.RoleID != roleId {
-		return []string{}
+	roles := r.sysRoleRepository.SelectRoleByIds([]string{roleId})
+	if len(roles) > 0 {
+		role := roles[0]
+		if role.RoleID == roleId {
+			return r.sysMenuRepository.SelectMenuListByRoleId(
+				role.RoleID,
+				role.MenuCheckStrictly == "1",
+			)
+		}
 	}
-	return r.sysMenuRepository.SelectMenuListByRoleId(
-		role.RoleID,
-		role.MenuCheckStrictly == "1",
-	)
+	return []string{}
 }
 
 // SelectMenuById 根据菜单ID查询信息
@@ -302,7 +305,7 @@ func (r *sysMenuImpl) getRouteRedirect(cMenus []model.SysMenu, routerPath string
 }
 
 // parseDataToTree 将数据解析为树结构，构建前端所需要下拉树结构
-func parseDataToTree(sysMenus []model.SysMenu) []model.SysMenu {
+func (r *sysMenuImpl) parseDataToTree(sysMenus []model.SysMenu) []model.SysMenu {
 	// 节点分组
 	nodesMap := make(map[string][]model.SysMenu)
 	// 节点id
@@ -338,15 +341,15 @@ func parseDataToTree(sysMenus []model.SysMenu) []model.SysMenu {
 	}
 
 	for i, node := range tree {
-		iN := componet(node, &nodesMap)
+		iN := r.parseDataToTreeComponet(node, &nodesMap)
 		tree[i] = iN
 	}
 
 	return tree
 }
 
-// componet 递归函数处理子节点
-func componet(node model.SysMenu, nodesMap *map[string][]model.SysMenu) model.SysMenu {
+// parseDataToTreeComponet 递归函数处理子节点
+func (r *sysMenuImpl) parseDataToTreeComponet(node model.SysMenu, nodesMap *map[string][]model.SysMenu) model.SysMenu {
 	id := node.MenuID
 	children, ok := (*nodesMap)[id]
 	if ok {
@@ -354,7 +357,7 @@ func componet(node model.SysMenu, nodesMap *map[string][]model.SysMenu) model.Sy
 	}
 	if len(node.Children) > 0 {
 		for i, child := range node.Children {
-			icN := componet(child, nodesMap)
+			icN := r.parseDataToTreeComponet(child, nodesMap)
 			node.Children[i] = icN
 		}
 	}

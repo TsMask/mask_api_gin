@@ -209,12 +209,12 @@ func (s *sysMenu) Remove(c *gin.Context) {
 	}
 
 	rows := s.sysMenuService.DeleteMenuById(menuId)
-	if rows <= 0 {
-		c.JSON(200, result.Err(nil))
+	if rows > 0 {
+		msg := fmt.Sprintf("删除成功：%d", rows)
+		c.JSON(200, result.OkMsg(msg))
 		return
 	}
-	msg := fmt.Sprintf("删除成功：%d", rows)
-	c.JSON(200, result.OkMsg(msg))
+	c.JSON(200, result.Err(nil))
 }
 
 // 菜单树结构列表

@@ -6,6 +6,7 @@ import (
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
+	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
@@ -181,12 +182,15 @@ func (r *sysMenuImpl) SelectMenuTreeByUserId(userId string) []model.SysMenu {
 func (r *sysMenuImpl) SelectMenuListByRoleId(roleId string, menuCheckStrictly bool) []string {
 	querySql := `select m.menu_id as 'str' from sys_menu m 
     left join sys_role_menu rm on m.menu_id = rm.menu_id
-    where rm.role_id = ?`
+    where rm.role_id = ? `
 	var params []interface{}
 	params = append(params, roleId)
 	// 展开
 	if menuCheckStrictly {
-		querySql += " and m.menu_id not in (select m.parent_id from sys_menu m inner join sys_role_menu rm on m.menu_id = rm.menu_id and rm.role_id = ?) "
+		querySql += ` and m.menu_id not in 
+		(select m.parent_id from sys_menu m 
+		inner join sys_role_menu rm on m.menu_id = rm.menu_id 
+		and rm.role_id = ?) `
 		params = append(params, roleId)
 	}
 
@@ -230,7 +234,7 @@ func (r *sysMenuImpl) HasChildByMenuId(menuId string) int64 {
 		return 0
 	}
 	if len(results) > 0 {
-		return results[0]["total"].(int64)
+		return parse.Number(results[0]["total"])
 	}
 	return 0
 }
