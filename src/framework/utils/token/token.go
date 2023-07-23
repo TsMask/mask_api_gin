@@ -44,7 +44,7 @@ func Create(loginUser *vo.LoginUser, ilobArgs ...string) string {
 	loginUser.Browser = ilobArgs[3]
 
 	// 设置用户令牌有效期并存入缓存
-	cacheLoginUser(loginUser)
+	Cache(loginUser)
 
 	// 令牌算法 HS256 HS384 HS512
 	algorithm := config.Get("jwt.algorithm").(string)
@@ -77,8 +77,8 @@ func Create(loginUser *vo.LoginUser, ilobArgs ...string) string {
 	return tokenStr
 }
 
-// cacheLoginUser 缓存登录用户信息
-func cacheLoginUser(loginUser *vo.LoginUser) {
+// Cache 缓存登录用户信息
+func Cache(loginUser *vo.LoginUser) {
 	// 计算配置的有效期
 	expTime := config.Get("jwt.expiresIn").(int)
 	expTimestamp := time.Duration(expTime) * time.Minute
@@ -94,8 +94,8 @@ func cacheLoginUser(loginUser *vo.LoginUser) {
 	redisCahe.SetByExpire(tokenKey, string(jsonBytes), expTimestamp)
 }
 
-// RefreshTokenUUID 验证令牌有效期，相差不足20分钟，自动刷新缓存
-func Refresh(loginUser *vo.LoginUser) {
+// RefreshIn 验证令牌有效期，相差不足xx分钟，自动刷新缓存
+func RefreshIn(loginUser *vo.LoginUser) {
 	// 相差不足xx分钟，自动刷新缓存
 	refreshTime := config.Get("jwt.refreshIn").(int)
 	refreshTimestamp := time.Duration(refreshTime) * time.Minute
@@ -103,7 +103,7 @@ func Refresh(loginUser *vo.LoginUser) {
 	expireTimestamp := loginUser.ExpireTime
 	currentTimestamp := date.NowTimestamp()
 	if expireTimestamp-currentTimestamp <= refreshTimestamp.Milliseconds() {
-		cacheLoginUser(loginUser)
+		Cache(loginUser)
 	}
 }
 
