@@ -75,7 +75,7 @@ func (s *accountImpl) LoginByUsername(username, password string) (vo.LoginUser, 
 		return loginUser, errors.New("对不起，您的账号已被删除")
 	}
 	if sysUser.Status == common.STATUS_NO {
-		return loginUser, errors.New("用户已封禁，请联系管理员")
+		return loginUser, errors.New("对不起，您的账号已禁用")
 	}
 
 	// 检验用户密码
@@ -136,9 +136,15 @@ func (s *accountImpl) RoleAndMenuPerms(userId string, isAdmin bool) ([]string, [
 	if isAdmin {
 		return []string{adminConstants.ROLE_KEY}, []string{adminConstants.PERMISSION}
 	} else {
-		roles := s.sysRoleService.SelectRolePermsByUserId(userId)
+		// 角色key
+		roleGroup := []string{}
+		roles := s.sysRoleService.SelectRoleListByUserId(userId)
+		for _, role := range roles {
+			roleGroup = append(roleGroup, role.RoleKey)
+		}
+		// 菜单权限key
 		perms := s.sysMenuService.SelectMenuPermsByUserId(userId)
-		return parse.RemoveDuplicates(roles), parse.RemoveDuplicates(perms)
+		return parse.RemoveDuplicates(roleGroup), parse.RemoveDuplicates(perms)
 	}
 }
 
