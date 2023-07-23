@@ -15,7 +15,7 @@ type SysUser struct {
 	// 用户邮箱
 	Email string `json:"email"`
 	// 手机号码
-	PhoneNumber string `json:"phonenumber" binding:"required"`
+	PhoneNumber string `json:"phonenumber"`
 	// 用户性别（0未知 1男 2女）
 	Sex string `json:"sex"`
 	// 头像地址
@@ -46,7 +46,7 @@ type SysUser struct {
 	// 部门对象
 	Dept SysDept `json:"dept,omitempty"`
 	// 角色对象组
-	Roles []SysRole `json:"roles,omitempty"`
+	Roles []SysRole `json:"roles"`
 	// 角色ID
 	RoleID string `json:"roleId,omitempty"`
 	// 角色组
