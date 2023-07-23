@@ -69,6 +69,8 @@ type Option struct {
 // 标题 "title":"--"
 //
 // 类型 "businessType": BUSINESS_TYPE_OTHER
+//
+// 注意之后JSON反序列使用：c.ShouldBindBodyWith(&params, binding.JSON)
 func OptionNew(title, businessType string) Option {
 	return Option{
 		Title:              title,

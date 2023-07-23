@@ -22,6 +22,8 @@ type repeatParam struct {
 // RepeatSubmit 防止表单重复提交，小于间隔时间视为重复提交
 //
 // 间隔时间(单位秒) 默认:5
+//
+// 注意之后JSON反序列使用：c.ShouldBindBodyWith(&params, binding.JSON)
 func RepeatSubmit(interval int64) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if interval < 5 {
