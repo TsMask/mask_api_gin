@@ -13,17 +13,90 @@ import (
 
 // SysDeptImpl 部门表 数据层处理
 var SysDeptImpl = &sysDeptImpl{
-	selectSql: "",
+	selectSql: `select 
+	d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status, d.del_flag, d.create_by, d.create_time 
+	from sys_dept d`,
+
+	resultMap: map[string]string{
+		"dept_id":     "DeptID",
+		"parent_id":   "ParentID",
+		"ancestors":   "Ancestors",
+		"dept_name":   "DeptName",
+		"order_num":   "OrderNum",
+		"leader":      "Leader",
+		"phone":       "Phone",
+		"email":       "Email",
+		"status":      "Status",
+		"del_flag":    "DelFlag",
+		"create_by":   "CreateBy",
+		"create_time": "CreateTime",
+		"update_by":   "UpdateBy",
+		"update_time": "UpdateTime",
+		"parent_name": "ParentName",
+	},
 }
 
 type sysDeptImpl struct {
 	// 查询视图对象SQL
 	selectSql string
+	// 结果字段与实体映射
+	resultMap map[string]string
+}
+
+// convertResultRows 将结果记录转实体结果组
+func (r *sysDeptImpl) convertResultRows(rows []map[string]interface{}) []model.SysDept {
+	arr := make([]model.SysDept, 0)
+	for _, row := range rows {
+		sysDept := model.SysDept{}
+		for key, value := range row {
+			if keyMapper, ok := r.resultMap[key]; ok {
+				repo.SetFieldValue(&sysDept, keyMapper, value)
+			}
+		}
+		arr = append(arr, sysDept)
+	}
+	return arr
 }
 
 // SelectDeptList 查询部门管理数据
 func (r *sysDeptImpl) SelectDeptList(sysDept model.SysDept, dataScopeSQL string) []model.SysDept {
-	return []model.SysDept{}
+	// 查询条件拼接
+	var conditions []string
+	var params []interface{}
+	if sysDept.DeptID != "" {
+		conditions = append(conditions, "dept_id = ?")
+		params = append(params, sysDept.DeptID)
+	}
+	if sysDept.ParentID != "" {
+		conditions = append(conditions, "parent_id = ?")
+		params = append(params, sysDept.ParentID)
+	}
+	if sysDept.DeptName != "" {
+		conditions = append(conditions, "dept_name like concat(?, '%')")
+		params = append(params, sysDept.DeptName)
+	}
+	if sysDept.Status != "" {
+		conditions = append(conditions, "status = ?")
+		params = append(params, sysDept.Status)
+	}
+
+	// 构建查询条件语句
+	whereSql := " where d.del_flag = '0' "
+	if len(conditions) > 0 {
+		whereSql += " and " + strings.Join(conditions, " and ")
+	}
+
+	// 查询数据
+	orderSql := " order by d.parent_id, d.order_num asc "
+	querySql := r.selectSql + whereSql + dataScopeSQL + orderSql
+	results, err := datasource.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return []model.SysDept{}
+	}
+
+	// 转换实体
+	return r.convertResultRows(results)
 }
 
 // SelectDeptListByRoleId 根据角色ID查询部门树信息
@@ -62,17 +135,34 @@ func (r *sysDeptImpl) SelectDeptListByRoleId(roleId string, deptCheckStrictly bo
 
 // SelectDeptById 根据部门ID查询信息
 func (r *sysDeptImpl) SelectDeptById(deptId string) model.SysDept {
+	querySql := `select d.dept_id, d.parent_id, d.ancestors,
+	d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status,
+	(select dept_name from sys_dept where dept_id = d.parent_id) parent_name
+	from sys_dept d where d.dept_id = ?`
+	results, err := datasource.RawDB("", querySql, []interface{}{deptId})
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return model.SysDept{}
+	}
+	// 转换实体
+	rows := r.convertResultRows(results)
+	if len(rows) > 0 {
+		return rows[0]
+	}
 	return model.SysDept{}
 }
 
 // SelectChildrenDeptById 根据ID查询所有子部门
 func (r *sysDeptImpl) SelectChildrenDeptById(deptId string) []model.SysDept {
-	return []model.SysDept{}
-}
+	querySql := r.selectSql + " where find_in_set(?, d.ancestors)"
+	results, err := datasource.RawDB("", querySql, []interface{}{deptId})
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return []model.SysDept{}
+	}
 
-// SelectNormalChildrenDeptById 根据ID查询所有子部门（正常状态）
-func (r *sysDeptImpl) SelectNormalChildrenDeptById(deptId string) int {
-	return 0
+	// 转换实体
+	return r.convertResultRows(results)
 }
 
 // HasChildByDeptId 是否存在子节点
@@ -250,13 +340,43 @@ func (r *sysDeptImpl) UpdateDept(sysDept model.SysDept) int64 {
 }
 
 // UpdateDeptStatusNormal 修改所在部门正常状态
-func (r *sysDeptImpl) UpdateDeptStatusNormal(deptIds []string) int {
-	return 0
+func (r *sysDeptImpl) UpdateDeptStatusNormal(deptIds []string) int64 {
+	placeholder := repo.KeyPlaceholderByQuery(len(deptIds))
+	sql := "update sys_dept set status = '1' where dept_id in (" + placeholder + ")"
+	parameters := repo.ConvertIdsSlice(deptIds)
+	results, err := datasource.ExecDB("", sql, parameters)
+	if err != nil {
+		logger.Errorf("delete err => %v", err)
+		return 0
+	}
+	return results
 }
 
 // UpdateDeptChildren 修改子元素关系
-func (r *sysDeptImpl) UpdateDeptChildren(sysDepts []model.SysDept) int {
-	return 0
+func (r *sysDeptImpl) UpdateDeptChildren(sysDepts []model.SysDept) int64 {
+	// 无参数
+	if len(sysDepts) == 0 {
+		return 0
+	}
+
+	// 更新条件拼接
+	var conditions []string
+	var params []interface{}
+	for _, dept := range sysDepts {
+		caseSql := fmt.Sprintf("case when %s then %s end", dept.DeptID, dept.Ancestors)
+		conditions = append(conditions, caseSql)
+		params = append(params, dept.DeptID)
+	}
+
+	cases := strings.Join(conditions, " ")
+	placeholders := repo.KeyPlaceholderByQuery(len(params))
+	sql := "update sys_dept set ancestors = " + cases + " where dept_id in (" + placeholders + ")"
+	results, err := datasource.ExecDB("", sql, params)
+	if err != nil {
+		logger.Errorf("delete err => %v", err)
+		return 0
+	}
+	return results
 }
 
 // DeleteDeptById 删除部门管理信息

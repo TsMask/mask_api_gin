@@ -92,7 +92,7 @@ func Setup(router *gin.Engine) {
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:list", "system:user:list"}}),
 			controller.SysDept.TreeSelect,
 		)
-		systemDeptGroup.GET("/list/exclude/:deptId",
+		systemDeptGroup.GET("/roleDeptTreeSelect/:roleId",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:query"}}),
 			controller.SysDept.RoleDeptTreeSelect,
 		)

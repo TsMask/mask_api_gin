@@ -1,9 +1,11 @@
 package service
 
 import (
+	"mask_api_gin/src/framework/constants/common"
 	"mask_api_gin/src/framework/vo"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
+	"strings"
 )
 
 // SysDeptImpl 部门表 数据层处理
@@ -41,17 +43,7 @@ func (r *sysDeptImpl) SelectDeptListByRoleId(roleId string) []string {
 
 // SelectDeptById 根据部门ID查询信息
 func (r *sysDeptImpl) SelectDeptById(deptId string) model.SysDept {
-	return model.SysDept{}
-}
-
-// SelectChildrenDeptById 根据ID查询所有子部门
-func (r *sysDeptImpl) SelectChildrenDeptById(deptId string) []model.SysDept {
-	return []model.SysDept{}
-}
-
-// SelectNormalChildrenDeptById 根据ID查询所有子部门（正常状态）
-func (r *sysDeptImpl) SelectNormalChildrenDeptById(deptId string) int {
-	return 0
+	return r.sysDeptRepository.SelectDeptById(deptId)
 }
 
 // HasChildByDeptId 是否存在子节点
@@ -83,17 +75,43 @@ func (r *sysDeptImpl) InsertDept(sysDept model.SysDept) string {
 
 // UpdateDept 修改部门信息
 func (r *sysDeptImpl) UpdateDept(sysDept model.SysDept) int64 {
+	newParentDept := r.sysDeptRepository.SelectDeptById(sysDept.ParentID)
+	oldDept := r.sysDeptRepository.SelectDeptById(sysDept.DeptID)
+	// 修改子元素关系
+	if newParentDept.DeptID == sysDept.ParentID && oldDept.DeptID == sysDept.DeptID {
+		newAncestors := newParentDept.Ancestors + "," + newParentDept.DeptID
+		oldAncestors := oldDept.Ancestors
+		sysDept.Ancestors = newAncestors
+		r.updateDeptChildren(sysDept.DeptID, newAncestors, oldAncestors)
+	}
+	// 如果该部门是启用状态，则启用该部门的所有上级部门
+	if sysDept.Status == common.STATUS_YES && sysDept.Ancestors != "0" {
+		r.updateDeptStatusNormal(sysDept.Ancestors)
+	}
 	return r.sysDeptRepository.UpdateDept(sysDept)
 }
 
-// UpdateDeptStatusNormal 修改所在部门正常状态
-func (r *sysDeptImpl) UpdateDeptStatusNormal(deptIds []string) int {
-	return 0
+// updateDeptStatusNormal 修改所在部门正常状态
+func (r *sysDeptImpl) updateDeptStatusNormal(ancestors string) int64 {
+	if ancestors == "" || ancestors == "0" {
+		return 0
+	}
+	deptIds := strings.Split(ancestors, ",")
+	return r.sysDeptRepository.UpdateDeptStatusNormal(deptIds)
 }
 
-// UpdateDeptChildren 修改子元素关系
-func (r *sysDeptImpl) UpdateDeptChildren(sysDepts []model.SysDept) int {
-	return 0
+// updateDeptChildren 修改子元素关系
+func (r *sysDeptImpl) updateDeptChildren(deptId, newAncestors, oldAncestors string) int64 {
+	childrens := r.sysDeptRepository.SelectChildrenDeptById(deptId)
+	if len(childrens) == 0 {
+		return 0
+	}
+	// 替换父ID
+	for _, child := range childrens {
+		ancestors := strings.Replace(child.Ancestors, oldAncestors, newAncestors, -1)
+		child.Ancestors = ancestors
+	}
+	return r.sysDeptRepository.UpdateDeptChildren(childrens)
 }
 
 // DeleteDeptById 删除部门管理信息

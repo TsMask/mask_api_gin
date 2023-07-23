@@ -16,9 +16,6 @@ type ISysDept interface {
 	// SelectChildrenDeptById 根据ID查询所有子部门
 	SelectChildrenDeptById(deptId string) []model.SysDept
 
-	// SelectNormalChildrenDeptById 根据ID查询所有子部门（正常状态）
-	SelectNormalChildrenDeptById(deptId string) int
-
 	// HasChildByDeptId 是否存在子节点
 	HasChildByDeptId(deptId string) int64
 
@@ -35,10 +32,10 @@ type ISysDept interface {
 	UpdateDept(sysDept model.SysDept) int64
 
 	// UpdateDeptStatusNormal 修改所在部门正常状态
-	UpdateDeptStatusNormal(deptIds []string) int
+	UpdateDeptStatusNormal(deptIds []string) int64
 
 	// UpdateDeptChildren 修改子元素关系
-	UpdateDeptChildren(sysDepts []model.SysDept) int
+	UpdateDeptChildren(sysDepts []model.SysDept) int64
 
 	// DeleteDeptById 删除部门管理信息
 	DeleteDeptById(deptId string) int64
