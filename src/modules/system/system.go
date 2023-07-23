@@ -18,6 +18,29 @@ func Setup(router *gin.Engine) {
 	// 启动时需要的初始参数
 	InitLoad()
 
+	// 个人信息
+	systemUserProfileGroup := router.Group("/system/user/profile")
+	{
+		systemUserProfileGroup.GET("/",
+			middleware.PreAuthorize(nil),
+			controller.SysProfile.Info,
+		)
+		systemUserProfileGroup.PUT("/",
+			middleware.PreAuthorize(nil),
+			controller.SysProfile.UpdateProfile,
+		)
+		systemUserProfileGroup.PUT("/updatePwd",
+			middleware.PreAuthorize(nil),
+			operlog.OperLog(operlog.OptionNew("个人信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysProfile.UpdatePwd,
+		)
+		systemUserProfileGroup.POST("/avatar",
+			middleware.PreAuthorize(nil),
+			operlog.OperLog(operlog.OptionNew("用户头像", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysProfile.Avatar,
+		)
+	}
+
 	// 用户信息
 	systemUserGroup := router.Group("/system/user")
 	{
