@@ -25,21 +25,9 @@ func (r *sysRoleImpl) SelectRoleList(sysRole model.SysRole, dataScopeSQL string)
 	return r.sysRoleRepository.SelectRoleList(sysRole, dataScopeSQL)
 }
 
-// SelectRolePermsByUserId 根据用户ID查询角色
-func (r *sysRoleImpl) SelectRolePermsByUserId(userId string) []string {
-	perms := r.sysRoleRepository.SelectRolePermsByUserId(userId)
-	arr := []string{}
-	for _, perm := range perms {
-		if perm.RoleKey != "" {
-			arr = append(arr, perm.RoleKey)
-		}
-	}
-	return arr
-}
-
-// SelectRoleIdsByUserId 根据用户ID获取拥有角色ID
-func (r *sysRoleImpl) SelectRoleIdsByUserId(userId string) []string {
-	return []string{}
+// SelectRoleListByUserId 根据用户ID获取角色选择框列表
+func (r *sysRoleImpl) SelectRoleListByUserId(userId string) []model.SysRole {
+	return r.sysRoleRepository.SelectRoleListByUserId(userId)
 }
 
 // SelectRoleById 通过角色ID查询角色

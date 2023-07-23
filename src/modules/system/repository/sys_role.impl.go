@@ -102,8 +102,8 @@ func (r *sysRoleImpl) SelectRoleList(sysRole model.SysRole, dataScopeSQL string)
 	return r.convertResultRows(rows)
 }
 
-// SelectRolePermsByUserId 根据用户ID查询角色
-func (r *sysRoleImpl) SelectRolePermsByUserId(userId string) []model.SysRole {
+// SelectRoleListByUserId 根据用户ID获取角色选择框列表
+func (r *sysRoleImpl) SelectRoleListByUserId(userId string) []model.SysRole {
 	querySql := r.selectSql + " where r.del_flag = '0' and ur.user_id = ?"
 	results, err := datasource.RawDB("", querySql, []interface{}{userId})
 	if err != nil {
@@ -113,14 +113,9 @@ func (r *sysRoleImpl) SelectRolePermsByUserId(userId string) []model.SysRole {
 	return r.convertResultRows(results)
 }
 
-// SelectRoleIdsByUserId 根据用户ID获取拥有角色ID
-func (r *sysRoleImpl) SelectRoleIdsByUserId(userId string) []string {
-	return []string{}
-}
-
-// SelectRoleById 通过角色ID查询角色
-func (r *sysRoleImpl) SelectRoleById(roleId string) model.SysRole {
-	return model.SysRole{}
+// SelectRoleByIds 通过角色ID查询角色
+func (r *sysRoleImpl) SelectRoleByIds(roleIds []string) []model.SysRole {
+	return []model.SysRole{}
 }
 
 // SelectRolesByUserName 根据用户名查询角色

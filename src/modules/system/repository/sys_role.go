@@ -10,14 +10,11 @@ type ISysRole interface {
 	// SelectRoleList 根据条件查询角色数据
 	SelectRoleList(sysRole model.SysRole, dataScopeSQL string) []model.SysRole
 
-	// SelectRolePermsByUserId 根据用户ID查询角色
-	SelectRolePermsByUserId(userId string) []model.SysRole
+	// SelectRoleListByUserId 根据用户ID获取角色选择框列表
+	SelectRoleListByUserId(userId string) []model.SysRole
 
-	// SelectRoleIdsByUserId 根据用户ID获取拥有角色ID
-	SelectRoleIdsByUserId(userId string) []string
-
-	// SelectRoleById 通过角色ID查询角色
-	SelectRoleById(roleId string) model.SysRole
+	// SelectRoleByIds 通过角色ID查询角色
+	SelectRoleByIds(roleIds []string) []model.SysRole
 
 	// SelectRolesByUserName 根据用户名查询角色
 	SelectRolesByUserName(userName string) []model.SysRole
