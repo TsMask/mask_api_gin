@@ -5,9 +5,9 @@ type SysPost struct {
 	// 岗位ID
 	PostID string `json:"postId"`
 	// 岗位编码
-	PostCode string `json:"postCode"`
+	PostCode string `json:"postCode" binding:"required"`
 	// 岗位名称
-	PostName string `json:"postName"`
+	PostName string `json:"postName" binding:"required"`
 	// 显示顺序
 	PostSort int `json:"postSort"`
 	// 状态（0停用 1正常）

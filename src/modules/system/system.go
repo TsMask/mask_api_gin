@@ -162,6 +162,38 @@ func Setup(router *gin.Engine) {
 		)
 	}
 
+	// 岗位信息
+	systemPostGroup := router.Group("/system/post")
+	{
+		systemPostGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:post:list"}}),
+			controller.SysPost.List,
+		)
+		systemPostGroup.GET("/:postId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:post:query"}}),
+			controller.SysPost.Info,
+		)
+		systemPostGroup.POST("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:post:add"}}),
+			operlog.OperLog(operlog.OptionNew("岗位信息", operlog.BUSINESS_TYPE_INSERT)),
+			controller.SysPost.Add,
+		)
+		systemPostGroup.PUT("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:post:edit"}}),
+			operlog.OperLog(operlog.OptionNew("岗位信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysPost.Edit,
+		)
+		systemPostGroup.DELETE("/:postIds",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:post:remove"}}),
+			operlog.OperLog(operlog.OptionNew("岗位信息", operlog.BUSINESS_TYPE_DELETE)),
+			controller.SysPost.Remove,
+		)
+		systemPostGroup.POST("/export",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:post:export"}}),
+			controller.SysPost.Export,
+		)
+	}
+
 	// 个人信息
 	systemUserProfileGroup := router.Group("/system/user/profile")
 	{

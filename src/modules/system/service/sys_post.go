@@ -16,21 +16,18 @@ type ISysPost interface {
 	// SelectPostListByUserId 根据用户ID获取岗位选择框列表
 	SelectPostListByUserId(userId string) []model.SysPost
 
-	// SelectPostsByUserName 查询用户所属岗位组
-	SelectPostsByUserName(userName string) []model.SysPost
-
 	// DeletePostByIds 批量删除岗位信息
-	DeletePostByIds(postIds []string) int
+	DeletePostByIds(postIds []string) (int64, error)
 
 	// UpdatePost 修改岗位信息
-	UpdatePost(sysPost model.SysPost) int
+	UpdatePost(sysPost model.SysPost) int64
 
 	// InsertPost 新增岗位信息
 	InsertPost(sysPost model.SysPost) string
 
 	// CheckUniquePostName 校验岗位名称
-	CheckUniquePostName(postName string) string
+	CheckUniquePostName(postName, postId string) bool
 
 	// CheckUniquePostCode 校验岗位编码
-	CheckUniquePostCode(postCode string) string
+	CheckUniquePostCode(postCode, postId string) bool
 }
