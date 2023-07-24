@@ -1,9 +1,13 @@
 package repository
 
 import (
+	"fmt"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/utils/parse"
+	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
+	"strings"
 )
 
 // SysRoleMenuImpl 角色与菜单关联表 数据层处理
@@ -25,22 +29,48 @@ func (r *sysRoleMenuImpl) CheckMenuExistRole(menuId string) int64 {
 		return 0
 	}
 	if len(results) > 0 {
-		return results[0]["total"].(int64)
+		return parse.Number(results[0]["total"])
 	}
 	return 0
 }
 
-// DeleteRoleMenuByRoleId 通过角色ID删除角色和菜单关联
-func (r *sysRoleMenuImpl) DeleteRoleMenuByRoleId(roleId string) int {
-	return 0
+// DeleteRoleMenu 批量删除角色和菜单关联
+func (r *sysRoleMenuImpl) DeleteRoleMenu(roleIds []string) int64 {
+	placeholder := repo.KeyPlaceholderByQuery(len(roleIds))
+	sql := "delete from sys_role_menu where role_id in (" + placeholder + ")"
+	parameters := repo.ConvertIdsSlice(roleIds)
+	results, err := datasource.ExecDB("", sql, parameters)
+	if err != nil {
+		logger.Errorf("delete err => %v", err)
+		return 0
+	}
+	return results
 }
 
-// DeleteRoleMenu 批量删除角色菜单关联信息
-func (r *sysRoleMenuImpl) DeleteRoleMenu(roleIds []string) int {
-	return 0
+// DeleteMenuRole 批量删除菜单和角色关联
+func (r *sysRoleMenuImpl) DeleteMenuRole(menuIds []string) int64 {
+	placeholder := repo.KeyPlaceholderByQuery(len(menuIds))
+	sql := "delete from sys_role_menu where menu_id in (" + placeholder + ")"
+	parameters := repo.ConvertIdsSlice(menuIds)
+	results, err := datasource.ExecDB("", sql, parameters)
+	if err != nil {
+		logger.Errorf("delete err => %v", err)
+		return 0
+	}
+	return results
 }
 
 // BatchRoleMenu 批量新增角色菜单信息
-func (r *sysRoleMenuImpl) BatchRoleMenu(sysRoleMenus []model.SysRoleMenu) int {
-	return 0
+func (r *sysRoleMenuImpl) BatchRoleMenu(sysRoleMenus []model.SysRoleMenu) int64 {
+	keyValues := make([]string, 0)
+	for _, item := range sysRoleMenus {
+		keyValues = append(keyValues, fmt.Sprintf("(%s,%s)", item.RoleID, item.MenuID))
+	}
+	sql := "insert into sys_role_menu(role_id, menu_id) values " + strings.Join(keyValues, ",")
+	results, err := datasource.ExecDB("", sql, nil)
+	if err != nil {
+		logger.Errorf("delete err => %v", err)
+		return 0
+	}
+	return results
 }

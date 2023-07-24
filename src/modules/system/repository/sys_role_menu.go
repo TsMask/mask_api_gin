@@ -7,12 +7,12 @@ type ISysRoleMenu interface {
 	// CheckMenuExistRole 查询菜单分配给角色使用数量
 	CheckMenuExistRole(menuId string) int64
 
-	// DeleteRoleMenuByRoleId 通过角色ID删除角色和菜单关联
-	DeleteRoleMenuByRoleId(roleId string) int
+	// DeleteRoleMenu 批量删除角色和菜单关联
+	DeleteRoleMenu(roleIds []string) int64
 
-	// DeleteRoleMenu 批量删除角色菜单关联信息
-	DeleteRoleMenu(roleIds []string) int
+	// DeleteMenuRole 批量删除菜单和角色关联
+	DeleteMenuRole(menuIds []string) int64
 
 	// BatchRoleMenu 批量新增角色菜单信息
-	BatchRoleMenu(sysRoleMenus []model.SysRoleMenu) int
+	BatchRoleMenu(sysRoleMenus []model.SysRoleMenu) int64
 }
