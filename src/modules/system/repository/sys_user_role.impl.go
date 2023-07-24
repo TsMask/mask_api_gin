@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
@@ -20,8 +21,16 @@ type sysUserRoleImpl struct {
 }
 
 // CountUserRoleByRoleId 通过角色ID查询角色使用数量
-func (r *sysUserRoleImpl) CountUserRoleByRoleId(roleId string) int {
-	// 实现具体逻辑
+func (r *sysUserRoleImpl) CountUserRoleByRoleId(roleId string) int64 {
+	querySql := "select count(1) as total from sys_user_role where role_id = ?"
+	results, err := datasource.RawDB("", querySql, []interface{}{roleId})
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return 0
+	}
+	if len(results) > 0 {
+		return parse.Number(results[0]["total"])
+	}
 	return 0
 }
 
@@ -53,8 +62,16 @@ func (r *sysUserRoleImpl) DeleteUserRole(userIds []string) int64 {
 	return results
 }
 
-// DeleteUserRoleInfos 批量取消授权用户角色
-func (r *sysUserRoleImpl) DeleteUserRoleInfos(roleId string, userIds []string) int {
-	// 实现具体逻辑
-	return 0
+// DeleteUserRoleByRoleId 批量取消授权用户角色
+func (r *sysUserRoleImpl) DeleteUserRoleByRoleId(roleId string, userIds []string) int64 {
+	placeholder := repo.KeyPlaceholderByQuery(len(userIds))
+	sql := "delete from sys_user_role where role_id= ? and user_id in (" + placeholder + ")"
+	parameters := repo.ConvertIdsSlice(userIds)
+	parameters = append([]interface{}{roleId}, parameters...)
+	results, err := datasource.ExecDB("", sql, parameters)
+	if err != nil {
+		logger.Errorf("delete err => %v", err)
+		return 0
+	}
+	return results
 }
