@@ -5,9 +5,9 @@ type SysRole struct {
 	// 角色ID
 	RoleID string `json:"roleId"`
 	// 角色名称
-	RoleName string `json:"roleName"`
+	RoleName string `json:"roleName" binding:"required"`
 	// 角色键值
-	RoleKey string `json:"roleKey"`
+	RoleKey string `json:"roleKey" binding:"required"`
 	// 显示顺序
 	RoleSort int `json:"roleSort"`
 	// 数据范围（1：全部数据权限 2：自定数据权限 3：本部门数据权限 4：本部门及以下数据权限 5：仅本人数据权限）
