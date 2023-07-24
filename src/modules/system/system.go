@@ -98,6 +98,48 @@ func Setup(router *gin.Engine) {
 		)
 	}
 
+	// 字典类型信息
+	sysDictTypeGroup := router.Group("/system/dict/type")
+	{
+		sysDictTypeGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:list"}}),
+			controller.SysDictType.List,
+		)
+		sysDictTypeGroup.GET("/:dictId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:query"}}),
+			controller.SysDictType.Info,
+		)
+		sysDictTypeGroup.POST("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:add"}}),
+			operlog.OperLog(operlog.OptionNew("字典类型信息", operlog.BUSINESS_TYPE_INSERT)),
+			controller.SysDictType.Add,
+		)
+		sysDictTypeGroup.PUT("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:edit"}}),
+			operlog.OperLog(operlog.OptionNew("字典类型信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysDictType.Edit,
+		)
+		sysDictTypeGroup.DELETE("/:dictIds",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:remove"}}),
+			operlog.OperLog(operlog.OptionNew("字典类型信息", operlog.BUSINESS_TYPE_DELETE)),
+			controller.SysDictType.Remove,
+		)
+		sysDictTypeGroup.PUT("/refreshCache",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:remove"}}),
+			operlog.OperLog(operlog.OptionNew("字典类型信息", operlog.BUSINESS_TYPE_CLEAN)),
+			controller.SysDictType.RefreshCache,
+		)
+		sysDictTypeGroup.GET("/getDictOptionselect",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:query"}}),
+			controller.SysDictType.DictOptionselect,
+		)
+		sysDictTypeGroup.POST("/export",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:export"}}),
+			operlog.OperLog(operlog.OptionNew("字典类型信息", operlog.BUSINESS_TYPE_EXPORT)),
+			controller.SysDictType.Export,
+		)
+	}
+
 	// 菜单信息
 	sysMenuGroup := router.Group("/system/menu")
 	{
