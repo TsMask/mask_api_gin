@@ -10,8 +10,9 @@ import (
 
 // SysDeptImpl 部门表 数据层处理
 var SysDeptImpl = &sysDeptImpl{
-	sysDeptRepository: repository.SysDeptImpl,
-	sysRoleRepository: repository.SysRoleImpl,
+	sysDeptRepository:     repository.SysDeptImpl,
+	sysRoleRepository:     repository.SysRoleImpl,
+	sysRoleDeptRepository: repository.SysRoleDeptImpl,
 }
 
 type sysDeptImpl struct {
@@ -19,6 +20,8 @@ type sysDeptImpl struct {
 	sysDeptRepository repository.ISysDept
 	// 角色服务
 	sysRoleRepository repository.ISysRole
+	// 角色与部门关联服务
+	sysRoleDeptRepository repository.ISysRoleDept
 }
 
 // SelectDeptList 查询部门管理数据
@@ -116,6 +119,8 @@ func (r *sysDeptImpl) updateDeptChildren(deptId, newAncestors, oldAncestors stri
 
 // DeleteDeptById 删除部门管理信息
 func (r *sysDeptImpl) DeleteDeptById(deptId string) int64 {
+	// 删除角色与部门关联
+	r.sysRoleDeptRepository.DeleteDeptRole([]string{deptId})
 	return r.sysDeptRepository.DeleteDeptById(deptId)
 }
 
