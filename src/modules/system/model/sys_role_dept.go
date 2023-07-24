@@ -7,8 +7,8 @@ type SysRoleDept struct {
 }
 
 // NewSysRoleDept 创建角色和部门关联对象的构造函数
-func NewSysRoleDept(roleID string, deptID string) *SysRoleDept {
-	return &SysRoleDept{
+func NewSysRoleDept(roleID string, deptID string) SysRoleDept {
+	return SysRoleDept{
 		RoleID: roleID,
 		DeptID: deptID,
 	}

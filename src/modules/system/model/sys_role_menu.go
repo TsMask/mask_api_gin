@@ -7,8 +7,8 @@ type SysRoleMenu struct {
 }
 
 // NewSysRoleMenu 创建角色和菜单关联对象的构造函数
-func NewSysRoleMenu(roleID string, menuID string) *SysRoleMenu {
-	return &SysRoleMenu{
+func NewSysRoleMenu(roleID string, menuID string) SysRoleMenu {
+	return SysRoleMenu{
 		RoleID: roleID,
 		MenuID: menuID,
 	}
