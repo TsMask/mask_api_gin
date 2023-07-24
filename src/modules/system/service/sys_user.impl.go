@@ -70,7 +70,7 @@ func (r *sysUserImpl) InsertUser(sysUser model.SysUser) string {
 
 // insertUserRole 新增用户角色信息
 func (r *sysUserImpl) insertUserRole(userId string, roleIds []string) int64 {
-	if len(roleIds) <= 0 {
+	if userId == "" || len(roleIds) <= 0 {
 		return 0
 	}
 
@@ -88,7 +88,7 @@ func (r *sysUserImpl) insertUserRole(userId string, roleIds []string) int64 {
 
 // insertUserPost 新增用户岗位信息
 func (r *sysUserImpl) insertUserPost(userId string, postIds []string) int64 {
-	if len(postIds) <= 0 {
+	if userId == "" || len(postIds) <= 0 {
 		return 0
 	}
 
