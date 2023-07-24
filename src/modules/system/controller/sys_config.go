@@ -24,6 +24,7 @@ var SysConfig = &sysConfig{
 }
 
 type sysConfig struct {
+	// 参数配置服务
 	sysConfigService service.ISysConfig
 }
 

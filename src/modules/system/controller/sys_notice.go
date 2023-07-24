@@ -21,6 +21,7 @@ var SysNotice = &sysNotice{
 }
 
 type sysNotice struct {
+	// 公告服务
 	sysNoticeService service.ISysNotice
 }
 

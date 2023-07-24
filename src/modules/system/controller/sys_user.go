@@ -327,11 +327,13 @@ func (s *sysUser) Status(c *gin.Context) {
 		return
 	}
 
+	// 检查是否存在
 	user := s.sysUserService.SelectUserById(body.UserID)
 	if user.UserID != body.UserID {
 		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
+
 	// 与旧值相等不变更
 	if user.Status == body.Status {
 		c.JSON(200, result.ErrMsg("变更状态与旧值相等！"))

@@ -23,6 +23,7 @@ var SysMenu = &sysMenu{
 }
 
 type sysMenu struct {
+	// 菜单服务
 	sysMenuService service.ISysMenu
 }
 

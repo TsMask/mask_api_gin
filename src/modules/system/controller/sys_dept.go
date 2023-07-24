@@ -21,6 +21,7 @@ var SysDept = &sysDept{
 }
 
 type sysDept struct {
+	// 部门服务
 	sysDeptService service.ISysDept
 }
 
