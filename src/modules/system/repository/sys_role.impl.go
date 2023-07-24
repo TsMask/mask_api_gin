@@ -1,8 +1,11 @@
 package repository
 
 import (
+	"fmt"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/utils/date"
+	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
@@ -60,7 +63,85 @@ func (r *sysRoleImpl) convertResultRows(rows []map[string]interface{}) []model.S
 
 // SelectRolePage 根据条件分页查询角色数据
 func (r *sysRoleImpl) SelectRolePage(query map[string]string, dataScopeSQL string) map[string]interface{} {
-	return map[string]interface{}{}
+	// 查询条件拼接
+	var conditions []string
+	var params []interface{}
+	if v, ok := query["roleId"]; ok {
+		conditions = append(conditions, "r.role_id = ?")
+		params = append(params, v)
+	}
+	if v, ok := query["roleName"]; ok {
+		conditions = append(conditions, "r.role_name like concat(?, '%')")
+		params = append(params, v)
+	}
+	if v, ok := query["roleKey"]; ok {
+		conditions = append(conditions, "r.role_key like concat(?, '%')")
+		params = append(params, v)
+	}
+	if v, ok := query["status"]; ok {
+		conditions = append(conditions, "r.status = ?")
+		params = append(params, v)
+	}
+	if v, ok := query["beginTime"]; ok {
+		conditions = append(conditions, "r.create_time >= ?")
+		beginDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
+		params = append(params, beginDate.UnixNano()/1e6)
+	}
+	if v, ok := query["endTime"]; ok {
+		conditions = append(conditions, "r.create_time <= ?")
+		endDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
+		params = append(params, endDate.UnixNano()/1e6)
+	}
+	if v, ok := query["deptId"]; ok {
+		conditions = append(conditions, `(u.dept_id = ? or u.dept_id in ( 
+			select t.dept_id from sys_dept t where find_in_set(?, ancestors)
+		))`)
+		params = append(params, v)
+		params = append(params, v)
+	}
+
+	// 构建查询条件语句
+	whereSql := " where r.del_flag = '0' "
+	if len(conditions) > 0 {
+		whereSql += " and " + strings.Join(conditions, " and ")
+	}
+
+	// 查询数量 长度为0直接返回
+	totalSql := `select count(distinct r.role_id) as 'total' from sys_role r
+    left join sys_user_role ur on ur.role_id = r.role_id
+    left join sys_user u on u.user_id = ur.user_id
+    left join sys_dept d on u.dept_id = d.dept_id`
+	totalRows, err := datasource.RawDB("", totalSql+whereSql+dataScopeSQL, params)
+	if err != nil {
+		logger.Errorf("total err => %v", err)
+	}
+	total := parse.Number(totalRows[0]["total"])
+	if total <= 0 {
+		return map[string]interface{}{
+			"total": 0,
+			"rows":  []interface{}{},
+		}
+	}
+
+	// 分页
+	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageSql := " order by r.role_sort asc limit ?,? "
+	params = append(params, pageNum*pageSize)
+	params = append(params, pageSize)
+
+	// 查询数据
+	querySql := r.selectSql + whereSql + dataScopeSQL + pageSql
+	results, err := datasource.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+	}
+
+	// 转换实体
+	rows := r.convertResultRows(results)
+	return map[string]interface{}{
+		"total": total,
+		"rows":  rows,
+	}
 }
 
 // SelectRoleList 根据条件查询角色数据
@@ -102,6 +183,94 @@ func (r *sysRoleImpl) SelectRoleList(sysRole model.SysRole, dataScopeSQL string)
 	return r.convertResultRows(rows)
 }
 
+// SelectAllocatedPage 根据条件分页查询分配用户角色列表
+func (r *sysRoleImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL string) map[string]interface{} {
+	// 查询条件拼接
+	var conditions []string
+	var params []interface{}
+	if v, ok := query["userName"]; ok {
+		conditions = append(conditions, "u.user_name like concat(?, '%')")
+		params = append(params, v)
+	}
+	if v, ok := query["phonenumber"]; ok {
+		conditions = append(conditions, "u.phonenumber like concat(?, '%')")
+		params = append(params, v)
+	}
+	if v, ok := query["status"]; ok {
+		conditions = append(conditions, "u.status = ?")
+		params = append(params, v)
+	}
+	// 分配角色用户
+	if allocated, ok := query["allocated"]; ok {
+		if deptId, ok := query["deptId"]; ok {
+			if parse.Boolean(allocated) {
+				conditions = append(conditions, "r.role_id = ?")
+				params = append(params, deptId)
+			} else {
+				conditions = append(conditions, `(r.role_id != ? or r.role_id IS NULL) 
+				and u.user_id not in (
+					select u.user_id from sys_user u 
+					inner join sys_user_role ur on u.user_id = ur.user_id 
+					and ur.role_id = ?
+				)`)
+				params = append(params, deptId)
+				params = append(params, deptId)
+			}
+
+		}
+	}
+
+	// 构建查询条件语句
+	whereSql := " where u.del_flag = '0' "
+	if len(conditions) > 0 {
+		whereSql += " and " + strings.Join(conditions, " and ")
+	}
+
+	// 查询数量 长度为0直接返回
+	totalSql := `select count(distinct u.user_id) as 'total' from sys_user u
+    left join sys_dept d on u.dept_id = d.dept_id
+    left join sys_user_role ur on u.user_id = ur.user_id
+    left join sys_role r on r.role_id = ur.role_id`
+	totalRows, err := datasource.RawDB("", totalSql+whereSql+dataScopeSQL, params)
+	if err != nil {
+		logger.Errorf("total err => %v", err)
+	}
+	total := parse.Number(totalRows[0]["total"])
+	if total <= 0 {
+		return map[string]interface{}{
+			"total": 0,
+			"rows":  []interface{}{},
+		}
+	}
+
+	// 分页
+	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageSql := " limit ?,? "
+	params = append(params, pageNum*pageSize)
+	params = append(params, pageSize)
+
+	// 查询数据
+	querySql := `select distinct 
+    u.user_id, u.dept_id, u.user_name, u.nick_name, u.email, 
+    u.phonenumber, u.status, u.create_time, d.dept_name
+    from sys_user u
+    left join sys_dept d on u.dept_id = d.dept_id
+    left join sys_user_role ur on u.user_id = ur.user_id
+    left join sys_role r on r.role_id = ur.role_id`
+	querySql = querySql + whereSql + dataScopeSQL + pageSql
+	results, err := datasource.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+	}
+
+	// 转换实体
+	rows := r.convertResultRows(results)
+	return map[string]interface{}{
+		"total": total,
+		"rows":  rows,
+	}
+}
+
 // SelectRoleListByUserId 根据用户ID获取角色选择框列表
 func (r *sysRoleImpl) SelectRoleListByUserId(userId string) []model.SysRole {
 	querySql := r.selectSql + " where r.del_flag = '0' and ur.user_id = ?"
@@ -115,35 +284,172 @@ func (r *sysRoleImpl) SelectRoleListByUserId(userId string) []model.SysRole {
 
 // SelectRoleByIds 通过角色ID查询角色
 func (r *sysRoleImpl) SelectRoleByIds(roleIds []string) []model.SysRole {
-	return []model.SysRole{}
-}
-
-// SelectRolesByUserName 根据用户名查询角色
-func (r *sysRoleImpl) SelectRolesByUserName(userName string) []model.SysRole {
-	return []model.SysRole{}
-}
-
-// CheckUniqueRoleName 校验角色名称是否唯一
-func (r *sysRoleImpl) CheckUniqueRoleName(roleName string) string {
-	return ""
-}
-
-// CheckUniqueRoleKey 校验角色权限是否唯一
-func (r *sysRoleImpl) CheckUniqueRoleKey(roleKey string) string {
-	return ""
+	placeholder := repo.KeyPlaceholderByQuery(len(roleIds))
+	querySql := r.selectSql + " where r.role_id in (" + placeholder + ")"
+	parameters := repo.ConvertIdsSlice(roleIds)
+	results, err := datasource.RawDB("", querySql, parameters)
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return []model.SysRole{}
+	}
+	// 转换实体
+	return r.convertResultRows(results)
 }
 
 // UpdateRole 修改角色信息
-func (r *sysRoleImpl) UpdateRole(sysRole model.SysRole) int {
-	return 0
+func (r *sysRoleImpl) UpdateRole(sysRole model.SysRole) int64 {
+	// 参数拼接
+	params := make(map[string]interface{})
+	if sysRole.RoleName != "" {
+		params["role_name"] = sysRole.RoleName
+	}
+	if sysRole.RoleKey != "" {
+		params["role_key"] = sysRole.RoleKey
+	}
+	if sysRole.RoleSort >= 0 {
+		params["role_sort"] = sysRole.RoleSort
+	}
+	if sysRole.DataScope != "" {
+		params["data_scope"] = sysRole.DataScope
+	}
+	if sysRole.MenuCheckStrictly != "" {
+		params["menu_check_strictly"] = sysRole.MenuCheckStrictly
+	}
+	if sysRole.DeptCheckStrictly != "" {
+		params["dept_check_strictly"] = sysRole.DeptCheckStrictly
+	}
+	if sysRole.Status != "" {
+		params["status"] = sysRole.Status
+	}
+	if sysRole.Remark != "" {
+		params["remark"] = sysRole.Remark
+	}
+	if sysRole.UpdateBy != "" {
+		params["update_by"] = sysRole.UpdateBy
+		params["update_time"] = date.NowTimestamp()
+	}
+
+	// 构建执行语句
+	keys, values := repo.KeyValueByUpdate(params)
+	sql := "update sys_role set " + strings.Join(keys, ",") + " where role_id = ?"
+
+	// 执行更新
+	values = append(values, sysRole.RoleID)
+	rows, err := datasource.ExecDB("", sql, values)
+	if err != nil {
+		logger.Errorf("update row : %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // InsertRole 新增角色信息
 func (r *sysRoleImpl) InsertRole(sysRole model.SysRole) string {
-	return ""
+	// 参数拼接
+	params := make(map[string]interface{})
+	if sysRole.RoleID != "" {
+		params["role_id"] = sysRole.RoleID
+	}
+	if sysRole.RoleName != "" {
+		params["role_name"] = sysRole.RoleName
+	}
+	if sysRole.RoleKey != "" {
+		params["role_key"] = sysRole.RoleKey
+	}
+	if sysRole.RoleSort >= 0 {
+		params["role_sort"] = sysRole.RoleSort
+	}
+	if sysRole.DataScope != "" {
+		params["data_scope"] = sysRole.DataScope
+	}
+	if sysRole.MenuCheckStrictly != "" {
+		params["menu_check_strictly"] = sysRole.MenuCheckStrictly
+	}
+	if sysRole.DeptCheckStrictly != "" {
+		params["dept_check_strictly"] = sysRole.DeptCheckStrictly
+	}
+	if sysRole.Status != "" {
+		params["status"] = sysRole.Status
+	}
+	if sysRole.Remark != "" {
+		params["remark"] = sysRole.Remark
+	}
+	if sysRole.CreateBy != "" {
+		params["create_by"] = sysRole.CreateBy
+		params["create_time"] = date.NowTimestamp()
+	}
+
+	// 构建执行语句
+	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
+	sql := "insert into sys_role (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+
+	db := datasource.DefaultDB()
+	// 开启事务
+	tx := db.Begin()
+	// 执行插入
+	err := tx.Exec(sql, values...).Error
+	if err != nil {
+		logger.Errorf("insert row : %v", err.Error())
+		tx.Rollback()
+		return ""
+	}
+	// 获取生成的自增 ID
+	var insertedID string
+	err = tx.Raw("select last_insert_id()").Row().Scan(&insertedID)
+	if err != nil {
+		logger.Errorf("insert last id : %v", err.Error())
+		tx.Rollback()
+		return ""
+	}
+	// 提交事务
+	tx.Commit()
+	return insertedID
 }
 
 // DeleteRoleByIds 批量删除角色信息
-func (r *sysRoleImpl) DeleteRoleByIds(roleIds []string) int {
-	return 0
+func (r *sysRoleImpl) DeleteRoleByIds(roleIds []string) int64 {
+	placeholder := repo.KeyPlaceholderByQuery(len(roleIds))
+	sql := "update sys_role set del_flag = '1' where role_id in (" + placeholder + ")"
+	parameters := repo.ConvertIdsSlice(roleIds)
+	results, err := datasource.ExecDB("", sql, parameters)
+	if err != nil {
+		logger.Errorf("delete err => %v", err)
+		return 0
+	}
+	return results
+}
+
+// CheckUniqueRole 校验角色是否唯一
+func (r *sysRoleImpl) CheckUniqueRole(sysRole model.SysRole) string {
+	// 查询条件拼接
+	var conditions []string
+	var params []interface{}
+	if sysRole.RoleName != "" {
+		conditions = append(conditions, "r.role_name = ?")
+		params = append(params, sysRole.RoleName)
+	}
+	if sysRole.RoleKey != "" {
+		conditions = append(conditions, "r.role_key = ?")
+		params = append(params, sysRole.RoleKey)
+	}
+
+	// 构建查询条件语句
+	whereSql := ""
+	if len(conditions) > 0 {
+		whereSql += " where " + strings.Join(conditions, " and ")
+	} else {
+		return ""
+	}
+
+	// 查询数据
+	querySql := "select role_id as 'str' from sys_role r " + whereSql + " and r.del_flag = '0' limit 1"
+	results, err := datasource.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err %v", err)
+		return ""
+	}
+	if len(results) > 0 {
+		return fmt.Sprintf("%v", results[0]["str"])
+	}
+	return ""
 }

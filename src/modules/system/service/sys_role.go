@@ -10,27 +10,36 @@ type ISysRole interface {
 	// SelectRoleList 根据条件查询角色数据
 	SelectRoleList(sysRole model.SysRole, dataScopeSQL string) []model.SysRole
 
+	// SelectAllocatedPage 根据条件分页查询分配用户角色列表
+	SelectAllocatedPage(query map[string]string, dataScopeSQL string) map[string]interface{}
+
 	// SelectRoleListByUserId 根据用户ID获取角色选择框列表
 	SelectRoleListByUserId(userId string) []model.SysRole
 
 	// SelectRoleById 通过角色ID查询角色
 	SelectRoleById(roleId string) model.SysRole
 
-	// SelectRolesByUserName 根据用户名查询角色
-	SelectRolesByUserName(userName string) []model.SysRole
-
-	// CheckUniqueRoleName 校验角色名称是否唯一
-	CheckUniqueRoleName(roleName string) string
-
-	// CheckUniqueRoleKey 校验角色权限是否唯一
-	CheckUniqueRoleKey(roleKey string) string
-
 	// UpdateRole 修改角色信息
-	UpdateRole(sysRole model.SysRole) int
+	UpdateRole(sysRole model.SysRole) int64
 
 	// InsertRole 新增角色信息
 	InsertRole(sysRole model.SysRole) string
 
 	// DeleteRoleByIds 批量删除角色信息
-	DeleteRoleByIds(roleIds []string) int
+	DeleteRoleByIds(roleIds []string) (int64, error)
+
+	// CheckUniqueRoleName 校验角色名称是否唯一
+	CheckUniqueRoleName(roleName, roleId string) bool
+
+	// CheckUniqueRoleKey 校验角色权限是否唯一
+	CheckUniqueRoleKey(roleKey, roleId string) bool
+
+	// AuthDataScope 修改数据权限信息
+	AuthDataScope(sysRole model.SysRole) int64
+
+	// DeleteAuthUsers 批量取消授权用户角色
+	DeleteAuthUsers(roleId string, userIds []string) int64
+
+	// InsertAuthUsers 批量新增授权用户角色
+	InsertAuthUsers(roleId string, userIds []string) int64
 }

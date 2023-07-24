@@ -217,6 +217,60 @@ func Setup(router *gin.Engine) {
 		)
 	}
 
+	// 角色信息
+	sysRoleGroup := router.Group("/system/role")
+	{
+		sysRoleGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:role:list"}}),
+			controller.SysRole.List,
+		)
+		sysRoleGroup.GET("/:roleId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:role:query"}}),
+			controller.SysRole.Info,
+		)
+		sysRoleGroup.POST("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:role:add"}}),
+			operlog.OperLog(operlog.OptionNew("角色信息", operlog.BUSINESS_TYPE_INSERT)),
+			controller.SysRole.Add,
+		)
+		sysRoleGroup.PUT("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:role:edit"}}),
+			operlog.OperLog(operlog.OptionNew("角色信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysRole.Edit,
+		)
+		sysRoleGroup.DELETE("/:roleIds",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:role:remove"}}),
+			operlog.OperLog(operlog.OptionNew("角色信息", operlog.BUSINESS_TYPE_DELETE)),
+			controller.SysRole.Remove,
+		)
+		sysRoleGroup.PUT("/changeStatus",
+			repeat.RepeatSubmit(5),
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:role:edit"}}),
+			operlog.OperLog(operlog.OptionNew("角色信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysRole.Status,
+		)
+		sysRoleGroup.PUT("/dataScope",
+			repeat.RepeatSubmit(5),
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:edit"}}),
+			operlog.OperLog(operlog.OptionNew("角色信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysRole.DataScope,
+		)
+		sysRoleGroup.GET("/authUser/allocatedList",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:list"}}),
+			controller.SysRole.AuthUserAllocatedList,
+		)
+		sysRoleGroup.PUT("/authUser/checked",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:edit"}}),
+			operlog.OperLog(operlog.OptionNew("角色信息", operlog.BUSINESS_TYPE_GRANT)),
+			controller.SysRole.AuthUserChecked,
+		)
+		sysRoleGroup.POST("/export",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:export"}}),
+			operlog.OperLog(operlog.OptionNew("角色信息", operlog.BUSINESS_TYPE_EXPORT)),
+			controller.SysRole.Export,
+		)
+	}
+
 	// 用户信息
 	sysUserGroup := router.Group("/system/user")
 	{
