@@ -14,27 +14,27 @@ func Setup(router *gin.Engine) {
 
 	// 路由主页
 	indexGroup := router.Group("/")
+	indexGroup.GET("/",
+		middleware.RateLimit(middleware.LimitOption{
+			Time:  300,
+			Count: 10,
+			Type:  middleware.LIMIT_IP,
+		}),
+		controller.Index.Handler,
+	)
+
+	// 验证码操作处理
+	indexGroup.GET("/captchaImage",
+		middleware.RateLimit(middleware.LimitOption{
+			Time:  300,
+			Count: 60,
+			Type:  middleware.LIMIT_IP,
+		}),
+		controller.Captcha.Image,
+	)
+
+	// 账号身份操作处理
 	{
-		indexGroup.GET("/",
-			middleware.RateLimit(middleware.LimitOption{
-				Time:  300,
-				Count: 10,
-				Type:  middleware.LIMIT_IP,
-			}),
-			controller.Index.Handler,
-		)
-
-		// 验证码操作处理
-		indexGroup.GET("/captchaImage",
-			middleware.RateLimit(middleware.LimitOption{
-				Time:  300,
-				Count: 60,
-				Type:  middleware.LIMIT_IP,
-			}),
-			controller.Captcha.Image,
-		)
-
-		// 账号身份操作处理
 		indexGroup.POST("/login",
 			middleware.RateLimit(middleware.LimitOption{
 				Time:  300,
@@ -53,8 +53,10 @@ func Setup(router *gin.Engine) {
 			}),
 			controller.Account.Logout,
 		)
+	}
 
-		// 账号注册操作处理
+	// 账号注册操作处理
+	{
 		indexGroup.POST("/register",
 			middleware.RateLimit(middleware.LimitOption{
 				Time:  300,
@@ -78,12 +80,12 @@ func Setup(router *gin.Engine) {
 		// 下载文件
 		fileGroup.GET("/download/:filePath", controller.File.Download)
 		// 上传文件
-		fileGroup.GET("/upload", controller.File.Upload)
+		fileGroup.POST("/upload", controller.File.Upload)
 		// 切片文件检查
 		fileGroup.POST("/chunkCheck", controller.File.ChunkCheck)
 		// 切片文件上传
-		fileGroup.GET("/chunkUpload", controller.File.ChunkUpload)
+		fileGroup.POST("/chunkUpload", controller.File.ChunkUpload)
 		// 切片文件合并
-		fileGroup.GET("/chunkMerge", controller.File.ChunkMerge)
+		fileGroup.POST("/chunkMerge", controller.File.ChunkMerge)
 	}
 }
