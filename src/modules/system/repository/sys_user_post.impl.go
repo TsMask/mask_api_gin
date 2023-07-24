@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
@@ -28,7 +29,7 @@ func (r *sysUserPostImpl) CountUserPostByPostId(postId string) int64 {
 		return 0
 	}
 	if len(results) > 0 {
-		return results[0]["total"].(int64)
+		return parse.Number(results[0]["total"])
 	}
 	return 0
 }
