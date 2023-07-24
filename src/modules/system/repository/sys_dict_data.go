@@ -17,7 +17,7 @@ type ISysDictData interface {
 	SelectDictDataByCode(dictCode string) model.SysDictData
 
 	// CountDictDataByType 查询字典数据
-	CountDictDataByType(dictType string) string
+	CountDictDataByType(dictType string) int64
 
 	// CheckUniqueDictLabel 校验字典标签是否唯一
 	CheckUniqueDictLabel(dictType string, dictLabel string) string
@@ -35,5 +35,5 @@ type ISysDictData interface {
 	UpdateDictData(sysDictData model.SysDictData) int
 
 	// UpdateDictDataType 同步修改字典类型
-	UpdateDictDataType(oldDictType string, newDictType string) int
+	UpdateDictDataType(oldDictType string, newDictType string) int64
 }

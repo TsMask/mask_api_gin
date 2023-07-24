@@ -5,9 +5,9 @@ type SysDictType struct {
 	// 字典主键
 	DictID string `json:"dictId"`
 	// 字典名称
-	DictName string `json:"dictName"`
+	DictName string `json:"dictName" binding:"required"`
 	// 字典类型
-	DictType string `json:"dictType"`
+	DictType string `json:"dictType" binding:"required"`
 	// 状态（0停用 1正常）
 	Status string `json:"status"`
 	// 创建者

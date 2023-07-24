@@ -16,9 +16,6 @@ type ISysDictData interface {
 	// SelectDictDataByCode 根据字典数据编码查询信息
 	SelectDictDataByCode(dictCode string) model.SysDictData
 
-	// CountDictDataByType 查询字典数据
-	CountDictDataByType(dictType string) string
-
 	// CheckUniqueDictLabel 校验字典标签是否唯一
 	CheckUniqueDictLabel(dictType string, dictLabel string) string
 

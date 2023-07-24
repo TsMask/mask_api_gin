@@ -1,18 +1,27 @@
 package service
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"mask_api_gin/src/framework/constants/cachekey"
+	"mask_api_gin/src/framework/constants/common"
+	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )
 
 // SysDictTypeImpl 字典类型 数据层处理
 var SysDictTypeImpl = &sysDictTypeImpl{
-	sysUserRepository: repository.SysDictTypeImpl,
+	sysDictTypeRepository: repository.SysDictTypeImpl,
+	sysDictDataRepository: repository.SysDictDataImpl,
 }
 
 type sysDictTypeImpl struct {
 	// 字典类型服务
-	sysUserRepository repository.ISysDictType
+	sysDictTypeRepository repository.ISysDictType
+	// 字典数据服务
+	sysDictDataRepository repository.ISysDictData
 }
 
 // SelectDictTypePage 根据条件分页查询字典类型
@@ -27,6 +36,13 @@ func (r *sysDictTypeImpl) SelectDictTypeList(sysDictType model.SysDictType) []mo
 
 // SelectDictTypeByID 根据字典类型ID查询信息
 func (r *sysDictTypeImpl) SelectDictTypeByID(dictID string) model.SysDictType {
+	if dictID == "" {
+		return model.SysDictType{}
+	}
+	dictTypes := r.sysDictTypeRepository.SelectDictTypeByIDs([]string{dictID})
+	if len(dictTypes) > 0 {
+		return dictTypes[0]
+	}
 	return model.SysDictType{}
 }
 
@@ -36,26 +52,128 @@ func (r *sysDictTypeImpl) SelectDictTypeByType(dictType string) model.SysDictTyp
 }
 
 // CheckUniqueDictName 校验字典名称是否唯一
-func (r *sysDictTypeImpl) CheckUniqueDictName(dictName string) string {
-	return ""
+func (r *sysDictTypeImpl) CheckUniqueDictName(dictName, dictID string) bool {
+	uniqueId := r.sysDictTypeRepository.CheckUniqueDictType(model.SysDictType{
+		DictName: dictName,
+	})
+	if uniqueId == dictID {
+		return true
+	}
+	return uniqueId == ""
 }
 
 // CheckUniqueDictType 校验字典类型是否唯一
-func (r *sysDictTypeImpl) CheckUniqueDictType(dictType string) string {
-	return ""
+func (r *sysDictTypeImpl) CheckUniqueDictType(dictType, dictID string) bool {
+	uniqueId := r.sysDictTypeRepository.CheckUniqueDictType(model.SysDictType{
+		DictType: dictType,
+	})
+	if uniqueId == dictID {
+		return true
+	}
+	return uniqueId == ""
 }
 
 // InsertDictType 新增字典类型信息
 func (r *sysDictTypeImpl) InsertDictType(sysDictType model.SysDictType) string {
-	return ""
+	insertId := r.sysDictTypeRepository.InsertDictType(sysDictType)
+	if insertId != "" {
+		r.loadingDictCache(sysDictType.DictType)
+	}
+	return insertId
 }
 
 // UpdateDictType 修改字典类型信息
 func (r *sysDictTypeImpl) UpdateDictType(sysDictType model.SysDictType) int {
-	return 0
+	data := r.sysDictTypeRepository.SelectDictTypeByIDs([]string{sysDictType.DictID})
+	if len(data) == 0 {
+		return 0
+	}
+	oldDictType := data[0].DictType
+	rows := r.sysDictTypeRepository.UpdateDictType(sysDictType)
+	if rows > 0 && oldDictType != "" && oldDictType != sysDictType.DictType {
+		r.sysDictDataRepository.UpdateDictDataType(oldDictType, sysDictType.DictType)
+		r.clearDictCache(oldDictType)
+		r.loadingDictCache(sysDictType.DictType)
+	}
+	return rows
 }
 
-// DeleteDictTypeByID 批量删除字典类型信息
-func (r *sysDictTypeImpl) DeleteDictTypeByID(dictIDs []string) int {
-	return 0
+// DeleteDictTypeByIDs 批量删除字典类型信息
+func (r *sysDictTypeImpl) DeleteDictTypeByIDs(dictIDs []string) (int64, error) {
+	// 检查是否存在
+	dictTypes := r.sysDictTypeRepository.SelectDictTypeByIDs(dictIDs)
+	if len(dictTypes) <= 0 {
+		return 0, errors.New("没有权限访问字典类型数据！")
+	}
+	for _, v := range dictTypes {
+		// 字典类型下级含有数据
+		useCount := r.sysDictDataRepository.CountDictDataByType(v.DictType)
+		if useCount > 0 {
+			msg := fmt.Sprintf("【%s】存在字典数据,不能删除", v.DictName)
+			return 0, errors.New(msg)
+		}
+		// 清除缓存
+		r.clearDictCache(v.DictType)
+	}
+	if len(dictTypes) == len(dictIDs) {
+		rows := r.sysDictTypeRepository.DeleteDictTypeByIDs(dictIDs)
+		return rows, nil
+	}
+	return 0, errors.New("删除字典数据信息失败！")
+}
+
+// ResetDictCache 重置字典缓存数据
+func (r *sysDictTypeImpl) ResetDictCache() {
+	r.clearDictCache("*")
+	r.loadingDictCache("")
+}
+
+// getCacheKey 组装缓存key
+func (r *sysDictTypeImpl) getDictCache(dictType string) string {
+	return cachekey.SYS_DICT_KEY + dictType
+}
+
+// loadingDictCache 加载字典缓存数据
+func (r *sysDictTypeImpl) loadingDictCache(dictType string) {
+	sysDictData := model.SysDictData{
+		Status: common.STATUS_YES,
+	}
+
+	// 指定字典类型
+	if dictType != "" {
+		sysDictData.DictType = dictType
+		// 删除缓存
+		key := r.getDictCache(dictType)
+		redis.Del(key)
+	}
+
+	sysDictDataList := r.sysDictDataRepository.SelectDictDataList(sysDictData)
+	if len(sysDictDataList) == 0 {
+		return
+	}
+
+	// 将字典数据按类型分组
+	m := make(map[string][]model.SysDictData, 0)
+	for _, v := range sysDictDataList {
+		key := v.DictType
+		if item, ok := m[key]; ok {
+			m[key] = append(item, v)
+		} else {
+			m[key] = []model.SysDictData{v}
+		}
+	}
+
+	// 放入缓存
+	for k, v := range m {
+		key := r.getDictCache(k)
+		values, _ := json.Marshal(v)
+		redis.Set(key, string(values))
+	}
+}
+
+// clearDictCache 清空字典缓存数据
+func (r *sysDictTypeImpl) clearDictCache(dictType string) bool {
+	key := r.getDictCache(dictType)
+	keys := redis.GetKeys(key)
+	return redis.DelKeys(keys)
 }

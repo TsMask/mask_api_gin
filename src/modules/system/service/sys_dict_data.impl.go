@@ -35,11 +35,6 @@ func (r *sysDictDataImpl) SelectDictDataByCode(dictCode string) model.SysDictDat
 	return model.SysDictData{}
 }
 
-// CountDictDataByType 查询字典数据
-func (r *sysDictDataImpl) CountDictDataByType(dictType string) string {
-	return ""
-}
-
 // CheckUniqueDictLabel 校验字典标签是否唯一
 func (r *sysDictDataImpl) CheckUniqueDictLabel(dictType string, dictLabel string) string {
 	return ""
