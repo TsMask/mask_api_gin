@@ -23,6 +23,7 @@ var SysOperLog = &sysOperLog{
 }
 
 type sysOperLog struct {
+	// 操作日志服务
 	sysOperLogService service.ISysOperLog
 }
 
@@ -45,17 +46,17 @@ func (s *sysOperLog) Remove(c *gin.Context) {
 		return
 	}
 
-	// 处理字符转id数组
+	// 处理字符转id数组后去重
 	ids := strings.Split(operIds, ",")
-	if len(ids) <= 0 {
+	uniqueIDs := parse.RemoveDuplicates(ids)
+	if len(uniqueIDs) <= 0 {
 		c.JSON(200, result.Err(nil))
 		return
 	}
-	// 去重id
-	uniqueIDs := parse.RemoveDuplicates(ids)
 	rows := s.sysOperLogService.DeleteOperLogByIds(uniqueIDs)
 	if rows > 0 {
-		c.JSON(200, result.Ok(nil))
+		msg := fmt.Sprintf("删除成功：%d", rows)
+		c.JSON(200, result.OkMsg(msg))
 		return
 	}
 	c.JSON(200, result.Err(nil))
