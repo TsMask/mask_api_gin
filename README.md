@@ -1,7 +1,7 @@
 # 基于 Gin 的管理系统后端接口服务
 
 ![Build Gin](https://img.shields.io/badge/Build-Gin-green.svg)
-![Release V0.0.6](https://img.shields.io/badge/Release-V0.0.6-orange.svg)
+![Release V0.0.7](https://img.shields.io/badge/Release-V0.0.7-orange.svg)
 ![License MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
 ## 介绍
