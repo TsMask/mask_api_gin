@@ -4,81 +4,240 @@ import (
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
-	repoUtils "mask_api_gin/src/framework/utils/repo"
+	"mask_api_gin/src/framework/utils/parse"
+	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/monitor/model"
 	"strings"
 )
 
 // SysOperLogImpl 操作日志表 数据层处理
 var SysOperLogImpl = &sysOperLogImpl{
-	selectSql: "",
+	selectSql: `select 
+	oper_id, title, business_type, method, request_method, operator_type, oper_name, dept_name, 
+	oper_url, oper_ip, oper_location, oper_param, oper_msg, status, oper_time, cost_time
+	from sys_oper_log`,
+
+	resultMap: map[string]string{
+		"oper_id":        "OperID",
+		"title":          "Title",
+		"business_type":  "BusinessType",
+		"method":         "Method",
+		"request_method": "RequestMethod",
+		"operator_type":  "OperatorType",
+		"oper_name":      "OperName",
+		"dept_name":      "DeptName",
+		"oper_url":       "OperUrl",
+		"oper_ip":        "OperIp",
+		"oper_location":  "OperLocation",
+		"oper_param":     "OperParam",
+		"oper_msg":       "OperMsg",
+		"status":         "Status",
+		"oper_time":      "OperTime",
+		"cost_time":      "CostTime",
+	},
 }
 
 type sysOperLogImpl struct {
 	// 查询视图对象SQL
 	selectSql string
+	// 结果字段与实体映射
+	resultMap map[string]string
+}
+
+// convertResultRows 将结果记录转实体结果组
+func (r *sysOperLogImpl) convertResultRows(rows []map[string]interface{}) []model.SysOperLog {
+	arr := make([]model.SysOperLog, 0)
+	for _, row := range rows {
+		sysOperLog := model.SysOperLog{}
+		for key, value := range row {
+			if keyMapper, ok := r.resultMap[key]; ok {
+				repo.SetFieldValue(&sysOperLog, keyMapper, value)
+			}
+		}
+		arr = append(arr, sysOperLog)
+	}
+	return arr
 }
 
 // SelectOperLogPage 分页查询系统操作日志集合
 func (r *sysOperLogImpl) SelectOperLogPage(query map[string]string) map[string]interface{} {
-	return map[string]interface{}{}
+	// 查询条件拼接
+	var conditions []string
+	var params []interface{}
+	if v, ok := query["title"]; ok {
+		conditions = append(conditions, "title like concat(?, '%')")
+		params = append(params, v)
+	}
+	if v, ok := query["businessType"]; ok {
+		conditions = append(conditions, "business_type = ?")
+		params = append(params, v)
+	}
+	if v, ok := query["operName"]; ok {
+		conditions = append(conditions, "oper_name like concat(?, '%')")
+		params = append(params, v)
+	}
+	if v, ok := query["status"]; ok {
+		conditions = append(conditions, "status = ?")
+		params = append(params, v)
+	}
+	if v, ok := query["beginTime"]; ok {
+		conditions = append(conditions, "oper_time >= ?")
+		beginDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
+		params = append(params, beginDate.UnixNano()/1e6)
+	}
+	if v, ok := query["endTime"]; ok {
+		conditions = append(conditions, "oper_time <= ?")
+		endDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
+		params = append(params, endDate.UnixNano()/1e6)
+	}
+
+	// 构建查询条件语句
+	whereSql := ""
+	if len(conditions) > 0 {
+		whereSql += " where " + strings.Join(conditions, " and ")
+	}
+
+	// 查询数量 长度为0直接返回
+	totalSql := "select count(1) as 'total' from sys_oper_log"
+	totalRows, err := datasource.RawDB("", totalSql+whereSql, params)
+	if err != nil {
+		logger.Errorf("total err => %v", err)
+	}
+	total := parse.Number(totalRows[0]["total"])
+	if total <= 0 {
+		return map[string]interface{}{
+			"total": 0,
+			"rows":  []interface{}{},
+		}
+	}
+
+	// 分页
+	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageSql := " order by oper_id desc limit ?,? "
+	params = append(params, pageNum*pageSize)
+	params = append(params, pageSize)
+
+	// 查询数据
+	querySql := r.selectSql + whereSql + pageSql
+	results, err := datasource.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+	}
+
+	// 转换实体
+	rows := r.convertResultRows(results)
+	return map[string]interface{}{
+		"total": total,
+		"rows":  rows,
+	}
 }
 
 // SelectOperLogList 查询系统操作日志集合
 func (r *sysOperLogImpl) SelectOperLogList(sysOperLog model.SysOperLog) []model.SysOperLog {
-	return []model.SysOperLog{}
+	// 查询条件拼接
+	var conditions []string
+	var params []interface{}
+	if sysOperLog.Title != "" {
+		conditions = append(conditions, "title like concat(?, '%')")
+		params = append(params, sysOperLog.Title)
+	}
+	if sysOperLog.BusinessType != "" {
+		conditions = append(conditions, "business_type = ?")
+		params = append(params, sysOperLog.BusinessType)
+	}
+	if sysOperLog.OperName != "" {
+		conditions = append(conditions, "oper_name like concat(?, '%')")
+		params = append(params, sysOperLog.OperName)
+	}
+	if sysOperLog.Status != "" {
+		conditions = append(conditions, "status = ?")
+		params = append(params, sysOperLog.Status)
+	}
+
+	// 构建查询条件语句
+	whereSql := ""
+	if len(conditions) > 0 {
+		whereSql += " where " + strings.Join(conditions, " and ")
+	}
+
+	// 查询数据
+	querySql := r.selectSql + whereSql
+	results, err := datasource.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return []model.SysOperLog{}
+	}
+
+	// 转换实体
+	return r.convertResultRows(results)
+}
+
+// SelectOperLogById 查询操作日志详细
+func (r *sysOperLogImpl) SelectOperLogById(operId string) model.SysOperLog {
+	querySql := r.selectSql + " where oper_id = ?"
+	results, err := datasource.RawDB("", querySql, []interface{}{operId})
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return model.SysOperLog{}
+	}
+	// 转换实体
+	rows := r.convertResultRows(results)
+	if len(rows) > 0 {
+		return rows[0]
+	}
+	return model.SysOperLog{}
 }
 
 // InsertOperLog 新增操作日志
 func (r *sysOperLogImpl) InsertOperLog(sysOperLog model.SysOperLog) string {
 	// 参数拼接
-	paramMap := make(map[string]interface{})
-	paramMap["oper_time"] = date.NowTimestamp()
+	params := make(map[string]interface{})
+	params["oper_time"] = date.NowTimestamp()
 	if sysOperLog.Title != "" {
-		paramMap["title"] = sysOperLog.Title
+		params["title"] = sysOperLog.Title
 	}
 	if sysOperLog.BusinessType != "" {
-		paramMap["business_type"] = sysOperLog.BusinessType
+		params["business_type"] = sysOperLog.BusinessType
 	}
 	if sysOperLog.Method != "" {
-		paramMap["method"] = sysOperLog.Method
+		params["method"] = sysOperLog.Method
 	}
 	if sysOperLog.RequestMethod != "" {
-		paramMap["request_method"] = sysOperLog.RequestMethod
+		params["request_method"] = sysOperLog.RequestMethod
 	}
 	if sysOperLog.OperatorType != "" {
-		paramMap["operator_type"] = sysOperLog.OperatorType
+		params["operator_type"] = sysOperLog.OperatorType
 	}
 	if sysOperLog.DeptName != "" {
-		paramMap["dept_name"] = sysOperLog.DeptName
+		params["dept_name"] = sysOperLog.DeptName
 	}
 	if sysOperLog.OperName != "" {
-		paramMap["oper_name"] = sysOperLog.OperName
+		params["oper_name"] = sysOperLog.OperName
 	}
 	if sysOperLog.OperURL != "" {
-		paramMap["oper_url"] = sysOperLog.OperURL
+		params["oper_url"] = sysOperLog.OperURL
 	}
 	if sysOperLog.OperID != "" {
-		paramMap["oper_ip"] = sysOperLog.OperID
+		params["oper_ip"] = sysOperLog.OperID
 	}
 	if sysOperLog.OperLocation != "" {
-		paramMap["oper_location"] = sysOperLog.OperLocation
+		params["oper_location"] = sysOperLog.OperLocation
 	}
 	if sysOperLog.OperParam != "" {
-		paramMap["oper_param"] = sysOperLog.OperParam
+		params["oper_param"] = sysOperLog.OperParam
 	}
 	if sysOperLog.OperMsg != "" {
-		paramMap["oper_msg"] = sysOperLog.OperMsg
+		params["oper_msg"] = sysOperLog.OperMsg
 	}
 	if sysOperLog.Status != "" {
-		paramMap["status"] = sysOperLog.Status
+		params["status"] = sysOperLog.Status
 	}
 	if sysOperLog.CostTime > 0 {
-		paramMap["cost_time"] = sysOperLog.CostTime
+		params["cost_time"] = sysOperLog.CostTime
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repoUtils.KeyPlaceholderValueByInsert(paramMap)
+	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
 	sql := "insert into sys_oper_log (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
 
 	db := datasource.DefaultDB()
@@ -106,15 +265,21 @@ func (r *sysOperLogImpl) InsertOperLog(sysOperLog model.SysOperLog) string {
 
 // DeleteOperLogByIds 批量删除系统操作日志
 func (r *sysOperLogImpl) DeleteOperLogByIds(operIds []string) int64 {
-	return 0
-}
-
-// SelectOperLogById 查询操作日志详细
-func (r *sysOperLogImpl) SelectOperLogById(operId string) model.SysOperLog {
-	return model.SysOperLog{}
+	placeholder := repo.KeyPlaceholderByQuery(len(operIds))
+	sql := "delete from sys_oper_log where oper_id in (" + placeholder + ")"
+	parameters := repo.ConvertIdsSlice(operIds)
+	results, err := datasource.ExecDB("", sql, parameters)
+	if err != nil {
+		logger.Errorf("delete err => %v", err)
+		return 0
+	}
+	return results
 }
 
 // CleanOperLog 清空操作日志
 func (r *sysOperLogImpl) CleanOperLog() error {
-	return nil
+	sql := "truncate table sys_oper_log"
+	results, err := datasource.ExecDB("", sql, []interface{}{})
+	logger.Errorf("delete results => %v", results)
+	return err
 }

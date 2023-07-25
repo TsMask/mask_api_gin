@@ -17,12 +17,17 @@ type sysOperLogImpl struct {
 
 // SelectOperLogPage 分页查询系统操作日志集合
 func (r *sysOperLogImpl) SelectOperLogPage(query map[string]string) map[string]interface{} {
-	return map[string]interface{}{}
+	return r.sysOperLogService.SelectOperLogPage(query)
 }
 
 // SelectOperLogList 查询系统操作日志集合
 func (r *sysOperLogImpl) SelectOperLogList(sysOperLog model.SysOperLog) []model.SysOperLog {
-	return []model.SysOperLog{}
+	return r.sysOperLogService.SelectOperLogList(sysOperLog)
+}
+
+// SelectOperLogById 查询操作日志详细
+func (r *sysOperLogImpl) SelectOperLogById(operId string) model.SysOperLog {
+	return r.sysOperLogService.SelectOperLogById(operId)
 }
 
 // InsertOperLog 新增操作日志
@@ -32,15 +37,10 @@ func (r *sysOperLogImpl) InsertOperLog(sysOperLog model.SysOperLog) string {
 
 // DeleteOperLogByIds 批量删除系统操作日志
 func (r *sysOperLogImpl) DeleteOperLogByIds(operIds []string) int64 {
-	return 0
-}
-
-// SelectOperLogById 查询操作日志详细
-func (r *sysOperLogImpl) SelectOperLogById(operId string) model.SysOperLog {
-	return model.SysOperLog{}
+	return r.sysOperLogService.DeleteOperLogByIds(operIds)
 }
 
 // CleanOperLog 清空操作日志
 func (r *sysOperLogImpl) CleanOperLog() error {
-	return nil
+	return r.sysOperLogService.CleanOperLog()
 }

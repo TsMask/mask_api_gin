@@ -10,14 +10,14 @@ type ISysOperLog interface {
 	// SelectOperLogList 查询系统操作日志集合
 	SelectOperLogList(sysOperLog model.SysOperLog) []model.SysOperLog
 
+	// SelectOperLogById 查询操作日志详细
+	SelectOperLogById(operId string) model.SysOperLog
+
 	// InsertOperLog 新增操作日志
 	InsertOperLog(sysOperLog model.SysOperLog) string
 
 	// DeleteOperLogByIds 批量删除系统操作日志
 	DeleteOperLogByIds(operIds []string) int64
-
-	// SelectOperLogById 查询操作日志详细
-	SelectOperLogById(operId string) model.SysOperLog
 
 	// CleanOperLog 清空操作日志
 	CleanOperLog() error
