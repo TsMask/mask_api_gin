@@ -4,6 +4,7 @@ import (
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/middleware"
 	"mask_api_gin/src/framework/middleware/operlog"
+	"mask_api_gin/src/framework/middleware/repeat"
 	"mask_api_gin/src/modules/monitor/controller"
 
 	"github.com/gin-gonic/gin"
@@ -46,6 +47,56 @@ func Setup(router *gin.Engine) {
 		sysCacheGroup.DELETE("/clearCacheSafe",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
 			controller.SysCache.ClearCacheSafe,
+		)
+	}
+
+	// 调度任务信息
+	sysJobGroup := router.Group("/monitor/job")
+	{
+		sysJobGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:list"}}),
+			controller.SysJob.List,
+		)
+		sysJobGroup.GET("/:jobId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:query"}}),
+			controller.SysJob.Info,
+		)
+		sysJobGroup.POST("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:add"}}),
+			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_INSERT)),
+			controller.SysJob.Add,
+		)
+		sysJobGroup.PUT("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:edit"}}),
+			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysJob.Edit,
+		)
+		sysJobGroup.DELETE("/:jobIds",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
+			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_DELETE)),
+			controller.SysJob.Remove,
+		)
+		sysJobGroup.PUT("/changeStatus",
+			repeat.RepeatSubmit(5),
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
+			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysJob.Status,
+		)
+		sysJobGroup.PUT("/run/:jobId",
+			repeat.RepeatSubmit(10),
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
+			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysJob.Run,
+		)
+		sysJobGroup.PUT("/resetQueueJob",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
+			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_CLEAN)),
+			controller.SysJob.ResetQueueJob,
+		)
+		sysJobGroup.POST("/export",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:export"}}),
+			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_EXPORT)),
+			controller.SysJob.Export,
 		)
 	}
 
