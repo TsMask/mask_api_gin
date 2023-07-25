@@ -16,12 +16,6 @@ func Setup(router *gin.Engine) {
 	// 启动时需要的初始参数
 	InitLoad()
 
-	// 服务器监控信息
-	router.GET("/monitor/server",
-		middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:server:info"}}),
-		controller.ServerController.Info,
-	)
-
 	// 缓存监控信息
 	sysCacheGroup := router.Group("/monitor/cache")
 	{
@@ -55,6 +49,21 @@ func Setup(router *gin.Engine) {
 		)
 	}
 
+	// 调度任务日志信息
+	jobLogGroup := router.Group("/monitor/jobLog")
+	{
+		// 导出调度任务日志信息
+		jobLogGroup.POST("/export", controller.SysJobLog.Export)
+		// 调度任务日志列表
+		jobLogGroup.GET("/list", controller.SysJobLog.List)
+		// 调度任务日志信息
+		jobLogGroup.GET("/:jobLogId", controller.SysJobLog.Info)
+		// 调度任务日志删除
+		jobLogGroup.DELETE("/:jobLogIds", controller.SysJobLog.Remove)
+		// 调度任务日志清空
+		jobLogGroup.DELETE("/clean", controller.SysJobLog.Clean)
+	}
+
 	// 操作日志记录信息
 	sysOperLogGroup := router.Group("/monitor/operlog")
 	{
@@ -79,33 +88,53 @@ func Setup(router *gin.Engine) {
 		)
 	}
 
-	// 在线用户监控
-	onlineGroup := router.Group("/monitor/online")
+	// 登录访问信息
+	sysLogininforGroup := router.Group("/monitor/logininfor")
 	{
-		onlineGroup.GET("/list",
+		sysLogininforGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:logininfor:list"}}),
+			controller.SysLogininfor.List,
+		)
+		sysLogininforGroup.DELETE("/:infoIds",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:logininfor:remove"}}),
+			operlog.OperLog(operlog.OptionNew("登录访问信息", operlog.BUSINESS_TYPE_DELETE)),
+			controller.SysLogininfor.Remove,
+		)
+		sysLogininforGroup.DELETE("/clean",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:logininfor:remove"}}),
+			operlog.OperLog(operlog.OptionNew("登录访问信息", operlog.BUSINESS_TYPE_CLEAN)),
+			controller.SysLogininfor.Clean,
+		)
+		sysLogininforGroup.PUT("/unlock/:userName",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:logininfor:unlock"}}),
+			operlog.OperLog(operlog.OptionNew("登录访问信息", operlog.BUSINESS_TYPE_CLEAN)),
+			controller.SysLogininfor.Unlock,
+		)
+		sysLogininforGroup.DELETE("/export",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:logininfor:export"}}),
+			operlog.OperLog(operlog.OptionNew("登录访问信息", operlog.BUSINESS_TYPE_EXPORT)),
+			controller.SysLogininfor.Export,
+		)
+	}
+
+	// 在线用户监控
+	sysUserOnlineGroup := router.Group("/monitor/online")
+	{
+		sysUserOnlineGroup.GET("/list",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:online:list"}}),
 			controller.SysUserOnline.List,
 		)
-		onlineGroup.DELETE("/:tokenId",
+		sysUserOnlineGroup.DELETE("/:tokenId",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:online:forceLogout"}}),
 			controller.SysUserOnline.ForceLogout,
 		)
 	}
 
-	// 调度任务日志信息
-	jobLogGroup := router.Group("/monitor/jobLog")
-	{
-		// 导出调度任务日志信息
-		jobLogGroup.POST("/export", controller.SysJobLog.Export)
-		// 调度任务日志列表
-		jobLogGroup.GET("/list", controller.SysJobLog.List)
-		// 调度任务日志信息
-		jobLogGroup.GET("/:jobLogId", controller.SysJobLog.Info)
-		// 调度任务日志删除
-		jobLogGroup.DELETE("/:jobLogIds", controller.SysJobLog.Remove)
-		// 调度任务日志清空
-		jobLogGroup.DELETE("/clean", controller.SysJobLog.Clean)
-	}
+	// 服务器监控信息
+	router.GET("/monitor/server",
+		middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:server:info"}}),
+		controller.ServerController.Info,
+	)
 }
 
 // InitLoad 初始参数
