@@ -27,7 +27,7 @@ var SysOperLogImpl = &sysOperLogImpl{
 		"oper_name":      "OperName",
 		"dept_name":      "DeptName",
 		"oper_url":       "OperUrl",
-		"oper_ip":        "OperIp",
+		"oper_ip":        "OperIP",
 		"oper_location":  "OperLocation",
 		"oper_param":     "OperParam",
 		"oper_msg":       "OperMsg",

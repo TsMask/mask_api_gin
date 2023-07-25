@@ -23,6 +23,7 @@ var SysUserOnline = &sysUserOnline{
 }
 
 type sysUserOnline struct {
+	// 在线用户服务
 	sysUserOnlineService service.ISysUserOnline
 }
 
@@ -115,6 +116,7 @@ func (s *sysUserOnline) ForceLogout(c *gin.Context) {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
+
 	// 删除token
 	ok := redis.Del(cachekey.LOGIN_TOKEN_KEY + tokenId)
 	if ok {

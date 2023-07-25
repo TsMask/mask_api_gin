@@ -15,6 +15,7 @@ var ServerController = &serverController{
 }
 
 type serverController struct {
+	// 服务器系统相关信息服务
 	systemInfogService service.ISystemInfo
 }
 
