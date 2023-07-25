@@ -23,7 +23,7 @@ type ISysDictType interface {
 	InsertDictType(sysDictType model.SysDictType) string
 
 	// UpdateDictType 修改字典类型信息
-	UpdateDictType(sysDictType model.SysDictType) int
+	UpdateDictType(sysDictType model.SysDictType) int64
 
 	// DeleteDictTypeByIDs 批量删除字典类型信息
 	DeleteDictTypeByIDs(dictIDs []string) int64

@@ -26,11 +26,20 @@ type ISysDictType interface {
 	InsertDictType(sysDictType model.SysDictType) string
 
 	// UpdateDictType 修改字典类型信息
-	UpdateDictType(sysDictType model.SysDictType) int
+	UpdateDictType(sysDictType model.SysDictType) int64
 
 	// DeleteDictTypeByIDs 批量删除字典类型信息
 	DeleteDictTypeByIDs(dictIDs []string) (int64, error)
 
 	// ResetDictCache 重置字典缓存数据
 	ResetDictCache()
+
+	// 加载字典缓存数据
+	LoadingDictCache(dictType string)
+
+	// 清空字典缓存数据
+	ClearDictCache(dictType string) bool
+
+	// DictDataCache 获取字典数据缓存数据
+	DictDataCache(dictType string) []model.SysDictData
 }

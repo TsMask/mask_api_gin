@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/utils/date"
+	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
@@ -52,12 +54,107 @@ func (r *sysDictTypeImpl) convertResultRows(rows []map[string]interface{}) []mod
 
 // SelectDictTypePage 根据条件分页查询字典类型
 func (r *sysDictTypeImpl) SelectDictTypePage(query map[string]string) map[string]interface{} {
-	return map[string]interface{}{}
+	// 查询条件拼接
+	var conditions []string
+	var params []interface{}
+	if v, ok := query["dictName"]; ok {
+		conditions = append(conditions, "dict_name like concat(?, '%')")
+		params = append(params, v)
+	}
+	if v, ok := query["dictType"]; ok {
+		conditions = append(conditions, "dict_type like concat(?, '%')")
+		params = append(params, v)
+	}
+	if v, ok := query["status"]; ok {
+		conditions = append(conditions, "status = ?")
+		params = append(params, v)
+	}
+	if v, ok := query["beginTime"]; ok {
+		conditions = append(conditions, "create_time >= ?")
+		beginDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
+		params = append(params, beginDate.UnixNano()/1e6)
+	}
+	if v, ok := query["endTime"]; ok {
+		conditions = append(conditions, "create_time <= ?")
+		endDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
+		params = append(params, endDate.UnixNano()/1e6)
+	}
+
+	// 构建查询条件语句
+	whereSql := ""
+	if len(conditions) > 0 {
+		whereSql += " where " + strings.Join(conditions, " and ")
+	}
+
+	// 查询数量 长度为0直接返回
+	totalSql := "select count(1) as 'total' from sys_dict_type"
+	totalRows, err := datasource.RawDB("", totalSql+whereSql, params)
+	if err != nil {
+		logger.Errorf("total err => %v", err)
+	}
+	total := parse.Number(totalRows[0]["total"])
+	if total <= 0 {
+		return map[string]interface{}{
+			"total": 0,
+			"rows":  []interface{}{},
+		}
+	}
+
+	// 分页
+	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageSql := " limit ?,? "
+	params = append(params, pageNum*pageSize)
+	params = append(params, pageSize)
+
+	// 查询数据
+	querySql := r.selectSql + whereSql + pageSql
+	results, err := datasource.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+	}
+
+	// 转换实体
+	rows := r.convertResultRows(results)
+	return map[string]interface{}{
+		"total": total,
+		"rows":  rows,
+	}
 }
 
 // SelectDictTypeList 根据条件查询字典类型
 func (r *sysDictTypeImpl) SelectDictTypeList(sysDictType model.SysDictType) []model.SysDictType {
-	return []model.SysDictType{}
+	// 查询条件拼接
+	var conditions []string
+	var params []interface{}
+	if sysDictType.DictName != "" {
+		conditions = append(conditions, "dict_name like concat(?, '%')")
+		params = append(params, sysDictType.DictName)
+	}
+	if sysDictType.DictType != "" {
+		conditions = append(conditions, "dict_type like concat(?, '%')")
+		params = append(params, sysDictType.DictType)
+	}
+	if sysDictType.Status != "" {
+		conditions = append(conditions, "status = ?")
+		params = append(params, sysDictType.Status)
+	}
+
+	// 构建查询条件语句
+	whereSql := ""
+	if len(conditions) > 0 {
+		whereSql += " where " + strings.Join(conditions, " and ")
+	}
+
+	// 查询数据
+	querySql := r.selectSql + whereSql
+	results, err := datasource.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return []model.SysDictType{}
+	}
+
+	// 转换实体
+	return r.convertResultRows(results)
 }
 
 // SelectDictTypeByIDs 根据字典类型ID查询信息
@@ -76,6 +173,17 @@ func (r *sysDictTypeImpl) SelectDictTypeByIDs(dictIDs []string) []model.SysDictT
 
 // SelectDictTypeByType 根据字典类型查询信息
 func (r *sysDictTypeImpl) SelectDictTypeByType(dictType string) model.SysDictType {
+	querySql := r.selectSql + " where dict_type = ?"
+	results, err := datasource.RawDB("", querySql, []interface{}{dictType})
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return model.SysDictType{}
+	}
+	// 转换实体
+	rows := r.convertResultRows(results)
+	if len(rows) > 0 {
+		return rows[0]
+	}
 	return model.SysDictType{}
 }
 
@@ -116,12 +224,85 @@ func (r *sysDictTypeImpl) CheckUniqueDictType(sysDictType model.SysDictType) str
 
 // InsertDictType 新增字典类型信息
 func (r *sysDictTypeImpl) InsertDictType(sysDictType model.SysDictType) string {
-	return ""
+	// 参数拼接
+	params := make(map[string]interface{})
+	if sysDictType.DictName != "" {
+		params["dict_name"] = sysDictType.DictName
+	}
+	if sysDictType.DictType != "" {
+		params["dict_type"] = sysDictType.DictType
+	}
+	if sysDictType.Status != "" {
+		params["status"] = sysDictType.Status
+	}
+	if sysDictType.Remark != "" {
+		params["remark"] = sysDictType.Remark
+	}
+	if sysDictType.CreateBy != "" {
+		params["create_by"] = sysDictType.CreateBy
+		params["create_time"] = date.NowTimestamp()
+	}
+
+	// 构建执行语句
+	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
+	sql := "insert into sys_dict_type (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+
+	db := datasource.DefaultDB()
+	// 开启事务
+	tx := db.Begin()
+	// 执行插入
+	err := tx.Exec(sql, values...).Error
+	if err != nil {
+		logger.Errorf("insert row : %v", err.Error())
+		tx.Rollback()
+		return ""
+	}
+	// 获取生成的自增 ID
+	var insertedID string
+	err = tx.Raw("select last_insert_id()").Row().Scan(&insertedID)
+	if err != nil {
+		logger.Errorf("insert last id : %v", err.Error())
+		tx.Rollback()
+		return ""
+	}
+	// 提交事务
+	tx.Commit()
+	return insertedID
 }
 
 // UpdateDictType 修改字典类型信息
-func (r *sysDictTypeImpl) UpdateDictType(sysDictType model.SysDictType) int {
-	return 0
+func (r *sysDictTypeImpl) UpdateDictType(sysDictType model.SysDictType) int64 {
+	// 参数拼接
+	params := make(map[string]interface{})
+	if sysDictType.DictName != "" {
+		params["dict_name"] = sysDictType.DictName
+	}
+	if sysDictType.DictType != "" {
+		params["dict_type"] = sysDictType.DictType
+	}
+	if sysDictType.Status != "" {
+		params["status"] = sysDictType.Status
+	}
+	if sysDictType.Remark != "" {
+		params["remark"] = sysDictType.Remark
+	}
+	if sysDictType.UpdateBy != "" {
+		params["update_by"] = sysDictType.UpdateBy
+		params["update_time"] = date.NowTimestamp()
+	}
+
+	// 构建执行语句
+	keys, values := repo.KeyValueByUpdate(params)
+	sql := "update sys_dict_type set " + strings.Join(keys, ",") + " where dict_id = ?"
+
+	// 执行更新
+	values = append(values, sysDictType.DictID)
+	rows, err := datasource.ExecDB("", sql, values)
+	if err != nil {
+		logger.Errorf("update row : %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // DeleteDictTypeByIDs 批量删除字典类型信息

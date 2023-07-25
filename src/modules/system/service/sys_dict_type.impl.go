@@ -26,12 +26,12 @@ type sysDictTypeImpl struct {
 
 // SelectDictTypePage 根据条件分页查询字典类型
 func (r *sysDictTypeImpl) SelectDictTypePage(query map[string]string) map[string]interface{} {
-	return map[string]interface{}{}
+	return r.sysDictTypeRepository.SelectDictTypePage(query)
 }
 
 // SelectDictTypeList 根据条件查询字典类型
 func (r *sysDictTypeImpl) SelectDictTypeList(sysDictType model.SysDictType) []model.SysDictType {
-	return []model.SysDictType{}
+	return r.sysDictTypeRepository.SelectDictTypeList(sysDictType)
 }
 
 // SelectDictTypeByID 根据字典类型ID查询信息
@@ -48,7 +48,7 @@ func (r *sysDictTypeImpl) SelectDictTypeByID(dictID string) model.SysDictType {
 
 // SelectDictTypeByType 根据字典类型查询信息
 func (r *sysDictTypeImpl) SelectDictTypeByType(dictType string) model.SysDictType {
-	return model.SysDictType{}
+	return r.sysDictTypeRepository.SelectDictTypeByType(dictType)
 }
 
 // CheckUniqueDictName 校验字典名称是否唯一
@@ -77,24 +77,26 @@ func (r *sysDictTypeImpl) CheckUniqueDictType(dictType, dictID string) bool {
 func (r *sysDictTypeImpl) InsertDictType(sysDictType model.SysDictType) string {
 	insertId := r.sysDictTypeRepository.InsertDictType(sysDictType)
 	if insertId != "" {
-		r.loadingDictCache(sysDictType.DictType)
+		r.LoadingDictCache(sysDictType.DictType)
 	}
 	return insertId
 }
 
 // UpdateDictType 修改字典类型信息
-func (r *sysDictTypeImpl) UpdateDictType(sysDictType model.SysDictType) int {
+func (r *sysDictTypeImpl) UpdateDictType(sysDictType model.SysDictType) int64 {
 	data := r.sysDictTypeRepository.SelectDictTypeByIDs([]string{sysDictType.DictID})
 	if len(data) == 0 {
 		return 0
 	}
+	// 修改字典类型key时同步更新其字典数据的类型key
 	oldDictType := data[0].DictType
 	rows := r.sysDictTypeRepository.UpdateDictType(sysDictType)
 	if rows > 0 && oldDictType != "" && oldDictType != sysDictType.DictType {
 		r.sysDictDataRepository.UpdateDictDataType(oldDictType, sysDictType.DictType)
-		r.clearDictCache(oldDictType)
-		r.loadingDictCache(sysDictType.DictType)
 	}
+	// 刷新缓存
+	r.ClearDictCache(oldDictType)
+	r.LoadingDictCache(sysDictType.DictType)
 	return rows
 }
 
@@ -113,7 +115,7 @@ func (r *sysDictTypeImpl) DeleteDictTypeByIDs(dictIDs []string) (int64, error) {
 			return 0, errors.New(msg)
 		}
 		// 清除缓存
-		r.clearDictCache(v.DictType)
+		r.ClearDictCache(v.DictType)
 	}
 	if len(dictTypes) == len(dictIDs) {
 		rows := r.sysDictTypeRepository.DeleteDictTypeByIDs(dictIDs)
@@ -124,8 +126,8 @@ func (r *sysDictTypeImpl) DeleteDictTypeByIDs(dictIDs []string) (int64, error) {
 
 // ResetDictCache 重置字典缓存数据
 func (r *sysDictTypeImpl) ResetDictCache() {
-	r.clearDictCache("*")
-	r.loadingDictCache("")
+	r.ClearDictCache("*")
+	r.LoadingDictCache("")
 }
 
 // getCacheKey 组装缓存key
@@ -133,8 +135,8 @@ func (r *sysDictTypeImpl) getDictCache(dictType string) string {
 	return cachekey.SYS_DICT_KEY + dictType
 }
 
-// loadingDictCache 加载字典缓存数据
-func (r *sysDictTypeImpl) loadingDictCache(dictType string) {
+// LoadingDictCache 加载字典缓存数据
+func (r *sysDictTypeImpl) LoadingDictCache(dictType string) {
 	sysDictData := model.SysDictData{
 		Status: common.STATUS_YES,
 	}
@@ -171,9 +173,33 @@ func (r *sysDictTypeImpl) loadingDictCache(dictType string) {
 	}
 }
 
-// clearDictCache 清空字典缓存数据
-func (r *sysDictTypeImpl) clearDictCache(dictType string) bool {
+// ClearDictCache 清空字典缓存数据
+func (r *sysDictTypeImpl) ClearDictCache(dictType string) bool {
 	key := r.getDictCache(dictType)
 	keys := redis.GetKeys(key)
 	return redis.DelKeys(keys)
+}
+
+// DictDataCache 获取字典数据缓存数据
+func (r *sysDictTypeImpl) DictDataCache(dictType string) []model.SysDictData {
+	data := []model.SysDictData{}
+	key := r.getDictCache(dictType)
+	jsonStr := redis.Get(key)
+	if len(jsonStr) > 7 {
+		err := json.Unmarshal([]byte(jsonStr), &data)
+		if err != nil {
+			data = []model.SysDictData{}
+		}
+	} else {
+		data = r.sysDictDataRepository.SelectDictDataList(model.SysDictData{
+			Status:   common.STATUS_YES,
+			DictType: dictType,
+		})
+		if len(data) > 0 {
+			redis.Del(key)
+			values, _ := json.Marshal(data)
+			redis.Set(key, string(values))
+		}
+	}
+	return data
 }
