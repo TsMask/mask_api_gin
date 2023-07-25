@@ -18,6 +18,7 @@ func initAppEngine() *gin.Engine {
 
 	// 禁止控制台日志输出的颜色
 	gin.DisableConsoleColor()
+
 	// 根据运行环境注册引擎
 	if config.Env() == "prod" {
 		gin.SetMode(gin.ReleaseMode)
@@ -27,6 +28,11 @@ func initAppEngine() *gin.Engine {
 		app = gin.Default()
 	}
 
+	return app
+}
+
+// 初始全局默认
+func initDefeat(app *gin.Engine) {
 	// 全局中间件
 	app.Use(middleware.Report())
 
@@ -36,6 +42,17 @@ func initAppEngine() *gin.Engine {
 	fsUpload := viper.GetStringMapString("staticFile.upload")
 	app.StaticFS(fsUpload["prefix"], gin.Dir(fsUpload["dir"], true))
 
+	// 路由未找到时
+	app.NoRoute(func(c *gin.Context) {
+		c.JSON(404, gin.H{
+			"code": 404,
+			"msg":  c.Request.RequestURI + " Not Found",
+		})
+	})
+}
+
+// 初始模块路由
+func initModulesRoute(app *gin.Engine) {
 	// 测试启动
 	app.GET("/ping", func(c *gin.Context) {
 		forwardedFor := c.Request.Header.Get("X-Forwarded-For")
@@ -48,19 +65,6 @@ func initAppEngine() *gin.Engine {
 		})
 	})
 
-	// 路由未找到时
-	app.NoRoute(func(c *gin.Context) {
-		c.JSON(404, gin.H{
-			"code": 404,
-			"msg":  c.Request.RequestURI + " Not Found",
-		})
-	})
-
-	return app
-}
-
-// 初始模块路由
-func initModulesRoute(app *gin.Engine) {
 	common.Setup(app)
 	monitor.Setup(app)
 	system.Setup(app)
@@ -69,6 +73,11 @@ func initModulesRoute(app *gin.Engine) {
 // 运行服务程序
 func RunServer() error {
 	app := initAppEngine()
+
+	// 初始全局默认
+	initDefeat(app)
+
+	// 初始模块路由
 	initModulesRoute(app)
 
 	// 读取服务配置
