@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/logger"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -52,6 +53,67 @@ func Close() {
 	if err := rdb.Close(); err != nil {
 		logger.Panicf("fatal error db close: %s", err)
 	}
+}
+
+// Info 获取redis服务信息
+func Info() map[string]map[string]string {
+	ctx := context.Background()
+	info, err := rdb.Info(ctx).Result()
+	if err != nil {
+		return map[string]map[string]string{}
+	}
+	infoObj := make(map[string]map[string]string)
+	lines := strings.Split(info, "\r\n")
+	label := ""
+	for _, line := range lines {
+		if strings.Contains(line, "#") {
+			label = strings.Fields(line)[len(strings.Fields(line))-1]
+			label = strings.ToLower(label)
+			infoObj[label] = make(map[string]string)
+			continue
+		}
+		kvArr := strings.Split(line, ":")
+		if len(kvArr) >= 2 {
+			key := strings.TrimSpace(kvArr[0])
+			value := strings.TrimSpace(kvArr[len(kvArr)-1])
+			infoObj[label][key] = value
+		}
+	}
+	return infoObj
+}
+
+// KeySize 获取redis当前连接可用键Key总数信息
+func KeySize() int64 {
+	ctx := context.Background()
+	size, err := rdb.DBSize(ctx).Result()
+	if err != nil {
+		return 0
+	}
+	return size
+}
+
+// CommandStats 获取redis命令状态信息
+func CommandStats() []map[string]string {
+	ctx := context.Background()
+	commandstats, err := rdb.Info(ctx, "commandstats").Result()
+	if err != nil {
+		return []map[string]string{}
+	}
+	statsObjArr := make([]map[string]string, 0)
+	lines := strings.Split(commandstats, "\r\n")
+	for _, line := range lines {
+		if !strings.HasPrefix(line, "cmdstat_") {
+			continue
+		}
+		kvArr := strings.Split(line, ":")
+		key := kvArr[0]
+		valueStr := kvArr[len(kvArr)-1]
+		statsObj := make(map[string]string)
+		statsObj["name"] = key[8:]
+		statsObj["value"] = valueStr[6:strings.Index(valueStr, ",usec=")]
+		statsObjArr = append(statsObjArr, statsObj)
+	}
+	return statsObjArr
 }
 
 // 获取键的剩余有效时间（秒）
