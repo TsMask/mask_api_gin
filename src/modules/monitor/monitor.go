@@ -17,6 +17,12 @@ func Setup(router *gin.Engine) {
 	// 启动时需要的初始参数
 	InitLoad()
 
+	// 服务器监控信息
+	router.GET("/monitor/server",
+		middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:server:info"}}),
+		controller.ServerController.Info,
+	)
+
 	// 缓存监控信息
 	sysCacheGroup := router.Group("/monitor/cache")
 	{
@@ -47,6 +53,35 @@ func Setup(router *gin.Engine) {
 		sysCacheGroup.DELETE("/clearCacheSafe",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
 			controller.SysCache.ClearCacheSafe,
+		)
+	}
+
+	// 调度任务日志信息
+	sysJobLogGroup := router.Group("/monitor/jobLog")
+	{
+		sysJobLogGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:list"}}),
+			controller.SysJobLog.List,
+		)
+		sysJobLogGroup.GET("/:jobLogId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:query"}}),
+			controller.SysJobLog.Info,
+		)
+		sysJobLogGroup.DELETE("/:jobLogIds",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
+			operlog.OperLog(operlog.OptionNew("调度任务日志信息", operlog.BUSINESS_TYPE_DELETE)),
+			controller.SysJobLog.Remove,
+		)
+		sysJobLogGroup.DELETE("/clean",
+			repeat.RepeatSubmit(5),
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
+			operlog.OperLog(operlog.OptionNew("调度任务日志信息", operlog.BUSINESS_TYPE_CLEAN)),
+			controller.SysJobLog.Clean,
+		)
+		sysJobLogGroup.POST("/export",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:export"}}),
+			operlog.OperLog(operlog.OptionNew("调度任务日志信息", operlog.BUSINESS_TYPE_EXPORT)),
+			controller.SysJobLog.Export,
 		)
 	}
 
@@ -98,21 +133,6 @@ func Setup(router *gin.Engine) {
 			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_EXPORT)),
 			controller.SysJob.Export,
 		)
-	}
-
-	// 调度任务日志信息
-	jobLogGroup := router.Group("/monitor/jobLog")
-	{
-		// 导出调度任务日志信息
-		jobLogGroup.POST("/export", controller.SysJobLog.Export)
-		// 调度任务日志列表
-		jobLogGroup.GET("/list", controller.SysJobLog.List)
-		// 调度任务日志信息
-		jobLogGroup.GET("/:jobLogId", controller.SysJobLog.Info)
-		// 调度任务日志删除
-		jobLogGroup.DELETE("/:jobLogIds", controller.SysJobLog.Remove)
-		// 调度任务日志清空
-		jobLogGroup.DELETE("/clean", controller.SysJobLog.Clean)
 	}
 
 	// 操作日志记录信息
@@ -180,12 +200,6 @@ func Setup(router *gin.Engine) {
 			controller.SysUserOnline.ForceLogout,
 		)
 	}
-
-	// 服务器监控信息
-	router.GET("/monitor/server",
-		middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:server:info"}}),
-		controller.ServerController.Info,
-	)
 }
 
 // InitLoad 初始参数

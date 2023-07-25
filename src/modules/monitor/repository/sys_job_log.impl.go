@@ -4,25 +4,53 @@ import (
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
-	repoUtils "mask_api_gin/src/framework/utils/repo"
+	"mask_api_gin/src/framework/utils/parse"
+	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/monitor/model"
 	"strings"
 )
 
 // SysJobLogImpl 调度任务日志表 数据层处理
 var SysJobLogImpl = &sysJobLogImpl{
-	selectSql: "select job_log_id, job_name, job_group, invoke_target, target_params, job_msg, status, create_time from sys_job_log",
+	selectSql: `select job_log_id, job_name, job_group, invoke_target, 
+	target_params, job_msg, status, create_time from sys_job_log`,
+
+	resultMap: map[string]string{
+		"job_log_id":    "JobLogID",
+		"job_name":      "JobName",
+		"job_group":     "JobGroup",
+		"invoke_target": "InvokeTarget",
+		"target_params": "TargetParams",
+		"job_msg":       "JobMsg",
+		"status":        "Status",
+		"create_time":   "CreateTime",
+	},
 }
 
 type sysJobLogImpl struct {
 	// 查询视图对象SQL
 	selectSql string
+	// 结果字段与实体映射
+	resultMap map[string]string
+}
+
+// convertResultRows 将结果记录转实体结果组
+func (r *sysJobLogImpl) convertResultRows(rows []map[string]interface{}) []model.SysJobLog {
+	arr := make([]model.SysJobLog, 0)
+	for _, row := range rows {
+		sysJobLog := model.SysJobLog{}
+		for key, value := range row {
+			if keyMapper, ok := r.resultMap[key]; ok {
+				repo.SetFieldValue(&sysJobLog, keyMapper, value)
+			}
+		}
+		arr = append(arr, sysJobLog)
+	}
+	return arr
 }
 
 // 分页查询调度任务日志集合
 func (r *sysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]interface{} {
-	db := datasource.DefaultDB()
-
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -61,11 +89,11 @@ func (r *sysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]int
 
 	// 查询数量 长度为0直接返回
 	totalSql := "select count(1) as 'total' from sys_job_log"
-	var total int64
-	totalRes := db.Raw(totalSql+whereSql, params...).Scan(&total)
-	if totalRes.Error != nil {
-		logger.Errorf("SelectJobLogPage totalRes err %v", totalRes.Error)
+	totalRows, err := datasource.RawDB("", totalSql+whereSql, params)
+	if err != nil {
+		logger.Errorf("total err => %v", err)
 	}
+	total := parse.Number(totalRows[0]["total"])
 	if total <= 0 {
 		return map[string]interface{}{
 			"total": 0,
@@ -74,20 +102,20 @@ func (r *sysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]int
 	}
 
 	// 分页
-	pageNum, pageSize := repoUtils.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " order by job_log_id desc limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
 
 	// 查询数据
-	var sysJobLog []model.SysJobLog
 	querySql := r.selectSql + whereSql + pageSql
-	queryRes := db.Raw(querySql, params...).Scan(&sysJobLog)
-	if queryRes.Error != nil {
-		logger.Errorf("SelectJobLogPage queryRes err %v", queryRes.Error)
+	results, err := datasource.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err => %v", err)
 	}
 
-	rows := repoUtils.ConvertResultRows(sysJobLog)
+	// 转换实体
+	rows := r.convertResultRows(results)
 	return map[string]interface{}{
 		"total": total,
 		"rows":  rows,
@@ -96,8 +124,6 @@ func (r *sysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]int
 
 // 查询调度任务日志集合
 func (r *sysJobLogImpl) SelectJobLogList(sysJobLog model.SysJobLog) []model.SysJobLog {
-	db := datasource.DefaultDB()
-
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -121,66 +147,69 @@ func (r *sysJobLogImpl) SelectJobLogList(sysJobLog model.SysJobLog) []model.SysJ
 	// 构建查询条件语句
 	whereSql := ""
 	if len(conditions) > 0 {
-		whereSql = " where " + strings.Join(conditions, " and ")
+		whereSql += " where " + strings.Join(conditions, " and ")
 	}
 
 	// 查询数据
-	var results []model.SysJobLog
 	querySql := r.selectSql + whereSql
-	queryRes := db.Raw(querySql, params...).Scan(&results)
-	if queryRes.Error != nil {
-		logger.Errorf("SelectJobLogPage queryRes err %v", queryRes.Error)
+	results, err := datasource.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return []model.SysJobLog{}
 	}
-	return results
+
+	// 转换实体
+	return r.convertResultRows(results)
 }
 
 // 通过调度ID查询调度任务日志信息
 func (r *sysJobLogImpl) SelectJobLogById(jobLogId string) model.SysJobLog {
-	db := datasource.DefaultDB()
-
-	// 查询数据
-	var result model.SysJobLog
 	querySql := r.selectSql + " where job_log_id = ?"
-	queryRes := db.Raw(querySql, jobLogId).Scan(&result)
-	if queryRes.Error != nil {
-		logger.Errorf("SelectJobLogById queryRes err %v", queryRes.Error)
+	results, err := datasource.RawDB("", querySql, []interface{}{jobLogId})
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return model.SysJobLog{}
 	}
-	return result
+	// 转换实体
+	rows := r.convertResultRows(results)
+	if len(rows) > 0 {
+		return rows[0]
+	}
+	return model.SysJobLog{}
 }
 
 // 新增调度任务日志信息
 func (r *sysJobLogImpl) InsertJobLog(sysJobLog model.SysJobLog) string {
-	db := datasource.DefaultDB()
-
 	// 参数拼接
-	paramMap := make(map[string]interface{})
-	paramMap["create_time"] = date.NowTimestamp()
+	params := make(map[string]interface{})
+	params["create_time"] = date.NowTimestamp()
 	if sysJobLog.JobLogID != "" {
-		paramMap["job_log_id"] = sysJobLog.JobLogID
+		params["job_log_id"] = sysJobLog.JobLogID
 	}
 	if sysJobLog.JobName != "" {
-		paramMap["job_name"] = sysJobLog.JobName
+		params["job_name"] = sysJobLog.JobName
 	}
 	if sysJobLog.JobGroup != "" {
-		paramMap["job_group"] = sysJobLog.JobGroup
+		params["job_group"] = sysJobLog.JobGroup
 	}
 	if sysJobLog.InvokeTarget != "" {
-		paramMap["invoke_target"] = sysJobLog.InvokeTarget
+		params["invoke_target"] = sysJobLog.InvokeTarget
 	}
 	if sysJobLog.TargetParams != "" {
-		paramMap["target_params"] = sysJobLog.TargetParams
+		params["target_params"] = sysJobLog.TargetParams
 	}
 	if sysJobLog.JobMsg != "" {
-		paramMap["job_msg"] = sysJobLog.JobMsg
+		params["job_msg"] = sysJobLog.JobMsg
 	}
 	if sysJobLog.Status != "" {
-		paramMap["status"] = sysJobLog.Status
+		params["status"] = sysJobLog.Status
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repoUtils.KeyPlaceholderValueByInsert(paramMap)
+	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
 	sql := "insert into sys_job_log (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
 
+	db := datasource.DefaultDB()
 	// 开启事务
 	tx := db.Begin()
 	// 执行插入
@@ -205,22 +234,21 @@ func (r *sysJobLogImpl) InsertJobLog(sysJobLog model.SysJobLog) string {
 
 // 批量删除调度任务日志信息
 func (r *sysJobLogImpl) DeleteJobLogByIds(jobLogIds []string) int64 {
-	db := datasource.DefaultDB()
-
-	// 构建执行语句
-	sql := "delete from sys_job_log where job_log_id in (?)"
-	// 执行插入
-	result := db.Exec(sql, jobLogIds)
-	if err := result.Error; err != nil {
-		logger.Errorf("delete rows : %v", err.Error())
+	placeholder := repo.KeyPlaceholderByQuery(len(jobLogIds))
+	sql := "delete from sys_job_log where job_log_id in (" + placeholder + ")"
+	parameters := repo.ConvertIdsSlice(jobLogIds)
+	results, err := datasource.ExecDB("", sql, parameters)
+	if err != nil {
+		logger.Errorf("delete err => %v", err)
 		return 0
 	}
-	return result.RowsAffected
+	return results
 }
 
 // 清空调度任务日志
 func (r *sysJobLogImpl) CleanJobLog() error {
-	db := datasource.DefaultDB()
-
-	return db.Exec("truncate table sys_job_log").Error
+	sql := "truncate table sys_job_log"
+	results, err := datasource.ExecDB("", sql, []interface{}{})
+	logger.Errorf("delete results => %v", results)
+	return err
 }

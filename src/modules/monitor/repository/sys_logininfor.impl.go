@@ -158,32 +158,32 @@ func (r *sysLogininforImpl) SelectLogininforList(sysLogininfor model.SysLogininf
 // InsertLogininfor 新增系统登录日志
 func (r *sysLogininforImpl) InsertLogininfor(sysLogininfor model.SysLogininfor) string {
 	// 参数拼接
-	paramMap := make(map[string]interface{})
-	paramMap["login_time"] = date.NowTimestamp()
+	params := make(map[string]interface{})
+	params["login_time"] = date.NowTimestamp()
 	if sysLogininfor.UserName != "" {
-		paramMap["user_name"] = sysLogininfor.UserName
+		params["user_name"] = sysLogininfor.UserName
 	}
 	if sysLogininfor.Status != "" {
-		paramMap["status"] = sysLogininfor.Status
+		params["status"] = sysLogininfor.Status
 	}
 	if sysLogininfor.IPAddr != "" {
-		paramMap["ipaddr"] = sysLogininfor.IPAddr
+		params["ipaddr"] = sysLogininfor.IPAddr
 	}
 	if sysLogininfor.LoginLocation != "" {
-		paramMap["login_location"] = sysLogininfor.LoginLocation
+		params["login_location"] = sysLogininfor.LoginLocation
 	}
 	if sysLogininfor.Browser != "" {
-		paramMap["browser"] = sysLogininfor.Browser
+		params["browser"] = sysLogininfor.Browser
 	}
 	if sysLogininfor.OS != "" {
-		paramMap["os"] = sysLogininfor.OS
+		params["os"] = sysLogininfor.OS
 	}
 	if sysLogininfor.Msg != "" {
-		paramMap["msg"] = sysLogininfor.Msg
+		params["msg"] = sysLogininfor.Msg
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(paramMap)
+	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
 	sql := "insert into sys_logininfor (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
 
 	db := datasource.DefaultDB()
