@@ -397,4 +397,6 @@ func Setup(router *gin.Engine) {
 func InitLoad() {
 	// 启动时，刷新缓存-参数配置
 	service.SysConfigImpl.ResetConfigCache()
+	// 启动时，刷新缓存-字典类型数据
+	service.SysDictTypeImpl.ResetDictCache()
 }

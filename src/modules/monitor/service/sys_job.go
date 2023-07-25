@@ -34,5 +34,5 @@ type ISysJob interface {
 	RunQueueJob(sysJob model.SysJob) bool
 
 	// ResetQueueJob 重置初始调度任务
-	ResetQueueJob() error
+	ResetQueueJob()
 }

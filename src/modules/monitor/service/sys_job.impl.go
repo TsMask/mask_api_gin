@@ -116,8 +116,7 @@ func (r *sysJobImpl) ChangeStatus(sysJob model.SysJob) bool {
 }
 
 // ResetQueueJob 重置初始调度任务
-func (r *sysJobImpl) ResetQueueJob() error {
-	return nil
+func (r *sysJobImpl) ResetQueueJob() {
 }
 
 // RunQueueJob 立即运行一次调度任务
