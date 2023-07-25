@@ -17,12 +17,12 @@ type sysLogininforImpl struct {
 
 // SelectLogininforPage 分页查询系统登录日志集合
 func (s *sysLogininforImpl) SelectLogininforPage(query map[string]string) map[string]interface{} {
-	return map[string]interface{}{}
+	return s.sysLogininforService.SelectLogininforPage(query)
 }
 
 // SelectLogininforList 查询系统登录日志集合
 func (s *sysLogininforImpl) SelectLogininforList(sysLogininfor model.SysLogininfor) []model.SysLogininfor {
-	return []model.SysLogininfor{}
+	return s.sysLogininforService.SelectLogininforList(sysLogininfor)
 }
 
 // InsertLogininfor 新增系统登录日志
@@ -32,12 +32,12 @@ func (s *sysLogininforImpl) InsertLogininfor(sysLogininfor model.SysLogininfor) 
 
 // DeleteLogininforByIds 批量删除系统登录日志
 func (s *sysLogininforImpl) DeleteLogininforByIds(infoIds []string) int64 {
-	return 0
+	return s.sysLogininforService.DeleteLogininforByIds(infoIds)
 }
 
 // CleanLogininfor 清空系统登录日志
 func (s *sysLogininforImpl) CleanLogininfor() error {
-	return nil
+	return s.sysLogininforService.CleanLogininfor()
 }
 
 // NewLogininfor 生成系统登录日志
