@@ -98,6 +98,43 @@ func Setup(router *gin.Engine) {
 		)
 	}
 
+	// 字典数据信息
+	sysDictDataGroup := router.Group("/system/dict/data")
+	{
+		sysDictDataGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:list"}}),
+			controller.SysDictData.List,
+		)
+		sysDictDataGroup.GET("/:dictCode",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:query"}}),
+			controller.SysDictData.Info,
+		)
+		sysDictDataGroup.POST("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:add"}}),
+			operlog.OperLog(operlog.OptionNew("字典数据信息", operlog.BUSINESS_TYPE_INSERT)),
+			controller.SysDictData.Add,
+		)
+		sysDictDataGroup.PUT("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:edit"}}),
+			operlog.OperLog(operlog.OptionNew("字典数据信息", operlog.BUSINESS_TYPE_UPDATE)),
+			controller.SysDictData.Edit,
+		)
+		sysDictDataGroup.DELETE("/:dictCodes",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:remove"}}),
+			operlog.OperLog(operlog.OptionNew("字典数据信息", operlog.BUSINESS_TYPE_DELETE)),
+			controller.SysDictData.Remove,
+		)
+		sysDictDataGroup.GET("/type/:dictType",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:query"}}),
+			controller.SysDictData.DictType,
+		)
+		sysDictDataGroup.POST("/export",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:export"}}),
+			operlog.OperLog(operlog.OptionNew("字典类型信息", operlog.BUSINESS_TYPE_EXPORT)),
+			controller.SysDictData.Export,
+		)
+	}
+
 	// 字典类型信息
 	sysDictTypeGroup := router.Group("/system/dict/type")
 	{

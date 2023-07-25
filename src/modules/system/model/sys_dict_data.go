@@ -7,11 +7,11 @@ type SysDictData struct {
 	// 字典排序
 	DictSort int `json:"dictSort"`
 	// 字典标签
-	DictLabel string `json:"dictLabel"`
+	DictLabel string `json:"dictLabel" binding:"required"`
 	// 字典键值
-	DictValue string `json:"dictValue"`
+	DictValue string `json:"dictValue" binding:"required"`
 	// 字典类型
-	DictType string `json:"dictType"`
+	DictType string `json:"dictType" binding:"required"`
 	// 样式属性（样式扩展）
 	TagClass string `json:"tagClass"`
 	// 标签类型（预设颜色）

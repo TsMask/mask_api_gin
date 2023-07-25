@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )
@@ -8,59 +9,100 @@ import (
 // SysDictDataImpl 字典类型数据 数据层处理
 var SysDictDataImpl = &sysDictDataImpl{
 	sysDictDataRepository: repository.SysDictDataImpl,
+	sysDictTypeService:    SysDictTypeImpl,
 }
 
 type sysDictDataImpl struct {
-	// 字典类型数据服务
+	// 字典数据服务
 	sysDictDataRepository repository.ISysDictData
+	// 字典类型服务
+	sysDictTypeService ISysDictType
 }
 
 // SelectDictDataPage 根据条件分页查询字典数据
 func (r *sysDictDataImpl) SelectDictDataPage(query map[string]string) map[string]interface{} {
-	return map[string]interface{}{}
+	return r.sysDictDataRepository.SelectDictDataPage(query)
 }
 
 // SelectDictDataList 根据条件查询字典数据
 func (r *sysDictDataImpl) SelectDictDataList(sysDictData model.SysDictData) []model.SysDictData {
-	return []model.SysDictData{}
-}
-
-// SelectDictLabel 根据字典类型和字典键值查询字典数据信息
-func (r *sysDictDataImpl) SelectDictLabel(dictType string, dictValue string) (string, error) {
-	return "", nil
+	return r.sysDictDataRepository.SelectDictDataList(sysDictData)
 }
 
 // SelectDictDataByCode 根据字典数据编码查询信息
 func (r *sysDictDataImpl) SelectDictDataByCode(dictCode string) model.SysDictData {
+	if dictCode == "" {
+		return model.SysDictData{}
+	}
+	dictCodes := r.sysDictDataRepository.SelectDictDataByCodes([]string{dictCode})
+	if len(dictCodes) > 0 {
+		return dictCodes[0]
+	}
 	return model.SysDictData{}
 }
 
+// SelectDictDataByType 根据字典类型查询信息
+func (r *sysDictDataImpl) SelectDictDataByType(dictType string) []model.SysDictData {
+	return r.sysDictTypeService.DictDataCache(dictType)
+}
+
 // CheckUniqueDictLabel 校验字典标签是否唯一
-func (r *sysDictDataImpl) CheckUniqueDictLabel(dictType string, dictLabel string) string {
-	return ""
+func (r *sysDictDataImpl) CheckUniqueDictLabel(dictType, dictLabel, dictCode string) bool {
+	uniqueId := r.sysDictDataRepository.CheckUniqueDictData(model.SysDictData{
+		DictType:  dictType,
+		DictLabel: dictLabel,
+	})
+	if uniqueId == dictCode {
+		return true
+	}
+	return uniqueId == ""
 }
 
 // CheckUniqueDictValue 校验字典键值是否唯一
-func (r *sysDictDataImpl) CheckUniqueDictValue(dictType string, dictValue string) string {
-	return ""
+func (r *sysDictDataImpl) CheckUniqueDictValue(dictType, dictValue, dictCode string) bool {
+	uniqueId := r.sysDictDataRepository.CheckUniqueDictData(model.SysDictData{
+		DictType:  dictType,
+		DictValue: dictValue,
+	})
+	if uniqueId == dictCode {
+		return true
+	}
+	return uniqueId == ""
 }
 
 // DeleteDictDataByCodes 批量删除字典数据信息
-func (r *sysDictDataImpl) DeleteDictDataByCodes(dictCodes []string) int {
-	return 0
+func (r *sysDictDataImpl) DeleteDictDataByCodes(dictCodes []string) (int64, error) {
+	// 检查是否存在
+	dictDatas := r.sysDictDataRepository.SelectDictDataByCodes(dictCodes)
+	if len(dictDatas) <= 0 {
+		return 0, errors.New("没有权限访问字典编码数据！")
+	}
+	if len(dictDatas) == len(dictCodes) {
+		for _, v := range dictDatas {
+			// 刷新缓存
+			r.sysDictTypeService.ClearDictCache(v.DictType)
+			r.sysDictTypeService.LoadingDictCache(v.DictType)
+		}
+		rows := r.sysDictDataRepository.DeleteDictDataByCodes(dictCodes)
+		return rows, nil
+	}
+	return 0, errors.New("删除字典数据信息失败！")
 }
 
 // InsertDictData 新增字典数据信息
 func (r *sysDictDataImpl) InsertDictData(sysDictData model.SysDictData) string {
-	return ""
+	insertId := r.sysDictDataRepository.InsertDictData(sysDictData)
+	if insertId != "" {
+		r.sysDictTypeService.LoadingDictCache(sysDictData.DictType)
+	}
+	return insertId
 }
 
 // UpdateDictData 修改字典数据信息
-func (r *sysDictDataImpl) UpdateDictData(sysDictData model.SysDictData) int {
-	return 0
-}
-
-// UpdateDictDataType 同步修改字典类型
-func (r *sysDictDataImpl) UpdateDictDataType(oldDictType string, newDictType string) int {
-	return 0
+func (r *sysDictDataImpl) UpdateDictData(sysDictData model.SysDictData) int64 {
+	rows := r.sysDictDataRepository.UpdateDictData(sysDictData)
+	if rows > 0 {
+		r.sysDictTypeService.LoadingDictCache(sysDictData.DictType)
+	}
+	return rows
 }
