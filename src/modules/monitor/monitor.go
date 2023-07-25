@@ -3,6 +3,7 @@ package monitor
 import (
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/middleware"
+	"mask_api_gin/src/framework/middleware/operlog"
 	"mask_api_gin/src/modules/monitor/controller"
 
 	"github.com/gin-gonic/gin"
@@ -17,11 +18,79 @@ func Setup(router *gin.Engine) {
 
 	// 服务器监控信息
 	router.GET("/monitor/server",
-		middleware.PreAuthorize(map[string][]string{
-			"hasPerms": {"monitor:server:info"},
-		}),
+		middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:server:info"}}),
 		controller.ServerController.Info,
 	)
+
+	// 缓存监控信息
+	sysCacheGroup := router.Group("/monitor/cache")
+	{
+		sysCacheGroup.GET("/",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:info"}}),
+			controller.SysCache.Info,
+		)
+		sysCacheGroup.GET("/getNames",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:list"}}),
+			controller.SysCache.Names,
+		)
+		sysCacheGroup.GET("/getKeys/:cacheName",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:list"}}),
+			controller.SysCache.Keys,
+		)
+		sysCacheGroup.GET("/getValue/:cacheName/:cacheKey",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:query"}}),
+			controller.SysCache.Value,
+		)
+		sysCacheGroup.DELETE("/clearCacheName/:cacheName",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
+			controller.SysCache.ClearCacheName,
+		)
+		sysCacheGroup.DELETE("/clearCacheKey/:cacheName/:cacheKey",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
+			controller.SysCache.ClearCacheKey,
+		)
+		sysCacheGroup.DELETE("/clearCacheSafe",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
+			controller.SysCache.ClearCacheSafe,
+		)
+	}
+
+	// 操作日志记录信息
+	sysOperLogGroup := router.Group("/monitor/operlog")
+	{
+		sysOperLogGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:operlog:list"}}),
+			controller.SysOperLog.List,
+		)
+		sysOperLogGroup.DELETE("/:operIds",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:operlog:remove"}}),
+			operlog.OperLog(operlog.OptionNew("操作日志", operlog.BUSINESS_TYPE_DELETE)),
+			controller.SysOperLog.Remove,
+		)
+		sysOperLogGroup.DELETE("/clean",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:operlog:remove"}}),
+			operlog.OperLog(operlog.OptionNew("操作日志", operlog.BUSINESS_TYPE_CLEAN)),
+			controller.SysOperLog.Clean,
+		)
+		sysOperLogGroup.POST("/export",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:operlog:export"}}),
+			operlog.OperLog(operlog.OptionNew("操作日志", operlog.BUSINESS_TYPE_EXPORT)),
+			controller.SysOperLog.Export,
+		)
+	}
+
+	// 在线用户监控
+	onlineGroup := router.Group("/monitor/online")
+	{
+		onlineGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:online:list"}}),
+			controller.SysUserOnline.List,
+		)
+		onlineGroup.DELETE("/:tokenId",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:online:forceLogout"}}),
+			controller.SysUserOnline.ForceLogout,
+		)
+	}
 
 	// 调度任务日志信息
 	jobLogGroup := router.Group("/monitor/jobLog")
