@@ -34,7 +34,7 @@ func initAppEngine() *gin.Engine {
 // 初始全局默认
 func initDefeat(app *gin.Engine) {
 	// 全局中间件
-	app.Use(middleware.Report())
+	app.Use(middleware.Report(), middleware.Cors())
 
 	// 静态目录
 	fsDefault := viper.GetStringMapString("staticFile.default")
