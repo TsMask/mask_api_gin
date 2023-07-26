@@ -248,7 +248,6 @@ func (r *sysJobLogImpl) DeleteJobLogByIds(jobLogIds []string) int64 {
 // 清空调度任务日志
 func (r *sysJobLogImpl) CleanJobLog() error {
 	sql := "truncate table sys_job_log"
-	results, err := datasource.ExecDB("", sql, []interface{}{})
-	logger.Errorf("delete results => %v", results)
+	_, err := datasource.ExecDB("", sql, []interface{}{})
 	return err
 }
