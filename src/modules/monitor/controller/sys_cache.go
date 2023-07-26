@@ -130,7 +130,7 @@ func (s *sysCache) ClearCacheSafe(c *gin.Context) {
 		model.NewSysCacheNames("密码错误次数", cachekey.PWD_ERR_CNT_KEY),
 	}
 	for _, v := range caches {
-		cacheKeys := redis.GetKeys(v.CacheKey + ":*")
+		cacheKeys := redis.GetKeys(v.CacheName + ":*")
 		redis.DelKeys(cacheKeys)
 	}
 	c.JSON(200, result.Ok(nil))
