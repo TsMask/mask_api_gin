@@ -291,7 +291,7 @@ func (r *sysMenuImpl) InsertMenu(sysMenu model.SysMenu) string {
 	}
 
 	// 根据菜单类型重置参数
-	if sysMenu.MenuType != menu.TYPE_BUTTON {
+	if sysMenu.MenuType == menu.TYPE_BUTTON {
 		params["component"] = ""
 		params["path"] = ""
 		params["icon"] = "#"
@@ -300,7 +300,7 @@ func (r *sysMenuImpl) InsertMenu(sysMenu model.SysMenu) string {
 		params["visible"] = "1"
 		params["status"] = "1"
 	}
-	if sysMenu.MenuType != menu.TYPE_DIR {
+	if sysMenu.MenuType == menu.TYPE_DIR {
 		params["component"] = ""
 		params["path"] = ""
 	}
@@ -384,7 +384,7 @@ func (r *sysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int64 {
 	}
 
 	// 根据菜单类型重置参数
-	if sysMenu.MenuType != menu.TYPE_BUTTON {
+	if sysMenu.MenuType == menu.TYPE_BUTTON {
 		params["component"] = ""
 		params["path"] = ""
 		params["icon"] = "#"
@@ -393,7 +393,7 @@ func (r *sysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int64 {
 		params["visible"] = "1"
 		params["status"] = "1"
 	}
-	if sysMenu.MenuType != menu.TYPE_DIR {
+	if sysMenu.MenuType == menu.TYPE_DIR {
 		params["component"] = ""
 		params["path"] = ""
 	}
