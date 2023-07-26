@@ -5,6 +5,7 @@ import (
 	"mask_api_gin/src/framework/constants/cachekey"
 	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/framework/utils/ctx"
+	"mask_api_gin/src/framework/utils/ip2region"
 	"mask_api_gin/src/framework/vo/result"
 	"strings"
 	"time"
@@ -74,7 +75,8 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 
 		// IP
 		if option.Type == LIMIT_IP {
-			limitKey = cachekey.RATE_LIMIT_KEY + c.ClientIP() + ":" + funcName
+			clientIP := ip2region.ClientIP(c.ClientIP())
+			limitKey = cachekey.RATE_LIMIT_KEY + clientIP + ":" + funcName
 		}
 
 		// 在Redis查询并记录请求次数

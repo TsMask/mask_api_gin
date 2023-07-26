@@ -6,6 +6,7 @@ import (
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/framework/utils/ctx"
+	"mask_api_gin/src/framework/utils/ip2region"
 	"mask_api_gin/src/framework/vo/result"
 	"strconv"
 	"time"
@@ -39,7 +40,8 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 		paramsJSONStr := string(paramsJSONByte)
 
 		// 唯一标识（指定key + 客户端IP + 请求地址）
-		repeatKey := cachekey.REPEAT_SUBMIT_KEY + c.ClientIP() + ":" + c.Request.RequestURI
+		clientIP := ip2region.ClientIP(c.ClientIP())
+		repeatKey := cachekey.REPEAT_SUBMIT_KEY + clientIP + ":" + c.Request.RequestURI
 
 		// 在Redis查询并记录请求次数
 		repeatStr := redis.Get(repeatKey)

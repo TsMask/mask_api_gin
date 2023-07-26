@@ -57,7 +57,7 @@ func RequestParamsMap(c *gin.Context) map[string]any {
 
 // IPAddrLocation 解析ip地址
 func IPAddrLocation(c *gin.Context) (string, string) {
-	ip := c.ClientIP()
+	ip := ip2region.ClientIP(c.ClientIP())
 	location := ip2region.RealAddressByIp(ip)
 	return ip, location
 }
