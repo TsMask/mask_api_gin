@@ -35,7 +35,7 @@ func (r *sysUserImpl) SelectUserList(sysUser model.SysUser, dataScopeSQL string)
 
 // SelectAllocatedPage 根据条件分页查询分配用户角色列表
 func (r *sysUserImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL string) map[string]interface{} {
-	return map[string]interface{}{}
+	return r.sysUserRepository.SelectAllocatedPage(query, dataScopeSQL)
 }
 
 // SelectUserByUserName 通过用户名查询用户

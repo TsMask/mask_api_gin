@@ -295,7 +295,7 @@ func (s *sysRole) AuthUserAllocatedList(c *gin.Context) {
 	}
 
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
-	data := s.sysRoleService.SelectAllocatedPage(querys, dataScopeSQL)
+	data := s.sysUserService.SelectAllocatedPage(querys, dataScopeSQL)
 	c.JSON(200, result.Ok(data))
 }
 
@@ -309,7 +309,7 @@ func (s *sysRole) AuthUserChecked(c *gin.Context) {
 		// 用户ID组
 		UserIDs string `json:"userIds" binding:"required"`
 		// 选择操作 添加true 取消false
-		Checked bool `json:"checked" binding:"required"`
+		Checked bool `json:"checked"`
 	}
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil {

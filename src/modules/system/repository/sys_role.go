@@ -10,9 +10,6 @@ type ISysRole interface {
 	// SelectRoleList 根据条件查询角色数据
 	SelectRoleList(sysRole model.SysRole, dataScopeSQL string) []model.SysRole
 
-	// SelectAllocatedPage 根据条件分页查询分配用户角色列表
-	SelectAllocatedPage(query map[string]string, dataScopeSQL string) map[string]interface{}
-
 	// SelectRoleListByUserId 根据用户ID获取角色选择框列表
 	SelectRoleListByUserId(userId string) []model.SysRole
 

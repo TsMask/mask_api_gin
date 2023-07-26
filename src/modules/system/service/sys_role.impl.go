@@ -36,11 +36,6 @@ func (r *sysRoleImpl) SelectRoleList(sysRole model.SysRole, dataScopeSQL string)
 	return r.sysRoleRepository.SelectRoleList(sysRole, dataScopeSQL)
 }
 
-// SelectAllocatedPage 根据条件分页查询分配用户角色列表
-func (r *sysRoleImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL string) map[string]interface{} {
-	return r.sysRoleRepository.SelectAllocatedPage(query, dataScopeSQL)
-}
-
 // SelectRoleListByUserId 根据用户ID获取角色选择框列表
 func (r *sysRoleImpl) SelectRoleListByUserId(userId string) []model.SysRole {
 	return r.sysRoleRepository.SelectRoleListByUserId(userId)

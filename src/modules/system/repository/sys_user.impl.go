@@ -207,18 +207,6 @@ func (r *sysUserImpl) SelectUserPage(query map[string]string, dataScopeSQL strin
 
 // SelectAllocatedPage 根据条件分页查询分配用户角色列表
 func (r *sysUserImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL string) map[string]interface{} {
-	selectUserSql := `select distinct 
-    u.user_id, u.dept_id, u.user_name, u.nick_name, u.email, 
-    u.phonenumber, u.status, u.create_time, d.dept_name
-    from sys_user u
-    left join sys_dept d on u.dept_id = d.dept_id
-    left join sys_user_role ur on u.user_id = ur.user_id
-    left join sys_role r on r.role_id = ur.role_id`
-	selectUserTotalSql := `select count(distinct u.user_id) as 'total' from sys_user u
-    left join sys_dept d on u.dept_id = d.dept_id
-    left join sys_user_role ur on u.user_id = ur.user_id
-    left join sys_role r on r.role_id = ur.role_id`
-
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -235,18 +223,22 @@ func (r *sysUserImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL 
 		params = append(params, v)
 	}
 	// 分配角色用户
-	if v, ok := query["allocated"]; ok {
-		if parse.Boolean(v) {
-			if v, ok := query["deptId"]; ok {
+	if allocated, ok := query["allocated"]; ok {
+		if roleId, ok := query["roleId"]; ok {
+			if parse.Boolean(allocated) {
 				conditions = append(conditions, "r.role_id = ?")
-				params = append(params, v)
+				params = append(params, roleId)
+			} else {
+				conditions = append(conditions, `(r.role_id != ? or r.role_id IS NULL) 
+				and u.user_id not in (
+					select u.user_id from sys_user u 
+					inner join sys_user_role ur on u.user_id = ur.user_id 
+					and ur.role_id = ?
+				)`)
+				params = append(params, roleId)
+				params = append(params, roleId)
 			}
-		} else {
-			if v, ok := query["deptId"]; ok {
-				conditions = append(conditions, "(r.role_id != ? or r.role_id IS NULL) and u.user_id not in (select u.user_id from sys_user u inner join sys_user_role ur on u.user_id = ur.user_id and ur.role_id = ?)")
-				params = append(params, v)
-				params = append(params, v)
-			}
+
 		}
 	}
 
@@ -257,8 +249,11 @@ func (r *sysUserImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL 
 	}
 
 	// 查询数量 长度为0直接返回
-	totalSql := selectUserTotalSql + whereSql + dataScopeSQL
-	totalRows, err := datasource.RawDB("", totalSql, params)
+	totalSql := `select count(distinct u.user_id) as 'total' from sys_user u
+    left join sys_dept d on u.dept_id = d.dept_id
+    left join sys_user_role ur on u.user_id = ur.user_id
+    left join sys_role r on r.role_id = ur.role_id`
+	totalRows, err := datasource.RawDB("", totalSql+whereSql+dataScopeSQL, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
 	}
@@ -277,7 +272,14 @@ func (r *sysUserImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL 
 	params = append(params, pageSize)
 
 	// 查询数据
-	querySql := selectUserSql + whereSql + dataScopeSQL + pageSql
+	querySql := `select distinct 
+    u.user_id, u.dept_id, u.user_name, u.nick_name, u.email, 
+    u.phonenumber, u.status, u.create_time, d.dept_name
+    from sys_user u
+    left join sys_dept d on u.dept_id = d.dept_id
+    left join sys_user_role ur on u.user_id = ur.user_id
+    left join sys_role r on r.role_id = ur.role_id`
+	querySql = querySql + whereSql + dataScopeSQL + pageSql
 	results, err := datasource.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
