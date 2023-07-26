@@ -22,7 +22,7 @@ var SysLogininforImpl = &sysLogininforImpl{
 		"ipaddr":         "IPAddr",
 		"login_location": "LoginLocation",
 		"browser":        "Browser",
-		"os":             "Os",
+		"os":             "OS",
 		"msg":            "Msg",
 		"login_time":     "LoginTime",
 	},
@@ -225,7 +225,6 @@ func (r *sysLogininforImpl) DeleteLogininforByIds(infoIds []string) int64 {
 // CleanLogininfor 清空系统登录日志
 func (r *sysLogininforImpl) CleanLogininfor() error {
 	sql := "truncate table sys_logininfor"
-	results, err := datasource.ExecDB("", sql, []interface{}{})
-	logger.Errorf("delete results => %v", results)
+	_, err := datasource.ExecDB("", sql, []interface{}{})
 	return err
 }
