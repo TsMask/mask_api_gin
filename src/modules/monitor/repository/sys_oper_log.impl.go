@@ -26,7 +26,7 @@ var SysOperLogImpl = &sysOperLogImpl{
 		"operator_type":  "OperatorType",
 		"oper_name":      "OperName",
 		"dept_name":      "DeptName",
-		"oper_url":       "OperUrl",
+		"oper_url":       "OperURL",
 		"oper_ip":        "OperIP",
 		"oper_location":  "OperLocation",
 		"oper_param":     "OperParam",
@@ -217,8 +217,8 @@ func (r *sysOperLogImpl) InsertOperLog(sysOperLog model.SysOperLog) string {
 	if sysOperLog.OperURL != "" {
 		params["oper_url"] = sysOperLog.OperURL
 	}
-	if sysOperLog.OperID != "" {
-		params["oper_ip"] = sysOperLog.OperID
+	if sysOperLog.OperIP != "" {
+		params["oper_ip"] = sysOperLog.OperIP
 	}
 	if sysOperLog.OperLocation != "" {
 		params["oper_location"] = sysOperLog.OperLocation
@@ -279,7 +279,6 @@ func (r *sysOperLogImpl) DeleteOperLogByIds(operIds []string) int64 {
 // CleanOperLog 清空操作日志
 func (r *sysOperLogImpl) CleanOperLog() error {
 	sql := "truncate table sys_oper_log"
-	results, err := datasource.ExecDB("", sql, []interface{}{})
-	logger.Errorf("delete results => %v", results)
+	_, err := datasource.ExecDB("", sql, []interface{}{})
 	return err
 }
