@@ -27,7 +27,7 @@ func Setup(router *gin.Engine) {
 	// 缓存监控信息
 	sysCacheGroup := router.Group("/monitor/cache")
 	{
-		sysCacheGroup.GET("/",
+		sysCacheGroup.GET("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:info"}}),
 			controller.SysCache.Info,
 		)
@@ -97,12 +97,12 @@ func Setup(router *gin.Engine) {
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:query"}}),
 			controller.SysJob.Info,
 		)
-		sysJobGroup.POST("/",
+		sysJobGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:add"}}),
 			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_INSERT)),
 			controller.SysJob.Add,
 		)
-		sysJobGroup.PUT("/",
+		sysJobGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:edit"}}),
 			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_UPDATE)),
 			controller.SysJob.Edit,

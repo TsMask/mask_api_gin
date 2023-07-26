@@ -14,7 +14,7 @@ func Setup(router *gin.Engine) {
 
 	// 路由主页
 	indexGroup := router.Group("/")
-	indexGroup.GET("/",
+	indexGroup.GET("",
 		middleware.RateLimit(middleware.LimitOption{
 			Time:  300,
 			Count: 10,

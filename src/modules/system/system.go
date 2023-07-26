@@ -29,12 +29,12 @@ func Setup(router *gin.Engine) {
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:query"}}),
 			controller.SysConfig.Info,
 		)
-		sysConfigGroup.POST("/",
+		sysConfigGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:add"}}),
 			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_INSERT)),
 			controller.SysConfig.Add,
 		)
-		sysConfigGroup.PUT("/",
+		sysConfigGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:edit"}}),
 			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_UPDATE)),
 			controller.SysConfig.Edit,
@@ -69,12 +69,12 @@ func Setup(router *gin.Engine) {
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:query"}}),
 			controller.SysDept.Info,
 		)
-		sysDeptGroup.POST("/",
+		sysDeptGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:add"}}),
 			operlog.OperLog(operlog.OptionNew("部门信息", operlog.BUSINESS_TYPE_INSERT)),
 			controller.SysDept.Add,
 		)
-		sysDeptGroup.PUT("/",
+		sysDeptGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:edit"}}),
 			operlog.OperLog(operlog.OptionNew("部门信息", operlog.BUSINESS_TYPE_UPDATE)),
 			controller.SysDept.Edit,
@@ -109,12 +109,12 @@ func Setup(router *gin.Engine) {
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:query"}}),
 			controller.SysDictData.Info,
 		)
-		sysDictDataGroup.POST("/",
+		sysDictDataGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:add"}}),
 			operlog.OperLog(operlog.OptionNew("字典数据信息", operlog.BUSINESS_TYPE_INSERT)),
 			controller.SysDictData.Add,
 		)
-		sysDictDataGroup.PUT("/",
+		sysDictDataGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:edit"}}),
 			operlog.OperLog(operlog.OptionNew("字典数据信息", operlog.BUSINESS_TYPE_UPDATE)),
 			controller.SysDictData.Edit,
@@ -146,12 +146,12 @@ func Setup(router *gin.Engine) {
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:query"}}),
 			controller.SysDictType.Info,
 		)
-		sysDictTypeGroup.POST("/",
+		sysDictTypeGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:add"}}),
 			operlog.OperLog(operlog.OptionNew("字典类型信息", operlog.BUSINESS_TYPE_INSERT)),
 			controller.SysDictType.Add,
 		)
-		sysDictTypeGroup.PUT("/",
+		sysDictTypeGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:edit"}}),
 			operlog.OperLog(operlog.OptionNew("字典类型信息", operlog.BUSINESS_TYPE_UPDATE)),
 			controller.SysDictType.Edit,
@@ -188,19 +188,19 @@ func Setup(router *gin.Engine) {
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:query"}}),
 			controller.SysMenu.Info,
 		)
-		sysMenuGroup.POST("/",
+		sysMenuGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:add"}}),
-			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_INSERT)),
+			operlog.OperLog(operlog.OptionNew("菜单信息", operlog.BUSINESS_TYPE_INSERT)),
 			controller.SysMenu.Add,
 		)
-		sysMenuGroup.PUT("/",
+		sysMenuGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:edit"}}),
-			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_UPDATE)),
+			operlog.OperLog(operlog.OptionNew("菜单信息", operlog.BUSINESS_TYPE_UPDATE)),
 			controller.SysMenu.Edit,
 		)
 		sysMenuGroup.DELETE("/:menuId",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:remove"}}),
-			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_DELETE)),
+			operlog.OperLog(operlog.OptionNew("菜单信息", operlog.BUSINESS_TYPE_DELETE)),
 			controller.SysMenu.Remove,
 		)
 		sysMenuGroup.GET("/treeSelect",
@@ -224,12 +224,12 @@ func Setup(router *gin.Engine) {
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:query"}}),
 			controller.SysNotice.Info,
 		)
-		sysNoticeGroup.POST("/",
+		sysNoticeGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:add"}}),
 			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_INSERT)),
 			controller.SysNotice.Add,
 		)
-		sysNoticeGroup.PUT("/",
+		sysNoticeGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:edit"}}),
 			operlog.OperLog(operlog.OptionNew("参数配置信息", operlog.BUSINESS_TYPE_UPDATE)),
 			controller.SysNotice.Edit,
@@ -252,12 +252,12 @@ func Setup(router *gin.Engine) {
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:post:query"}}),
 			controller.SysPost.Info,
 		)
-		sysPostGroup.POST("/",
+		sysPostGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:post:add"}}),
 			operlog.OperLog(operlog.OptionNew("岗位信息", operlog.BUSINESS_TYPE_INSERT)),
 			controller.SysPost.Add,
 		)
-		sysPostGroup.PUT("/",
+		sysPostGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:post:edit"}}),
 			operlog.OperLog(operlog.OptionNew("岗位信息", operlog.BUSINESS_TYPE_UPDATE)),
 			controller.SysPost.Edit,
@@ -276,11 +276,11 @@ func Setup(router *gin.Engine) {
 	// 个人信息
 	sysProfileGroup := router.Group("/system/user/profile")
 	{
-		sysProfileGroup.GET("/",
+		sysProfileGroup.GET("",
 			middleware.PreAuthorize(nil),
 			controller.SysProfile.Info,
 		)
-		sysProfileGroup.PUT("/",
+		sysProfileGroup.PUT("",
 			middleware.PreAuthorize(nil),
 			controller.SysProfile.UpdateProfile,
 		)
@@ -307,12 +307,12 @@ func Setup(router *gin.Engine) {
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:role:query"}}),
 			controller.SysRole.Info,
 		)
-		sysRoleGroup.POST("/",
+		sysRoleGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:role:add"}}),
 			operlog.OperLog(operlog.OptionNew("角色信息", operlog.BUSINESS_TYPE_INSERT)),
 			controller.SysRole.Add,
 		)
-		sysRoleGroup.PUT("/",
+		sysRoleGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:role:edit"}}),
 			operlog.OperLog(operlog.OptionNew("角色信息", operlog.BUSINESS_TYPE_UPDATE)),
 			controller.SysRole.Edit,
@@ -361,12 +361,12 @@ func Setup(router *gin.Engine) {
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:query"}}),
 			controller.SysUser.Info,
 		)
-		sysUserGroup.POST("/",
+		sysUserGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:add"}}),
 			operlog.OperLog(operlog.OptionNew("用户信息", operlog.BUSINESS_TYPE_INSERT)),
 			controller.SysUser.Add,
 		)
-		sysUserGroup.PUT("/",
+		sysUserGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:edit"}}),
 			operlog.OperLog(operlog.OptionNew("用户信息", operlog.BUSINESS_TYPE_UPDATE)),
 			controller.SysUser.Edit,
