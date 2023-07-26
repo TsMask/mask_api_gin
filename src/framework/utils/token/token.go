@@ -118,13 +118,14 @@ func Verify(tokenString string) (jwt.MapClaims, error) {
 		return nil, jwt.ErrSignatureInvalid
 	})
 	if err != nil {
-		return nil, err
+		logger.Errorf("token String Verify : %v", err)
+		return nil, errors.New("无效身份授权")
 	}
 	// 如果解析负荷成功并通过签名校验
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		return claims, nil
 	}
-	return nil, errors.New("token Valid err")
+	return nil, errors.New("token valid error")
 }
 
 // LoginUser 缓存的登录用户信息

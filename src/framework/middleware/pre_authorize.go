@@ -33,7 +33,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 		// 验证令牌
 		claims, err := tokenUtils.Verify(tokenStr)
 		if err != nil {
-			c.JSON(401, result.CodeMsg(401, "无效身份授权"))
+			c.JSON(401, result.CodeMsg(401, err.Error()))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
