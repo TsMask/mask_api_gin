@@ -85,5 +85,6 @@ func RunServer() error {
 	addr := fmt.Sprintf(":%d", config.Get("server.port").(int))
 
 	// 启动服务
+	fmt.Printf("\nopen http://localhost%s \n\n", addr)
 	return app.Run(addr)
 }
