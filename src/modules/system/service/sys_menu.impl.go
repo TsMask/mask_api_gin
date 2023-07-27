@@ -142,9 +142,9 @@ func (r *sysMenuImpl) BuildRouteMenus(sysMenus []model.SysMenu, prefix string) [
 		router.Component = r.getComponent(item)
 		router.Meta = r.getRouteMeta(item)
 
-		// 非路径链接 子项菜单目录
+		// 子项菜单 目录类型 非路径链接
 		cMenus := item.Children
-		if len(cMenus) > 0 && !regular.ValidHttp(item.Path) && item.MenuType == menu.TYPE_DIR {
+		if len(cMenus) > 0 && item.MenuType == menu.TYPE_DIR && !regular.ValidHttp(item.Path) {
 			// 获取重定向地址
 			redirectPrefix, redirectPath := r.getRouteRedirect(
 				cMenus,
@@ -154,66 +154,82 @@ func (r *sysMenuImpl) BuildRouteMenus(sysMenus []model.SysMenu, prefix string) [
 			router.Redirect = redirectPath
 			// 子菜单进入递归
 			router.Children = r.BuildRouteMenus(cMenus, redirectPrefix)
+		} else if item.ParentID == "0" && item.IsFrame == common.STATUS_YES && item.MenuType == menu.TYPE_MENU {
+			// 父菜单 内部跳转 菜单类型
+			menuPath := "/" + item.MenuID
+			childPath := menuPath + r.getRouterPath(item)
+			children := vo.Router{
+				Name:      r.getRouteName(item),
+				Path:      childPath,
+				Component: item.Component,
+				Meta:      r.getRouteMeta(item),
+			}
+			router.Meta.HideChildInMenu = true
+			router.Children = append(router.Children, children)
+			router.Name = item.MenuID
+			router.Path = menuPath
+			router.Redirect = childPath
+			router.Component = menu.COMPONENT_LAYOUT_BASIC
+		} else if item.ParentID == "0" && item.IsFrame == common.STATUS_YES && regular.ValidHttp(item.Path) {
+			// 父菜单 内部跳转 路径链接
+			menuPath := "/" + item.MenuID
+			childPath := menuPath + r.getRouterPath(item)
+			children := vo.Router{
+				Name:      r.getRouteName(item),
+				Path:      childPath,
+				Component: menu.COMPONENT_LAYOUT_LINK,
+				Meta:      r.getRouteMeta(item),
+			}
+			router.Meta.HideChildInMenu = true
+			router.Children = append(router.Children, children)
+			router.Name = item.MenuID
+			router.Path = menuPath
+			router.Redirect = childPath
+			router.Component = menu.COMPONENT_LAYOUT_BASIC
 		}
+
 		routers = append(routers, router)
 	}
 	return routers
 }
 
-// 获取路由名称
-//
-// 路径英文首字母大写
-//
-// menu 菜单信息
-func (r *sysMenuImpl) getRouteName(menu model.SysMenu) string {
-	routerName := parse.FirstUpper(menu.Path)
+// getRouteName 获取路由名称 路径英文首字母大写
+func (r *sysMenuImpl) getRouteName(sysMenu model.SysMenu) string {
+	routerName := parse.FirstUpper(sysMenu.Path)
 	// 路径链接
-	if regular.ValidHttp(menu.Path) {
-		return routerName[:5] + "Link" + menu.MenuID
+	if regular.ValidHttp(sysMenu.Path) {
+		return routerName[:5] + "Link" + sysMenu.MenuID
 	}
 	return routerName
 }
 
-// 获取路由地址
-//
-// menu 菜单信息
+// getRouterPath 获取路由地址
 func (r *sysMenuImpl) getRouterPath(sysMenu model.SysMenu) string {
 	routerPath := sysMenu.Path
 
 	// 显式路径
-	if strings.HasPrefix(routerPath, "/") {
+	if routerPath == "" || strings.HasPrefix(routerPath, "/") {
 		return routerPath
 	}
 
-	menuType := sysMenu.MenuType == menu.TYPE_DIR || sysMenu.MenuType == menu.TYPE_MENU
-
-	// 路径链接
-	if regular.ValidHttp(routerPath) {
-		// 内部跳转 非父菜单 目录类型或菜单类型
-		if sysMenu.IsFrame == common.STATUS_YES && sysMenu.ParentID != "0" && menuType {
-			routerPath = regular.Replace(routerPath, `/^http(s)?:\/\/+/`, "")
-			return base64.StdEncoding.EncodeToString([]byte(routerPath))
-		}
-		// 非内部跳转
-		return routerPath
+	// 路径链接 内部跳转
+	if regular.ValidHttp(routerPath) && sysMenu.IsFrame == common.STATUS_YES {
+		routerPath = regular.Replace(routerPath, `/^http(s)?:\/\/+/`, "")
+		routerPath = base64.StdEncoding.EncodeToString([]byte(routerPath))
 	}
 
-	// 父菜单 目录类型或菜单类型
-	if sysMenu.ParentID == "0" && menuType {
+	// 父菜单 内部跳转
+	if sysMenu.ParentID == "0" && sysMenu.IsFrame == common.STATUS_YES {
 		routerPath = "/" + routerPath
 	}
 
 	return routerPath
 }
 
-// 获取组件信息
-//
-// menu 菜单信息
+// getComponent 获取组件信息
 func (r *sysMenuImpl) getComponent(sysMenu model.SysMenu) string {
-	menuType := sysMenu.MenuType == menu.TYPE_DIR || sysMenu.MenuType == menu.TYPE_MENU
-
-	// 路径链接 非父菜单 目录类型或菜单类型
-	if regular.ValidHttp(sysMenu.Path) && sysMenu.ParentID != "0" && menuType {
+	// 内部跳转 路径链接
+	if sysMenu.IsFrame == common.STATUS_YES && regular.ValidHttp(sysMenu.Path) {
 		return menu.COMPONENT_LAYOUT_LINK
 	}
 
@@ -222,17 +238,19 @@ func (r *sysMenuImpl) getComponent(sysMenu model.SysMenu) string {
 		return menu.COMPONENT_LAYOUT_BLANK
 	}
 
-	// 菜单类型 内部跳转 有组件路径
-	if sysMenu.MenuType == menu.TYPE_MENU && sysMenu.IsFrame == common.STATUS_YES && sysMenu.Component != "" {
+	// 组件路径 内部跳转 菜单类型
+	if sysMenu.Component != "" && sysMenu.IsFrame == common.STATUS_YES && sysMenu.MenuType == menu.TYPE_MENU {
+		// 父菜单套外层布局
+		if sysMenu.ParentID == "0" {
+			return menu.COMPONENT_LAYOUT_BASIC
+		}
 		return sysMenu.Component
 	}
 
 	return menu.COMPONENT_LAYOUT_BASIC
 }
 
-// 获取路由元信息
-//
-// menu 菜单信息
+// getRouteMeta 获取路由元信息
 func (r *sysMenuImpl) getRouteMeta(sysMenu model.SysMenu) vo.RouterMeta {
 	meta := vo.RouterMeta{}
 	if sysMenu.Icon == "#" {
@@ -241,28 +259,20 @@ func (r *sysMenuImpl) getRouteMeta(sysMenu model.SysMenu) vo.RouterMeta {
 		meta.Icon = sysMenu.Icon
 	}
 	meta.Title = sysMenu.MenuName
-	meta.Hide = sysMenu.Visible == common.STATUS_NO
+	meta.HideChildInMenu = false
+	meta.HideInMenu = sysMenu.Visible == common.STATUS_NO
 	meta.Cache = sysMenu.IsCache == common.STATUS_YES
 	meta.Target = ""
 
-	// 路径链接
-	if regular.ValidHttp(sysMenu.Path) {
-		menuType := sysMenu.MenuType == menu.TYPE_DIR || sysMenu.MenuType == menu.TYPE_MENU
-
-		// 内部跳转 父菜单 目录类型或菜单类型
-		if sysMenu.IsFrame == common.STATUS_YES && sysMenu.ParentID == "0" && menuType {
-			meta.Target = "_self"
-		}
-		// 非内部跳转
-		if sysMenu.IsFrame == common.STATUS_NO {
-			meta.Target = "_blank"
-		}
+	// 路径链接 非内部跳转
+	if regular.ValidHttp(sysMenu.Path) && sysMenu.IsFrame == common.STATUS_NO {
+		meta.Target = "_blank"
 	}
 
 	return meta
 }
 
-// 获取路由重定向地址（针对目录）
+// getRouteRedirect 获取路由重定向地址（针对目录）
 //
 // cMenus 子菜单数组
 // routerPath 当前菜单路径
