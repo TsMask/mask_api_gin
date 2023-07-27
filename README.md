@@ -1,5 +1,6 @@
 # 基于 Gin 的管理系统后端接口服务
 
+[![star](https://gitee.com/TsMask/mask_api_gin/badge/star.svg?theme=dark)](https://gitee.com/TsMask/mask_api_gin/stargazers)
 ![Build Gin](https://img.shields.io/badge/Build-Gin-green.svg)
 ![Release V0.0.8](https://img.shields.io/badge/Release-V0.0.8-orange.svg)
 ![License MIT](https://img.shields.io/badge/License-MIT-blue.svg)
@@ -8,7 +9,7 @@
 
 该项目选择 [RuoYi-Vue](https://gitee.com/y_project/RuoYi-Vue) 后端进行重构改造。
 
-基于 `Golang` 的 `Gin` Web框架进行开发，如需进一步了解框架，参见 [Midwayjs](https://gin-gonic.com/zh-cn/docs/quickstart/) 官方文档。
+基于 `Golang` 的 `Gin` Web框架进行开发，如需进一步了解框架，参见 [Gin Web Framework](https://gin-gonic.com/zh-cn/docs/quickstart/) 官方文档。
 
 ## 项目拓展
 
@@ -83,9 +84,11 @@ mask_api_gin
 
 ```bash
 # 修改配置参数 /src/connfig/config.local.go
-go mod tidy                 # 安装项目所需依赖
-go run main.go              # 开发模式启动项目
-open http://localhost:6275  # 启动成功后得到服务访问地址
+go mod tidy                  # 安装项目所需依赖
+go run main.go               # 开发模式启动项目
+open http://localhost:6275   # 启动成功后得到服务访问地址
+
+go run main.go --env prod    # 生产模式启动项目
 ```
 
 #### 生产部署-Liunx
@@ -93,7 +96,10 @@ open http://localhost:6275  # 启动成功后得到服务访问地址
 ```bash
 # 修改配置参数 /src/connfig/config.prod.go
 go mod tidy             # 安装项目所需依赖
-go build -o main.go     # 构建生产项目代码
+go build -o .           # 构建项目二进制文件
+
+# 二进制文件启动时指定生产模式
+./xxx --env prod
 ```
 
 > 有任何问题或者建议，可以在 [_Issues_](https://gitee.com/TsMask/mask_api_gin/issues) 或通过QQ群：[_57242844_](https://jq.qq.com/?_wv=1027&k=z6Y4YQcB) 提出想法。  
