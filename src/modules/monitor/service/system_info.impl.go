@@ -58,9 +58,9 @@ func (s *systemInfoImpl) dependencies() map[string]string {
 		line = strings.TrimSpace(line)
 
 		// 行不为空，不以module\require开头，不带有 // indirect 注释，则解析包名和版本
-		prefixLine := strings.HasPrefix(line, "module") || strings.HasPrefix(line, "require") || strings.HasPrefix(line, "go")
-		suffixLine := strings.HasSuffix(line, ")")
-		if line == "" || prefixLine || suffixLine || strings.Contains(line, "//") {
+		prefixLine := strings.HasPrefix(line, "module") || strings.HasPrefix(line, "require") || strings.HasPrefix(line, "go ")
+		suffixLine := strings.HasSuffix(line, ")") || strings.HasSuffix(line, "// indirect")
+		if line == "" || prefixLine || suffixLine {
 			continue
 		}
 
