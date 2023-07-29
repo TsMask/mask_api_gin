@@ -2,6 +2,7 @@ package src
 
 import (
 	"mask_api_gin/src/framework/config"
+	"mask_api_gin/src/framework/cron"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/redis"
 )
@@ -14,6 +15,8 @@ func ConfigurationInit() {
 	datasource.Connect()
 	// 连接Redis实例
 	redis.Connect()
+	// 初始调度任务实例
+	cron.InitNew()
 }
 
 // 配置中心相关配置关闭连接
