@@ -6,6 +6,7 @@ import (
 	"mask_api_gin/src/framework/middleware/operlog"
 	"mask_api_gin/src/framework/middleware/repeat"
 	"mask_api_gin/src/modules/monitor/controller"
+	"mask_api_gin/src/modules/monitor/processor"
 	"mask_api_gin/src/modules/monitor/service"
 
 	"github.com/gin-gonic/gin"
@@ -205,6 +206,8 @@ func Setup(router *gin.Engine) {
 
 // InitLoad 初始参数
 func InitLoad() {
+	// 初始化定时任务处理
+	processor.InitCronQueue()
 	// 启动时，初始化调度任务
 	service.SysJobImpl.ResetQueueJob()
 }
