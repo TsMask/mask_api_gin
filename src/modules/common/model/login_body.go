@@ -9,8 +9,8 @@ type LoginBody struct {
 	Password string `json:"password" binding:"required"`
 
 	// Code 验证码
-	Code string `json:"code" binding:"required"`
+	Code string `json:"code"`
 
 	// UUID 验证码唯一标识
-	UUID string `json:"uuid" binding:"required"`
+	UUID string `json:"uuid"`
 }

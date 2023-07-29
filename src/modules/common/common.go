@@ -70,7 +70,6 @@ func Setup(router *gin.Engine) {
 	// 通用请求
 	commonGroup := router.Group("/common")
 	{
-		// 路由主页
 		commonGroup.GET("/hash", controller.Commont.Hash)
 	}
 

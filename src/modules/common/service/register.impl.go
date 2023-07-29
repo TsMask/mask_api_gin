@@ -35,16 +35,20 @@ type registerImpl struct {
 func (s *registerImpl) ValidateCaptcha(code, uuid string) error {
 	// 验证码检查，从数据库配置获取验证码开关 true开启，false关闭
 	captchaEnabledStr := s.sysConfigService.SelectConfigValueByKey("sys.account.captchaEnabled")
-	if parse.Boolean(captchaEnabledStr) {
-		verifyKey := cachekey.CAPTCHA_CODE_KEY + uuid
-		captcha := redis.Get(verifyKey)
-		if captcha == "" {
-			return errors.New("验证码已失效")
-		}
-		redis.Del(verifyKey)
-		if captcha != code {
-			return errors.New("验证码错误")
-		}
+	if !parse.Boolean(captchaEnabledStr) {
+		return nil
+	}
+	if code == "" || uuid == "" {
+		return errors.New("验证码信息错误")
+	}
+	verifyKey := cachekey.CAPTCHA_CODE_KEY + uuid
+	captcha := redis.Get(verifyKey)
+	if captcha == "" {
+		return errors.New("验证码已失效")
+	}
+	redis.Del(verifyKey)
+	if captcha != code {
+		return errors.New("验证码错误")
 	}
 	return nil
 }
