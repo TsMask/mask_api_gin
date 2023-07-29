@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/date"
@@ -67,27 +68,31 @@ func (s *sysJob) Add(c *gin.Context) {
 	}
 
 	// 检查cron表达式格式
-	if false {
+	if parse.CronExpression(body.CronExpression) == 0 {
 		msg := fmt.Sprintf("调度任务新增【%s】失败，Cron表达式不正确", body.JobName)
-		c.JSON(200, result.ErrMsg(msg))
-		return
-	}
-
-	// 检查属性值唯一
-	uniqueJob := s.sysJobService.CheckUniqueJobName(body.JobName, body.JobGroup, "")
-	if !uniqueJob {
-		msg := fmt.Sprintf("调度任务修改【%s】失败，同任务组内有相同任务名称", body.JobName)
 		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
 	// 检查任务调用传入参数是否json格式
 	if body.TargetParams != "" {
-		msg := fmt.Sprintf("调度任务修改【%s】失败，任务传入参数json字符串不正确", body.JobName)
+		msg := fmt.Sprintf("调度任务新增【%s】失败，任务传入参数json字符串不正确", body.JobName)
 		if len(body.TargetParams) < 7 {
 			c.JSON(200, result.ErrMsg(msg))
 			return
 		}
+		if !json.Valid([]byte(body.TargetParams)) {
+			c.JSON(200, result.ErrMsg(msg))
+			return
+		}
+	}
+
+	// 检查属性值唯一
+	uniqueJob := s.sysJobService.CheckUniqueJobName(body.JobName, body.JobGroup, "")
+	if !uniqueJob {
+		msg := fmt.Sprintf("调度任务新增【%s】失败，同任务组内有相同任务名称", body.JobName)
+		c.JSON(200, result.ErrMsg(msg))
+		return
 	}
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
@@ -111,16 +116,8 @@ func (s *sysJob) Edit(c *gin.Context) {
 	}
 
 	// 检查cron表达式格式
-	if false {
+	if parse.CronExpression(body.CronExpression) == 0 {
 		msg := fmt.Sprintf("调度任务修改【%s】失败，Cron表达式不正确", body.JobName)
-		c.JSON(200, result.ErrMsg(msg))
-		return
-	}
-
-	// 检查属性值唯一
-	uniqueJob := s.sysJobService.CheckUniqueJobName(body.JobName, body.JobGroup, "")
-	if !uniqueJob {
-		msg := fmt.Sprintf("调度任务修改【%s】失败，同任务组内有相同任务名称", body.JobName)
 		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
@@ -132,6 +129,18 @@ func (s *sysJob) Edit(c *gin.Context) {
 			c.JSON(200, result.ErrMsg(msg))
 			return
 		}
+		if !json.Valid([]byte(body.TargetParams)) {
+			c.JSON(200, result.ErrMsg(msg))
+			return
+		}
+	}
+
+	// 检查属性值唯一
+	uniqueJob := s.sysJobService.CheckUniqueJobName(body.JobName, body.JobGroup, body.JobID)
+	if !uniqueJob {
+		msg := fmt.Sprintf("调度任务修改【%s】失败，同任务组内有相同任务名称", body.JobName)
+		c.JSON(200, result.ErrMsg(msg))
+		return
 	}
 
 	body.UpdateBy = ctx.LoginUserToUserName(c)
