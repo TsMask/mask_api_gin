@@ -18,9 +18,6 @@ type ISysJob interface {
 	// CheckUniqueJob 校验调度任务是否唯一
 	CheckUniqueJob(sysJob model.SysJob) string
 
-	// SelectJobByInvokeTarget 通过调用目标字符串查询调度任务信息
-	SelectJobByInvokeTarget(invokeTarget string) model.SysJob
-
 	// InsertJob 新增调度任务信息
 	InsertJob(sysJob model.SysJob) string
 

@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"mask_api_gin/src/framework/constants/common"
+	"mask_api_gin/src/framework/cron"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/repository"
 )
@@ -117,19 +118,54 @@ func (r *sysJobImpl) ChangeStatus(sysJob model.SysJob) bool {
 
 // ResetQueueJob 重置初始调度任务
 func (r *sysJobImpl) ResetQueueJob() {
+	// 获取注册的队列列表
+	queueList := cron.QueueList()
+	if len(queueList) == 0 {
+		return
+	}
+	// 查询系统中定义状态为正常启用的任务
+	sysJobs := r.sysJobRepository.SelectJobList(model.SysJob{
+		Status: common.STATUS_YES,
+	})
+	for _, sysJob := range sysJobs {
+		for _, queue := range queueList {
+			if queue.Name == sysJob.InvokeTarget {
+				r.insertQueueJob(sysJob, true)
+			}
+		}
+	}
 }
 
 // RunQueueJob 立即运行一次调度任务
 func (r *sysJobImpl) RunQueueJob(sysJob model.SysJob) bool {
-	return false
+	return r.insertQueueJob(sysJob, false)
 }
 
 // insertQueueJob 添加调度任务
 func (r *sysJobImpl) insertQueueJob(sysJob model.SysJob, repeat bool) bool {
-	return false
+	// 获取队列 Processor
+	queue, err := cron.GetQueue(sysJob.InvokeTarget)
+	if err != nil {
+		return false
+	}
+
+	// 给执行任务数据参数
+	options := cron.Options{
+		Repeat: repeat,
+		SysJob: sysJob,
+	}
+
+	queue.RunJob(options, sysJob.JobID, sysJob.CronExpression)
+
+	return true
 }
 
 // deleteQueueJob 删除调度任务
-func (r *sysJobImpl) deleteQueueJob(sysJob model.SysJob) error {
-	return nil
+func (r *sysJobImpl) deleteQueueJob(sysJob model.SysJob) bool {
+	// 获取队列 Processor
+	queue, err := cron.GetQueue(sysJob.InvokeTarget)
+	if err != nil {
+		return false
+	}
+	return queue.RemoveJob(sysJob.JobID)
 }

@@ -15,9 +15,6 @@ type ISysJobLog interface {
 	// SelectJobLogById 通过调度ID查询调度任务日志信息
 	SelectJobLogById(jobLogId string) model.SysJobLog
 
-	// InsertJobLog 新增调度任务日志信息
-	InsertJobLog(sysJobLog model.SysJobLog) string
-
 	// DeleteJobLogByIds 批量删除调度任务日志信息
 	DeleteJobLogByIds(jobLogIds []string) int64
 

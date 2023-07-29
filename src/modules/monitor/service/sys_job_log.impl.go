@@ -30,11 +30,6 @@ func (s *sysJobLogImpl) SelectJobLogById(jobLogId string) model.SysJobLog {
 	return s.sysJobLogRepository.SelectJobLogById(jobLogId)
 }
 
-// InsertJobLog 新增调度任务日志信息
-func (s *sysJobLogImpl) InsertJobLog(sysJobLog model.SysJobLog) string {
-	return s.sysJobLogRepository.InsertJobLog(sysJobLog)
-}
-
 // DeleteJobLogByIds 批量删除调度任务日志信息
 func (s *sysJobLogImpl) DeleteJobLogByIds(jobLogIds []string) int64 {
 	return s.sysJobLogRepository.DeleteJobLogByIds(jobLogIds)

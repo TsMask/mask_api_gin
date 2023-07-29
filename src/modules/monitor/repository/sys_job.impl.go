@@ -208,11 +208,6 @@ func (r *sysJobImpl) CheckUniqueJob(sysJob model.SysJob) string {
 	return ""
 }
 
-// SelectJobByInvokeTarget 通过调用目标字符串查询调度任务信息
-func (r *sysJobImpl) SelectJobByInvokeTarget(invokeTarget string) model.SysJob {
-	return model.SysJob{}
-}
-
 // InsertJob 新增调度任务信息
 func (r *sysJobImpl) InsertJob(sysJob model.SysJob) string {
 	// 参数拼接
