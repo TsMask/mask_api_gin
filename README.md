@@ -2,7 +2,7 @@
 
 [![star](https://gitee.com/TsMask/mask_api_gin/badge/star.svg?theme=dark)](https://gitee.com/TsMask/mask_api_gin/stargazers)
 ![Build Gin](https://img.shields.io/badge/Build-Gin-green.svg)
-![Release V0.0.9](https://img.shields.io/badge/Release-V0.0.9-orange.svg)
+![Release V0.1.0](https://img.shields.io/badge/Release-V0.1.0-orange.svg)
 ![License MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
 ## 介绍
