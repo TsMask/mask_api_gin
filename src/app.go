@@ -11,7 +11,6 @@ import (
 	"mask_api_gin/src/modules/system"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 )
 
 // 运行服务程序
@@ -57,36 +56,37 @@ func initDefeat(app *gin.Engine) {
 	// 全局中间件
 	app.Use(middleware.Report(), middleware.Cors(), security.Security())
 
-	// 静态目录
-	fsDefault := viper.GetStringMapString("staticFile.default")
-	app.StaticFS(fsDefault["prefix"], gin.Dir(fsDefault["dir"], true))
-	fsUpload := viper.GetStringMapString("staticFile.upload")
-	app.StaticFS(fsUpload["prefix"], gin.Dir(fsUpload["dir"], true))
+	// 静态目录-静态资源
+	if v := config.Get("staticFile.default"); v != nil {
+		fsMap := v.(map[string]interface{})
+		prefix, dir := fsMap["prefix"], fsMap["dir"]
+		if prefix != nil && dir != nil {
+			app.StaticFS(prefix.(string), gin.Dir(dir.(string), true))
+		}
+	}
+
+	// 静态目录-上传资源
+	if v := config.Get("staticFile.upload"); v != nil {
+		fsMap := v.(map[string]interface{})
+		prefix, dir := fsMap["prefix"], fsMap["dir"]
+		if prefix != nil && dir != nil {
+			app.StaticFS(prefix.(string), gin.Dir(dir.(string), true))
+		}
+	}
 
 	// 路由未找到时
 	app.NoRoute(func(c *gin.Context) {
 		c.JSON(404, gin.H{
 			"code": 404,
-			"msg":  c.Request.RequestURI + " Not Found",
+			"msg":  fmt.Sprintf("%s Not Found", c.Request.RequestURI),
 		})
 	})
 }
 
 // 初始模块路由
 func initModulesRoute(app *gin.Engine) {
-	// 测试启动
-	app.GET("/ping", func(c *gin.Context) {
-		forwardedFor := c.GetHeader("X-Forwarded-For")
-		ip := c.ClientIP()
-
-		c.JSON(200, gin.H{
-			"config":       viper.AllSettings(),
-			"forwarded_ip": forwardedFor,
-			"client_ip":    ip,
-		})
-	})
-
 	demo.Setup(app)
+
 	common.Setup(app)
 	monitor.Setup(app)
 	system.Setup(app) // 一定放最后，定时任务加载
