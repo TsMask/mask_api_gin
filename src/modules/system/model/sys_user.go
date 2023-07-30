@@ -44,7 +44,7 @@ type SysUser struct {
 	// ====== 非数据库字段属性 ======
 
 	// 部门对象
-	Dept SysDept `json:"dept,omitempty"`
+	Dept SysDept `json:"dept,omitempty" binding:"structonly"`
 	// 角色对象组
 	Roles []SysRole `json:"roles"`
 	// 角色ID
