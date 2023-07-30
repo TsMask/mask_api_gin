@@ -2,6 +2,17 @@
 server:
   port: 6276
 
+# security 安全
+security:
+  csrf:
+    refererWhiteList:
+      - "localhost:6269"
+      - "127.0.0.1:6269"
+      - "localhost:6269"
+      - "127.0.0.1:6265"
+      - "127.0.0.1:6275"
+      - "192.168.56.101"
+
 # GORM 数据源
 gorm:
   dataSource:
