@@ -144,10 +144,12 @@ func (r *sysRoleImpl) CheckUniqueRoleKey(roleKey, roleId string) bool {
 
 // AuthDataScope 修改数据权限信息
 func (r *sysRoleImpl) AuthDataScope(sysRole model.SysRole) int64 {
+	// 修改角色信息
+	rows := r.sysRoleRepository.UpdateRole(sysRole)
 	// 删除角色与部门关联
 	r.sysRoleDeptRepository.DeleteRoleDept([]string{sysRole.RoleID})
 	// 新增角色和部门信息
-	if len(sysRole.DeptIds) > 0 {
+	if sysRole.DataScope == "2" && len(sysRole.DeptIds) > 0 {
 		sysRoleDepts := []model.SysRoleDept{}
 		for _, deptId := range sysRole.DeptIds {
 			if deptId == "" {
@@ -155,10 +157,9 @@ func (r *sysRoleImpl) AuthDataScope(sysRole model.SysRole) int64 {
 			}
 			sysRoleDepts = append(sysRoleDepts, model.NewSysRoleDept(sysRole.RoleID, deptId))
 		}
-		r.sysRoleDeptRepository.BatchRoleDept(sysRoleDepts)
+		rows += r.sysRoleDeptRepository.BatchRoleDept(sysRoleDepts)
 	}
-	// 修改角色信息
-	return r.sysRoleRepository.UpdateRole(sysRole)
+	return rows
 }
 
 // DeleteAuthUsers 批量取消授权用户角色

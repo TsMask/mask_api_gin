@@ -262,11 +262,13 @@ func (s *sysRole) DataScope(c *gin.Context) {
 	}
 
 	// 更新数据权限
+	userName := ctx.LoginUserToUserName(c)
 	sysRole := model.SysRole{
 		RoleID:            body.RoleID,
 		DeptIds:           body.DeptIds,
 		DataScope:         body.DataScope,
 		DeptCheckStrictly: body.DeptCheckStrictly,
+		UpdateBy:          userName,
 	}
 	rows := s.sysRoleService.AuthDataScope(sysRole)
 	if rows > 0 {
