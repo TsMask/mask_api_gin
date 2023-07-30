@@ -281,6 +281,8 @@ func (r *sysMenuImpl) InsertMenu(sysMenu model.SysMenu) string {
 	}
 	if sysMenu.Icon != "" {
 		params["icon"] = sysMenu.Icon
+	} else {
+		params["icon"] = "#"
 	}
 	if sysMenu.Remark != "" {
 		params["remark"] = sysMenu.Remark
@@ -302,7 +304,7 @@ func (r *sysMenuImpl) InsertMenu(sysMenu model.SysMenu) string {
 	}
 	if sysMenu.MenuType == menu.TYPE_DIR {
 		params["component"] = ""
-		params["path"] = ""
+		params["perms"] = ""
 	}
 
 	// 构建执行语句
@@ -374,6 +376,8 @@ func (r *sysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int64 {
 	}
 	if sysMenu.Icon != "" {
 		params["icon"] = sysMenu.Icon
+	} else {
+		params["icon"] = "#"
 	}
 	if sysMenu.Remark != "" {
 		params["remark"] = sysMenu.Remark
@@ -395,7 +399,7 @@ func (r *sysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int64 {
 	}
 	if sysMenu.MenuType == menu.TYPE_DIR {
 		params["component"] = ""
-		params["path"] = ""
+		params["perms"] = ""
 	}
 
 	// 构建执行语句
