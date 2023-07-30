@@ -85,7 +85,7 @@ func (s *sysNotice) Edit(c *gin.Context) {
 	// 检查是否存在
 	notice := s.sysNoticeService.SelectNoticeById(body.NoticeID)
 	if notice.NoticeID != body.NoticeID {
-		c.JSON(200, result.OkMsg("没有权限访问公告信息数据！"))
+		c.JSON(200, result.ErrMsg("没有权限访问公告信息数据！"))
 		return
 	}
 

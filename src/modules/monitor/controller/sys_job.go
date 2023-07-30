@@ -196,7 +196,7 @@ func (s *sysJob) Status(c *gin.Context) {
 	// 检查是否存在
 	job := s.sysJobService.SelectJobById(body.JobId)
 	if job.JobID != body.JobId {
-		c.JSON(200, result.OkMsg("没有权限访问调度任务数据！"))
+		c.JSON(200, result.ErrMsg("没有权限访问调度任务数据！"))
 		return
 	}
 
@@ -230,7 +230,7 @@ func (s *sysJob) Run(c *gin.Context) {
 	// 检查是否存在
 	job := s.sysJobService.SelectJobById(jobId)
 	if job.JobID != jobId {
-		c.JSON(200, result.OkMsg("没有权限访问调度任务数据！"))
+		c.JSON(200, result.ErrMsg("没有权限访问调度任务数据！"))
 		return
 	}
 

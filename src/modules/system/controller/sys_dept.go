@@ -88,17 +88,17 @@ func (s *sysDept) Add(c *gin.Context) {
 	if body.ParentID != "0" {
 		deptParent := s.sysDeptService.SelectDeptById(body.ParentID)
 		if deptParent.DeptID != body.ParentID {
-			c.JSON(200, result.OkMsg("没有权限访问部门数据！"))
+			c.JSON(200, result.ErrMsg("没有权限访问部门数据！"))
 			return
 		}
 		if deptParent.Status == common.STATUS_NO {
 			msg := fmt.Sprintf("上级部门【%s】停用，不允许新增", deptParent.DeptName)
-			c.JSON(200, result.OkMsg(msg))
+			c.JSON(200, result.ErrMsg(msg))
 			return
 		}
 		if deptParent.DelFlag == common.STATUS_YES {
 			msg := fmt.Sprintf("上级部门【%s】已删除，不允许新增", deptParent.DeptName)
-			c.JSON(200, result.OkMsg(msg))
+			c.JSON(200, result.ErrMsg(msg))
 			return
 		}
 		body.Ancestors = deptParent.Ancestors + "," + body.ParentID
@@ -110,7 +110,7 @@ func (s *sysDept) Add(c *gin.Context) {
 	uniqueDeptName := s.sysDeptService.CheckUniqueDeptName(body.DeptName, body.ParentID, "")
 	if !uniqueDeptName {
 		msg := fmt.Sprintf("部门新增【%s】失败，部门名称已存在", body.DeptName)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
@@ -137,21 +137,21 @@ func (s *sysDept) Edit(c *gin.Context) {
 	// 上级部门不能选自己
 	if body.DeptID == body.ParentID {
 		msg := fmt.Sprintf("部门修改【%s】失败，上级部门不能是自己", body.DeptName)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
 	// 检查数据是否存在
 	deptInfo := s.sysDeptService.SelectDeptById(body.DeptID)
 	if deptInfo.DeptID != body.DeptID {
-		c.JSON(200, result.OkMsg("没有权限访问部门数据！"))
+		c.JSON(200, result.ErrMsg("没有权限访问部门数据！"))
 		return
 	}
 	// 父级ID不为0是要检查
 	if body.ParentID != "0" {
 		deptParent := s.sysDeptService.SelectDeptById(body.ParentID)
 		if deptParent.DeptID != body.ParentID {
-			c.JSON(200, result.OkMsg("没有权限访问部门数据！"))
+			c.JSON(200, result.ErrMsg("没有权限访问部门数据！"))
 			return
 		}
 	}
@@ -160,7 +160,7 @@ func (s *sysDept) Edit(c *gin.Context) {
 	uniqueDeptName := s.sysDeptService.CheckUniqueDeptName(body.DeptName, body.ParentID, body.DeptID)
 	if !uniqueDeptName {
 		msg := fmt.Sprintf("部门修改【%s】失败，部门名称已存在", body.DeptName)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
@@ -169,7 +169,7 @@ func (s *sysDept) Edit(c *gin.Context) {
 		hasChild := s.sysDeptService.HasChildByDeptId(body.DeptID)
 		if hasChild > 0 {
 			msg := fmt.Sprintf("该部门包含未停用的子部门数量：%d", hasChild)
-			c.JSON(200, result.OkMsg(msg))
+			c.JSON(200, result.ErrMsg(msg))
 			return
 		}
 	}

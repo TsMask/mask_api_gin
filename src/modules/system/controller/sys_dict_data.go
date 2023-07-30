@@ -79,7 +79,7 @@ func (s *sysDictData) Add(c *gin.Context) {
 	uniqueDictLabel := s.sysDictDataService.CheckUniqueDictLabel(body.DictType, body.DictLabel, "")
 	if !uniqueDictLabel {
 		msg := fmt.Sprintf("数据新增【%s】失败，该字典类型下标签名已存在", body.DictLabel)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
@@ -87,7 +87,7 @@ func (s *sysDictData) Add(c *gin.Context) {
 	uniqueDictValue := s.sysDictDataService.CheckUniqueDictValue(body.DictType, body.DictValue, "")
 	if !uniqueDictValue {
 		msg := fmt.Sprintf("数据新增【%s】失败，该字典类型下标签值已存在", body.DictValue)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
@@ -129,7 +129,7 @@ func (s *sysDictData) Edit(c *gin.Context) {
 	uniqueDictLabel := s.sysDictDataService.CheckUniqueDictLabel(body.DictType, body.DictLabel, body.DictCode)
 	if !uniqueDictLabel {
 		msg := fmt.Sprintf("数据修改【%s】失败，该字典类型下标签名已存在", body.DictLabel)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
@@ -137,7 +137,7 @@ func (s *sysDictData) Edit(c *gin.Context) {
 	uniqueDictValue := s.sysDictDataService.CheckUniqueDictValue(body.DictType, body.DictValue, body.DictCode)
 	if !uniqueDictValue {
 		msg := fmt.Sprintf("数据修改【%s】失败，该字典类型下标签值已存在", body.DictValue)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 

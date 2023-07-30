@@ -117,7 +117,7 @@ func (s *sysRole) Edit(c *gin.Context) {
 	// 检查是否存在
 	role := s.sysRoleService.SelectRoleById(body.RoleID)
 	if role.RoleID != body.RoleID {
-		c.JSON(200, result.OkMsg("没有权限访问角色数据！"))
+		c.JSON(200, result.ErrMsg("没有权限访问角色数据！"))
 		return
 	}
 
@@ -203,7 +203,7 @@ func (s *sysRole) Status(c *gin.Context) {
 	// 检查是否存在
 	role := s.sysRoleService.SelectRoleById(body.RoleID)
 	if role.RoleID != body.RoleID {
-		c.JSON(200, result.OkMsg("没有权限访问角色数据！"))
+		c.JSON(200, result.ErrMsg("没有权限访问角色数据！"))
 		return
 	}
 
@@ -257,7 +257,7 @@ func (s *sysRole) DataScope(c *gin.Context) {
 	// 检查是否存在
 	role := s.sysRoleService.SelectRoleById(body.RoleID)
 	if role.RoleID != body.RoleID {
-		c.JSON(200, result.OkMsg("没有权限访问角色数据！"))
+		c.JSON(200, result.ErrMsg("没有权限访问角色数据！"))
 		return
 	}
 
@@ -290,7 +290,7 @@ func (s *sysRole) AuthUserAllocatedList(c *gin.Context) {
 	// 检查是否存在
 	role := s.sysRoleService.SelectRoleById(roleId)
 	if role.RoleID != roleId {
-		c.JSON(200, result.OkMsg("没有权限访问角色数据！"))
+		c.JSON(200, result.ErrMsg("没有权限访问角色数据！"))
 		return
 	}
 
@@ -328,7 +328,7 @@ func (s *sysRole) AuthUserChecked(c *gin.Context) {
 	// 检查是否存在
 	role := s.sysRoleService.SelectRoleById(body.RoleID)
 	if role.RoleID != body.RoleID {
-		c.JSON(200, result.OkMsg("没有权限访问角色数据！"))
+		c.JSON(200, result.ErrMsg("没有权限访问角色数据！"))
 		return
 	}
 

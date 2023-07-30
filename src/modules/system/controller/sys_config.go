@@ -104,7 +104,7 @@ func (s *sysConfig) Edit(c *gin.Context) {
 	// 检查是否存在
 	config := s.sysConfigService.SelectConfigById(body.ConfigID)
 	if config.ConfigID != body.ConfigID {
-		c.JSON(200, result.OkMsg("没有权限访问参数配置数据！"))
+		c.JSON(200, result.ErrMsg("没有权限访问参数配置数据！"))
 		return
 	}
 

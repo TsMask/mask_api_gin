@@ -104,7 +104,7 @@ func (s *sysPost) Edit(c *gin.Context) {
 	// 检查是否存在
 	post := s.sysPostService.SelectPostById(body.PostID)
 	if post.PostID != body.PostID {
-		c.JSON(200, result.OkMsg("没有权限访问岗位数据！"))
+		c.JSON(200, result.ErrMsg("没有权限访问岗位数据！"))
 		return
 	}
 

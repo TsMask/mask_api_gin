@@ -70,7 +70,7 @@ func (s *sysDictType) Add(c *gin.Context) {
 	uniqueDictName := s.sysDictTypeService.CheckUniqueDictName(body.DictName, "")
 	if !uniqueDictName {
 		msg := fmt.Sprintf("字典新增【%s】失败，字典名称已存在", body.DictName)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
@@ -78,7 +78,7 @@ func (s *sysDictType) Add(c *gin.Context) {
 	uniqueDictType := s.sysDictTypeService.CheckUniqueDictType(body.DictType, "")
 	if !uniqueDictType {
 		msg := fmt.Sprintf("字典新增【%s】失败，字典类型已存在", body.DictType)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
@@ -105,7 +105,7 @@ func (s *sysDictType) Edit(c *gin.Context) {
 	// 检查数据是否存在
 	dictInfo := s.sysDictTypeService.SelectDictTypeByID(body.DictID)
 	if dictInfo.DictID != body.DictID {
-		c.JSON(200, result.OkMsg("没有权限访问字典类型数据！"))
+		c.JSON(200, result.ErrMsg("没有权限访问字典类型数据！"))
 		return
 	}
 
@@ -113,7 +113,7 @@ func (s *sysDictType) Edit(c *gin.Context) {
 	uniqueDictName := s.sysDictTypeService.CheckUniqueDictName(body.DictName, body.DictID)
 	if !uniqueDictName {
 		msg := fmt.Sprintf("字典修改【%s】失败，字典名称已存在", body.DictName)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
@@ -121,7 +121,7 @@ func (s *sysDictType) Edit(c *gin.Context) {
 	uniqueDictType := s.sysDictTypeService.CheckUniqueDictType(body.DictType, body.DictID)
 	if !uniqueDictType {
 		msg := fmt.Sprintf("字典修改【%s】失败，字典类型已存在", body.DictType)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 

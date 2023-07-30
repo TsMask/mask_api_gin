@@ -80,7 +80,7 @@ func (s *sysMenu) Add(c *gin.Context) {
 		uniqueNenuPath := s.sysMenuService.CheckUniqueMenuPath(body.Path, "")
 		if !uniqueNenuPath {
 			msg := fmt.Sprintf("菜单新增【%s】失败，菜单路由地址已存在", body.MenuName)
-			c.JSON(200, result.OkMsg(msg))
+			c.JSON(200, result.ErrMsg(msg))
 			return
 		}
 	}
@@ -89,14 +89,14 @@ func (s *sysMenu) Add(c *gin.Context) {
 	uniqueNenuName := s.sysMenuService.CheckUniqueMenuName(body.MenuName, body.ParentID, "")
 	if !uniqueNenuName {
 		msg := fmt.Sprintf("菜单新增【%s】失败，菜单名称已存在", body.MenuName)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
 	// 外链菜单需要符合网站http(s)开头
 	if body.IsFrame == common.STATUS_NO && !regular.ValidHttp(body.Path) {
 		msg := fmt.Sprintf("菜单新增【%s】失败，非内部地址必须以http(s)://开头", body.MenuName)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
@@ -123,21 +123,21 @@ func (s *sysMenu) Edit(c *gin.Context) {
 	// 上级菜单不能选自己
 	if body.MenuID == body.ParentID {
 		msg := fmt.Sprintf("菜单修改【%s】失败，上级菜单不能选择自己", body.MenuName)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
 	// 检查数据是否存在
 	menuInfo := s.sysMenuService.SelectMenuById(body.MenuID)
 	if menuInfo.MenuID != body.MenuID {
-		c.JSON(200, result.OkMsg("没有权限访问菜单数据"))
+		c.JSON(200, result.ErrMsg("没有权限访问菜单数据"))
 		return
 	}
 	// 父级ID不为0是要检查
 	if body.ParentID != "0" {
 		menuParent := s.sysMenuService.SelectMenuById(body.ParentID)
 		if menuParent.MenuID != body.ParentID {
-			c.JSON(200, result.OkMsg("没有权限访问菜单数据"))
+			c.JSON(200, result.ErrMsg("没有权限访问菜单数据"))
 			return
 		}
 	}
@@ -147,7 +147,7 @@ func (s *sysMenu) Edit(c *gin.Context) {
 		uniqueNenuPath := s.sysMenuService.CheckUniqueMenuPath(body.Path, body.MenuID)
 		if !uniqueNenuPath {
 			msg := fmt.Sprintf("菜单修改【%s】失败，菜单路由地址已存在", body.MenuName)
-			c.JSON(200, result.OkMsg(msg))
+			c.JSON(200, result.ErrMsg(msg))
 			return
 		}
 	}
@@ -156,14 +156,14 @@ func (s *sysMenu) Edit(c *gin.Context) {
 	uniqueNenuName := s.sysMenuService.CheckUniqueMenuName(body.MenuName, body.ParentID, body.MenuID)
 	if !uniqueNenuName {
 		msg := fmt.Sprintf("菜单修改【%s】失败，菜单名称已存在", body.MenuName)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
 	// 外链菜单需要符合网站http(s)开头
 	if body.IsFrame == common.STATUS_NO && !regular.ValidHttp(body.Path) {
 		msg := fmt.Sprintf("菜单修改【%s】失败，非内部地址必须以http(s)://开头", body.MenuName)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
