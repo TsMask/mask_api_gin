@@ -220,6 +220,7 @@ func (s *sysDept) Remove(c *gin.Context) {
 	if rows > 0 {
 		msg := fmt.Sprintf("删除成功：%d", rows)
 		c.JSON(200, result.OkMsg(msg))
+		return
 	}
 	c.JSON(200, result.Err(nil))
 }
@@ -297,7 +298,7 @@ func (s *sysDept) RoleDeptTreeSelect(c *gin.Context) {
 	}
 
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")
-	deptTreeSelect := s.sysDeptService.SelectDeptList(model.SysDept{}, dataScopeSQL)
+	deptTreeSelect := s.sysDeptService.SelectDeptTreeSelect(model.SysDept{}, dataScopeSQL)
 	checkedKeys := s.sysDeptService.SelectDeptListByRoleId(roleId)
 	c.JSON(200, result.OkData(map[string]interface{}{
 		"depts":       deptTreeSelect,
