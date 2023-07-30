@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/middleware"
+	"mask_api_gin/src/framework/middleware/security"
 	"mask_api_gin/src/modules/common"
 	"mask_api_gin/src/modules/demo"
 	"mask_api_gin/src/modules/monitor"
@@ -54,7 +55,7 @@ func initAppEngine() *gin.Engine {
 // 初始全局默认
 func initDefeat(app *gin.Engine) {
 	// 全局中间件
-	app.Use(middleware.Report(), middleware.Cors())
+	app.Use(middleware.Report(), middleware.Cors(), security.Security())
 
 	// 静态目录
 	fsDefault := viper.GetStringMapString("staticFile.default")
@@ -75,7 +76,7 @@ func initDefeat(app *gin.Engine) {
 func initModulesRoute(app *gin.Engine) {
 	// 测试启动
 	app.GET("/ping", func(c *gin.Context) {
-		forwardedFor := c.Request.Header.Get("X-Forwarded-For")
+		forwardedFor := c.GetHeader("X-Forwarded-For")
 		ip := c.ClientIP()
 
 		c.JSON(200, gin.H{
