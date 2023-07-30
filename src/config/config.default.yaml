@@ -97,8 +97,9 @@ security:
   csrf:
     enable: true
     type: "referer"
+    # 允许调用的域名地址的，例如：http://<Referer地址>/mask-api
     refererWhiteList:
-      - "127.0.0.1"
+      - "127.0.0.1:6275"
   xframe:
     enable: true
     value: "SAMEORIGIN"
