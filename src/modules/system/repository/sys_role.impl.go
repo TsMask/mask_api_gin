@@ -218,7 +218,7 @@ func (r *sysRoleImpl) UpdateRole(sysRole model.SysRole) int64 {
 	if sysRole.RoleKey != "" {
 		params["role_key"] = sysRole.RoleKey
 	}
-	if sysRole.RoleSort >= 0 {
+	if sysRole.RoleSort > 0 {
 		params["role_sort"] = sysRole.RoleSort
 	}
 	if sysRole.DataScope != "" {
@@ -268,7 +268,7 @@ func (r *sysRoleImpl) InsertRole(sysRole model.SysRole) string {
 	if sysRole.RoleKey != "" {
 		params["role_key"] = sysRole.RoleKey
 	}
-	if sysRole.RoleSort >= 0 {
+	if sysRole.RoleSort > 0 {
 		params["role_sort"] = sysRole.RoleSort
 	}
 	if sysRole.DataScope != "" {

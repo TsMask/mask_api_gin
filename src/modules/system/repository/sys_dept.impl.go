@@ -327,7 +327,7 @@ func (r *sysDeptImpl) UpdateDept(sysDept model.SysDept) int64 {
 
 	// 构建执行语句
 	keys, values := repo.KeyValueByUpdate(params)
-	sql := "update sys_dept set " + strings.Join(keys, ",") + " where menu_id = ?"
+	sql := "update sys_dept set " + strings.Join(keys, ",") + " where dept_id = ?"
 
 	// 执行更新
 	values = append(values, sysDept.DeptID)

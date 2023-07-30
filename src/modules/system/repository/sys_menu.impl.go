@@ -252,7 +252,7 @@ func (r *sysMenuImpl) InsertMenu(sysMenu model.SysMenu) string {
 	if sysMenu.MenuName != "" {
 		params["menu_name"] = sysMenu.MenuName
 	}
-	if sysMenu.MenuSort >= 0 {
+	if sysMenu.MenuSort > 0 {
 		params["menu_sort"] = sysMenu.MenuSort
 	}
 	if sysMenu.Path != "" {
@@ -347,7 +347,7 @@ func (r *sysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int64 {
 	if sysMenu.MenuName != "" {
 		params["menu_name"] = sysMenu.MenuName
 	}
-	if sysMenu.MenuSort >= 0 {
+	if sysMenu.MenuSort > 0 {
 		params["menu_sort"] = sysMenu.MenuSort
 	}
 	if sysMenu.Path != "" {

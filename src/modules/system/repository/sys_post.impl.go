@@ -93,7 +93,7 @@ func (r *sysPostImpl) SelectPostPage(query map[string]string) map[string]interfa
 
 	// 分页
 	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
-	pageSql := " limit ?,? "
+	pageSql := " order by post_sort limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
 
@@ -181,7 +181,7 @@ func (r *sysPostImpl) SelectPostListByUserId(userId string) []model.SysPost {
 // DeletePostByIds 批量删除岗位信息
 func (r *sysPostImpl) DeletePostByIds(postIds []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(postIds))
-	sql := "delete from sys_post where post_id (" + placeholder + ")"
+	sql := "delete from sys_post where post_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(postIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
@@ -201,7 +201,7 @@ func (r *sysPostImpl) UpdatePost(sysPost model.SysPost) int64 {
 	if sysPost.PostName != "" {
 		params["post_name"] = sysPost.PostName
 	}
-	if sysPost.PostSort >= 0 {
+	if sysPost.PostSort > 0 {
 		params["post_sort"] = sysPost.PostSort
 	}
 	if sysPost.Status != "" {
@@ -242,7 +242,7 @@ func (r *sysPostImpl) InsertPost(sysPost model.SysPost) string {
 	if sysPost.PostName != "" {
 		params["post_name"] = sysPost.PostName
 	}
-	if sysPost.PostSort >= 0 {
+	if sysPost.PostSort > 0 {
 		params["post_sort"] = sysPost.PostSort
 	}
 	if sysPost.Status != "" {
