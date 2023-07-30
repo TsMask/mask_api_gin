@@ -37,7 +37,8 @@ func init() {
 //
 // 国家|区域|省份|城市|ISP
 func RegionSearchByIp(ip string) (string, int, int64) {
-	if ClientIP(ip) == LOCAT_HOST {
+	ip = ClientIP(ip)
+	if ip == LOCAT_HOST {
 		return "0|0|0|内网IP|内网IP", 0, 0
 	}
 	tStart := time.Now()
@@ -53,7 +54,8 @@ func RegionSearchByIp(ip string) (string, int, int64) {
 //
 // 218.4.167.70 江苏省 苏州市
 func RealAddressByIp(ip string) string {
-	if ClientIP(ip) == LOCAT_HOST {
+	ip = ClientIP(ip)
+	if ip == LOCAT_HOST {
 		return "内网IP"
 	}
 	region, err := searcher.SearchByStr(ip)
