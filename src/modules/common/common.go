@@ -20,7 +20,7 @@ func Setup(router *gin.Engine) {
 			Count: 10,
 			Type:  middleware.LIMIT_IP,
 		}),
-		controller.Index.Handler,
+		controller.NewIndex.Handler,
 	)
 
 	// 验证码操作处理
@@ -30,7 +30,7 @@ func Setup(router *gin.Engine) {
 			Count: 60,
 			Type:  middleware.LIMIT_IP,
 		}),
-		controller.Captcha.Image,
+		controller.NewCaptcha.Image,
 	)
 
 	// 账号身份操作处理
@@ -41,17 +41,17 @@ func Setup(router *gin.Engine) {
 				Count: 10,
 				Type:  middleware.LIMIT_IP,
 			}),
-			controller.Account.Login,
+			controller.NewAccount.Login,
 		)
-		indexGroup.GET("/getInfo", middleware.PreAuthorize(nil), controller.Account.Info)
-		indexGroup.GET("/getRouters", middleware.PreAuthorize(nil), controller.Account.Router)
+		indexGroup.GET("/getInfo", middleware.PreAuthorize(nil), controller.NewAccount.Info)
+		indexGroup.GET("/getRouters", middleware.PreAuthorize(nil), controller.NewAccount.Router)
 		indexGroup.POST("/logout",
 			middleware.RateLimit(middleware.LimitOption{
 				Time:  300,
 				Count: 5,
 				Type:  middleware.LIMIT_IP,
 			}),
-			controller.Account.Logout,
+			controller.NewAccount.Logout,
 		)
 	}
 
@@ -63,28 +63,23 @@ func Setup(router *gin.Engine) {
 				Count: 10,
 				Type:  middleware.LIMIT_IP,
 			}),
-			controller.Register.UserName,
+			controller.NewRegister.UserName,
 		)
 	}
 
 	// 通用请求
 	commonGroup := router.Group("/common")
 	{
-		commonGroup.GET("/hash", controller.Commont.Hash)
+		commonGroup.GET("/hash", controller.NewCommont.Hash)
 	}
 
 	// 文件操作处理
 	fileGroup := router.Group("/file")
 	{
-		// 下载文件
-		fileGroup.GET("/download/:filePath", controller.File.Download)
-		// 上传文件
-		fileGroup.POST("/upload", controller.File.Upload)
-		// 切片文件检查
-		fileGroup.POST("/chunkCheck", controller.File.ChunkCheck)
-		// 切片文件上传
-		fileGroup.POST("/chunkUpload", controller.File.ChunkUpload)
-		// 切片文件合并
-		fileGroup.POST("/chunkMerge", controller.File.ChunkMerge)
+		fileGroup.GET("/download/:filePath", controller.NewFile.Download)
+		fileGroup.POST("/upload", controller.NewFile.Upload)
+		fileGroup.POST("/chunkCheck", controller.NewFile.ChunkCheck)
+		fileGroup.POST("/chunkUpload", controller.NewFile.ChunkUpload)
+		fileGroup.POST("/chunkMerge", controller.NewFile.ChunkMerge)
 	}
 }

@@ -15,15 +15,16 @@ import (
 	"time"
 )
 
-// 账号身份操作服务 业务层处理
-var AccountImpl = &accountImpl{
+// 实例化服务层 AccountImpl 结构体
+var NewAccountImpl = &AccountImpl{
 	sysUserService:   systemService.SysUserImpl,
 	sysConfigService: systemService.SysConfigImpl,
 	sysRoleService:   systemService.SysRoleImpl,
 	sysMenuService:   systemService.SysMenuImpl,
 }
 
-type accountImpl struct {
+// 账号身份操作服务 业务层处理
+type AccountImpl struct {
 	// 用户信息服务
 	sysUserService systemService.ISysUser
 	// 参数配置服务
@@ -35,7 +36,7 @@ type accountImpl struct {
 }
 
 // ValidateCaptcha 校验验证码
-func (s *accountImpl) ValidateCaptcha(code, uuid string) error {
+func (s *AccountImpl) ValidateCaptcha(code, uuid string) error {
 	// 验证码检查，从数据库配置获取验证码开关 true开启，false关闭
 	captchaEnabledStr := s.sysConfigService.SelectConfigValueByKey("sys.account.captchaEnabled")
 	if !parse.Boolean(captchaEnabledStr) {
@@ -57,7 +58,7 @@ func (s *accountImpl) ValidateCaptcha(code, uuid string) error {
 }
 
 // LoginByUsername 登录创建用户信息
-func (s *accountImpl) LoginByUsername(username, password string) (vo.LoginUser, error) {
+func (s *AccountImpl) LoginByUsername(username, password string) (vo.LoginUser, error) {
 	loginUser := vo.LoginUser{}
 
 	// 检查密码重试次数
@@ -104,7 +105,7 @@ func (s *accountImpl) LoginByUsername(username, password string) (vo.LoginUser, 
 }
 
 // ClearLoginRecordCache 清除错误记录次数
-func (s *accountImpl) ClearLoginRecordCache(username string) bool {
+func (s *AccountImpl) ClearLoginRecordCache(username string) bool {
 	cacheKey := cachekey.PWD_ERR_CNT_KEY + username
 	if redis.Has(cacheKey) {
 		return redis.Del(cacheKey)
@@ -113,7 +114,7 @@ func (s *accountImpl) ClearLoginRecordCache(username string) bool {
 }
 
 // passwordRetryCount 密码重试次数
-func (s *accountImpl) passwordRetryCount(username string) (string, int64, time.Duration, error) {
+func (s *AccountImpl) passwordRetryCount(username string) (string, int64, time.Duration, error) {
 	// 验证登录次数和错误锁定时间
 	maxRetryCount := config.Get("user.password.maxRetryCount").(int)
 	lockTime := config.Get("user.password.lockTime").(int)
@@ -132,7 +133,7 @@ func (s *accountImpl) passwordRetryCount(username string) (string, int64, time.D
 }
 
 // RoleAndMenuPerms 角色和菜单数据权限 TODO
-func (s *accountImpl) RoleAndMenuPerms(userId string, isAdmin bool) ([]string, []string) {
+func (s *AccountImpl) RoleAndMenuPerms(userId string, isAdmin bool) ([]string, []string) {
 	if isAdmin {
 		return []string{adminConstants.ROLE_KEY}, []string{adminConstants.PERMISSION}
 	} else {
@@ -149,7 +150,7 @@ func (s *accountImpl) RoleAndMenuPerms(userId string, isAdmin bool) ([]string, [
 }
 
 // RouteMenus 前端路由所需要的菜单 TODO
-func (s *accountImpl) RouteMenus(userId string, isAdmin bool) []vo.Router {
+func (s *AccountImpl) RouteMenus(userId string, isAdmin bool) []vo.Router {
 	var buildMenus []vo.Router
 	if isAdmin {
 		menus := s.sysMenuService.SelectMenuTreeByUserId("*")

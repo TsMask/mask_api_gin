@@ -8,15 +8,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 文件操作处理
-var File = new(file)
+// 实例化控制层 FileController 结构体
+var NewFile = &FileController{}
 
-type file struct{}
+// 文件操作处理
+//
+// PATH /
+type FileController struct{}
 
 // 下载文件
 //
 // GET /download/:filePath
-func (s *file) Download(c *gin.Context) {
+func (s *FileController) Download(c *gin.Context) {
 	filePath := c.Param("filePath")
 	c.String(200, filePath)
 }
@@ -24,22 +27,22 @@ func (s *file) Download(c *gin.Context) {
 // 上传文件
 //
 // POST /upload
-func (s *file) Upload(c *gin.Context) {
+func (s *FileController) Upload(c *gin.Context) {
 	// 单文件
-	file, _ := c.FormFile("file")
-	log.Println(file.Filename)
+	FileController, _ := c.FormFile("FileController")
+	log.Println(FileController.Filename)
 
-	dst := "./" + file.Filename
+	dst := "./" + FileController.Filename
 	// 上传文件至指定的完整文件路径
-	c.SaveUploadedFile(file, dst)
+	c.SaveUploadedFile(FileController, dst)
 
-	c.String(http.StatusOK, fmt.Sprintf("'%s' uploaded!", file.Filename))
+	c.String(http.StatusOK, fmt.Sprintf("'%s' uploaded!", FileController.Filename))
 }
 
 // 切片文件检查
 //
 // POST /chunkCheck
-func (s *file) ChunkCheck(c *gin.Context) {
+func (s *FileController) ChunkCheck(c *gin.Context) {
 	var jsonData map[string]interface{}
 
 	if err := c.ShouldBindJSON(&jsonData); err != nil {
@@ -72,7 +75,7 @@ func (s *file) ChunkCheck(c *gin.Context) {
 // 切片文件合并
 //
 // POST /chunkMerge
-func (s *file) ChunkMerge(c *gin.Context) {
+func (s *FileController) ChunkMerge(c *gin.Context) {
 	var jsonData map[string]interface{}
 
 	if err := c.ShouldBindJSON(&jsonData); err != nil {
@@ -105,7 +108,7 @@ func (s *file) ChunkMerge(c *gin.Context) {
 // 切片文件上传
 //
 // POST /chunkUpload
-func (s *file) ChunkUpload(c *gin.Context) {
+func (s *FileController) ChunkUpload(c *gin.Context) {
 	var jsonData map[string]interface{}
 
 	if err := c.ShouldBindJSON(&jsonData); err != nil {

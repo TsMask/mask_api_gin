@@ -19,7 +19,7 @@ import (
 // 实例化控制层 SysLogininforController 结构体
 var NewSysLogininfor = &SysLogininforController{
 	sysLogininforService: service.NewSysLogininforImpl,
-	accountService:       commonService.AccountImpl,
+	accountService:       commonService.NewAccountImpl,
 }
 
 // 登录访问信息

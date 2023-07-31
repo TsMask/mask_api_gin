@@ -13,13 +13,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 账号注册操作处理
-var Register = &registerController{
-	registerService:      commonService.RegisterImpl,
+// 实例化控制层 RegisterController 结构体
+var NewRegister = &RegisterController{
+	registerService:      commonService.NewRegisterImpl,
 	sysLogininforService: monitorService.NewSysLogininforImpl,
 }
 
-type registerController struct {
+// 账号注册操作处理
+//
+// PATH /
+type RegisterController struct {
 	// 账号注册操作服务
 	registerService commonService.IRegister
 	// 系统登录访问
@@ -29,7 +32,7 @@ type registerController struct {
 // 账号注册
 //
 // GET /captchaImage
-func (s *registerController) UserName(c *gin.Context) {
+func (s *RegisterController) UserName(c *gin.Context) {
 	var registerBody commonModel.RegisterBody
 	if err := c.ShouldBindJSON(&registerBody); err != nil {
 		c.JSON(400, result.ErrMsg("参数错误"))

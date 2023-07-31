@@ -11,14 +11,15 @@ import (
 	systemService "mask_api_gin/src/modules/system/service"
 )
 
-// 账号身份操作服务 业务层处理
-var RegisterImpl = &registerImpl{
+// 实例化服务层 RegisterImpl 结构体
+var NewRegisterImpl = &RegisterImpl{
 	sysUserService:   systemService.SysUserImpl,
 	sysConfigService: systemService.SysConfigImpl,
 	sysRoleService:   systemService.SysRoleImpl,
 }
 
-type registerImpl struct {
+// 账号注册操作处理 业务层处理
+type RegisterImpl struct {
 	// 用户信息服务
 	sysUserService systemService.ISysUser
 	// 参数配置服务
@@ -28,7 +29,7 @@ type registerImpl struct {
 }
 
 // ValidateCaptcha 校验验证码
-func (s *registerImpl) ValidateCaptcha(code, uuid string) error {
+func (s *RegisterImpl) ValidateCaptcha(code, uuid string) error {
 	// 验证码检查，从数据库配置获取验证码开关 true开启，false关闭
 	captchaEnabledStr := s.sysConfigService.SelectConfigValueByKey("sys.account.captchaEnabled")
 	if !parse.Boolean(captchaEnabledStr) {
@@ -50,7 +51,7 @@ func (s *registerImpl) ValidateCaptcha(code, uuid string) error {
 }
 
 // ByUserName 账号注册
-func (s *registerImpl) ByUserName(username, password, userType string) string {
+func (s *RegisterImpl) ByUserName(username, password, userType string) string {
 	// 检查用户登录账号是否唯一
 	uniqueUserName := s.sysUserService.CheckUniqueUserName(username, "")
 	if !uniqueUserName {
@@ -82,7 +83,7 @@ func (s *registerImpl) ByUserName(username, password, userType string) string {
 }
 
 // registerRoleInit 注册初始角色
-func (s *registerImpl) registerRoleInit(userType string) []string {
+func (s *RegisterImpl) registerRoleInit(userType string) []string {
 	if userType == "sys" {
 		return []string{}
 	}
@@ -90,7 +91,7 @@ func (s *registerImpl) registerRoleInit(userType string) []string {
 }
 
 // registerPostInit 注册初始岗位
-func (s *registerImpl) registerPostInit(userType string) []string {
+func (s *RegisterImpl) registerPostInit(userType string) []string {
 	if userType == "sys" {
 		return []string{}
 	}

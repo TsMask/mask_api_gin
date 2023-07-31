@@ -14,13 +14,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 账号身份操作处理
-var Account = &accountController{
-	accountService:       commonService.AccountImpl,
+// 实例化控制层 AccountController 结构体
+var NewAccount = &AccountController{
+	accountService:       commonService.NewAccountImpl,
 	sysLogininforService: monitorService.NewSysLogininforImpl,
 }
 
-type accountController struct {
+// 账号身份操作处理
+//
+// PATH /
+type AccountController struct {
 	// 账号身份操作服务
 	accountService commonService.IAccount
 	// 系统登录访问
@@ -30,7 +33,7 @@ type accountController struct {
 // 系统登录
 //
 // POST /login
-func (s *accountController) Login(c *gin.Context) {
+func (s *AccountController) Login(c *gin.Context) {
 	var loginBody commonModel.LoginBody
 	if err := c.ShouldBindJSON(&loginBody); err != nil {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -84,7 +87,7 @@ func (s *accountController) Login(c *gin.Context) {
 // 登录用户信息
 //
 // GET /getInfo
-func (s *accountController) Info(c *gin.Context) {
+func (s *AccountController) Info(c *gin.Context) {
 	loginUser, err := ctxUtils.LoginUser(c)
 	if err != nil {
 		c.JSON(401, result.CodeMsg(401, err.Error()))
@@ -105,7 +108,7 @@ func (s *accountController) Info(c *gin.Context) {
 // 登录用户路由信息
 //
 // GET /getRouters
-func (s *accountController) Router(c *gin.Context) {
+func (s *AccountController) Router(c *gin.Context) {
 	userID := ctxUtils.LoginUserToUserID(c)
 
 	// 前端路由，管理员拥有所有
@@ -117,7 +120,7 @@ func (s *accountController) Router(c *gin.Context) {
 // 系统登出
 //
 // POST /logout
-func (s *accountController) Logout(c *gin.Context) {
+func (s *AccountController) Logout(c *gin.Context) {
 	tokenStr := ctxUtils.Authorization(c)
 	if tokenStr != "" {
 		// 存在token时记录退出信息

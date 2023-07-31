@@ -8,15 +8,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 路由主页
-var Index = new(indexController)
+// 实例化控制层 IndexController 结构体
+var NewIndex = &IndexController{}
 
-type indexController struct{}
+// 路由主页
+//
+// PATH /
+type IndexController struct{}
 
 // 根路由
 //
 // GET /
-func (s *indexController) Handler(c *gin.Context) {
+func (s *IndexController) Handler(c *gin.Context) {
 	name := config.Get("framework.name").(string)
 	version := config.Get("framework.version").(string)
 	str := "欢迎使用%s后台管理框架，当前版本：%s，请通过前端管理地址访问。"

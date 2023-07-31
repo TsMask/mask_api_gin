@@ -15,12 +15,15 @@ import (
 	"github.com/mojocn/base64Captcha"
 )
 
-// 验证码操作处理
-var Captcha = &captchaController{
+// 实例化控制层 CaptchaController 结构体
+var NewCaptcha = &CaptchaController{
 	sysConfigService: systemService.SysConfigImpl,
 }
 
-type captchaController struct {
+// 验证码操作处理
+//
+// PATH /
+type CaptchaController struct {
 	// 参数配置服务
 	sysConfigService systemService.ISysConfig
 }
@@ -28,7 +31,7 @@ type captchaController struct {
 // 获取验证码
 //
 // GET /captchaImage
-func (s *captchaController) Image(c *gin.Context) {
+func (s *CaptchaController) Image(c *gin.Context) {
 	// 从数据库配置获取验证码开关 true开启，false关闭
 	captchaEnabledStr := s.sysConfigService.SelectConfigValueByKey("sys.account.captchaEnabled")
 	captchaEnabled := parse.Boolean(captchaEnabledStr)
