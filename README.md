@@ -13,12 +13,17 @@
 
 ## 项目拓展
 
-- `Apifox` 提供mock服务和程序接口文档 => [接口预览](https://mask-api-midwayjs.apifox.cn/)
-- `Element-Vue3` 前端代码仓库地址 => [mask_element_vue3](https://gitee.com/TsMask/mask_element_vue3)
-- `Antd-Vue3` 前端代码仓库地址 => [mask_antd_vue3](https://gitee.com/TsMask/mask_antd_vue3)
-- `Midwayjs-Node` 后端代码仓库地址 => [mask_api_midwayjs](https://gitee.com/TsMask/mask_api_midwayjs)
+- `Apifox` 提供mock服务和程序接口文档 => [接口文档](https://mask-api-midwayjs.apifox.cn/)
+- 项目代码进行服务器部署的网站 => [在线预览](http://124.223.91.248:8102/#/)
 
-[Antd在线预览](http://124.223.91.248:8102/mask-antd/#/index) or [Element在线预览](http://124.223.91.248:8102/mask-el/#/index)
+### 前端代码
+
+- `Vue3-Element` 仓库地址 => [mask_element_vue3](https://gitee.com/TsMask/mask_element_vue3)
+- `Vue3-Antd` 仓库地址 => [mask_antd_vue3](https://gitee.com/TsMask/mask_antd_vue3)
+
+### 后端代码
+
+- `Node-Midwayjs` 仓库地址 => [mask_api_midwayjs](https://gitee.com/TsMask/mask_api_midwayjs)
 
 ## 内置功能
 
@@ -84,7 +89,7 @@ mask_api_gin
 
 ```bash
 # 修改配置参数 /src/connfig/config.local.go
-go mod tidy                  # 安装项目所需依赖
+go mod download              # 下载项目所需依赖
 go run main.go               # 开发模式启动项目
 open http://localhost:6275   # 启动成功后得到服务访问地址
 
@@ -93,13 +98,13 @@ go run main.go --env prod    # 生产模式启动项目
 
 #### 生产部署-Liunx
 
+启动依赖同级目录 `src/assets` 和 `src/config` 两个文件夹，如果打包后移动编译打包文件，需要将两个文件夹一并移动至同级目录。
+
 ```bash
 # 修改配置参数 /src/connfig/config.prod.go
-go mod tidy             # 安装项目所需依赖
-go build -o .           # 构建项目二进制文件
-
-# 二进制文件启动时指定生产模式
-./xxx --env prod
+go mod download             # 下载项目所需依赖
+go build -ldflags="-s -w"   # 构建项目二进制文件
+./xxx --env prod            # 二进制文件启动时指定生产模式
 ```
 
 > 有任何问题或者建议，可以在 [_Issues_](https://gitee.com/TsMask/mask_api_gin/issues) 或通过QQ群：[_57242844_](https://jq.qq.com/?_wv=1027&k=z6Y4YQcB) 提出想法。  
