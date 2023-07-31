@@ -10,8 +10,8 @@ import (
 	"strings"
 )
 
-// SysOperLogImpl 操作日志表 数据层处理
-var SysOperLogImpl = &sysOperLogImpl{
+// 实例化数据层 SysOperLogImpl 结构体
+var NewSysOperLogImpl = &SysOperLogImpl{
 	selectSql: `select 
 	oper_id, title, business_type, method, request_method, operator_type, oper_name, dept_name, 
 	oper_url, oper_ip, oper_location, oper_param, oper_msg, status, oper_time, cost_time
@@ -37,7 +37,8 @@ var SysOperLogImpl = &sysOperLogImpl{
 	},
 }
 
-type sysOperLogImpl struct {
+// SysOperLogImpl 操作日志表 数据层处理
+type SysOperLogImpl struct {
 	// 查询视图对象SQL
 	selectSql string
 	// 结果字段与实体映射
@@ -45,7 +46,7 @@ type sysOperLogImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *sysOperLogImpl) convertResultRows(rows []map[string]interface{}) []model.SysOperLog {
+func (r *SysOperLogImpl) convertResultRows(rows []map[string]interface{}) []model.SysOperLog {
 	arr := make([]model.SysOperLog, 0)
 	for _, row := range rows {
 		sysOperLog := model.SysOperLog{}
@@ -60,7 +61,7 @@ func (r *sysOperLogImpl) convertResultRows(rows []map[string]interface{}) []mode
 }
 
 // SelectOperLogPage 分页查询系统操作日志集合
-func (r *sysOperLogImpl) SelectOperLogPage(query map[string]string) map[string]interface{} {
+func (r *SysOperLogImpl) SelectOperLogPage(query map[string]string) map[string]interface{} {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -133,7 +134,7 @@ func (r *sysOperLogImpl) SelectOperLogPage(query map[string]string) map[string]i
 }
 
 // SelectOperLogList 查询系统操作日志集合
-func (r *sysOperLogImpl) SelectOperLogList(sysOperLog model.SysOperLog) []model.SysOperLog {
+func (r *SysOperLogImpl) SelectOperLogList(sysOperLog model.SysOperLog) []model.SysOperLog {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -173,7 +174,7 @@ func (r *sysOperLogImpl) SelectOperLogList(sysOperLog model.SysOperLog) []model.
 }
 
 // SelectOperLogById 查询操作日志详细
-func (r *sysOperLogImpl) SelectOperLogById(operId string) model.SysOperLog {
+func (r *SysOperLogImpl) SelectOperLogById(operId string) model.SysOperLog {
 	querySql := r.selectSql + " where oper_id = ?"
 	results, err := datasource.RawDB("", querySql, []interface{}{operId})
 	if err != nil {
@@ -189,7 +190,7 @@ func (r *sysOperLogImpl) SelectOperLogById(operId string) model.SysOperLog {
 }
 
 // InsertOperLog 新增操作日志
-func (r *sysOperLogImpl) InsertOperLog(sysOperLog model.SysOperLog) string {
+func (r *SysOperLogImpl) InsertOperLog(sysOperLog model.SysOperLog) string {
 	// 参数拼接
 	params := make(map[string]interface{})
 	params["oper_time"] = date.NowTimestamp()
@@ -264,7 +265,7 @@ func (r *sysOperLogImpl) InsertOperLog(sysOperLog model.SysOperLog) string {
 }
 
 // DeleteOperLogByIds 批量删除系统操作日志
-func (r *sysOperLogImpl) DeleteOperLogByIds(operIds []string) int64 {
+func (r *SysOperLogImpl) DeleteOperLogByIds(operIds []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(operIds))
 	sql := "delete from sys_oper_log where oper_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(operIds)
@@ -277,7 +278,7 @@ func (r *sysOperLogImpl) DeleteOperLogByIds(operIds []string) int64 {
 }
 
 // CleanOperLog 清空操作日志
-func (r *sysOperLogImpl) CleanOperLog() error {
+func (r *SysOperLogImpl) CleanOperLog() error {
 	sql := "truncate table sys_oper_log"
 	_, err := datasource.ExecDB("", sql, []interface{}{})
 	return err

@@ -10,8 +10,8 @@ import (
 	"strings"
 )
 
-// SysLogininforImpl 系统登录访问表 数据层处理
-var SysLogininforImpl = &sysLogininforImpl{
+// 实例化数据层 SysLogininforImpl 结构体
+var NewSysLogininforImpl = &SysLogininforImpl{
 	selectSql: `select info_id, user_name, ipaddr, login_location, 
 	browser, os, status, msg, login_time from sys_logininfor`,
 
@@ -28,7 +28,8 @@ var SysLogininforImpl = &sysLogininforImpl{
 	},
 }
 
-type sysLogininforImpl struct {
+// SysLogininforImpl 系统登录访问表 数据层处理
+type SysLogininforImpl struct {
 	// 查询视图对象SQL
 	selectSql string
 	// 结果字段与实体映射
@@ -36,7 +37,7 @@ type sysLogininforImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *sysLogininforImpl) convertResultRows(rows []map[string]interface{}) []model.SysLogininfor {
+func (r *SysLogininforImpl) convertResultRows(rows []map[string]interface{}) []model.SysLogininfor {
 	arr := make([]model.SysLogininfor, 0)
 	for _, row := range rows {
 		sysLogininfor := model.SysLogininfor{}
@@ -51,7 +52,7 @@ func (r *sysLogininforImpl) convertResultRows(rows []map[string]interface{}) []m
 }
 
 // SelectLogininforPage 分页查询系统登录日志集合
-func (r *sysLogininforImpl) SelectLogininforPage(query map[string]string) map[string]interface{} {
+func (r *SysLogininforImpl) SelectLogininforPage(query map[string]string) map[string]interface{} {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -120,7 +121,7 @@ func (r *sysLogininforImpl) SelectLogininforPage(query map[string]string) map[st
 }
 
 // SelectLogininforList 查询系统登录日志集合
-func (r *sysLogininforImpl) SelectLogininforList(sysLogininfor model.SysLogininfor) []model.SysLogininfor {
+func (r *SysLogininforImpl) SelectLogininforList(sysLogininfor model.SysLogininfor) []model.SysLogininfor {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -156,7 +157,7 @@ func (r *sysLogininforImpl) SelectLogininforList(sysLogininfor model.SysLogininf
 }
 
 // InsertLogininfor 新增系统登录日志
-func (r *sysLogininforImpl) InsertLogininfor(sysLogininfor model.SysLogininfor) string {
+func (r *SysLogininforImpl) InsertLogininfor(sysLogininfor model.SysLogininfor) string {
 	// 参数拼接
 	params := make(map[string]interface{})
 	params["login_time"] = date.NowTimestamp()
@@ -210,7 +211,7 @@ func (r *sysLogininforImpl) InsertLogininfor(sysLogininfor model.SysLogininfor) 
 }
 
 // DeleteLogininforByIds 批量删除系统登录日志
-func (r *sysLogininforImpl) DeleteLogininforByIds(infoIds []string) int64 {
+func (r *SysLogininforImpl) DeleteLogininforByIds(infoIds []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(infoIds))
 	sql := "delete from sys_logininfor where info_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(infoIds)
@@ -223,7 +224,7 @@ func (r *sysLogininforImpl) DeleteLogininforByIds(infoIds []string) int64 {
 }
 
 // CleanLogininfor 清空系统登录日志
-func (r *sysLogininforImpl) CleanLogininfor() error {
+func (r *SysLogininforImpl) CleanLogininfor() error {
 	sql := "truncate table sys_logininfor"
 	_, err := datasource.ExecDB("", sql, []interface{}{})
 	return err

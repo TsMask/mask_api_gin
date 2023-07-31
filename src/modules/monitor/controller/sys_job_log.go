@@ -15,21 +15,22 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+// 实例化控制层 SysJobLogController 结构体
+var NewSysJobLog = &SysJobLogController{
+	sysJobLogService: service.NewSysJobLogImpl,
+}
+
 // 调度任务日志信息
 //
 // PATH /monitor/jobLog
-var SysJobLog = &sysJobLog{
-	sysJobLogService: service.SysJobLogImpl,
-}
-
-type sysJobLog struct {
+type SysJobLogController struct {
 	sysJobLogService service.ISysJobLog
 }
 
 // 调度任务日志列表
 //
 // GET /list
-func (s *sysJobLog) List(c *gin.Context) {
+func (s *SysJobLogController) List(c *gin.Context) {
 	// 查询参数转换map
 	querys := ctx.QueryMapString(c)
 	list := s.sysJobLogService.SelectJobLogPage(querys)
@@ -39,7 +40,7 @@ func (s *sysJobLog) List(c *gin.Context) {
 // 调度任务日志信息
 //
 // GET /:jobLogId
-func (s *sysJobLog) Info(c *gin.Context) {
+func (s *SysJobLogController) Info(c *gin.Context) {
 	jobLogId := c.Param("jobLogId")
 	if jobLogId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -56,7 +57,7 @@ func (s *sysJobLog) Info(c *gin.Context) {
 // 调度任务日志删除
 //
 // DELETE /:jobLogIds
-func (s *sysJobLog) Remove(c *gin.Context) {
+func (s *SysJobLogController) Remove(c *gin.Context) {
 	jobLogIds := c.Param("jobLogIds")
 	if jobLogIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -82,7 +83,7 @@ func (s *sysJobLog) Remove(c *gin.Context) {
 // 调度任务日志清空
 //
 // DELETE /clean
-func (s *sysJobLog) Clean(c *gin.Context) {
+func (s *SysJobLogController) Clean(c *gin.Context) {
 	err := s.sysJobLogService.CleanJobLog()
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
@@ -94,7 +95,7 @@ func (s *sysJobLog) Clean(c *gin.Context) {
 // 导出调度任务日志信息
 //
 // POST /export
-func (s *sysJobLog) Export(c *gin.Context) {
+func (s *SysJobLogController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	querys := ctx.QueryMapString(c)
 	data := s.sysJobLogService.SelectJobLogPage(querys)

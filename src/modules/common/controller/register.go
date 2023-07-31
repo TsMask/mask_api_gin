@@ -16,7 +16,7 @@ import (
 // 账号注册操作处理
 var Register = &registerController{
 	registerService:      commonService.RegisterImpl,
-	sysLogininforService: monitorService.SysLogininforImpl,
+	sysLogininforService: monitorService.NewSysLogininforImpl,
 }
 
 type registerController struct {

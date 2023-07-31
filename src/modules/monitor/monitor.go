@@ -22,7 +22,7 @@ func Setup(router *gin.Engine) {
 	// 服务器监控信息
 	router.GET("/monitor/server",
 		middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:server:info"}}),
-		controller.ServerController.Info,
+		controller.NewServer.Info,
 	)
 
 	// 缓存监控信息
@@ -30,31 +30,31 @@ func Setup(router *gin.Engine) {
 	{
 		sysCacheGroup.GET("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:info"}}),
-			controller.SysCache.Info,
+			controller.NewSysCache.Info,
 		)
 		sysCacheGroup.GET("/getNames",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:list"}}),
-			controller.SysCache.Names,
+			controller.NewSysCache.Names,
 		)
 		sysCacheGroup.GET("/getKeys/:cacheName",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:list"}}),
-			controller.SysCache.Keys,
+			controller.NewSysCache.Keys,
 		)
 		sysCacheGroup.GET("/getValue/:cacheName/:cacheKey",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:query"}}),
-			controller.SysCache.Value,
+			controller.NewSysCache.Value,
 		)
 		sysCacheGroup.DELETE("/clearCacheName/:cacheName",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
-			controller.SysCache.ClearCacheName,
+			controller.NewSysCache.ClearCacheName,
 		)
 		sysCacheGroup.DELETE("/clearCacheKey/:cacheName/:cacheKey",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
-			controller.SysCache.ClearCacheKey,
+			controller.NewSysCache.ClearCacheKey,
 		)
 		sysCacheGroup.DELETE("/clearCacheSafe",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
-			controller.SysCache.ClearCacheSafe,
+			controller.NewSysCache.ClearCacheSafe,
 		)
 	}
 
@@ -63,27 +63,27 @@ func Setup(router *gin.Engine) {
 	{
 		sysJobLogGroup.GET("/list",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:list"}}),
-			controller.SysJobLog.List,
+			controller.NewSysJobLog.List,
 		)
 		sysJobLogGroup.GET("/:jobLogId",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:query"}}),
-			controller.SysJobLog.Info,
+			controller.NewSysJobLog.Info,
 		)
 		sysJobLogGroup.DELETE("/:jobLogIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
 			operlog.OperLog(operlog.OptionNew("调度任务日志信息", operlog.BUSINESS_TYPE_DELETE)),
-			controller.SysJobLog.Remove,
+			controller.NewSysJobLog.Remove,
 		)
 		sysJobLogGroup.DELETE("/clean",
 			repeat.RepeatSubmit(5),
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
 			operlog.OperLog(operlog.OptionNew("调度任务日志信息", operlog.BUSINESS_TYPE_CLEAN)),
-			controller.SysJobLog.Clean,
+			controller.NewSysJobLog.Clean,
 		)
 		sysJobLogGroup.POST("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:export"}}),
 			operlog.OperLog(operlog.OptionNew("调度任务日志信息", operlog.BUSINESS_TYPE_EXPORT)),
-			controller.SysJobLog.Export,
+			controller.NewSysJobLog.Export,
 		)
 	}
 
@@ -92,48 +92,48 @@ func Setup(router *gin.Engine) {
 	{
 		sysJobGroup.GET("/list",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:list"}}),
-			controller.SysJob.List,
+			controller.NewSysJob.List,
 		)
 		sysJobGroup.GET("/:jobId",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:query"}}),
-			controller.SysJob.Info,
+			controller.NewSysJob.Info,
 		)
 		sysJobGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:add"}}),
 			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_INSERT)),
-			controller.SysJob.Add,
+			controller.NewSysJob.Add,
 		)
 		sysJobGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:edit"}}),
 			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_UPDATE)),
-			controller.SysJob.Edit,
+			controller.NewSysJob.Edit,
 		)
 		sysJobGroup.DELETE("/:jobIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
 			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_DELETE)),
-			controller.SysJob.Remove,
+			controller.NewSysJob.Remove,
 		)
 		sysJobGroup.PUT("/changeStatus",
 			repeat.RepeatSubmit(5),
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
 			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_UPDATE)),
-			controller.SysJob.Status,
+			controller.NewSysJob.Status,
 		)
 		sysJobGroup.PUT("/run/:jobId",
 			repeat.RepeatSubmit(10),
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
 			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_UPDATE)),
-			controller.SysJob.Run,
+			controller.NewSysJob.Run,
 		)
 		sysJobGroup.PUT("/resetQueueJob",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
 			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_CLEAN)),
-			controller.SysJob.ResetQueueJob,
+			controller.NewSysJob.ResetQueueJob,
 		)
 		sysJobGroup.POST("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:export"}}),
 			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_EXPORT)),
-			controller.SysJob.Export,
+			controller.NewSysJob.Export,
 		)
 	}
 
@@ -142,22 +142,22 @@ func Setup(router *gin.Engine) {
 	{
 		sysOperLogGroup.GET("/list",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:operlog:list"}}),
-			controller.SysOperLog.List,
+			controller.NewSysOperLog.List,
 		)
 		sysOperLogGroup.DELETE("/:operIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:operlog:remove"}}),
 			operlog.OperLog(operlog.OptionNew("操作日志", operlog.BUSINESS_TYPE_DELETE)),
-			controller.SysOperLog.Remove,
+			controller.NewSysOperLog.Remove,
 		)
 		sysOperLogGroup.DELETE("/clean",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:operlog:remove"}}),
 			operlog.OperLog(operlog.OptionNew("操作日志", operlog.BUSINESS_TYPE_CLEAN)),
-			controller.SysOperLog.Clean,
+			controller.NewSysOperLog.Clean,
 		)
 		sysOperLogGroup.POST("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:operlog:export"}}),
 			operlog.OperLog(operlog.OptionNew("操作日志", operlog.BUSINESS_TYPE_EXPORT)),
-			controller.SysOperLog.Export,
+			controller.NewSysOperLog.Export,
 		)
 	}
 
@@ -166,27 +166,27 @@ func Setup(router *gin.Engine) {
 	{
 		sysLogininforGroup.GET("/list",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:logininfor:list"}}),
-			controller.SysLogininfor.List,
+			controller.NewSysLogininfor.List,
 		)
 		sysLogininforGroup.DELETE("/:infoIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:logininfor:remove"}}),
 			operlog.OperLog(operlog.OptionNew("登录访问信息", operlog.BUSINESS_TYPE_DELETE)),
-			controller.SysLogininfor.Remove,
+			controller.NewSysLogininfor.Remove,
 		)
 		sysLogininforGroup.DELETE("/clean",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:logininfor:remove"}}),
 			operlog.OperLog(operlog.OptionNew("登录访问信息", operlog.BUSINESS_TYPE_CLEAN)),
-			controller.SysLogininfor.Clean,
+			controller.NewSysLogininfor.Clean,
 		)
 		sysLogininforGroup.PUT("/unlock/:userName",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:logininfor:unlock"}}),
 			operlog.OperLog(operlog.OptionNew("登录访问信息", operlog.BUSINESS_TYPE_CLEAN)),
-			controller.SysLogininfor.Unlock,
+			controller.NewSysLogininfor.Unlock,
 		)
 		sysLogininforGroup.DELETE("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:logininfor:export"}}),
 			operlog.OperLog(operlog.OptionNew("登录访问信息", operlog.BUSINESS_TYPE_EXPORT)),
-			controller.SysLogininfor.Export,
+			controller.NewSysLogininfor.Export,
 		)
 	}
 
@@ -195,11 +195,11 @@ func Setup(router *gin.Engine) {
 	{
 		sysUserOnlineGroup.GET("/list",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:online:list"}}),
-			controller.SysUserOnline.List,
+			controller.NewSysUserOnline.List,
 		)
 		sysUserOnlineGroup.DELETE("/:tokenId",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:online:forceLogout"}}),
-			controller.SysUserOnline.ForceLogout,
+			controller.NewSysUserOnline.ForceLogout,
 		)
 	}
 }
@@ -209,5 +209,5 @@ func InitLoad() {
 	// 初始化定时任务处理
 	processor.InitCronQueue()
 	// 启动时，初始化调度任务
-	service.SysJobImpl.ResetQueueJob()
+	service.NewSysJobImpl.ResetQueueJob()
 }

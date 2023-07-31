@@ -5,13 +5,14 @@ import (
 	"mask_api_gin/src/modules/monitor/model"
 )
 
-// SysUserOnlineImpl 在线用户 数据层处理
-var SysUserOnlineImpl = &sysUserOnlineImpl{}
+// 实例化服务层 SysUserOnlineImpl 结构体
+var NewSysUserOnlineImpl = &SysUserOnlineImpl{}
 
-type sysUserOnlineImpl struct{}
+// SysUserOnlineImpl 在线用户 数据层处理
+type SysUserOnlineImpl struct{}
 
 // LoginUserToUserOnline 设置在线用户信息
-func (r *sysUserOnlineImpl) LoginUserToUserOnline(loginUser vo.LoginUser) model.SysUserOnline {
+func (r *SysUserOnlineImpl) LoginUserToUserOnline(loginUser vo.LoginUser) model.SysUserOnline {
 	if loginUser.UserID == "" {
 		return model.SysUserOnline{}
 	}

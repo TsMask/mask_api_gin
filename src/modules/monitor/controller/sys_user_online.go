@@ -15,14 +15,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// 实例化控制层 SysOperLogController 结构体
+var NewSysUserOnline = &SysUserOnlineController{
+	sysUserOnlineService: service.NewSysUserOnlineImpl,
+}
+
 // 在线用户监控
 //
 // PATH /monitor/online
-var SysUserOnline = &sysUserOnline{
-	sysUserOnlineService: service.SysUserOnlineImpl,
-}
-
-type sysUserOnline struct {
+type SysUserOnlineController struct {
 	// 在线用户服务
 	sysUserOnlineService service.ISysUserOnline
 }
@@ -30,7 +31,7 @@ type sysUserOnline struct {
 // 在线用户列表
 //
 // GET /list
-func (s *sysUserOnline) List(c *gin.Context) {
+func (s *SysUserOnlineController) List(c *gin.Context) {
 	ipaddr := c.Param("ipaddr")
 	userName := c.Param("userName")
 
@@ -110,7 +111,7 @@ func (s *sysUserOnline) List(c *gin.Context) {
 // 在线用户强制退出
 //
 // DELETE /:tokenId
-func (s *sysUserOnline) ForceLogout(c *gin.Context) {
+func (s *SysUserOnlineController) ForceLogout(c *gin.Context) {
 	tokenId := c.Param("tokenId")
 	if tokenId == "" || tokenId == "*" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))

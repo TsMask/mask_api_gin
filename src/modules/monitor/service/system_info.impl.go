@@ -17,13 +17,14 @@ import (
 	"github.com/shirou/gopsutil/v3/net"
 )
 
-// SystemInfoImpl 服务器系统相关信息 服务层处理
-var SystemInfoImpl = &systemInfoImpl{}
+// 实例化服务层 SystemInfoImpl 结构体
+var NewSystemInfoImpl = &SystemInfoImpl{}
 
-type systemInfoImpl struct{}
+// SystemInfoImpl 服务器系统相关信息 服务层处理
+type SystemInfoImpl struct{}
 
 // ProjectInfo 程序项目信息
-func (s *systemInfoImpl) ProjectInfo() map[string]interface{} {
+func (s *SystemInfoImpl) ProjectInfo() map[string]interface{} {
 	// 获取工作目录
 	appDir, err := os.Getwd()
 	if err != nil {
@@ -41,7 +42,7 @@ func (s *systemInfoImpl) ProjectInfo() map[string]interface{} {
 }
 
 // dependencies 读取mod内项目包依赖
-func (s *systemInfoImpl) dependencies() map[string]string {
+func (s *SystemInfoImpl) dependencies() map[string]string {
 	var pkgs = make(map[string]string)
 
 	// 打开 go.mod 文件
@@ -79,7 +80,7 @@ func (s *systemInfoImpl) dependencies() map[string]string {
 }
 
 // SystemInfo 系统信息
-func (s *systemInfoImpl) SystemInfo() map[string]interface{} {
+func (s *SystemInfoImpl) SystemInfo() map[string]interface{} {
 	info, err := host.Info()
 	if err != nil {
 		info.Platform = err.Error()
@@ -108,7 +109,7 @@ func (s *systemInfoImpl) SystemInfo() map[string]interface{} {
 }
 
 // TimeInfo 系统时间信息
-func (s *systemInfoImpl) TimeInfo() map[string]string {
+func (s *SystemInfoImpl) TimeInfo() map[string]string {
 	// 获取当前时间
 	current := time.Now().Format("2006-01-02 15:04:05")
 	// 获取程序运行时间
@@ -127,7 +128,7 @@ func (s *systemInfoImpl) TimeInfo() map[string]string {
 }
 
 // MemoryInfo 内存信息
-func (s *systemInfoImpl) MemoryInfo() map[string]interface{} {
+func (s *SystemInfoImpl) MemoryInfo() map[string]interface{} {
 	memInfo, err := mem.VirtualMemory()
 	if err != nil {
 		memInfo.UsedPercent = 0
@@ -150,7 +151,7 @@ func (s *systemInfoImpl) MemoryInfo() map[string]interface{} {
 }
 
 // CPUInfo CPU信息
-func (s *systemInfoImpl) CPUInfo() map[string]interface{} {
+func (s *SystemInfoImpl) CPUInfo() map[string]interface{} {
 	var core int32 = 0
 	var speed string = "未知"
 	var model string = "未知"
@@ -178,7 +179,7 @@ func (s *systemInfoImpl) CPUInfo() map[string]interface{} {
 }
 
 // NetworkInfo 网络信息
-func (s *systemInfoImpl) NetworkInfo() map[string]string {
+func (s *SystemInfoImpl) NetworkInfo() map[string]string {
 	ipAddrs := make(map[string]string)
 	interfaces, err := net.Interfaces()
 	if err == nil {
@@ -200,7 +201,7 @@ func (s *systemInfoImpl) NetworkInfo() map[string]string {
 }
 
 // DiskInfo 磁盘信息
-func (s *systemInfoImpl) DiskInfo() []map[string]string {
+func (s *SystemInfoImpl) DiskInfo() []map[string]string {
 	disks := make([]map[string]string, 0)
 
 	partitions, err := disk.Partitions(false)

@@ -45,7 +45,7 @@ func (clog cronLog) Error(err error, msg string, keysAndValues ...interface{}) {
 			JobMsg:       jobMsg,
 		}
 		// 插入数据
-		repository.SysJobLogImpl.InsertJobLog(sysJobLog)
+		repository.NewSysJobLogImpl.InsertJobLog(sysJobLog)
 	}
 }
 
@@ -72,5 +72,5 @@ func (clog cronLog) Completed(options Options, result interface{}) {
 		JobMsg:       jobMsg,
 	}
 	// 插入数据
-	repository.SysJobLogImpl.InsertJobLog(sysJobLog)
+	repository.NewSysJobLogImpl.InsertJobLog(sysJobLog)
 }

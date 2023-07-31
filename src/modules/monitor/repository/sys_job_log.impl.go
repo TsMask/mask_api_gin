@@ -10,8 +10,8 @@ import (
 	"strings"
 )
 
-// SysJobLogImpl 调度任务日志表 数据层处理
-var SysJobLogImpl = &sysJobLogImpl{
+// 实例化数据层 SysJobLogImpl 结构体
+var NewSysJobLogImpl = &SysJobLogImpl{
 	selectSql: `select job_log_id, job_name, job_group, invoke_target, 
 	target_params, job_msg, status, create_time from sys_job_log`,
 
@@ -27,7 +27,8 @@ var SysJobLogImpl = &sysJobLogImpl{
 	},
 }
 
-type sysJobLogImpl struct {
+// SysJobLogImpl 调度任务日志表 数据层处理
+type SysJobLogImpl struct {
 	// 查询视图对象SQL
 	selectSql string
 	// 结果字段与实体映射
@@ -35,7 +36,7 @@ type sysJobLogImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *sysJobLogImpl) convertResultRows(rows []map[string]interface{}) []model.SysJobLog {
+func (r *SysJobLogImpl) convertResultRows(rows []map[string]interface{}) []model.SysJobLog {
 	arr := make([]model.SysJobLog, 0)
 	for _, row := range rows {
 		sysJobLog := model.SysJobLog{}
@@ -50,7 +51,7 @@ func (r *sysJobLogImpl) convertResultRows(rows []map[string]interface{}) []model
 }
 
 // 分页查询调度任务日志集合
-func (r *sysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]interface{} {
+func (r *SysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]interface{} {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -123,7 +124,7 @@ func (r *sysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]int
 }
 
 // 查询调度任务日志集合
-func (r *sysJobLogImpl) SelectJobLogList(sysJobLog model.SysJobLog) []model.SysJobLog {
+func (r *SysJobLogImpl) SelectJobLogList(sysJobLog model.SysJobLog) []model.SysJobLog {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -163,7 +164,7 @@ func (r *sysJobLogImpl) SelectJobLogList(sysJobLog model.SysJobLog) []model.SysJ
 }
 
 // 通过调度ID查询调度任务日志信息
-func (r *sysJobLogImpl) SelectJobLogById(jobLogId string) model.SysJobLog {
+func (r *SysJobLogImpl) SelectJobLogById(jobLogId string) model.SysJobLog {
 	querySql := r.selectSql + " where job_log_id = ?"
 	results, err := datasource.RawDB("", querySql, []interface{}{jobLogId})
 	if err != nil {
@@ -179,7 +180,7 @@ func (r *sysJobLogImpl) SelectJobLogById(jobLogId string) model.SysJobLog {
 }
 
 // 新增调度任务日志信息
-func (r *sysJobLogImpl) InsertJobLog(sysJobLog model.SysJobLog) string {
+func (r *SysJobLogImpl) InsertJobLog(sysJobLog model.SysJobLog) string {
 	// 参数拼接
 	params := make(map[string]interface{})
 	params["create_time"] = date.NowTimestamp()
@@ -233,7 +234,7 @@ func (r *sysJobLogImpl) InsertJobLog(sysJobLog model.SysJobLog) string {
 }
 
 // 批量删除调度任务日志信息
-func (r *sysJobLogImpl) DeleteJobLogByIds(jobLogIds []string) int64 {
+func (r *SysJobLogImpl) DeleteJobLogByIds(jobLogIds []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(jobLogIds))
 	sql := "delete from sys_job_log where job_log_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(jobLogIds)
@@ -246,7 +247,7 @@ func (r *sysJobLogImpl) DeleteJobLogByIds(jobLogIds []string) int64 {
 }
 
 // 清空调度任务日志
-func (r *sysJobLogImpl) CleanJobLog() error {
+func (r *SysJobLogImpl) CleanJobLog() error {
 	sql := "truncate table sys_job_log"
 	_, err := datasource.ExecDB("", sql, []interface{}{})
 	return err

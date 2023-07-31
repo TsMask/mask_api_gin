@@ -7,22 +7,18 @@ import (
 	"mask_api_gin/src/framework/constants/common"
 	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/framework/utils/parse"
-	monitorService "mask_api_gin/src/modules/monitor/service"
 	systemModel "mask_api_gin/src/modules/system/model"
 	systemService "mask_api_gin/src/modules/system/service"
 )
 
 // 账号身份操作服务 业务层处理
 var RegisterImpl = &registerImpl{
-	sysLogininforService: monitorService.SysLogininforImpl,
-	sysUserService:       systemService.SysUserImpl,
-	sysConfigService:     systemService.SysConfigImpl,
-	sysRoleService:       systemService.SysRoleImpl,
+	sysUserService:   systemService.SysUserImpl,
+	sysConfigService: systemService.SysConfigImpl,
+	sysRoleService:   systemService.SysRoleImpl,
 }
 
 type registerImpl struct {
-	// 系统登录访问信息服务
-	sysLogininforService monitorService.ISysLogininfor
 	// 用户信息服务
 	sysUserService systemService.ISysUser
 	// 参数配置服务

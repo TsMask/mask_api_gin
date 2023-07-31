@@ -169,6 +169,6 @@ func OperLog(option Option) gin.HandlerFunc {
 		operLog.Status = common.STATUS_YES
 
 		// 保存操作记录到数据库
-		service.SysOperLogImpl.InsertOperLog(operLog)
+		service.NewSysOperLogImpl.InsertOperLog(operLog)
 	}
 }

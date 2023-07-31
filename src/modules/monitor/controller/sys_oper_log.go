@@ -15,14 +15,15 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+// 实例化控制层 SysOperLogController 结构体
+var NewSysOperLog = &SysOperLogController{
+	sysOperLogService: service.NewSysOperLogImpl,
+}
+
 // 操作日志记录信息
 //
 // PATH /monitor/operlog
-var SysOperLog = &sysOperLog{
-	sysOperLogService: service.SysOperLogImpl,
-}
-
-type sysOperLog struct {
+type SysOperLogController struct {
 	// 操作日志服务
 	sysOperLogService service.ISysOperLog
 }
@@ -30,7 +31,7 @@ type sysOperLog struct {
 // 操作日志列表
 //
 // GET /list
-func (s *sysOperLog) List(c *gin.Context) {
+func (s *SysOperLogController) List(c *gin.Context) {
 	querys := ctx.QueryMapString(c)
 	data := s.sysOperLogService.SelectOperLogPage(querys)
 	c.JSON(200, result.Ok(data))
@@ -39,7 +40,7 @@ func (s *sysOperLog) List(c *gin.Context) {
 // 操作日志删除
 //
 // DELETE /:operIds
-func (s *sysOperLog) Remove(c *gin.Context) {
+func (s *SysOperLogController) Remove(c *gin.Context) {
 	operIds := c.Param("operIds")
 	if operIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -65,7 +66,7 @@ func (s *sysOperLog) Remove(c *gin.Context) {
 // 操作日志清空
 //
 // DELETE /clean
-func (s *sysOperLog) Clean(c *gin.Context) {
+func (s *SysOperLogController) Clean(c *gin.Context) {
 	err := s.sysOperLogService.CleanOperLog()
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
@@ -77,7 +78,7 @@ func (s *sysOperLog) Clean(c *gin.Context) {
 // 导出操作日志
 //
 // POST /export
-func (s *sysOperLog) Export(c *gin.Context) {
+func (s *SysOperLogController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	querys := ctx.QueryMapString(c)
 	data := s.sysOperLogService.SelectOperLogPage(querys)

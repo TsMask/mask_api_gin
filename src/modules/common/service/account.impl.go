@@ -11,23 +11,19 @@ import (
 	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo"
-	monitorService "mask_api_gin/src/modules/monitor/service"
 	systemService "mask_api_gin/src/modules/system/service"
 	"time"
 )
 
 // 账号身份操作服务 业务层处理
 var AccountImpl = &accountImpl{
-	sysLogininforService: monitorService.SysLogininforImpl,
-	sysUserService:       systemService.SysUserImpl,
-	sysConfigService:     systemService.SysConfigImpl,
-	sysRoleService:       systemService.SysRoleImpl,
-	sysMenuService:       systemService.SysMenuImpl,
+	sysUserService:   systemService.SysUserImpl,
+	sysConfigService: systemService.SysConfigImpl,
+	sysRoleService:   systemService.SysRoleImpl,
+	sysMenuService:   systemService.SysMenuImpl,
 }
 
 type accountImpl struct {
-	// 系统登录访问信息服务
-	sysLogininforService monitorService.ISysLogininfor
 	// 用户信息服务
 	sysUserService systemService.ISysUser
 	// 参数配置服务

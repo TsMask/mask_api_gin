@@ -17,7 +17,7 @@ import (
 // 账号身份操作处理
 var Account = &accountController{
 	accountService:       commonService.AccountImpl,
-	sysLogininforService: monitorService.SysLogininforImpl,
+	sysLogininforService: monitorService.NewSysLogininforImpl,
 }
 
 type accountController struct {

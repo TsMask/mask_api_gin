@@ -5,37 +5,38 @@ import (
 	"mask_api_gin/src/modules/monitor/repository"
 )
 
-// SysJobLogImpl 调度任务日志 业务层处理
-var SysJobLogImpl = &sysJobLogImpl{
-	sysJobLogRepository: repository.SysJobLogImpl,
+// 实例化服务层 SysJobLogImpl 结构体
+var NewSysJobLogImpl = &SysJobLogImpl{
+	sysJobLogRepository: repository.NewSysJobLogImpl,
 }
 
-type sysJobLogImpl struct {
-	// 调度任务日志信息
+// SysJobLogImpl 调度任务日志 业务层处理
+type SysJobLogImpl struct {
+	// 调度任务日志数据信息
 	sysJobLogRepository repository.ISysJobLog
 }
 
 // SelectJobLogPage 分页查询调度任务日志集合
-func (s *sysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]interface{} {
+func (s *SysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]interface{} {
 	return s.sysJobLogRepository.SelectJobLogPage(query)
 }
 
 // SelectJobLogList 查询调度任务日志集合
-func (s *sysJobLogImpl) SelectJobLogList(sysJobLog model.SysJobLog) []model.SysJobLog {
+func (s *SysJobLogImpl) SelectJobLogList(sysJobLog model.SysJobLog) []model.SysJobLog {
 	return s.sysJobLogRepository.SelectJobLogList(sysJobLog)
 }
 
 // SelectJobLogById 通过调度ID查询调度任务日志信息
-func (s *sysJobLogImpl) SelectJobLogById(jobLogId string) model.SysJobLog {
+func (s *SysJobLogImpl) SelectJobLogById(jobLogId string) model.SysJobLog {
 	return s.sysJobLogRepository.SelectJobLogById(jobLogId)
 }
 
 // DeleteJobLogByIds 批量删除调度任务日志信息
-func (s *sysJobLogImpl) DeleteJobLogByIds(jobLogIds []string) int64 {
+func (s *SysJobLogImpl) DeleteJobLogByIds(jobLogIds []string) int64 {
 	return s.sysJobLogRepository.DeleteJobLogByIds(jobLogIds)
 }
 
 // CleanJobLog 清空调度任务日志
-func (s *sysJobLogImpl) CleanJobLog() error {
+func (s *SysJobLogImpl) CleanJobLog() error {
 	return s.sysJobLogRepository.CleanJobLog()
 }

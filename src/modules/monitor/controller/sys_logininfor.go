@@ -16,15 +16,16 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-// 登录访问信息
-//
-// PATH /monitor/logininfor
-var SysLogininfor = &sysLogininfor{
-	sysLogininforService: service.SysLogininforImpl,
+// 实例化控制层 SysLogininforController 结构体
+var NewSysLogininfor = &SysLogininforController{
+	sysLogininforService: service.NewSysLogininforImpl,
 	accountService:       commonService.AccountImpl,
 }
 
-type sysLogininfor struct {
+// 登录访问信息
+//
+// PATH /monitor/logininfor
+type SysLogininforController struct {
 	// 系统登录访问服务
 	sysLogininforService service.ISysLogininfor
 	// 账号身份操作服务
@@ -34,7 +35,7 @@ type sysLogininfor struct {
 // 登录访问列表
 //
 // GET /list
-func (s *sysLogininfor) List(c *gin.Context) {
+func (s *SysLogininforController) List(c *gin.Context) {
 	querys := ctx.QueryMapString(c)
 	data := s.sysLogininforService.SelectLogininforPage(querys)
 	c.JSON(200, result.Ok(data))
@@ -43,7 +44,7 @@ func (s *sysLogininfor) List(c *gin.Context) {
 // 登录访问删除
 //
 // DELETE /:infoIds
-func (s *sysLogininfor) Remove(c *gin.Context) {
+func (s *SysLogininforController) Remove(c *gin.Context) {
 	infoIds := c.Param("infoIds")
 	if infoIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -69,7 +70,7 @@ func (s *sysLogininfor) Remove(c *gin.Context) {
 // 登录访问清空
 //
 // DELETE /clean
-func (s *sysLogininfor) Clean(c *gin.Context) {
+func (s *SysLogininforController) Clean(c *gin.Context) {
 	err := s.sysLogininforService.CleanLogininfor()
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
@@ -81,7 +82,7 @@ func (s *sysLogininfor) Clean(c *gin.Context) {
 // 登录访问账户解锁
 //
 // PUT /unlock/:userName
-func (s *sysLogininfor) Unlock(c *gin.Context) {
+func (s *SysLogininforController) Unlock(c *gin.Context) {
 	userName := c.Param("userName")
 	if userName == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -98,7 +99,7 @@ func (s *sysLogininfor) Unlock(c *gin.Context) {
 // 导出登录访问信息
 //
 // POST /export
-func (s *sysLogininfor) Export(c *gin.Context) {
+func (s *SysLogininforController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	querys := ctx.QueryMapString(c)
 	data := s.sysLogininforService.SelectLogininforPage(querys)

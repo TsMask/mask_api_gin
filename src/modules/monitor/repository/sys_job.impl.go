@@ -11,8 +11,8 @@ import (
 	"strings"
 )
 
-// SysJobImpl 调度任务表 数据层处理
-var SysJobImpl = &sysJobImpl{
+// 实例化数据层 SysJobImpl 结构体
+var NewSysJobImpl = &SysJobImpl{
 	selectSql: `select job_id, job_name, job_group, invoke_target, target_params, cron_expression, 
 	misfire_policy, concurrent, status, create_by, create_time, remark from sys_job`,
 
@@ -34,7 +34,8 @@ var SysJobImpl = &sysJobImpl{
 	},
 }
 
-type sysJobImpl struct {
+// SysJobImpl 调度任务表 数据层处理
+type SysJobImpl struct {
 	// 查询视图对象SQL
 	selectSql string
 	// 结果字段与实体映射
@@ -42,7 +43,7 @@ type sysJobImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *sysJobImpl) convertResultRows(rows []map[string]interface{}) []model.SysJob {
+func (r *SysJobImpl) convertResultRows(rows []map[string]interface{}) []model.SysJob {
 	arr := make([]model.SysJob, 0)
 	for _, row := range rows {
 		sysJob := model.SysJob{}
@@ -57,7 +58,7 @@ func (r *sysJobImpl) convertResultRows(rows []map[string]interface{}) []model.Sy
 }
 
 // SelectJobPage 分页查询调度任务集合
-func (r *sysJobImpl) SelectJobPage(query map[string]string) map[string]interface{} {
+func (r *SysJobImpl) SelectJobPage(query map[string]string) map[string]interface{} {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -120,7 +121,7 @@ func (r *sysJobImpl) SelectJobPage(query map[string]string) map[string]interface
 }
 
 // SelectJobList 查询调度任务集合
-func (r *sysJobImpl) SelectJobList(sysJob model.SysJob) []model.SysJob {
+func (r *SysJobImpl) SelectJobList(sysJob model.SysJob) []model.SysJob {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -160,7 +161,7 @@ func (r *sysJobImpl) SelectJobList(sysJob model.SysJob) []model.SysJob {
 }
 
 // SelectJobByIds 通过调度ID查询调度任务信息
-func (r *sysJobImpl) SelectJobByIds(jobIds []string) []model.SysJob {
+func (r *SysJobImpl) SelectJobByIds(jobIds []string) []model.SysJob {
 	placeholder := repo.KeyPlaceholderByQuery(len(jobIds))
 	querySql := r.selectSql + " where job_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(jobIds)
@@ -174,7 +175,7 @@ func (r *sysJobImpl) SelectJobByIds(jobIds []string) []model.SysJob {
 }
 
 // CheckUniqueJob 校验调度任务是否唯一
-func (r *sysJobImpl) CheckUniqueJob(sysJob model.SysJob) string {
+func (r *SysJobImpl) CheckUniqueJob(sysJob model.SysJob) string {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -209,7 +210,7 @@ func (r *sysJobImpl) CheckUniqueJob(sysJob model.SysJob) string {
 }
 
 // InsertJob 新增调度任务信息
-func (r *sysJobImpl) InsertJob(sysJob model.SysJob) string {
+func (r *SysJobImpl) InsertJob(sysJob model.SysJob) string {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysJob.JobID != "" {
@@ -275,7 +276,7 @@ func (r *sysJobImpl) InsertJob(sysJob model.SysJob) string {
 }
 
 // UpdateJob 修改调度任务信息
-func (r *sysJobImpl) UpdateJob(sysJob model.SysJob) int64 {
+func (r *SysJobImpl) UpdateJob(sysJob model.SysJob) int64 {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysJob.JobName != "" {
@@ -325,7 +326,7 @@ func (r *sysJobImpl) UpdateJob(sysJob model.SysJob) int64 {
 }
 
 // DeleteJobByIds 批量删除调度任务信息
-func (r *sysJobImpl) DeleteJobByIds(jobIds []string) int64 {
+func (r *SysJobImpl) DeleteJobByIds(jobIds []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(jobIds))
 	sql := "delete from sys_job where job_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(jobIds)
