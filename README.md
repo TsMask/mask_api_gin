@@ -7,23 +7,25 @@
 
 ## 介绍
 
-该项目选择 [RuoYi-Vue](https://gitee.com/y_project/RuoYi-Vue) 后端进行重构改造。
+`Node-Midwayjs` 项目代码迁移，相同配置，性能翻倍。
 
 基于 `Golang` 的 `Gin` Web框架进行开发，如需进一步了解框架，参见 [Gin Web Framework](https://gin-gonic.com/zh-cn/docs/quickstart/) 官方文档。
 
-## 项目拓展
+## 项目文档
 
-- `Apifox` 提供mock服务和程序接口文档 => [接口文档](https://mask-api-midwayjs.apifox.cn/)
 - 项目代码进行服务器部署的网站 => [在线预览](http://124.223.91.248:8102/#/)
+- `Apifox` 提供mock服务和程序接口文档 => [接口文档](https://mask-api-midwayjs.apifox.cn/)
+- `Mask管理系统` 文档专栏，相关使用和开发升级文档。 => [专栏](https://juejin.cn/column/7188761626017792056/)
 
-### 前端代码
+### 前端
 
 - `Vue3-Element` 仓库地址 => [mask_element_vue3](https://gitee.com/TsMask/mask_element_vue3)
 - `Vue3-Antd` 仓库地址 => [mask_antd_vue3](https://gitee.com/TsMask/mask_antd_vue3)
 
-### 后端代码
+### 后端
 
 - `Node-Midwayjs` 仓库地址 => [mask_api_midwayjs](https://gitee.com/TsMask/mask_api_midwayjs)
+- `Go-Gin` 仓库地址 => [mask_api_gin](https://gitee.com/TsMask/mask_api_gin)
 
 ## 内置功能
 
