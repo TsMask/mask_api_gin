@@ -13,7 +13,7 @@ var NewSysJobImpl = &SysJobImpl{
 	sysJobRepository: repository.NewSysJobImpl,
 }
 
-// SysJobImpl 调度任务 业务层处理
+// SysJobImpl 调度任务 服务层处理
 type SysJobImpl struct {
 	// 调度任务数据信息
 	sysJobRepository repository.ISysJob

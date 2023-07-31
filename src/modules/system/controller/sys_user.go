@@ -16,16 +16,17 @@ import (
 	"github.com/gin-gonic/gin/binding"
 )
 
+// 实例化控制层 SysUserController 结构体
+var NewSysUser = &SysUserController{
+	sysUserService: service.NewSysUserImpl,
+	sysRoleService: service.NewSysRoleImpl,
+	sysPostService: service.NewSysPostImpl,
+}
+
 // 用户信息
 //
 // PATH /system/user
-var SysUser = &sysUser{
-	sysUserService: service.SysUserImpl,
-	sysRoleService: service.SysRoleImpl,
-	sysPostService: service.SysPostImpl,
-}
-
-type sysUser struct {
+type SysUserController struct {
 	// 用户服务
 	sysUserService service.ISysUser
 	// 角色服务
@@ -37,7 +38,7 @@ type sysUser struct {
 // 用户信息列表
 //
 // GET /list
-func (s *sysUser) List(c *gin.Context) {
+func (s *SysUserController) List(c *gin.Context) {
 	querys := ctx.QueryMapString(c)
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
 	data := s.sysUserService.SelectUserPage(querys, dataScopeSQL)
@@ -47,7 +48,7 @@ func (s *sysUser) List(c *gin.Context) {
 // 用户信息详情
 //
 // GET /:userId
-func (s *sysUser) Info(c *gin.Context) {
+func (s *SysUserController) Info(c *gin.Context) {
 	userId := c.Param("userId")
 	if userId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -115,7 +116,7 @@ func (s *sysUser) Info(c *gin.Context) {
 // 用户信息新增
 //
 // POST /
-func (s *sysUser) Add(c *gin.Context) {
+func (s *SysUserController) Add(c *gin.Context) {
 	var body model.SysUser
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.UserID != "" {
@@ -175,7 +176,7 @@ func (s *sysUser) Add(c *gin.Context) {
 // 用户信息修改
 //
 // POST /
-func (s *sysUser) Edit(c *gin.Context) {
+func (s *SysUserController) Edit(c *gin.Context) {
 	var body model.SysUser
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.UserID == "" {
@@ -249,7 +250,7 @@ func (s *sysUser) Edit(c *gin.Context) {
 // 用户信息删除
 //
 // DELETE /:userIds
-func (s *sysUser) Remove(c *gin.Context) {
+func (s *SysUserController) Remove(c *gin.Context) {
 	userIds := c.Param("userIds")
 	if userIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -274,7 +275,7 @@ func (s *sysUser) Remove(c *gin.Context) {
 // 用户重置密码
 //
 // PUT /resetPwd
-func (s *sysUser) ResetPwd(c *gin.Context) {
+func (s *SysUserController) ResetPwd(c *gin.Context) {
 	var body struct {
 		UserID   string `json:"userId" binding:"required"`
 		Password string `json:"password" binding:"required"`
@@ -301,12 +302,12 @@ func (s *sysUser) ResetPwd(c *gin.Context) {
 	}
 
 	userName := ctx.LoginUserToUserName(c)
-	sysUser := model.SysUser{
+	SysUserController := model.SysUser{
 		UserID:   body.UserID,
 		Password: body.Password,
 		UpdateBy: userName,
 	}
-	rows := s.sysUserService.UpdateUser(sysUser)
+	rows := s.sysUserService.UpdateUser(SysUserController)
 	if rows > 0 {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -317,7 +318,7 @@ func (s *sysUser) ResetPwd(c *gin.Context) {
 // 用户状态修改
 //
 // PUT /changeStatus
-func (s *sysUser) Status(c *gin.Context) {
+func (s *SysUserController) Status(c *gin.Context) {
 	var body struct {
 		UserID string `json:"userId" binding:"required"`
 		Status string `json:"status" binding:"required"`
@@ -341,12 +342,12 @@ func (s *sysUser) Status(c *gin.Context) {
 	}
 
 	userName := ctx.LoginUserToUserName(c)
-	sysUser := model.SysUser{
+	SysUserController := model.SysUser{
 		UserID:   body.UserID,
 		Status:   body.Status,
 		UpdateBy: userName,
 	}
-	rows := s.sysUserService.UpdateUser(sysUser)
+	rows := s.sysUserService.UpdateUser(SysUserController)
 	if rows > 0 {
 		c.JSON(200, result.Ok(nil))
 		return

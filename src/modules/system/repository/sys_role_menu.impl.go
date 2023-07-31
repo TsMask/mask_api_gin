@@ -10,18 +10,14 @@ import (
 	"strings"
 )
 
-// SysRoleMenuImpl 角色与菜单关联表 数据层处理
-var SysRoleMenuImpl = &sysRoleMenuImpl{
-	selectSql: "",
-}
+// 实例化数据层 SysRoleMenuImpl 结构体
+var NewSysRoleMenuImpl = &SysRoleMenuImpl{}
 
-type sysRoleMenuImpl struct {
-	// 查询视图对象SQL
-	selectSql string
-}
+// SysRoleMenuImpl 角色与菜单关联表 数据层处理
+type SysRoleMenuImpl struct{}
 
 // CheckMenuExistRole 查询菜单分配给角色使用数量
-func (r *sysRoleMenuImpl) CheckMenuExistRole(menuId string) int64 {
+func (r *SysRoleMenuImpl) CheckMenuExistRole(menuId string) int64 {
 	querySql := "select count(1) as 'total' from sys_role_menu where menu_id = ?"
 	results, err := datasource.RawDB("", querySql, []interface{}{menuId})
 	if err != nil {
@@ -35,7 +31,7 @@ func (r *sysRoleMenuImpl) CheckMenuExistRole(menuId string) int64 {
 }
 
 // DeleteRoleMenu 批量删除角色和菜单关联
-func (r *sysRoleMenuImpl) DeleteRoleMenu(roleIds []string) int64 {
+func (r *SysRoleMenuImpl) DeleteRoleMenu(roleIds []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(roleIds))
 	sql := "delete from sys_role_menu where role_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(roleIds)
@@ -48,7 +44,7 @@ func (r *sysRoleMenuImpl) DeleteRoleMenu(roleIds []string) int64 {
 }
 
 // DeleteMenuRole 批量删除菜单和角色关联
-func (r *sysRoleMenuImpl) DeleteMenuRole(menuIds []string) int64 {
+func (r *SysRoleMenuImpl) DeleteMenuRole(menuIds []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(menuIds))
 	sql := "delete from sys_role_menu where menu_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(menuIds)
@@ -61,7 +57,7 @@ func (r *sysRoleMenuImpl) DeleteMenuRole(menuIds []string) int64 {
 }
 
 // BatchRoleMenu 批量新增角色菜单信息
-func (r *sysRoleMenuImpl) BatchRoleMenu(sysRoleMenus []model.SysRoleMenu) int64 {
+func (r *SysRoleMenuImpl) BatchRoleMenu(sysRoleMenus []model.SysRoleMenu) int64 {
 	keyValues := make([]string, 0)
 	for _, item := range sysRoleMenus {
 		keyValues = append(keyValues, fmt.Sprintf("(%s,%s)", item.RoleID, item.MenuID))

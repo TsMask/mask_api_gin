@@ -10,7 +10,7 @@ var NewSysOperLogImpl = &SysOperLogImpl{
 	sysOperLogService: repository.NewSysOperLogImpl,
 }
 
-// SysOperLogImpl 操作日志表 数据层处理
+// SysOperLogImpl 操作日志表 服务层处理
 type SysOperLogImpl struct {
 	// 操作日志信息
 	sysOperLogService repository.ISysOperLog

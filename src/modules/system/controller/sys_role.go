@@ -19,15 +19,16 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+// 实例化控制层 SysRoleController 结构体
+var NewSysRole = &SysRoleController{
+	sysRoleService: service.NewSysRoleImpl,
+	sysUserService: service.NewSysUserImpl,
+}
+
 // 角色信息
 //
 // PATH /system/role
-var SysRole = &sysRole{
-	sysRoleService: service.SysRoleImpl,
-	sysUserService: service.SysUserImpl,
-}
-
-type sysRole struct {
+type SysRoleController struct {
 	// 角色服务
 	sysRoleService service.ISysRole
 	// 用户服务
@@ -37,7 +38,7 @@ type sysRole struct {
 // 角色列表
 //
 // GET /list
-func (s *sysRole) List(c *gin.Context) {
+func (s *SysRoleController) List(c *gin.Context) {
 	querys := ctx.QueryMapString(c)
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")
 	data := s.sysRoleService.SelectRolePage(querys, dataScopeSQL)
@@ -47,7 +48,7 @@ func (s *sysRole) List(c *gin.Context) {
 // 角色信息详情
 //
 // GET /:roleId
-func (s *sysRole) Info(c *gin.Context) {
+func (s *SysRoleController) Info(c *gin.Context) {
 	roleId := c.Param("roleId")
 	if roleId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -64,7 +65,7 @@ func (s *sysRole) Info(c *gin.Context) {
 // 角色信息新增
 //
 // POST /
-func (s *sysRole) Add(c *gin.Context) {
+func (s *SysRoleController) Add(c *gin.Context) {
 	var body model.SysRole
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.RoleID != "" {
@@ -100,7 +101,7 @@ func (s *sysRole) Add(c *gin.Context) {
 // 角色信息修改
 //
 // PUT /
-func (s *sysRole) Edit(c *gin.Context) {
+func (s *SysRoleController) Edit(c *gin.Context) {
 	var body model.SysRole
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.RoleID == "" {
@@ -149,7 +150,7 @@ func (s *sysRole) Edit(c *gin.Context) {
 // 角色信息删除
 //
 // DELETE /:roleIds
-func (s *sysRole) Remove(c *gin.Context) {
+func (s *SysRoleController) Remove(c *gin.Context) {
 	roleIds := c.Param("roleIds")
 	if roleIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -181,7 +182,7 @@ func (s *sysRole) Remove(c *gin.Context) {
 // 角色状态变更
 //
 // PUT /changeStatus
-func (s *sysRole) Status(c *gin.Context) {
+func (s *SysRoleController) Status(c *gin.Context) {
 	var body struct {
 		// 角色ID
 		RoleID string `json:"roleId" binding:"required"`
@@ -215,12 +216,12 @@ func (s *sysRole) Status(c *gin.Context) {
 
 	// 更新状态不刷新缓存
 	userName := ctx.LoginUserToUserName(c)
-	sysRole := model.SysRole{
+	SysRoleController := model.SysRole{
 		RoleID:   body.RoleID,
 		Status:   body.Status,
 		UpdateBy: userName,
 	}
-	rows := s.sysRoleService.UpdateRole(sysRole)
+	rows := s.sysRoleService.UpdateRole(SysRoleController)
 	if rows > 0 {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -231,7 +232,7 @@ func (s *sysRole) Status(c *gin.Context) {
 // 角色数据权限修改
 //
 // PUT /dataScope
-func (s *sysRole) DataScope(c *gin.Context) {
+func (s *SysRoleController) DataScope(c *gin.Context) {
 	var body struct {
 		// 角色ID
 		RoleID string `json:"roleId"`
@@ -263,14 +264,14 @@ func (s *sysRole) DataScope(c *gin.Context) {
 
 	// 更新数据权限
 	userName := ctx.LoginUserToUserName(c)
-	sysRole := model.SysRole{
+	SysRoleController := model.SysRole{
 		RoleID:            body.RoleID,
 		DeptIds:           body.DeptIds,
 		DataScope:         body.DataScope,
 		DeptCheckStrictly: body.DeptCheckStrictly,
 		UpdateBy:          userName,
 	}
-	rows := s.sysRoleService.AuthDataScope(sysRole)
+	rows := s.sysRoleService.AuthDataScope(SysRoleController)
 	if rows > 0 {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -281,7 +282,7 @@ func (s *sysRole) DataScope(c *gin.Context) {
 // 角色分配用户列表
 //
 // GET /authUser/allocatedList
-func (s *sysRole) AuthUserAllocatedList(c *gin.Context) {
+func (s *SysRoleController) AuthUserAllocatedList(c *gin.Context) {
 	querys := ctx.QueryMapString(c)
 	roleId, ok := querys["roleId"]
 	if !ok {
@@ -304,7 +305,7 @@ func (s *sysRole) AuthUserAllocatedList(c *gin.Context) {
 // 角色分配选择授权
 //
 // PUT /authUser/checked
-func (s *sysRole) AuthUserChecked(c *gin.Context) {
+func (s *SysRoleController) AuthUserChecked(c *gin.Context) {
 	var body struct {
 		// 角色ID
 		RoleID string `json:"roleId" binding:"required"`
@@ -350,7 +351,7 @@ func (s *sysRole) AuthUserChecked(c *gin.Context) {
 // 导出角色信息
 //
 // POST /export
-func (s *sysRole) Export(c *gin.Context) {
+func (s *SysRoleController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	querys := ctx.QueryMapString(c)
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")

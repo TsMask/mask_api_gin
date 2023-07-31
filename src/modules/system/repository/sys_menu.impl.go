@@ -12,8 +12,8 @@ import (
 	"strings"
 )
 
-// SysMenuImpl 菜单表 数据层处理
-var SysMenuImpl = &sysMenuImpl{
+// 实例化数据层 SysMenuImpl 结构体
+var NewSysMenuImpl = &SysMenuImpl{
 	selectSql: `select 
 	m.menu_id, m.menu_name, m.parent_id, m.menu_sort, m.path, m.component, m.is_frame, m.is_cache, m.menu_type, m.visible, m.status, ifnull(m.perms,'') as perms, m.icon, m.create_time, m.remark 
 	from sys_menu m`,
@@ -48,7 +48,8 @@ var SysMenuImpl = &sysMenuImpl{
 	},
 }
 
-type sysMenuImpl struct {
+// SysMenuImpl 菜单表 数据层处理
+type SysMenuImpl struct {
 	// 查询视图对象SQL
 	selectSql string
 	// 查询视图用户对象SQL
@@ -58,7 +59,7 @@ type sysMenuImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *sysMenuImpl) convertResultRows(rows []map[string]interface{}) []model.SysMenu {
+func (r *SysMenuImpl) convertResultRows(rows []map[string]interface{}) []model.SysMenu {
 	arr := make([]model.SysMenu, 0)
 	for _, row := range rows {
 		sysMenu := model.SysMenu{}
@@ -73,7 +74,7 @@ func (r *sysMenuImpl) convertResultRows(rows []map[string]interface{}) []model.S
 }
 
 // SelectMenuList 查询系统菜单列表
-func (r *sysMenuImpl) SelectMenuList(sysMenu model.SysMenu, userId string) []model.SysMenu {
+func (r *SysMenuImpl) SelectMenuList(sysMenu model.SysMenu, userId string) []model.SysMenu {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -119,7 +120,7 @@ func (r *sysMenuImpl) SelectMenuList(sysMenu model.SysMenu, userId string) []mod
 }
 
 // SelectMenuPermsByUserId 根据用户ID查询权限
-func (r *sysMenuImpl) SelectMenuPermsByUserId(userId string) []string {
+func (r *SysMenuImpl) SelectMenuPermsByUserId(userId string) []string {
 	querySql := `select distinct m.perms as 'str' from sys_menu m 
     left join sys_role_menu rm on m.menu_id = rm.menu_id 
     left join sys_user_role ur on rm.role_id = ur.role_id 
@@ -142,7 +143,7 @@ func (r *sysMenuImpl) SelectMenuPermsByUserId(userId string) []string {
 }
 
 // SelectMenuTreeByUserId 根据用户ID查询菜单
-func (r *sysMenuImpl) SelectMenuTreeByUserId(userId string) []model.SysMenu {
+func (r *SysMenuImpl) SelectMenuTreeByUserId(userId string) []model.SysMenu {
 	var params []interface{}
 	var querySql string
 
@@ -179,7 +180,7 @@ func (r *sysMenuImpl) SelectMenuTreeByUserId(userId string) []model.SysMenu {
 }
 
 // SelectMenuListByRoleId 根据角色ID查询菜单树信息
-func (r *sysMenuImpl) SelectMenuListByRoleId(roleId string, menuCheckStrictly bool) []string {
+func (r *SysMenuImpl) SelectMenuListByRoleId(roleId string, menuCheckStrictly bool) []string {
 	querySql := `select m.menu_id as 'str' from sys_menu m 
     left join sys_role_menu rm on m.menu_id = rm.menu_id
     where rm.role_id = ? `
@@ -212,7 +213,7 @@ func (r *sysMenuImpl) SelectMenuListByRoleId(roleId string, menuCheckStrictly bo
 }
 
 // SelectMenuByIds 根据菜单ID查询信息
-func (r *sysMenuImpl) SelectMenuByIds(menuIds []string) []model.SysMenu {
+func (r *SysMenuImpl) SelectMenuByIds(menuIds []string) []model.SysMenu {
 	placeholder := repo.KeyPlaceholderByQuery(len(menuIds))
 	querySql := r.selectSql + " where m.menu_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(menuIds)
@@ -226,7 +227,7 @@ func (r *sysMenuImpl) SelectMenuByIds(menuIds []string) []model.SysMenu {
 }
 
 // HasChildByMenuId 存在菜单子节点数量
-func (r *sysMenuImpl) HasChildByMenuId(menuId string) int64 {
+func (r *SysMenuImpl) HasChildByMenuId(menuId string) int64 {
 	querySql := "select count(1) as 'total' from sys_menu where parent_id = ?"
 	results, err := datasource.RawDB("", querySql, []interface{}{menuId})
 	if err != nil {
@@ -240,7 +241,7 @@ func (r *sysMenuImpl) HasChildByMenuId(menuId string) int64 {
 }
 
 // InsertMenu 新增菜单信息
-func (r *sysMenuImpl) InsertMenu(sysMenu model.SysMenu) string {
+func (r *SysMenuImpl) InsertMenu(sysMenu model.SysMenu) string {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysMenu.MenuID != "" {
@@ -335,7 +336,7 @@ func (r *sysMenuImpl) InsertMenu(sysMenu model.SysMenu) string {
 }
 
 // UpdateMenu 修改菜单信息
-func (r *sysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int64 {
+func (r *SysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int64 {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysMenu.MenuID != "" {
@@ -417,7 +418,7 @@ func (r *sysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int64 {
 }
 
 // DeleteMenuById 删除菜单管理信息
-func (r *sysMenuImpl) DeleteMenuById(menuId string) int64 {
+func (r *SysMenuImpl) DeleteMenuById(menuId string) int64 {
 	sql := "delete from sys_menu where menu_id = ?"
 	results, err := datasource.ExecDB("", sql, []interface{}{menuId})
 	if err != nil {
@@ -428,7 +429,7 @@ func (r *sysMenuImpl) DeleteMenuById(menuId string) int64 {
 }
 
 // CheckUniqueMenu 校验菜单是否唯一
-func (r *sysMenuImpl) CheckUniqueMenu(sysMenu model.SysMenu) string {
+func (r *SysMenuImpl) CheckUniqueMenu(sysMenu model.SysMenu) string {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}

@@ -16,14 +16,15 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+// 实例化控制层 SysPostController 结构体
+var NewSysPost = &SysPostController{
+	sysPostService: service.NewSysPostImpl,
+}
+
 // 岗位信息
 //
 // PATH /system/post
-var SysPost = &sysPost{
-	sysPostService: service.SysPostImpl,
-}
-
-type sysPost struct {
+type SysPostController struct {
 	// 岗位服务
 	sysPostService service.ISysPost
 }
@@ -31,7 +32,7 @@ type sysPost struct {
 // 岗位列表
 //
 // GET /list
-func (s *sysPost) List(c *gin.Context) {
+func (s *SysPostController) List(c *gin.Context) {
 	querys := ctx.QueryMapString(c)
 	data := s.sysPostService.SelectPostPage(querys)
 	c.JSON(200, result.Ok(data))
@@ -40,7 +41,7 @@ func (s *sysPost) List(c *gin.Context) {
 // 岗位信息
 //
 // GET /:postId
-func (s *sysPost) Info(c *gin.Context) {
+func (s *SysPostController) Info(c *gin.Context) {
 	postId := c.Param("postId")
 	if postId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -57,7 +58,7 @@ func (s *sysPost) Info(c *gin.Context) {
 // 岗位新增
 //
 // POST /
-func (s *sysPost) Add(c *gin.Context) {
+func (s *SysPostController) Add(c *gin.Context) {
 	var body model.SysPost
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.PostID != "" {
@@ -93,7 +94,7 @@ func (s *sysPost) Add(c *gin.Context) {
 // 岗位修改
 //
 // PUT /
-func (s *sysPost) Edit(c *gin.Context) {
+func (s *SysPostController) Edit(c *gin.Context) {
 	var body model.SysPost
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.PostID == "" {
@@ -136,7 +137,7 @@ func (s *sysPost) Edit(c *gin.Context) {
 // 岗位删除
 //
 // DELETE /:postIds
-func (s *sysPost) Remove(c *gin.Context) {
+func (s *SysPostController) Remove(c *gin.Context) {
 	postIds := c.Param("postIds")
 	if postIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -161,7 +162,7 @@ func (s *sysPost) Remove(c *gin.Context) {
 // 导出岗位信息
 //
 // POST /export
-func (s *sysPost) Export(c *gin.Context) {
+func (s *SysPostController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	querys := ctx.BodyJSONMapString(c)
 	data := s.sysPostService.SelectPostPage(querys)

@@ -13,14 +13,15 @@ import (
 	"github.com/gin-gonic/gin/binding"
 )
 
+// 实例化控制层 SysDeptController 结构体
+var NewSysDept = &SysDeptController{
+	sysDeptService: service.NewSysDeptImpl,
+}
+
 // 部门信息
 //
 // PATH /system/dept
-var SysDept = &sysDept{
-	sysDeptService: service.SysDeptImpl,
-}
-
-type sysDept struct {
+type SysDeptController struct {
 	// 部门服务
 	sysDeptService service.ISysDept
 }
@@ -28,7 +29,7 @@ type sysDept struct {
 // 部门列表
 //
 // GET /list
-func (s *sysDept) List(c *gin.Context) {
+func (s *SysDeptController) List(c *gin.Context) {
 	var querys struct {
 		// 部门ID
 		DeptID string `json:"deptId"`
@@ -45,21 +46,21 @@ func (s *sysDept) List(c *gin.Context) {
 		return
 	}
 
-	sysDept := model.SysDept{
+	SysDeptController := model.SysDept{
 		DeptID:   querys.DeptID,
 		ParentID: querys.ParentID,
 		DeptName: querys.DeptName,
 		Status:   querys.Status,
 	}
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")
-	data := s.sysDeptService.SelectDeptList(sysDept, dataScopeSQL)
+	data := s.sysDeptService.SelectDeptList(SysDeptController, dataScopeSQL)
 	c.JSON(200, result.OkData(data))
 }
 
 // 部门信息
 //
 // GET /:deptId
-func (s *sysDept) Info(c *gin.Context) {
+func (s *SysDeptController) Info(c *gin.Context) {
 	deptId := c.Param("deptId")
 	if deptId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -76,7 +77,7 @@ func (s *sysDept) Info(c *gin.Context) {
 // 部门新增
 //
 // POST /
-func (s *sysDept) Add(c *gin.Context) {
+func (s *SysDeptController) Add(c *gin.Context) {
 	var body model.SysDept
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.DeptID != "" {
@@ -126,7 +127,7 @@ func (s *sysDept) Add(c *gin.Context) {
 // 部门修改
 //
 // PUT /
-func (s *sysDept) Edit(c *gin.Context) {
+func (s *SysDeptController) Edit(c *gin.Context) {
 	var body model.SysDept
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.DeptID == "" {
@@ -186,7 +187,7 @@ func (s *sysDept) Edit(c *gin.Context) {
 // 部门删除
 //
 // DELETE /:deptId
-func (s *sysDept) Remove(c *gin.Context) {
+func (s *SysDeptController) Remove(c *gin.Context) {
 	deptId := c.Param("deptId")
 	if deptId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -228,7 +229,7 @@ func (s *sysDept) Remove(c *gin.Context) {
 // 部门列表（排除节点）
 //
 // GET /list/exclude/:deptId
-func (s *sysDept) ExcludeChild(c *gin.Context) {
+func (s *SysDeptController) ExcludeChild(c *gin.Context) {
 	deptId := c.Param("deptId")
 	if deptId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -259,7 +260,7 @@ func (s *sysDept) ExcludeChild(c *gin.Context) {
 // 部门树结构列表
 //
 // GET /treeSelect
-func (s *sysDept) TreeSelect(c *gin.Context) {
+func (s *SysDeptController) TreeSelect(c *gin.Context) {
 	var querys struct {
 		// 部门ID
 		DeptID string `json:"deptId"`
@@ -276,21 +277,21 @@ func (s *sysDept) TreeSelect(c *gin.Context) {
 		return
 	}
 
-	sysDept := model.SysDept{
+	SysDeptController := model.SysDept{
 		DeptID:   querys.DeptID,
 		ParentID: querys.ParentID,
 		DeptName: querys.DeptName,
 		Status:   querys.Status,
 	}
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")
-	data := s.sysDeptService.SelectDeptTreeSelect(sysDept, dataScopeSQL)
+	data := s.sysDeptService.SelectDeptTreeSelect(SysDeptController, dataScopeSQL)
 	c.JSON(200, result.OkData(data))
 }
 
 // 部门树结构列表（指定角色）
 //
 // GET /roleDeptTreeSelect/:roleId
-func (s *sysDept) RoleDeptTreeSelect(c *gin.Context) {
+func (s *SysDeptController) RoleDeptTreeSelect(c *gin.Context) {
 	roleId := c.Param("roleId")
 	if roleId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))

@@ -12,8 +12,8 @@ import (
 	"strings"
 )
 
-// SysUserImpl 用户表 数据层处理
-var SysUserImpl = &sysUserImpl{
+// 实例化数据层 SysUserImpl 结构体
+var NewSysUserImpl = &SysUserImpl{
 	selectSql: `select 
 	u.user_id, u.dept_id, u.user_name, u.nick_name, u.user_type, u.email, u.avatar, u.phonenumber, u.password, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time, u.remark, 
 	d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, d.leader, d.status as dept_status,
@@ -65,7 +65,8 @@ var SysUserImpl = &sysUserImpl{
 	},
 }
 
-type sysUserImpl struct {
+// SysUserImpl 用户表 数据层处理
+type SysUserImpl struct {
 	// 查询视图对象SQL
 	selectSql string
 	// 用户信息实体映射
@@ -77,7 +78,7 @@ type sysUserImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *sysUserImpl) convertResultRows(rows []map[string]interface{}) []model.SysUser {
+func (r *SysUserImpl) convertResultRows(rows []map[string]interface{}) []model.SysUser {
 	arr := make([]model.SysUser, 0)
 
 	for _, row := range rows {
@@ -121,7 +122,7 @@ func (r *sysUserImpl) convertResultRows(rows []map[string]interface{}) []model.S
 }
 
 // SelectUserPage 根据条件分页查询用户列表
-func (r *sysUserImpl) SelectUserPage(query map[string]string, dataScopeSQL string) map[string]interface{} {
+func (r *SysUserImpl) SelectUserPage(query map[string]string, dataScopeSQL string) map[string]interface{} {
 	selectUserSql := `select 
     u.user_id, u.dept_id, u.nick_name, u.user_name, u.email, u.avatar, u.phonenumber, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time, u.remark, d.dept_name, d.leader 
     from sys_user u 
@@ -206,7 +207,7 @@ func (r *sysUserImpl) SelectUserPage(query map[string]string, dataScopeSQL strin
 }
 
 // SelectAllocatedPage 根据条件分页查询分配用户角色列表
-func (r *sysUserImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL string) map[string]interface{} {
+func (r *SysUserImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL string) map[string]interface{} {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -294,7 +295,7 @@ func (r *sysUserImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL 
 }
 
 // SelectUserList 根据条件查询用户列表
-func (r *sysUserImpl) SelectUserList(sysUser model.SysUser, dataScopeSQL string) []model.SysUser {
+func (r *SysUserImpl) SelectUserList(sysUser model.SysUser, dataScopeSQL string) []model.SysUser {
 	selectUserSql := `select 
     u.user_id, u.dept_id, u.nick_name, u.user_name, u.email, u.avatar, u.phonenumber, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time, u.remark, d.dept_name, d.leader 
     from sys_user u
@@ -337,7 +338,7 @@ func (r *sysUserImpl) SelectUserList(sysUser model.SysUser, dataScopeSQL string)
 }
 
 // SelectUserByIds 通过用户ID查询用户
-func (r *sysUserImpl) SelectUserByIds(userIds []string) []model.SysUser {
+func (r *SysUserImpl) SelectUserByIds(userIds []string) []model.SysUser {
 	placeholder := repo.KeyPlaceholderByQuery(len(userIds))
 	querySql := r.selectSql + " where u.del_flag = '0' and u.user_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(userIds)
@@ -351,7 +352,7 @@ func (r *sysUserImpl) SelectUserByIds(userIds []string) []model.SysUser {
 }
 
 // SelectUserByUserName 通过用户登录账号查询用户
-func (r *sysUserImpl) SelectUserByUserName(userName string) model.SysUser {
+func (r *SysUserImpl) SelectUserByUserName(userName string) model.SysUser {
 	querySql := r.selectSql + " where u.del_flag = '0' and u.user_name = ?"
 	results, err := datasource.RawDB("", querySql, []interface{}{userName})
 	if err != nil {
@@ -367,7 +368,7 @@ func (r *sysUserImpl) SelectUserByUserName(userName string) model.SysUser {
 }
 
 // InsertUser 新增用户信息
-func (r *sysUserImpl) InsertUser(sysUser model.SysUser) string {
+func (r *SysUserImpl) InsertUser(sysUser model.SysUser) string {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysUser.UserID != "" {
@@ -440,7 +441,7 @@ func (r *sysUserImpl) InsertUser(sysUser model.SysUser) string {
 }
 
 // UpdateUser 修改用户信息
-func (r *sysUserImpl) UpdateUser(sysUser model.SysUser) int64 {
+func (r *SysUserImpl) UpdateUser(sysUser model.SysUser) int64 {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysUser.DeptID != "" {
@@ -511,7 +512,7 @@ func (r *sysUserImpl) UpdateUser(sysUser model.SysUser) int64 {
 }
 
 // DeleteUserByIds 批量删除用户信息
-func (r *sysUserImpl) DeleteUserByIds(userIds []string) int64 {
+func (r *SysUserImpl) DeleteUserByIds(userIds []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(userIds))
 	sql := "update sys_user set del_flag = '1' where user_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(userIds)
@@ -524,7 +525,7 @@ func (r *sysUserImpl) DeleteUserByIds(userIds []string) int64 {
 }
 
 // CheckUniqueUser 校验用户信息是否唯一
-func (r *sysUserImpl) CheckUniqueUser(sysUser model.SysUser) string {
+func (r *SysUserImpl) CheckUniqueUser(sysUser model.SysUser) string {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}

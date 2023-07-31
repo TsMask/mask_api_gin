@@ -10,7 +10,7 @@ var NewSysJobLogImpl = &SysJobLogImpl{
 	sysJobLogRepository: repository.NewSysJobLogImpl,
 }
 
-// SysJobLogImpl 调度任务日志 业务层处理
+// SysJobLogImpl 调度任务日志 服务层处理
 type SysJobLogImpl struct {
 	// 调度任务日志数据信息
 	sysJobLogRepository repository.ISysJobLog

@@ -13,12 +13,12 @@ import (
 
 // 实例化服务层 RegisterImpl 结构体
 var NewRegisterImpl = &RegisterImpl{
-	sysUserService:   systemService.SysUserImpl,
-	sysConfigService: systemService.SysConfigImpl,
-	sysRoleService:   systemService.SysRoleImpl,
+	sysUserService:   systemService.NewSysUserImpl,
+	sysConfigService: systemService.NewSysConfigImpl,
+	sysRoleService:   systemService.NewSysRoleImpl,
 }
 
-// 账号注册操作处理 业务层处理
+// 账号注册操作处理 服务层处理
 type RegisterImpl struct {
 	// 用户信息服务
 	sysUserService systemService.ISysUser

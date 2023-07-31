@@ -6,28 +6,29 @@ import (
 	"mask_api_gin/src/modules/system/repository"
 )
 
-// SysNoticeImpl 公告 数据层处理
-var SysNoticeImpl = &sysNoticeImpl{
-	sysNoticeRepository: repository.SysNoticeImpl,
+// 实例化服务层 SysNoticeImpl 结构体
+var NewSysNoticeImpl = &SysNoticeImpl{
+	sysNoticeRepository: repository.NewSysNoticeImpl,
 }
 
-type sysNoticeImpl struct {
+// SysNoticeImpl 公告 服务层处理
+type SysNoticeImpl struct {
 	// 公告服务
 	sysNoticeRepository repository.ISysNotice
 }
 
 // SelectNoticePage 分页查询公告列表
-func (r *sysNoticeImpl) SelectNoticePage(query map[string]string) map[string]interface{} {
+func (r *SysNoticeImpl) SelectNoticePage(query map[string]string) map[string]interface{} {
 	return r.sysNoticeRepository.SelectNoticePage(query)
 }
 
 // SelectNoticeList 查询公告列表
-func (r *sysNoticeImpl) SelectNoticeList(sysNotice model.SysNotice) []model.SysNotice {
+func (r *SysNoticeImpl) SelectNoticeList(sysNotice model.SysNotice) []model.SysNotice {
 	return r.sysNoticeRepository.SelectNoticeList(sysNotice)
 }
 
 // SelectNoticeById 查询公告信息
-func (r *sysNoticeImpl) SelectNoticeById(noticeId string) model.SysNotice {
+func (r *SysNoticeImpl) SelectNoticeById(noticeId string) model.SysNotice {
 	if noticeId == "" {
 		return model.SysNotice{}
 	}
@@ -39,17 +40,17 @@ func (r *sysNoticeImpl) SelectNoticeById(noticeId string) model.SysNotice {
 }
 
 // InsertNotice 新增公告
-func (r *sysNoticeImpl) InsertNotice(sysNotice model.SysNotice) string {
+func (r *SysNoticeImpl) InsertNotice(sysNotice model.SysNotice) string {
 	return r.sysNoticeRepository.InsertNotice(sysNotice)
 }
 
 // UpdateNotice 修改公告
-func (r *sysNoticeImpl) UpdateNotice(sysNotice model.SysNotice) int64 {
+func (r *SysNoticeImpl) UpdateNotice(sysNotice model.SysNotice) int64 {
 	return r.sysNoticeRepository.UpdateNotice(sysNotice)
 }
 
 // DeleteNoticeByIds 批量删除公告信息
-func (r *sysNoticeImpl) DeleteNoticeByIds(noticeIds []string) (int64, error) {
+func (r *SysNoticeImpl) DeleteNoticeByIds(noticeIds []string) (int64, error) {
 	// 检查是否存在
 	notices := r.sysNoticeRepository.SelectNoticeByIds(noticeIds)
 	if len(notices) <= 0 {

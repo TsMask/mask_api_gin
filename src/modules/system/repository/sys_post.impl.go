@@ -11,8 +11,8 @@ import (
 	"strings"
 )
 
-// SysPostImpl 岗位表 数据层处理
-var SysPostImpl = &sysPostImpl{
+// 实例化数据层 SysPostImpl 结构体
+var NewSysPostImpl = &SysPostImpl{
 	selectSql: `select 
 	post_id, post_code, post_name, post_sort, status, create_by, create_time, remark 
 	from sys_post`,
@@ -31,7 +31,8 @@ var SysPostImpl = &sysPostImpl{
 	},
 }
 
-type sysPostImpl struct {
+// SysPostImpl 岗位表 数据层处理
+type SysPostImpl struct {
 	// 查询视图对象SQL
 	selectSql string
 	// 结果字段与实体映射
@@ -39,7 +40,7 @@ type sysPostImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *sysPostImpl) convertResultRows(rows []map[string]interface{}) []model.SysPost {
+func (r *SysPostImpl) convertResultRows(rows []map[string]interface{}) []model.SysPost {
 	arr := make([]model.SysPost, 0)
 	for _, row := range rows {
 		sysPost := model.SysPost{}
@@ -54,7 +55,7 @@ func (r *sysPostImpl) convertResultRows(rows []map[string]interface{}) []model.S
 }
 
 // SelectPostPage 查询岗位分页数据集合
-func (r *sysPostImpl) SelectPostPage(query map[string]string) map[string]interface{} {
+func (r *SysPostImpl) SelectPostPage(query map[string]string) map[string]interface{} {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -113,7 +114,7 @@ func (r *sysPostImpl) SelectPostPage(query map[string]string) map[string]interfa
 }
 
 // SelectPostList 查询岗位数据集合
-func (r *sysPostImpl) SelectPostList(sysPost model.SysPost) []model.SysPost {
+func (r *SysPostImpl) SelectPostList(sysPost model.SysPost) []model.SysPost {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -148,7 +149,7 @@ func (r *sysPostImpl) SelectPostList(sysPost model.SysPost) []model.SysPost {
 }
 
 // SelectPostByIds 通过岗位ID查询岗位信息
-func (r *sysPostImpl) SelectPostByIds(postIds []string) []model.SysPost {
+func (r *SysPostImpl) SelectPostByIds(postIds []string) []model.SysPost {
 	placeholder := repo.KeyPlaceholderByQuery(len(postIds))
 	querySql := r.selectSql + " where post_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(postIds)
@@ -162,7 +163,7 @@ func (r *sysPostImpl) SelectPostByIds(postIds []string) []model.SysPost {
 }
 
 // SelectPostListByUserId 根据用户ID获取岗位选择框列表
-func (r *sysPostImpl) SelectPostListByUserId(userId string) []model.SysPost {
+func (r *SysPostImpl) SelectPostListByUserId(userId string) []model.SysPost {
 	// 查询数据
 	querySql := `select distinct 
 	p.post_id, p.post_name, p.post_code 
@@ -179,7 +180,7 @@ func (r *sysPostImpl) SelectPostListByUserId(userId string) []model.SysPost {
 }
 
 // DeletePostByIds 批量删除岗位信息
-func (r *sysPostImpl) DeletePostByIds(postIds []string) int64 {
+func (r *SysPostImpl) DeletePostByIds(postIds []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(postIds))
 	sql := "delete from sys_post where post_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(postIds)
@@ -192,7 +193,7 @@ func (r *sysPostImpl) DeletePostByIds(postIds []string) int64 {
 }
 
 // UpdatePost 修改岗位信息
-func (r *sysPostImpl) UpdatePost(sysPost model.SysPost) int64 {
+func (r *SysPostImpl) UpdatePost(sysPost model.SysPost) int64 {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysPost.PostCode != "" {
@@ -230,7 +231,7 @@ func (r *sysPostImpl) UpdatePost(sysPost model.SysPost) int64 {
 }
 
 // InsertPost 新增岗位信息
-func (r *sysPostImpl) InsertPost(sysPost model.SysPost) string {
+func (r *SysPostImpl) InsertPost(sysPost model.SysPost) string {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysPost.PostID != "" {
@@ -284,7 +285,7 @@ func (r *sysPostImpl) InsertPost(sysPost model.SysPost) string {
 }
 
 // CheckUniquePost 校验岗位唯一
-func (r *sysPostImpl) CheckUniquePost(sysPost model.SysPost) string {
+func (r *SysPostImpl) CheckUniquePost(sysPost model.SysPost) string {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}

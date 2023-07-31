@@ -8,28 +8,29 @@ import (
 	"mask_api_gin/src/modules/system/repository"
 )
 
-// 参数配置 服务层实现
-var SysConfigImpl = &sysConfigImpl{
-	sysConfigRepository: repository.SysConfigImpl,
+// 实例化服务层 SysConfigImpl 结构体
+var NewSysConfigImpl = &SysConfigImpl{
+	sysConfigRepository: repository.NewSysConfigImpl,
 }
 
-type sysConfigImpl struct {
+// SysConfigImpl 参数配置 服务层处理
+type SysConfigImpl struct {
 	// 参数配置表
 	sysConfigRepository repository.ISysConfig
 }
 
 // SelectDictDataPage 分页查询参数配置列表数据
-func (r *sysConfigImpl) SelectConfigPage(query map[string]string) map[string]interface{} {
+func (r *SysConfigImpl) SelectConfigPage(query map[string]string) map[string]interface{} {
 	return r.sysConfigRepository.SelectConfigPage(query)
 }
 
 // SelectConfigList 查询参数配置列表
-func (r *sysConfigImpl) SelectConfigList(sysConfig model.SysConfig) []model.SysConfig {
+func (r *SysConfigImpl) SelectConfigList(sysConfig model.SysConfig) []model.SysConfig {
 	return r.sysConfigRepository.SelectConfigList(sysConfig)
 }
 
 // SelectConfigValueByKey 通过参数键名查询参数键值
-func (r *sysConfigImpl) SelectConfigValueByKey(configKey string) string {
+func (r *SysConfigImpl) SelectConfigValueByKey(configKey string) string {
 	cacheKey := r.getCacheKey(configKey)
 	// 从缓存中读取
 	cacheValue := redis.Get(cacheKey)
@@ -46,7 +47,7 @@ func (r *sysConfigImpl) SelectConfigValueByKey(configKey string) string {
 }
 
 // SelectConfigById 通过配置ID查询参数配置信息
-func (r *sysConfigImpl) SelectConfigById(configId string) model.SysConfig {
+func (r *SysConfigImpl) SelectConfigById(configId string) model.SysConfig {
 	if configId == "" {
 		return model.SysConfig{}
 	}
@@ -58,7 +59,7 @@ func (r *sysConfigImpl) SelectConfigById(configId string) model.SysConfig {
 }
 
 // CheckUniqueConfigKey 校验参数键名是否唯一
-func (r *sysConfigImpl) CheckUniqueConfigKey(configKey, configId string) bool {
+func (r *SysConfigImpl) CheckUniqueConfigKey(configKey, configId string) bool {
 	uniqueId := r.sysConfigRepository.CheckUniqueConfig(model.SysConfig{
 		ConfigKey: configKey,
 	})
@@ -69,7 +70,7 @@ func (r *sysConfigImpl) CheckUniqueConfigKey(configKey, configId string) bool {
 }
 
 // InsertConfig 新增参数配置
-func (r *sysConfigImpl) InsertConfig(sysConfig model.SysConfig) string {
+func (r *SysConfigImpl) InsertConfig(sysConfig model.SysConfig) string {
 	configId := r.sysConfigRepository.InsertConfig(sysConfig)
 	if configId != "" {
 		r.loadingConfigCache(sysConfig.ConfigKey)
@@ -78,7 +79,7 @@ func (r *sysConfigImpl) InsertConfig(sysConfig model.SysConfig) string {
 }
 
 // UpdateConfig 修改参数配置
-func (r *sysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int64 {
+func (r *SysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int64 {
 	rows := r.sysConfigRepository.UpdateConfig(sysConfig)
 	if rows > 0 {
 		r.loadingConfigCache(sysConfig.ConfigKey)
@@ -87,7 +88,7 @@ func (r *sysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int64 {
 }
 
 // DeleteConfigByIds 批量删除参数配置信息
-func (r *sysConfigImpl) DeleteConfigByIds(configIds []string) (int64, error) {
+func (r *SysConfigImpl) DeleteConfigByIds(configIds []string) (int64, error) {
 	// 检查是否存在
 	configs := r.sysConfigRepository.SelectConfigByIds(configIds)
 	if len(configs) <= 0 {
@@ -109,18 +110,18 @@ func (r *sysConfigImpl) DeleteConfigByIds(configIds []string) (int64, error) {
 }
 
 // ResetConfigCache 重置参数缓存数据
-func (r *sysConfigImpl) ResetConfigCache() {
+func (r *SysConfigImpl) ResetConfigCache() {
 	r.clearConfigCache("*")
 	r.loadingConfigCache("*")
 }
 
 // getCacheKey 组装缓存key
-func (r *sysConfigImpl) getCacheKey(configKey string) string {
+func (r *SysConfigImpl) getCacheKey(configKey string) string {
 	return cachekey.SYS_CONFIG_KEY + configKey
 }
 
 // loadingConfigCache 加载参数缓存数据
-func (r *sysConfigImpl) loadingConfigCache(configKey string) {
+func (r *SysConfigImpl) loadingConfigCache(configKey string) {
 	// 查询全部参数
 	if configKey == "*" {
 		sysConfigs := r.SelectConfigList(model.SysConfig{})
@@ -144,7 +145,7 @@ func (r *sysConfigImpl) loadingConfigCache(configKey string) {
 }
 
 // clearConfigCache 清空参数缓存数据
-func (r *sysConfigImpl) clearConfigCache(configKey string) bool {
+func (r *SysConfigImpl) clearConfigCache(configKey string) bool {
 	key := r.getCacheKey(configKey)
 	keys := redis.GetKeys(key)
 	return redis.DelKeys(keys)

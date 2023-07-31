@@ -7,14 +7,15 @@ import (
 	"mask_api_gin/src/modules/system/repository"
 )
 
-// SysUserImpl 用户 数据层处理
-var SysUserImpl = &sysUserImpl{
-	sysUserRepository:     repository.SysUserImpl,
-	sysUserRoleRepository: repository.SysUserRoleImpl,
-	sysUserPostRepository: repository.SysUserPostImpl,
+// 实例化服务层 SysUserImpl 结构体
+var NewSysUserImpl = &SysUserImpl{
+	sysUserRepository:     repository.NewSysUserImpl,
+	sysUserRoleRepository: repository.NewSysUserRoleImpl,
+	sysUserPostRepository: repository.NewSysUserPostImpl,
 }
 
-type sysUserImpl struct {
+// SysUserImpl 用户 服务层处理
+type SysUserImpl struct {
 	// 用户服务
 	sysUserRepository repository.ISysUser
 	// 用户与角色服务
@@ -24,27 +25,27 @@ type sysUserImpl struct {
 }
 
 // SelectUserPage 根据条件分页查询用户列表
-func (r *sysUserImpl) SelectUserPage(query map[string]string, dataScopeSQL string) map[string]interface{} {
+func (r *SysUserImpl) SelectUserPage(query map[string]string, dataScopeSQL string) map[string]interface{} {
 	return r.sysUserRepository.SelectUserPage(query, dataScopeSQL)
 }
 
 // SelectUserList 根据条件查询用户列表
-func (r *sysUserImpl) SelectUserList(sysUser model.SysUser, dataScopeSQL string) []model.SysUser {
+func (r *SysUserImpl) SelectUserList(sysUser model.SysUser, dataScopeSQL string) []model.SysUser {
 	return []model.SysUser{}
 }
 
 // SelectAllocatedPage 根据条件分页查询分配用户角色列表
-func (r *sysUserImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL string) map[string]interface{} {
+func (r *SysUserImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL string) map[string]interface{} {
 	return r.sysUserRepository.SelectAllocatedPage(query, dataScopeSQL)
 }
 
 // SelectUserByUserName 通过用户名查询用户
-func (r *sysUserImpl) SelectUserByUserName(userName string) model.SysUser {
+func (r *SysUserImpl) SelectUserByUserName(userName string) model.SysUser {
 	return r.sysUserRepository.SelectUserByUserName(userName)
 }
 
 // SelectUserById 通过用户ID查询用户
-func (r *sysUserImpl) SelectUserById(userId string) model.SysUser {
+func (r *SysUserImpl) SelectUserById(userId string) model.SysUser {
 	if userId == "" {
 		return model.SysUser{}
 	}
@@ -56,7 +57,7 @@ func (r *sysUserImpl) SelectUserById(userId string) model.SysUser {
 }
 
 // InsertUser 新增用户信息
-func (r *sysUserImpl) InsertUser(sysUser model.SysUser) string {
+func (r *SysUserImpl) InsertUser(sysUser model.SysUser) string {
 	// 新增用户信息
 	insertId := r.sysUserRepository.InsertUser(sysUser)
 	if insertId != "" {
@@ -69,7 +70,7 @@ func (r *sysUserImpl) InsertUser(sysUser model.SysUser) string {
 }
 
 // insertUserRole 新增用户角色信息
-func (r *sysUserImpl) insertUserRole(userId string, roleIds []string) int64 {
+func (r *SysUserImpl) insertUserRole(userId string, roleIds []string) int64 {
 	if userId == "" || len(roleIds) <= 0 {
 		return 0
 	}
@@ -87,7 +88,7 @@ func (r *sysUserImpl) insertUserRole(userId string, roleIds []string) int64 {
 }
 
 // insertUserPost 新增用户岗位信息
-func (r *sysUserImpl) insertUserPost(userId string, postIds []string) int64 {
+func (r *SysUserImpl) insertUserPost(userId string, postIds []string) int64 {
 	if userId == "" || len(postIds) <= 0 {
 		return 0
 	}
@@ -104,12 +105,12 @@ func (r *sysUserImpl) insertUserPost(userId string, postIds []string) int64 {
 }
 
 // UpdateUser 修改用户信息
-func (r *sysUserImpl) UpdateUser(sysUser model.SysUser) int64 {
+func (r *SysUserImpl) UpdateUser(sysUser model.SysUser) int64 {
 	return r.sysUserRepository.UpdateUser(sysUser)
 }
 
 // UpdateUserAndRolePost 修改用户信息同时更新角色和岗位
-func (r *sysUserImpl) UpdateUserAndRolePost(sysUser model.SysUser) int64 {
+func (r *SysUserImpl) UpdateUserAndRolePost(sysUser model.SysUser) int64 {
 	// 删除用户与角色关联
 	r.sysUserRoleRepository.DeleteUserRole([]string{sysUser.UserID})
 	// 新增用户角色信息
@@ -122,7 +123,7 @@ func (r *sysUserImpl) UpdateUserAndRolePost(sysUser model.SysUser) int64 {
 }
 
 // DeleteUserByIds 批量删除用户信息
-func (r *sysUserImpl) DeleteUserByIds(userIds []string) (int64, error) {
+func (r *SysUserImpl) DeleteUserByIds(userIds []string) (int64, error) {
 	// 检查是否存在
 	users := r.sysUserRepository.SelectUserByIds(userIds)
 	if len(users) <= 0 {
@@ -142,7 +143,7 @@ func (r *sysUserImpl) DeleteUserByIds(userIds []string) (int64, error) {
 }
 
 // CheckUniqueUserName 校验用户名称是否唯一
-func (r *sysUserImpl) CheckUniqueUserName(userName, userId string) bool {
+func (r *SysUserImpl) CheckUniqueUserName(userName, userId string) bool {
 	uniqueId := r.sysUserRepository.CheckUniqueUser(model.SysUser{
 		UserName: userName,
 	})
@@ -153,7 +154,7 @@ func (r *sysUserImpl) CheckUniqueUserName(userName, userId string) bool {
 }
 
 // CheckUniquePhone 校验手机号码是否唯一
-func (r *sysUserImpl) CheckUniquePhone(phonenumber, userId string) bool {
+func (r *SysUserImpl) CheckUniquePhone(phonenumber, userId string) bool {
 	uniqueId := r.sysUserRepository.CheckUniqueUser(model.SysUser{
 		PhoneNumber: phonenumber,
 	})
@@ -164,7 +165,7 @@ func (r *sysUserImpl) CheckUniquePhone(phonenumber, userId string) bool {
 }
 
 // CheckUniqueEmail 校验email是否唯一
-func (r *sysUserImpl) CheckUniqueEmail(email, userId string) bool {
+func (r *SysUserImpl) CheckUniqueEmail(email, userId string) bool {
 	uniqueId := r.sysUserRepository.CheckUniqueUser(model.SysUser{
 		Email: email,
 	})

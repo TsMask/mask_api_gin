@@ -11,8 +11,8 @@ import (
 	"strings"
 )
 
-// SysDictTypeImpl 字典类型表 数据层处理
-var SysDictTypeImpl = &sysDictTypeImpl{
+// 实例化数据层 SysDictTypeImpl 结构体
+var NewSysDictTypeImpl = &SysDictTypeImpl{
 	selectSql: `select 
 	dict_id, dict_name, dict_type, status, create_by, create_time, remark 
 	from sys_dict_type`,
@@ -30,7 +30,8 @@ var SysDictTypeImpl = &sysDictTypeImpl{
 	},
 }
 
-type sysDictTypeImpl struct {
+// SysDictTypeImpl 字典类型表 数据层处理
+type SysDictTypeImpl struct {
 	// 查询视图对象SQL
 	selectSql string
 	// 结果字段与实体映射
@@ -38,7 +39,7 @@ type sysDictTypeImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *sysDictTypeImpl) convertResultRows(rows []map[string]interface{}) []model.SysDictType {
+func (r *SysDictTypeImpl) convertResultRows(rows []map[string]interface{}) []model.SysDictType {
 	arr := make([]model.SysDictType, 0)
 	for _, row := range rows {
 		sysDictType := model.SysDictType{}
@@ -53,7 +54,7 @@ func (r *sysDictTypeImpl) convertResultRows(rows []map[string]interface{}) []mod
 }
 
 // SelectDictTypePage 根据条件分页查询字典类型
-func (r *sysDictTypeImpl) SelectDictTypePage(query map[string]string) map[string]interface{} {
+func (r *SysDictTypeImpl) SelectDictTypePage(query map[string]string) map[string]interface{} {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -122,7 +123,7 @@ func (r *sysDictTypeImpl) SelectDictTypePage(query map[string]string) map[string
 }
 
 // SelectDictTypeList 根据条件查询字典类型
-func (r *sysDictTypeImpl) SelectDictTypeList(sysDictType model.SysDictType) []model.SysDictType {
+func (r *SysDictTypeImpl) SelectDictTypeList(sysDictType model.SysDictType) []model.SysDictType {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -158,7 +159,7 @@ func (r *sysDictTypeImpl) SelectDictTypeList(sysDictType model.SysDictType) []mo
 }
 
 // SelectDictTypeByIDs 根据字典类型ID查询信息
-func (r *sysDictTypeImpl) SelectDictTypeByIDs(dictIDs []string) []model.SysDictType {
+func (r *SysDictTypeImpl) SelectDictTypeByIDs(dictIDs []string) []model.SysDictType {
 	placeholder := repo.KeyPlaceholderByQuery(len(dictIDs))
 	querySql := r.selectSql + " where dict_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(dictIDs)
@@ -172,7 +173,7 @@ func (r *sysDictTypeImpl) SelectDictTypeByIDs(dictIDs []string) []model.SysDictT
 }
 
 // SelectDictTypeByType 根据字典类型查询信息
-func (r *sysDictTypeImpl) SelectDictTypeByType(dictType string) model.SysDictType {
+func (r *SysDictTypeImpl) SelectDictTypeByType(dictType string) model.SysDictType {
 	querySql := r.selectSql + " where dict_type = ?"
 	results, err := datasource.RawDB("", querySql, []interface{}{dictType})
 	if err != nil {
@@ -188,7 +189,7 @@ func (r *sysDictTypeImpl) SelectDictTypeByType(dictType string) model.SysDictTyp
 }
 
 // CheckUniqueDictType 校验字典是否唯一
-func (r *sysDictTypeImpl) CheckUniqueDictType(sysDictType model.SysDictType) string {
+func (r *SysDictTypeImpl) CheckUniqueDictType(sysDictType model.SysDictType) string {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -223,7 +224,7 @@ func (r *sysDictTypeImpl) CheckUniqueDictType(sysDictType model.SysDictType) str
 }
 
 // InsertDictType 新增字典类型信息
-func (r *sysDictTypeImpl) InsertDictType(sysDictType model.SysDictType) string {
+func (r *SysDictTypeImpl) InsertDictType(sysDictType model.SysDictType) string {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysDictType.DictName != "" {
@@ -271,7 +272,7 @@ func (r *sysDictTypeImpl) InsertDictType(sysDictType model.SysDictType) string {
 }
 
 // UpdateDictType 修改字典类型信息
-func (r *sysDictTypeImpl) UpdateDictType(sysDictType model.SysDictType) int64 {
+func (r *SysDictTypeImpl) UpdateDictType(sysDictType model.SysDictType) int64 {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysDictType.DictName != "" {
@@ -306,7 +307,7 @@ func (r *sysDictTypeImpl) UpdateDictType(sysDictType model.SysDictType) int64 {
 }
 
 // DeleteDictTypeByIDs 批量删除字典类型信息
-func (r *sysDictTypeImpl) DeleteDictTypeByIDs(dictIDs []string) int64 {
+func (r *SysDictTypeImpl) DeleteDictTypeByIDs(dictIDs []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(dictIDs))
 	sql := "delete from sys_dict_type where dict_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(dictIDs)

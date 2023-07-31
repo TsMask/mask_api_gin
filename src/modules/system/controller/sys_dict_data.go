@@ -16,15 +16,16 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+// 实例化控制层 SysDictDataController 结构体
+var NewSysDictData = &SysDictDataController{
+	sysDictDataService: service.NewSysDictDataImpl,
+	sysDictTypeService: service.NewSysDictTypeImpl,
+}
+
 // 字典类型对应的字典数据信息
 //
 // PATH /system/dict/data
-var SysDictData = &sysDictData{
-	sysDictDataService: service.SysDictDataImpl,
-	sysDictTypeService: service.SysDictTypeImpl,
-}
-
-type sysDictData struct {
+type SysDictDataController struct {
 	// 字典数据服务
 	sysDictDataService service.ISysDictData
 	// 字典类型服务
@@ -34,7 +35,7 @@ type sysDictData struct {
 // 字典数据列表
 //
 // GET /list
-func (s *sysDictData) List(c *gin.Context) {
+func (s *SysDictDataController) List(c *gin.Context) {
 	querys := ctx.QueryMapString(c)
 	data := s.sysDictDataService.SelectDictDataPage(querys)
 	c.JSON(200, result.Ok(data))
@@ -43,7 +44,7 @@ func (s *sysDictData) List(c *gin.Context) {
 // 字典数据详情
 //
 // GET /:dictCode
-func (s *sysDictData) Info(c *gin.Context) {
+func (s *SysDictDataController) Info(c *gin.Context) {
 	dictCode := c.Param("dictCode")
 	if dictCode == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -60,7 +61,7 @@ func (s *sysDictData) Info(c *gin.Context) {
 // 字典数据新增
 //
 // POST /
-func (s *sysDictData) Add(c *gin.Context) {
+func (s *SysDictDataController) Add(c *gin.Context) {
 	var body model.SysDictData
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.DictCode != "" {
@@ -103,7 +104,7 @@ func (s *sysDictData) Add(c *gin.Context) {
 // 字典类型修改
 //
 // PUT /
-func (s *sysDictData) Edit(c *gin.Context) {
+func (s *SysDictDataController) Edit(c *gin.Context) {
 	var body model.SysDictData
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.DictCode == "" {
@@ -119,8 +120,8 @@ func (s *sysDictData) Edit(c *gin.Context) {
 	}
 
 	// 检查字典编码是否存在
-	sysDictData := s.sysDictDataService.SelectDictDataByCode(body.DictCode)
-	if sysDictData.DictCode != body.DictCode {
+	SysDictDataController := s.sysDictDataService.SelectDictDataByCode(body.DictCode)
+	if SysDictDataController.DictCode != body.DictCode {
 		c.JSON(200, result.ErrMsg("没有权限访问字典编码数据！"))
 		return
 	}
@@ -153,7 +154,7 @@ func (s *sysDictData) Edit(c *gin.Context) {
 // 字典数据删除
 //
 // DELETE /:dictCodes
-func (s *sysDictData) Remove(c *gin.Context) {
+func (s *SysDictDataController) Remove(c *gin.Context) {
 	dictCodes := c.Param("dictCodes")
 	if dictCodes == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -178,7 +179,7 @@ func (s *sysDictData) Remove(c *gin.Context) {
 // 字典数据列表（指定字典类型）
 //
 // GET /type/:dictType
-func (s *sysDictData) DictType(c *gin.Context) {
+func (s *SysDictDataController) DictType(c *gin.Context) {
 	dictType := c.Param("dictType")
 	if dictType == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -192,7 +193,7 @@ func (s *sysDictData) DictType(c *gin.Context) {
 // 字典数据列表导出
 //
 // POST /export
-func (s *sysDictData) Export(c *gin.Context) {
+func (s *SysDictDataController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	querys := ctx.QueryMapString(c)
 	data := s.sysDictDataService.SelectDictDataPage(querys)

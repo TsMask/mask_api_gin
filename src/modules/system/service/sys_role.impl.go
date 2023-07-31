@@ -7,15 +7,16 @@ import (
 	"mask_api_gin/src/modules/system/repository"
 )
 
-// SysRoleImpl 角色 数据层处理
-var SysRoleImpl = &sysRoleImpl{
-	sysRoleRepository:     repository.SysRoleImpl,
-	sysUserRoleRepository: repository.SysUserRoleImpl,
-	sysRoleDeptRepository: repository.SysRoleDeptImpl,
-	sysRoleMenuRepository: repository.SysRoleMenuImpl,
+// 实例化服务层 SysRoleImpl 结构体
+var NewSysRoleImpl = &SysRoleImpl{
+	sysRoleRepository:     repository.NewSysRoleImpl,
+	sysUserRoleRepository: repository.NewSysUserRoleImpl,
+	sysRoleDeptRepository: repository.NewSysRoleDeptImpl,
+	sysRoleMenuRepository: repository.NewSysRoleMenuImpl,
 }
 
-type sysRoleImpl struct {
+// SysRoleImpl 角色 服务层处理
+type SysRoleImpl struct {
 	// 角色服务
 	sysRoleRepository repository.ISysRole
 	//  用户与角色关联服务
@@ -27,22 +28,22 @@ type sysRoleImpl struct {
 }
 
 // SelectRolePage 根据条件分页查询角色数据
-func (r *sysRoleImpl) SelectRolePage(query map[string]string, dataScopeSQL string) map[string]interface{} {
+func (r *SysRoleImpl) SelectRolePage(query map[string]string, dataScopeSQL string) map[string]interface{} {
 	return r.sysRoleRepository.SelectRolePage(query, dataScopeSQL)
 }
 
 // SelectRoleList 根据条件查询角色数据
-func (r *sysRoleImpl) SelectRoleList(sysRole model.SysRole, dataScopeSQL string) []model.SysRole {
+func (r *SysRoleImpl) SelectRoleList(sysRole model.SysRole, dataScopeSQL string) []model.SysRole {
 	return r.sysRoleRepository.SelectRoleList(sysRole, dataScopeSQL)
 }
 
 // SelectRoleListByUserId 根据用户ID获取角色选择框列表
-func (r *sysRoleImpl) SelectRoleListByUserId(userId string) []model.SysRole {
+func (r *SysRoleImpl) SelectRoleListByUserId(userId string) []model.SysRole {
 	return r.sysRoleRepository.SelectRoleListByUserId(userId)
 }
 
 // SelectRoleById 通过角色ID查询角色
-func (r *sysRoleImpl) SelectRoleById(roleId string) model.SysRole {
+func (r *SysRoleImpl) SelectRoleById(roleId string) model.SysRole {
 	if roleId == "" {
 		return model.SysRole{}
 	}
@@ -54,7 +55,7 @@ func (r *sysRoleImpl) SelectRoleById(roleId string) model.SysRole {
 }
 
 // UpdateRole 修改角色信息
-func (r *sysRoleImpl) UpdateRole(sysRole model.SysRole) int64 {
+func (r *SysRoleImpl) UpdateRole(sysRole model.SysRole) int64 {
 	rows := r.sysRoleRepository.UpdateRole(sysRole)
 	if rows > 0 && len(sysRole.MenuIds) > 0 {
 		// 删除角色与菜单关联
@@ -65,7 +66,7 @@ func (r *sysRoleImpl) UpdateRole(sysRole model.SysRole) int64 {
 }
 
 // InsertRole 新增角色信息
-func (r *sysRoleImpl) InsertRole(sysRole model.SysRole) string {
+func (r *SysRoleImpl) InsertRole(sysRole model.SysRole) string {
 	insertId := r.sysRoleRepository.InsertRole(sysRole)
 	if insertId != "" && len(sysRole.MenuIds) > 0 {
 		r.insertRoleMenu(insertId, sysRole.MenuIds)
@@ -74,7 +75,7 @@ func (r *sysRoleImpl) InsertRole(sysRole model.SysRole) string {
 }
 
 // insertRoleMenu 新增角色菜单信息
-func (r *sysRoleImpl) insertRoleMenu(roleId string, menuIds []string) int64 {
+func (r *SysRoleImpl) insertRoleMenu(roleId string, menuIds []string) int64 {
 	if roleId == "" || len(menuIds) <= 0 {
 		return 0
 	}
@@ -91,7 +92,7 @@ func (r *sysRoleImpl) insertRoleMenu(roleId string, menuIds []string) int64 {
 }
 
 // DeleteRoleByIds 批量删除角色信息
-func (r *sysRoleImpl) DeleteRoleByIds(roleIds []string) (int64, error) {
+func (r *SysRoleImpl) DeleteRoleByIds(roleIds []string) (int64, error) {
 	// 检查是否存在
 	roles := r.sysRoleRepository.SelectRoleByIds(roleIds)
 	if len(roles) <= 0 {
@@ -121,7 +122,7 @@ func (r *sysRoleImpl) DeleteRoleByIds(roleIds []string) (int64, error) {
 }
 
 // CheckUniqueRoleName 校验角色名称是否唯一
-func (r *sysRoleImpl) CheckUniqueRoleName(roleName, roleId string) bool {
+func (r *SysRoleImpl) CheckUniqueRoleName(roleName, roleId string) bool {
 	uniqueId := r.sysRoleRepository.CheckUniqueRole(model.SysRole{
 		RoleName: roleName,
 	})
@@ -132,7 +133,7 @@ func (r *sysRoleImpl) CheckUniqueRoleName(roleName, roleId string) bool {
 }
 
 // CheckUniqueRoleKey 校验角色权限是否唯一
-func (r *sysRoleImpl) CheckUniqueRoleKey(roleKey, roleId string) bool {
+func (r *SysRoleImpl) CheckUniqueRoleKey(roleKey, roleId string) bool {
 	uniqueId := r.sysRoleRepository.CheckUniqueRole(model.SysRole{
 		RoleKey: roleKey,
 	})
@@ -143,7 +144,7 @@ func (r *sysRoleImpl) CheckUniqueRoleKey(roleKey, roleId string) bool {
 }
 
 // AuthDataScope 修改数据权限信息
-func (r *sysRoleImpl) AuthDataScope(sysRole model.SysRole) int64 {
+func (r *SysRoleImpl) AuthDataScope(sysRole model.SysRole) int64 {
 	// 修改角色信息
 	rows := r.sysRoleRepository.UpdateRole(sysRole)
 	// 删除角色与部门关联
@@ -163,12 +164,12 @@ func (r *sysRoleImpl) AuthDataScope(sysRole model.SysRole) int64 {
 }
 
 // DeleteAuthUsers 批量取消授权用户角色
-func (r *sysRoleImpl) DeleteAuthUsers(roleId string, userIds []string) int64 {
+func (r *SysRoleImpl) DeleteAuthUsers(roleId string, userIds []string) int64 {
 	return r.sysUserRoleRepository.DeleteUserRoleByRoleId(roleId, userIds)
 }
 
 // InsertAuthUsers 批量新增授权用户角色
-func (r *sysRoleImpl) InsertAuthUsers(roleId string, userIds []string) int64 {
+func (r *SysRoleImpl) InsertAuthUsers(roleId string, userIds []string) int64 {
 	if roleId == "" || len(userIds) <= 0 {
 		return 0
 	}

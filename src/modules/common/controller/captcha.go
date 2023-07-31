@@ -17,7 +17,7 @@ import (
 
 // 实例化控制层 CaptchaController 结构体
 var NewCaptcha = &CaptchaController{
-	sysConfigService: systemService.SysConfigImpl,
+	sysConfigService: systemService.NewSysConfigImpl,
 }
 
 // 验证码操作处理

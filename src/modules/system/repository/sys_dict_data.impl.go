@@ -11,8 +11,8 @@ import (
 	"strings"
 )
 
-// SysDictDataImpl 字典类型数据表 数据层处理
-var SysDictDataImpl = &sysDictDataImpl{
+// 实例化数据层 SysDictDataImpl 结构体
+var NewSysDictDataImpl = &SysDictDataImpl{
 	selectSql: `select 
 	dict_code, dict_sort, dict_label, dict_value, dict_type, tag_class, tag_type, status, create_by, create_time, remark 
 	from sys_dict_data`,
@@ -34,7 +34,8 @@ var SysDictDataImpl = &sysDictDataImpl{
 	},
 }
 
-type sysDictDataImpl struct {
+// SysDictDataImpl 字典类型数据表 数据层处理
+type SysDictDataImpl struct {
 	// 查询视图对象SQL
 	selectSql string
 	// 结果字段与实体映射
@@ -42,7 +43,7 @@ type sysDictDataImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *sysDictDataImpl) convertResultRows(rows []map[string]interface{}) []model.SysDictData {
+func (r *SysDictDataImpl) convertResultRows(rows []map[string]interface{}) []model.SysDictData {
 	arr := make([]model.SysDictData, 0)
 	for _, row := range rows {
 		sysDictData := model.SysDictData{}
@@ -57,7 +58,7 @@ func (r *sysDictDataImpl) convertResultRows(rows []map[string]interface{}) []mod
 }
 
 // SelectDictDataPage 根据条件分页查询字典数据
-func (r *sysDictDataImpl) SelectDictDataPage(query map[string]string) map[string]interface{} {
+func (r *SysDictDataImpl) SelectDictDataPage(query map[string]string) map[string]interface{} {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -116,7 +117,7 @@ func (r *sysDictDataImpl) SelectDictDataPage(query map[string]string) map[string
 }
 
 // SelectDictDataList 根据条件查询字典数据
-func (r *sysDictDataImpl) SelectDictDataList(sysDictData model.SysDictData) []model.SysDictData {
+func (r *SysDictDataImpl) SelectDictDataList(sysDictData model.SysDictData) []model.SysDictData {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -153,7 +154,7 @@ func (r *sysDictDataImpl) SelectDictDataList(sysDictData model.SysDictData) []mo
 }
 
 // SelectDictDataByCodes 根据字典数据编码查询信息
-func (r *sysDictDataImpl) SelectDictDataByCodes(dictCodes []string) []model.SysDictData {
+func (r *SysDictDataImpl) SelectDictDataByCodes(dictCodes []string) []model.SysDictData {
 	placeholder := repo.KeyPlaceholderByQuery(len(dictCodes))
 	querySql := r.selectSql + " where dict_code in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(dictCodes)
@@ -167,7 +168,7 @@ func (r *sysDictDataImpl) SelectDictDataByCodes(dictCodes []string) []model.SysD
 }
 
 // CountDictDataByType 查询字典数据
-func (r *sysDictDataImpl) CountDictDataByType(dictType string) int64 {
+func (r *SysDictDataImpl) CountDictDataByType(dictType string) int64 {
 	querySql := "select count(1) as 'total' from sys_dict_data where dict_type = ?"
 	results, err := datasource.RawDB("", querySql, []interface{}{dictType})
 	if err != nil {
@@ -181,7 +182,7 @@ func (r *sysDictDataImpl) CountDictDataByType(dictType string) int64 {
 }
 
 // CheckUniqueDictData 校验字典数据是否唯一
-func (r *sysDictDataImpl) CheckUniqueDictData(sysDictData model.SysDictData) string {
+func (r *SysDictDataImpl) CheckUniqueDictData(sysDictData model.SysDictData) string {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -220,7 +221,7 @@ func (r *sysDictDataImpl) CheckUniqueDictData(sysDictData model.SysDictData) str
 }
 
 // DeleteDictDataByCodes 批量删除字典数据信息
-func (r *sysDictDataImpl) DeleteDictDataByCodes(dictCodes []string) int64 {
+func (r *SysDictDataImpl) DeleteDictDataByCodes(dictCodes []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(dictCodes))
 	sql := "delete from sys_dict_data where dict_code in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(dictCodes)
@@ -233,7 +234,7 @@ func (r *sysDictDataImpl) DeleteDictDataByCodes(dictCodes []string) int64 {
 }
 
 // InsertDictData 新增字典数据信息
-func (r *sysDictDataImpl) InsertDictData(sysDictData model.SysDictData) string {
+func (r *SysDictDataImpl) InsertDictData(sysDictData model.SysDictData) string {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysDictData.DictSort > 0 {
@@ -293,7 +294,7 @@ func (r *sysDictDataImpl) InsertDictData(sysDictData model.SysDictData) string {
 }
 
 // UpdateDictData 修改字典数据信息
-func (r *sysDictDataImpl) UpdateDictData(sysDictData model.SysDictData) int64 {
+func (r *SysDictDataImpl) UpdateDictData(sysDictData model.SysDictData) int64 {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysDictData.DictSort > 0 {
@@ -340,7 +341,7 @@ func (r *sysDictDataImpl) UpdateDictData(sysDictData model.SysDictData) int64 {
 }
 
 // UpdateDictDataType 同步修改字典类型
-func (r *sysDictDataImpl) UpdateDictDataType(oldDictType string, newDictType string) int64 {
+func (r *SysDictDataImpl) UpdateDictDataType(oldDictType string, newDictType string) int64 {
 	// 参数拼接
 	params := make([]interface{}, 0)
 	if oldDictType == "" || newDictType == "" {

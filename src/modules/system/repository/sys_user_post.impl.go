@@ -10,18 +10,14 @@ import (
 	"strings"
 )
 
-// SysUserPostImpl 用户与岗位关联表 数据层处理
-var SysUserPostImpl = &sysUserPostImpl{
-	selectSql: "",
-}
+// 实例化数据层 SysUserPostImpl 结构体
+var NewSysUserPostImpl = &SysUserPostImpl{}
 
-type sysUserPostImpl struct {
-	// 查询视图对象SQL
-	selectSql string
-}
+// SysUserPostImpl 用户与岗位关联表 数据层处理
+type SysUserPostImpl struct{}
 
 // CountUserPostByPostId 通过岗位ID查询岗位使用数量
-func (r *sysUserPostImpl) CountUserPostByPostId(postId string) int64 {
+func (r *SysUserPostImpl) CountUserPostByPostId(postId string) int64 {
 	querySql := "select count(1) as total from sys_user_role where role_id = ?"
 	results, err := datasource.RawDB("", querySql, []interface{}{postId})
 	if err != nil {
@@ -35,7 +31,7 @@ func (r *sysUserPostImpl) CountUserPostByPostId(postId string) int64 {
 }
 
 // DeleteUserPost 批量删除用户和岗位关联
-func (r *sysUserPostImpl) DeleteUserPost(userIds []string) int64 {
+func (r *SysUserPostImpl) DeleteUserPost(userIds []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(userIds))
 	sql := "delete from sys_user_post where user_id in  (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(userIds)
@@ -48,7 +44,7 @@ func (r *sysUserPostImpl) DeleteUserPost(userIds []string) int64 {
 }
 
 // BatchUserPost 批量新增用户岗位信息
-func (r *sysUserPostImpl) BatchUserPost(sysUserPosts []model.SysUserPost) int64 {
+func (r *SysUserPostImpl) BatchUserPost(sysUserPosts []model.SysUserPost) int64 {
 	keyValues := make([]string, 0)
 	for _, item := range sysUserPosts {
 		keyValues = append(keyValues, fmt.Sprintf("(%s,%s)", item.UserID, item.PostID))

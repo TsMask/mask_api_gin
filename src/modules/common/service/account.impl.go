@@ -17,13 +17,13 @@ import (
 
 // 实例化服务层 AccountImpl 结构体
 var NewAccountImpl = &AccountImpl{
-	sysUserService:   systemService.SysUserImpl,
-	sysConfigService: systemService.SysConfigImpl,
-	sysRoleService:   systemService.SysRoleImpl,
-	sysMenuService:   systemService.SysMenuImpl,
+	sysUserService:   systemService.NewSysUserImpl,
+	sysConfigService: systemService.NewSysConfigImpl,
+	sysRoleService:   systemService.NewSysRoleImpl,
+	sysMenuService:   systemService.NewSysMenuImpl,
 }
 
-// 账号身份操作服务 业务层处理
+// 账号身份操作服务 服务层处理
 type AccountImpl struct {
 	// 用户信息服务
 	sysUserService systemService.ISysUser

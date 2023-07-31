@@ -10,8 +10,8 @@ import (
 	"strings"
 )
 
-// SysNoticeImpl 通知公告表 数据层处理
-var SysNoticeImpl = &sysNoticeImpl{
+// 实例化数据层 SysNoticeImpl 结构体
+var NewSysNoticeImpl = &SysNoticeImpl{
 	selectSql: `select 
 	notice_id, notice_title, notice_type, notice_content, status, del_flag, 
 	create_by, create_time, update_by, update_time, remark from sys_notice`,
@@ -31,7 +31,8 @@ var SysNoticeImpl = &sysNoticeImpl{
 	},
 }
 
-type sysNoticeImpl struct {
+// SysNoticeImpl 通知公告表 数据层处理
+type SysNoticeImpl struct {
 	// 查询视图对象SQL
 	selectSql string
 	// 结果字段与实体映射
@@ -39,7 +40,7 @@ type sysNoticeImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *sysNoticeImpl) convertResultRows(rows []map[string]interface{}) []model.SysNotice {
+func (r *SysNoticeImpl) convertResultRows(rows []map[string]interface{}) []model.SysNotice {
 	arr := make([]model.SysNotice, 0)
 	for _, row := range rows {
 		sysNotice := model.SysNotice{}
@@ -54,7 +55,7 @@ func (r *sysNoticeImpl) convertResultRows(rows []map[string]interface{}) []model
 }
 
 // SelectNoticePage 分页查询公告列表
-func (r *sysNoticeImpl) SelectNoticePage(query map[string]string) map[string]interface{} {
+func (r *SysNoticeImpl) SelectNoticePage(query map[string]string) map[string]interface{} {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -127,7 +128,7 @@ func (r *sysNoticeImpl) SelectNoticePage(query map[string]string) map[string]int
 }
 
 // SelectNoticeList 查询公告列表
-func (r *sysNoticeImpl) SelectNoticeList(sysNotice model.SysNotice) []model.SysNotice {
+func (r *SysNoticeImpl) SelectNoticeList(sysNotice model.SysNotice) []model.SysNotice {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -167,7 +168,7 @@ func (r *sysNoticeImpl) SelectNoticeList(sysNotice model.SysNotice) []model.SysN
 }
 
 // SelectNoticeByIds 查询公告信息
-func (r *sysNoticeImpl) SelectNoticeByIds(noticeIds []string) []model.SysNotice {
+func (r *SysNoticeImpl) SelectNoticeByIds(noticeIds []string) []model.SysNotice {
 	placeholder := repo.KeyPlaceholderByQuery(len(noticeIds))
 	querySql := r.selectSql + " where notice_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(noticeIds)
@@ -181,7 +182,7 @@ func (r *sysNoticeImpl) SelectNoticeByIds(noticeIds []string) []model.SysNotice 
 }
 
 // InsertNotice 新增公告
-func (r *sysNoticeImpl) InsertNotice(sysNotice model.SysNotice) string {
+func (r *SysNoticeImpl) InsertNotice(sysNotice model.SysNotice) string {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysNotice.NoticeTitle != "" {
@@ -232,7 +233,7 @@ func (r *sysNoticeImpl) InsertNotice(sysNotice model.SysNotice) string {
 }
 
 // UpdateNotice 修改公告
-func (r *sysNoticeImpl) UpdateNotice(sysNotice model.SysNotice) int64 {
+func (r *SysNoticeImpl) UpdateNotice(sysNotice model.SysNotice) int64 {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysNotice.NoticeTitle != "" {
@@ -270,7 +271,7 @@ func (r *sysNoticeImpl) UpdateNotice(sysNotice model.SysNotice) int64 {
 }
 
 // DeleteNoticeByIds 批量删除公告信息
-func (r *sysNoticeImpl) DeleteNoticeByIds(noticeIds []string) int64 {
+func (r *SysNoticeImpl) DeleteNoticeByIds(noticeIds []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(noticeIds))
 	sql := "update sys_notice set del_flag = '1' where notice_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(noticeIds)

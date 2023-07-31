@@ -11,8 +11,8 @@ import (
 	"strings"
 )
 
-// SysConfigImpl 参数配置表 数据层处理
-var SysConfigImpl = &sysConfigImpl{
+// 实例化数据层 SysConfigImpl 结构体
+var NewSysConfigImpl = &SysConfigImpl{
 	selectSql: `select
 	config_id, config_name, config_key, config_value, config_type, create_by, create_time, update_by, update_time, remark 
 	from sys_config`,
@@ -31,7 +31,8 @@ var SysConfigImpl = &sysConfigImpl{
 	},
 }
 
-type sysConfigImpl struct {
+// SysConfigImpl 参数配置表 数据层处理
+type SysConfigImpl struct {
 	// 查询视图对象SQL
 	selectSql string
 	// 结果字段与实体映射
@@ -39,7 +40,7 @@ type sysConfigImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *sysConfigImpl) convertResultRows(rows []map[string]interface{}) []model.SysConfig {
+func (r *SysConfigImpl) convertResultRows(rows []map[string]interface{}) []model.SysConfig {
 	arr := make([]model.SysConfig, 0)
 	for _, row := range rows {
 		sysConfig := model.SysConfig{}
@@ -54,7 +55,7 @@ func (r *sysConfigImpl) convertResultRows(rows []map[string]interface{}) []model
 }
 
 // SelectDictDataPage 分页查询参数配置列表数据
-func (r *sysConfigImpl) SelectConfigPage(query map[string]string) map[string]interface{} {
+func (r *SysConfigImpl) SelectConfigPage(query map[string]string) map[string]interface{} {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -123,7 +124,7 @@ func (r *sysConfigImpl) SelectConfigPage(query map[string]string) map[string]int
 }
 
 // SelectConfigList 查询参数配置列表
-func (r *sysConfigImpl) SelectConfigList(sysConfig model.SysConfig) []model.SysConfig {
+func (r *SysConfigImpl) SelectConfigList(sysConfig model.SysConfig) []model.SysConfig {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -163,7 +164,7 @@ func (r *sysConfigImpl) SelectConfigList(sysConfig model.SysConfig) []model.SysC
 }
 
 // SelectConfigValueByKey 通过参数键名查询参数键值
-func (r *sysConfigImpl) SelectConfigValueByKey(configKey string) string {
+func (r *SysConfigImpl) SelectConfigValueByKey(configKey string) string {
 	querySql := "select config_value as 'str' from sys_config where config_key = ?"
 	results, err := datasource.RawDB("", querySql, []interface{}{configKey})
 	if err != nil {
@@ -177,7 +178,7 @@ func (r *sysConfigImpl) SelectConfigValueByKey(configKey string) string {
 }
 
 // SelectConfigByIds 通过配置ID查询参数配置信息
-func (r *sysConfigImpl) SelectConfigByIds(configIds []string) []model.SysConfig {
+func (r *SysConfigImpl) SelectConfigByIds(configIds []string) []model.SysConfig {
 	placeholder := repo.KeyPlaceholderByQuery(len(configIds))
 	querySql := r.selectSql + " where config_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(configIds)
@@ -191,7 +192,7 @@ func (r *sysConfigImpl) SelectConfigByIds(configIds []string) []model.SysConfig 
 }
 
 // CheckUniqueConfig 校验配置参数是否唯一
-func (r *sysConfigImpl) CheckUniqueConfig(sysConfig model.SysConfig) string {
+func (r *SysConfigImpl) CheckUniqueConfig(sysConfig model.SysConfig) string {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -222,7 +223,7 @@ func (r *sysConfigImpl) CheckUniqueConfig(sysConfig model.SysConfig) string {
 }
 
 // InsertConfig 新增参数配置
-func (r *sysConfigImpl) InsertConfig(sysConfig model.SysConfig) string {
+func (r *SysConfigImpl) InsertConfig(sysConfig model.SysConfig) string {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysConfig.ConfigName != "" {
@@ -273,7 +274,7 @@ func (r *sysConfigImpl) InsertConfig(sysConfig model.SysConfig) string {
 }
 
 // UpdateConfig 修改参数配置
-func (r *sysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int64 {
+func (r *SysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int64 {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysConfig.ConfigName != "" {
@@ -311,7 +312,7 @@ func (r *sysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int64 {
 }
 
 // DeleteConfigByIds 批量删除参数配置信息
-func (r *sysConfigImpl) DeleteConfigByIds(configIds []string) int64 {
+func (r *SysConfigImpl) DeleteConfigByIds(configIds []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(configIds))
 	sql := "delete from sys_config where config_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(configIds)

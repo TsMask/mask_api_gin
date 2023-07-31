@@ -6,13 +6,14 @@ import (
 	"mask_api_gin/src/modules/system/repository"
 )
 
-// SysDictDataImpl 字典类型数据 数据层处理
-var SysDictDataImpl = &sysDictDataImpl{
-	sysDictDataRepository: repository.SysDictDataImpl,
-	sysDictTypeService:    SysDictTypeImpl,
+// 实例化服务层 SysDictDataImpl 结构体
+var NewSysDictDataImpl = &SysDictDataImpl{
+	sysDictDataRepository: repository.NewSysDictDataImpl,
+	sysDictTypeService:    NewSysDictTypeImpl,
 }
 
-type sysDictDataImpl struct {
+// SysDictDataImpl 字典类型数据 服务层处理
+type SysDictDataImpl struct {
 	// 字典数据服务
 	sysDictDataRepository repository.ISysDictData
 	// 字典类型服务
@@ -20,17 +21,17 @@ type sysDictDataImpl struct {
 }
 
 // SelectDictDataPage 根据条件分页查询字典数据
-func (r *sysDictDataImpl) SelectDictDataPage(query map[string]string) map[string]interface{} {
+func (r *SysDictDataImpl) SelectDictDataPage(query map[string]string) map[string]interface{} {
 	return r.sysDictDataRepository.SelectDictDataPage(query)
 }
 
 // SelectDictDataList 根据条件查询字典数据
-func (r *sysDictDataImpl) SelectDictDataList(sysDictData model.SysDictData) []model.SysDictData {
+func (r *SysDictDataImpl) SelectDictDataList(sysDictData model.SysDictData) []model.SysDictData {
 	return r.sysDictDataRepository.SelectDictDataList(sysDictData)
 }
 
 // SelectDictDataByCode 根据字典数据编码查询信息
-func (r *sysDictDataImpl) SelectDictDataByCode(dictCode string) model.SysDictData {
+func (r *SysDictDataImpl) SelectDictDataByCode(dictCode string) model.SysDictData {
 	if dictCode == "" {
 		return model.SysDictData{}
 	}
@@ -42,12 +43,12 @@ func (r *sysDictDataImpl) SelectDictDataByCode(dictCode string) model.SysDictDat
 }
 
 // SelectDictDataByType 根据字典类型查询信息
-func (r *sysDictDataImpl) SelectDictDataByType(dictType string) []model.SysDictData {
+func (r *SysDictDataImpl) SelectDictDataByType(dictType string) []model.SysDictData {
 	return r.sysDictTypeService.DictDataCache(dictType)
 }
 
 // CheckUniqueDictLabel 校验字典标签是否唯一
-func (r *sysDictDataImpl) CheckUniqueDictLabel(dictType, dictLabel, dictCode string) bool {
+func (r *SysDictDataImpl) CheckUniqueDictLabel(dictType, dictLabel, dictCode string) bool {
 	uniqueId := r.sysDictDataRepository.CheckUniqueDictData(model.SysDictData{
 		DictType:  dictType,
 		DictLabel: dictLabel,
@@ -59,7 +60,7 @@ func (r *sysDictDataImpl) CheckUniqueDictLabel(dictType, dictLabel, dictCode str
 }
 
 // CheckUniqueDictValue 校验字典键值是否唯一
-func (r *sysDictDataImpl) CheckUniqueDictValue(dictType, dictValue, dictCode string) bool {
+func (r *SysDictDataImpl) CheckUniqueDictValue(dictType, dictValue, dictCode string) bool {
 	uniqueId := r.sysDictDataRepository.CheckUniqueDictData(model.SysDictData{
 		DictType:  dictType,
 		DictValue: dictValue,
@@ -71,7 +72,7 @@ func (r *sysDictDataImpl) CheckUniqueDictValue(dictType, dictValue, dictCode str
 }
 
 // DeleteDictDataByCodes 批量删除字典数据信息
-func (r *sysDictDataImpl) DeleteDictDataByCodes(dictCodes []string) (int64, error) {
+func (r *SysDictDataImpl) DeleteDictDataByCodes(dictCodes []string) (int64, error) {
 	// 检查是否存在
 	dictDatas := r.sysDictDataRepository.SelectDictDataByCodes(dictCodes)
 	if len(dictDatas) <= 0 {
@@ -90,7 +91,7 @@ func (r *sysDictDataImpl) DeleteDictDataByCodes(dictCodes []string) (int64, erro
 }
 
 // InsertDictData 新增字典数据信息
-func (r *sysDictDataImpl) InsertDictData(sysDictData model.SysDictData) string {
+func (r *SysDictDataImpl) InsertDictData(sysDictData model.SysDictData) string {
 	insertId := r.sysDictDataRepository.InsertDictData(sysDictData)
 	if insertId != "" {
 		r.sysDictTypeService.LoadingDictCache(sysDictData.DictType)
@@ -99,7 +100,7 @@ func (r *sysDictDataImpl) InsertDictData(sysDictData model.SysDictData) string {
 }
 
 // UpdateDictData 修改字典数据信息
-func (r *sysDictDataImpl) UpdateDictData(sysDictData model.SysDictData) int64 {
+func (r *SysDictDataImpl) UpdateDictData(sysDictData model.SysDictData) int64 {
 	rows := r.sysDictDataRepository.UpdateDictData(sysDictData)
 	if rows > 0 {
 		r.sysDictTypeService.LoadingDictCache(sysDictData.DictType)

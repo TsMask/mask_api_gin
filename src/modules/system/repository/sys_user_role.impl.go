@@ -10,18 +10,14 @@ import (
 	"strings"
 )
 
-// SysUserRoleImpl 用户与角色关联表 数据层处理
-var SysUserRoleImpl = &sysUserRoleImpl{
-	selectSql: "",
-}
+// 实例化数据层 SysUserRoleImpl 结构体
+var NewSysUserRoleImpl = &SysUserRoleImpl{}
 
-type sysUserRoleImpl struct {
-	// 查询视图对象SQL
-	selectSql string
-}
+// SysUserRoleImpl 用户与角色关联表 数据层处理
+type SysUserRoleImpl struct{}
 
 // CountUserRoleByRoleId 通过角色ID查询角色使用数量
-func (r *sysUserRoleImpl) CountUserRoleByRoleId(roleId string) int64 {
+func (r *SysUserRoleImpl) CountUserRoleByRoleId(roleId string) int64 {
 	querySql := "select count(1) as total from sys_user_role where role_id = ?"
 	results, err := datasource.RawDB("", querySql, []interface{}{roleId})
 	if err != nil {
@@ -35,7 +31,7 @@ func (r *sysUserRoleImpl) CountUserRoleByRoleId(roleId string) int64 {
 }
 
 // BatchUserRole 批量新增用户角色信息
-func (r *sysUserRoleImpl) BatchUserRole(sysUserRoles []model.SysUserRole) int64 {
+func (r *SysUserRoleImpl) BatchUserRole(sysUserRoles []model.SysUserRole) int64 {
 	keyValues := make([]string, 0)
 	for _, item := range sysUserRoles {
 		keyValues = append(keyValues, fmt.Sprintf("(%s,%s)", item.UserID, item.RoleID))
@@ -50,7 +46,7 @@ func (r *sysUserRoleImpl) BatchUserRole(sysUserRoles []model.SysUserRole) int64 
 }
 
 // DeleteUserRole 批量删除用户和角色关联
-func (r *sysUserRoleImpl) DeleteUserRole(userIds []string) int64 {
+func (r *SysUserRoleImpl) DeleteUserRole(userIds []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(userIds))
 	sql := "delete from sys_user_role where user_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(userIds)
@@ -63,7 +59,7 @@ func (r *sysUserRoleImpl) DeleteUserRole(userIds []string) int64 {
 }
 
 // DeleteUserRoleByRoleId 批量取消授权用户角色
-func (r *sysUserRoleImpl) DeleteUserRoleByRoleId(roleId string, userIds []string) int64 {
+func (r *SysUserRoleImpl) DeleteUserRoleByRoleId(roleId string, userIds []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(userIds))
 	sql := "delete from sys_user_role where role_id= ? and user_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(userIds)

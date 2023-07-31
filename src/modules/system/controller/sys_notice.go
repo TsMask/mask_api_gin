@@ -13,14 +13,15 @@ import (
 	"github.com/gin-gonic/gin/binding"
 )
 
+// 实例化控制层 SysNoticeController 结构体
+var NewSysNotice = &SysNoticeController{
+	sysNoticeService: service.NewSysNoticeImpl,
+}
+
 // 通知公告信息
 //
 // PATH /system/notice
-var SysNotice = &sysNotice{
-	sysNoticeService: service.SysNoticeImpl,
-}
-
-type sysNotice struct {
+type SysNoticeController struct {
 	// 公告服务
 	sysNoticeService service.ISysNotice
 }
@@ -28,7 +29,7 @@ type sysNotice struct {
 // 通知公告列表
 //
 // GET /list
-func (s *sysNotice) List(c *gin.Context) {
+func (s *SysNoticeController) List(c *gin.Context) {
 	querys := ctx.QueryMapString(c)
 	data := s.sysNoticeService.SelectNoticePage(querys)
 	c.JSON(200, result.Ok(data))
@@ -37,7 +38,7 @@ func (s *sysNotice) List(c *gin.Context) {
 // 通知公告信息
 //
 // GET /:noticeId
-func (s *sysNotice) Info(c *gin.Context) {
+func (s *SysNoticeController) Info(c *gin.Context) {
 	noticeId := c.Param("noticeId")
 	if noticeId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -54,7 +55,7 @@ func (s *sysNotice) Info(c *gin.Context) {
 // 通知公告新增
 //
 // POST /
-func (s *sysNotice) Add(c *gin.Context) {
+func (s *SysNoticeController) Add(c *gin.Context) {
 	var body model.SysNotice
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.NoticeID != "" {
@@ -74,7 +75,7 @@ func (s *sysNotice) Add(c *gin.Context) {
 // 通知公告修改
 //
 // PUT /
-func (s *sysNotice) Edit(c *gin.Context) {
+func (s *SysNoticeController) Edit(c *gin.Context) {
 	var body model.SysNotice
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.NoticeID == "" {
@@ -101,7 +102,7 @@ func (s *sysNotice) Edit(c *gin.Context) {
 // 通知公告删除
 //
 // DELETE /:noticeIds
-func (s *sysNotice) Remove(c *gin.Context) {
+func (s *SysNoticeController) Remove(c *gin.Context) {
 	noticeIds := c.Param("noticeIds")
 	if noticeIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))

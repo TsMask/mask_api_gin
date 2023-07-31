@@ -10,7 +10,7 @@ var NewSysLogininforImpl = &SysLogininforImpl{
 	sysLogininforService: repository.NewSysLogininforImpl,
 }
 
-// SysLogininforImpl 系统登录访问 业务层处理
+// SysLogininforImpl 系统登录访问 服务层处理
 type SysLogininforImpl struct {
 	// 系统登录访问信息
 	sysLogininforService repository.ISysLogininfor

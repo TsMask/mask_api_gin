@@ -11,8 +11,8 @@ import (
 	"strings"
 )
 
-// SysRoleImpl 角色表 数据层处理
-var SysRoleImpl = &sysRoleImpl{
+// 实例化数据层 SysRoleImpl 结构体
+var NewSysRoleImpl = &SysRoleImpl{
 	selectSql: `select distinct 
 	r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, r.menu_check_strictly, 
 	r.dept_check_strictly, r.status, r.del_flag, r.create_time, r.remark 
@@ -39,7 +39,8 @@ var SysRoleImpl = &sysRoleImpl{
 	},
 }
 
-type sysRoleImpl struct {
+// SysRoleImpl 角色表 数据层处理
+type SysRoleImpl struct {
 	// 查询视图对象SQL
 	selectSql string
 	// 结果字段与实体映射
@@ -47,7 +48,7 @@ type sysRoleImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *sysRoleImpl) convertResultRows(rows []map[string]interface{}) []model.SysRole {
+func (r *SysRoleImpl) convertResultRows(rows []map[string]interface{}) []model.SysRole {
 	arr := make([]model.SysRole, 0)
 	for _, row := range rows {
 		sysRole := model.SysRole{}
@@ -62,7 +63,7 @@ func (r *sysRoleImpl) convertResultRows(rows []map[string]interface{}) []model.S
 }
 
 // SelectRolePage 根据条件分页查询角色数据
-func (r *sysRoleImpl) SelectRolePage(query map[string]string, dataScopeSQL string) map[string]interface{} {
+func (r *SysRoleImpl) SelectRolePage(query map[string]string, dataScopeSQL string) map[string]interface{} {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -145,7 +146,7 @@ func (r *sysRoleImpl) SelectRolePage(query map[string]string, dataScopeSQL strin
 }
 
 // SelectRoleList 根据条件查询角色数据
-func (r *sysRoleImpl) SelectRoleList(sysRole model.SysRole, dataScopeSQL string) []model.SysRole {
+func (r *SysRoleImpl) SelectRoleList(sysRole model.SysRole, dataScopeSQL string) []model.SysRole {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
@@ -184,7 +185,7 @@ func (r *sysRoleImpl) SelectRoleList(sysRole model.SysRole, dataScopeSQL string)
 }
 
 // SelectRoleListByUserId 根据用户ID获取角色选择框列表
-func (r *sysRoleImpl) SelectRoleListByUserId(userId string) []model.SysRole {
+func (r *SysRoleImpl) SelectRoleListByUserId(userId string) []model.SysRole {
 	querySql := r.selectSql + " where r.del_flag = '0' and ur.user_id = ?"
 	results, err := datasource.RawDB("", querySql, []interface{}{userId})
 	if err != nil {
@@ -195,7 +196,7 @@ func (r *sysRoleImpl) SelectRoleListByUserId(userId string) []model.SysRole {
 }
 
 // SelectRoleByIds 通过角色ID查询角色
-func (r *sysRoleImpl) SelectRoleByIds(roleIds []string) []model.SysRole {
+func (r *SysRoleImpl) SelectRoleByIds(roleIds []string) []model.SysRole {
 	placeholder := repo.KeyPlaceholderByQuery(len(roleIds))
 	querySql := r.selectSql + " where r.role_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(roleIds)
@@ -209,7 +210,7 @@ func (r *sysRoleImpl) SelectRoleByIds(roleIds []string) []model.SysRole {
 }
 
 // UpdateRole 修改角色信息
-func (r *sysRoleImpl) UpdateRole(sysRole model.SysRole) int64 {
+func (r *SysRoleImpl) UpdateRole(sysRole model.SysRole) int64 {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysRole.RoleName != "" {
@@ -256,7 +257,7 @@ func (r *sysRoleImpl) UpdateRole(sysRole model.SysRole) int64 {
 }
 
 // InsertRole 新增角色信息
-func (r *sysRoleImpl) InsertRole(sysRole model.SysRole) string {
+func (r *SysRoleImpl) InsertRole(sysRole model.SysRole) string {
 	// 参数拼接
 	params := make(map[string]interface{})
 	if sysRole.RoleID != "" {
@@ -319,7 +320,7 @@ func (r *sysRoleImpl) InsertRole(sysRole model.SysRole) string {
 }
 
 // DeleteRoleByIds 批量删除角色信息
-func (r *sysRoleImpl) DeleteRoleByIds(roleIds []string) int64 {
+func (r *SysRoleImpl) DeleteRoleByIds(roleIds []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(roleIds))
 	sql := "update sys_role set del_flag = '1' where role_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(roleIds)
@@ -332,7 +333,7 @@ func (r *sysRoleImpl) DeleteRoleByIds(roleIds []string) int64 {
 }
 
 // CheckUniqueRole 校验角色是否唯一
-func (r *sysRoleImpl) CheckUniqueRole(sysRole model.SysRole) string {
+func (r *SysRoleImpl) CheckUniqueRole(sysRole model.SysRole) string {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}

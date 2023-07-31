@@ -19,17 +19,18 @@ import (
 	"github.com/gin-gonic/gin/binding"
 )
 
+// 实例化控制层 SysProfileController 结构体
+var NewSysProfile = &SysProfileController{
+	sysUserService: service.NewSysUserImpl,
+	sysRoleService: service.NewSysRoleImpl,
+	sysPostService: service.NewSysPostImpl,
+	sysMenuService: service.NewSysMenuImpl,
+}
+
 // 个人信息
 //
 // PATH /system/user/profile
-var SysProfile = &sysProfile{
-	sysUserService: service.SysUserImpl,
-	sysRoleService: service.SysRoleImpl,
-	sysPostService: service.SysPostImpl,
-	sysMenuService: service.SysMenuImpl,
-}
-
-type sysProfile struct {
+type SysProfileController struct {
 	// 用户服务
 	sysUserService service.ISysUser
 	// 角色服务
@@ -43,7 +44,7 @@ type sysProfile struct {
 // 个人信息
 //
 // GET /
-func (s *sysProfile) Info(c *gin.Context) {
+func (s *SysProfileController) Info(c *gin.Context) {
 	loginUser, err := ctx.LoginUser(c)
 	if err != nil {
 		c.JSON(401, result.CodeMsg(401, err.Error()))
@@ -78,7 +79,7 @@ func (s *sysProfile) Info(c *gin.Context) {
 // 个人信息修改
 //
 // PUT /
-func (s *sysProfile) UpdateProfile(c *gin.Context) {
+func (s *SysProfileController) UpdateProfile(c *gin.Context) {
 	var body struct {
 		// 昵称
 		NickName string `json:"nickName" binding:"required"`
@@ -173,7 +174,7 @@ func (s *sysProfile) UpdateProfile(c *gin.Context) {
 // 个人重置密码
 //
 // PUT /updatePwd
-func (s *sysProfile) UpdatePwd(c *gin.Context) {
+func (s *SysProfileController) UpdatePwd(c *gin.Context) {
 	var body struct {
 		// 旧密码
 		OldPassword string `json:"oldPassword" binding:"required"`
@@ -231,7 +232,7 @@ func (s *sysProfile) UpdatePwd(c *gin.Context) {
 // 个人头像上传
 //
 // POST /avatar
-func (s *sysProfile) Avatar(c *gin.Context) {
+func (s *SysProfileController) Avatar(c *gin.Context) {
 	formFile, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
