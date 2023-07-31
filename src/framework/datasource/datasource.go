@@ -23,11 +23,10 @@ type dialectInfo struct {
 	logging   bool
 }
 
-// 数据库连接
-var dialects = make(map[string]dialectInfo)
-
 // 载入数据库连接
-func loadDialect() {
+func loadDialect() map[string]dialectInfo {
+	dialects := make(map[string]dialectInfo, 0)
+
 	// 读取数据源配置
 	datasource := config.Get("gorm.datasource").(map[string]interface{})
 	for key, value := range datasource {
@@ -50,6 +49,8 @@ func loadDialect() {
 			logger.Warnf("%s: %v\n Not Load DB Config Type", key, item)
 		}
 	}
+
+	return dialects
 }
 
 // 载入连接日志配置
@@ -68,9 +69,8 @@ func loadLogger() gormLog.Interface {
 
 // 连接数据库实例
 func Connect() {
-	loadDialect()
 	// 遍历进行连接数据库实例
-	for key, info := range dialects {
+	for key, info := range loadDialect() {
 		opts := &gorm.Config{}
 		// 是否需要日志输出
 		if info.logging {
