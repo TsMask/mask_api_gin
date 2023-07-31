@@ -1,16 +1,13 @@
 # 应用服务配置
 server:
   port: 6275
+  proxy: true
 
 # security 安全
 security:
   csrf:
     # 允许调用的域名地址的，例如：http://<Referer地址>/mask-api
     refererWhiteList:
-      - "localhost:6269"
-      - "127.0.0.1:6269"
-      - "localhost:6265"
-      - "127.0.0.1:6265"
       - "127.0.0.1:6275"
       - "<Referer地址>"
 
