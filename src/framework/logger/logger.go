@@ -24,7 +24,7 @@ var logLevelMap = map[int]string{
 	err:    "error",
 }
 
-func logWithLevel(level int, format string, v ...interface{}) {
+func logWithLevel(level int, format string, v ...any) {
 	if level <= silent {
 		return
 	}
@@ -33,19 +33,19 @@ func logWithLevel(level int, format string, v ...interface{}) {
 	stdLog.Output(3, fmt.Sprintf(format, v...))
 }
 
-func Infof(format string, v ...interface{}) {
+func Infof(format string, v ...any) {
 	logWithLevel(info, format, v...)
 }
 
-func Warnf(format string, v ...interface{}) {
+func Warnf(format string, v ...any) {
 	logWithLevel(warn, format, v...)
 }
 
-func Errorf(format string, v ...interface{}) {
+func Errorf(format string, v ...any) {
 	logWithLevel(err, format, v...)
 }
 
 // Panicf 抛出错误并退出程序
-func Panicf(format string, v ...interface{}) {
+func Panicf(format string, v ...any) {
 	log.Fatalf(format, v...)
 }

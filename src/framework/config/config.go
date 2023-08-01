@@ -69,7 +69,7 @@ func RunTime() time.Time {
 // Get 获取配置信息
 //
 // Get("framework.name")
-func Get(key string) interface{} {
+func Get(key string) any {
 	return viper.Get(key)
 }
 
@@ -79,7 +79,7 @@ func IsAdmin(userID string) bool {
 		return false
 	}
 	// 从本地配置获取user信息
-	admins := Get("user.adminList").([]interface{})
+	admins := Get("user.adminList").([]any)
 	for _, s := range admins {
 		if s.(string) == userID {
 			return true

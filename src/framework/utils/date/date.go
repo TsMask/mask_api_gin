@@ -37,7 +37,7 @@ func ParseStrToDate(dateStr, formatStr string) time.Time {
 // date 可转的Date对象
 //
 // formatStr 时间格式 默认YYYY-MM-DD HH:mm:ss
-func ParseDateToStr(date interface{}, formatStr string) string {
+func ParseDateToStr(date any, formatStr string) string {
 	t, ok := date.(time.Time)
 	if !ok {
 		switch v := date.(type) {

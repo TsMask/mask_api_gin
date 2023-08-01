@@ -51,7 +51,7 @@ func Cors() gin.HandlerFunc {
 			// 允许方法
 			if v := config.Get("cors.allowMethods"); v != nil {
 				var allowMethods = make([]string, 0)
-				for _, s := range v.([]interface{}) {
+				for _, s := range v.([]any) {
 					allowMethods = append(allowMethods, s.(string))
 				}
 				c.Header("Access-Control-Allow-Methods", strings.Join(allowMethods, ","))
@@ -62,7 +62,7 @@ func Cors() gin.HandlerFunc {
 			// 允许请求头
 			if v := config.Get("cors.allowHeaders"); v != nil {
 				var allowHeaders = make([]string, 0)
-				for _, s := range v.([]interface{}) {
+				for _, s := range v.([]any) {
 					allowHeaders = append(allowHeaders, s.(string))
 				}
 				c.Header("Access-Control-Allow-Headers", strings.Join(allowHeaders, ","))
@@ -75,7 +75,7 @@ func Cors() gin.HandlerFunc {
 		// 暴露请求头
 		if v := config.Get("cors.exposeHeaders"); v != nil {
 			var exposeHeaders = make([]string, 0)
-			for _, s := range v.([]interface{}) {
+			for _, s := range v.([]any) {
 				exposeHeaders = append(exposeHeaders, s.(string))
 			}
 			c.Header("Access-Control-Expose-Headers", strings.Join(exposeHeaders, ","))

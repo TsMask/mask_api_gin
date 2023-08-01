@@ -54,7 +54,7 @@ type queue struct {
 }
 
 // 任务函数
-type jobFunc func(options Options) interface{}
+type jobFunc func(options Options) any
 
 // 处理器任务
 type job struct {

@@ -53,7 +53,7 @@ func referer(c *gin.Context) {
 	// 允许的来源白名单
 	refererWhiteList := make([]string, 0)
 	if v := config.Get("security.csrf.refererWhiteList"); v != nil {
-		for _, s := range v.([]interface{}) {
+		for _, s := range v.([]any) {
 			refererWhiteList = append(refererWhiteList, s.(string))
 		}
 	}

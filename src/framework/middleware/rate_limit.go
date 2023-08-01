@@ -63,7 +63,7 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 		if option.Type == LIMIT_USER {
 			loginUser, err := ctx.LoginUser(c)
 			if err != nil {
-				c.JSON(401, result.Err(map[string]interface{}{
+				c.JSON(401, result.Err(map[string]any{
 					"code": 401,
 					"msg":  err.Error(),
 				}))

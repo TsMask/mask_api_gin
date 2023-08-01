@@ -28,9 +28,9 @@ func loadDialect() map[string]dialectInfo {
 	dialects := make(map[string]dialectInfo, 0)
 
 	// 读取数据源配置
-	datasource := config.Get("gorm.datasource").(map[string]interface{})
+	datasource := config.Get("gorm.datasource").(map[string]any)
 	for key, value := range datasource {
-		item := value.(map[string]interface{})
+		item := value.(map[string]any)
 		// 数据库类型对应的数据库连接
 		switch item["type"] {
 		case "mysql":
@@ -121,7 +121,7 @@ func DB(source string) *gorm.DB {
 }
 
 // RawDB 原生查询语句
-func RawDB(source string, sql string, parameters []interface{}) ([]map[string]interface{}, error) {
+func RawDB(source string, sql string, parameters []any) ([]map[string]any, error) {
 	// 数据源
 	db := DefaultDB()
 	if source != "" {
@@ -134,7 +134,7 @@ func RawDB(source string, sql string, parameters []interface{}) ([]map[string]in
 	// logger.Infof("parameters=> %v", parameters)
 
 	// 查询结果
-	var rows []map[string]interface{}
+	var rows []map[string]any
 	res := db.Raw(fmtSql, parameters...).Scan(&rows)
 	if res.Error != nil {
 		return nil, res.Error
@@ -143,7 +143,7 @@ func RawDB(source string, sql string, parameters []interface{}) ([]map[string]in
 }
 
 // ExecDB 原生执行语句
-func ExecDB(source string, sql string, parameters []interface{}) (int64, error) {
+func ExecDB(source string, sql string, parameters []any) (int64, error) {
 	// 数据源
 	db := DefaultDB()
 	if source != "" {

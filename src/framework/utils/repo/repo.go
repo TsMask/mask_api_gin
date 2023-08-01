@@ -10,7 +10,7 @@ import (
 )
 
 // PageNumSize 分页页码记录数
-func PageNumSize(pageNum, pageSize interface{}) (int64, int64) {
+func PageNumSize(pageNum, pageSize any) (int64, int64) {
 	// 记录起始索引
 	num := parse.Number(pageNum)
 	if num > 5000 {
@@ -32,7 +32,7 @@ func PageNumSize(pageNum, pageSize interface{}) (int64, int64) {
 }
 
 // SetFieldValue 判断结构体内是否存在指定字段并设置值
-func SetFieldValue(obj interface{}, fieldName string, value interface{}) {
+func SetFieldValue(obj any, fieldName string, value any) {
 	// 获取结构体的反射值
 	userValue := reflect.ValueOf(obj)
 
@@ -78,23 +78,23 @@ func SetFieldValue(obj interface{}, fieldName string, value interface{}) {
 }
 
 // 转换记录结果 TODO
-func ConvertResultRows(results interface{}) []interface{} {
+func ConvertResultRows(results any) []any {
 	s := reflect.ValueOf(results)
 	if s.Kind() != reflect.Slice {
 		logger.Errorf("ConvertResultRows not a slice")
 	}
 
-	rows := make([]interface{}, s.Len())
+	rows := make([]any, s.Len())
 	for i := 0; i < s.Len(); i++ {
 		rows[i] = s.Index(i).Interface()
 	}
 	return rows
 }
 
-// ConvertIdsSlice 将 []string 转换为 []interface{}
-func ConvertIdsSlice(ids []string) []interface{} {
-	// 将 []string 转换为 []interface{}
-	arr := make([]interface{}, len(ids))
+// ConvertIdsSlice 将 []string 转换为 []any
+func ConvertIdsSlice(ids []string) []any {
+	// 将 []string 转换为 []any
+	arr := make([]any, len(ids))
 	for i, v := range ids {
 		arr[i] = v
 	}
@@ -111,11 +111,11 @@ func KeyPlaceholderByQuery(sum int) string {
 }
 
 // 插入-参数映射键值占位符 keys, placeholder, values
-func KeyPlaceholderValueByInsert(params map[string]interface{}) ([]string, string, []interface{}) {
+func KeyPlaceholderValueByInsert(params map[string]any) ([]string, string, []any) {
 	// 参数映射的键
 	keys := make([]string, len(params))
 	// 参数映射的值
-	values := make([]interface{}, len(params))
+	values := make([]any, len(params))
 	sum := 0
 	for k, v := range params {
 		keys[sum] = k
@@ -131,11 +131,11 @@ func KeyPlaceholderValueByInsert(params map[string]interface{}) ([]string, strin
 }
 
 // 更新-参数映射键值占位符 keys, values
-func KeyValueByUpdate(params map[string]interface{}) ([]string, []interface{}) {
+func KeyValueByUpdate(params map[string]any) ([]string, []any) {
 	// 参数映射的键
 	keys := make([]string, len(params))
 	// 参数映射的值
-	values := make([]interface{}, len(params))
+	values := make([]any, len(params))
 	sum := 0
 	for k, v := range params {
 		keys[sum] = k + "=?"

@@ -13,7 +13,7 @@ import (
 )
 
 // Number 解析数值型
-func Number(str interface{}) int64 {
+func Number(str any) int64 {
 	switch str := str.(type) {
 	case string:
 		if str == "" {
@@ -34,7 +34,7 @@ func Number(str interface{}) int64 {
 }
 
 // Boolean 解析布尔型
-func Boolean(str interface{}) bool {
+func Boolean(str any) bool {
 	switch str := str.(type) {
 	case string:
 		if str == "" || str == "false" || str == "0" {

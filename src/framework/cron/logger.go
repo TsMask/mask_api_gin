@@ -12,19 +12,19 @@ import (
 type cronLog struct{}
 
 // Info 任务普通信息收集
-func (clog cronLog) Info(msg string, keysAndValues ...interface{}) {
+func (clog cronLog) Info(msg string, keysAndValues ...any) {
 	logger.Infof("Info ====> %s kv: %v", msg, keysAndValues)
 }
 
 // Error 任务异常错误收集
-func (clog cronLog) Error(err error, msg string, keysAndValues ...interface{}) {
+func (clog cronLog) Error(err error, msg string, keysAndValues ...any) {
 	// 不是指定的错误收集
 	if msg != "failed" {
 		logger.Infof("Error %v ====> %s kv: %v", err, msg, keysAndValues)
 		return
 	}
 	// 结果信息序列化字符串
-	msgMap := map[string]interface{}{
+	msgMap := map[string]any{
 		"name":    "failed",
 		"message": keysAndValues[1],
 	}
@@ -50,9 +50,9 @@ func (clog cronLog) Error(err error, msg string, keysAndValues ...interface{}) {
 }
 
 // Completed 任务完成return的结果收集
-func (clog cronLog) Completed(options Options, result interface{}) {
+func (clog cronLog) Completed(options Options, result any) {
 	// 结果信息序列化字符串
-	msgMap := map[string]interface{}{
+	msgMap := map[string]any{
 		"name":    "completed",
 		"message": result,
 	}

@@ -23,7 +23,7 @@ const DEFAULT_FILE_NAME_LENGTH = 100
 
 // 文件上传路径 prefix, dir
 func resourceUpload() (string, string) {
-	upload := config.Get("staticFile.upload").(map[string]interface{})
+	upload := config.Get("staticFile.upload").(map[string]any)
 	dir, err := filepath.Abs(upload["dir"].(string))
 	if err != nil {
 		logger.Errorf("file resourceUpload err %v", err)
@@ -43,7 +43,7 @@ func uploadFileSize() int64 {
 
 // 文件上传扩展名白名单
 func uploadWhiteList() []string {
-	arr := config.Get("upload.whitelist").([]interface{})
+	arr := config.Get("upload.whitelist").([]any)
 	strings := make([]string, len(arr))
 	for i, val := range arr {
 		if str, ok := val.(string); ok {
@@ -157,18 +157,18 @@ func TransferUploadFile(file *multipart.FileHeader, subPath string, allowExts []
 // filePath 文件存放资源路径，URL相对地址 如：/upload/common/2023/06/xxx.png
 //
 // headerRange 断点续传范围区间，bytes=0-12131
-func ReadUploadFileStream(filePath, headerRange string) (map[string]interface{}, error) {
+func ReadUploadFileStream(filePath, headerRange string) (map[string]any, error) {
 	// 读取文件检查
 	err := isAllowRead(filePath)
 	if err != nil {
-		return map[string]interface{}{}, err
+		return map[string]any{}, err
 	}
 	// 上传资源路径
 	prefix, dir := resourceUpload()
 	fileAsbPath := strings.Replace(filePath, prefix, dir, 1)
 
 	// 响应结果
-	result := map[string]interface{}{
+	result := map[string]any{
 		"range":     "",
 		"chunkSize": 0,
 		"fileSize":  0,
@@ -202,7 +202,7 @@ func ReadUploadFileStream(filePath, headerRange string) (map[string]interface{},
 		result["chunkSize"] = end - start + 1
 		byteArr, err := getFileStream(fileAsbPath, start, end)
 		if err != nil {
-			return map[string]interface{}{}, errors.New("读取文件失败")
+			return map[string]any{}, errors.New("读取文件失败")
 		}
 		result["data"] = byteArr
 		return result, nil
@@ -210,7 +210,7 @@ func ReadUploadFileStream(filePath, headerRange string) (map[string]interface{},
 
 	byteArr, err := getFileStream(fileAsbPath, 0, fileSize)
 	if err != nil {
-		return map[string]interface{}{}, errors.New("读取文件失败")
+		return map[string]any{}, errors.New("读取文件失败")
 	}
 	result["data"] = byteArr
 	return result, nil

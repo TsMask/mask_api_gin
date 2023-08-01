@@ -32,7 +32,7 @@ return tonumber(current);`)
 // 连接Redis实例
 func Connect() {
 	ctx := context.Background()
-	client := config.Get("redis.client").(map[string]interface{})
+	client := config.Get("redis.client").(map[string]any)
 	address := fmt.Sprintf("%s:%d", client["host"], client["port"])
 	// 创建连接
 	rdb = redis.NewClient(&redis.Options{
@@ -151,15 +151,15 @@ func GetKeys(pattern string) []string {
 }
 
 // 批量获得缓存数据
-func GetBatch(keys []string) []interface{} {
+func GetBatch(keys []string) []any {
 	if len(keys) == 0 {
-		return []interface{}{}
+		return []any{}
 	}
 	// 获取缓存数据
 	result, err := rdb.MGet(context.Background(), keys...).Result()
 	if err != nil {
 		logger.Errorf("Failed to get batch data: %v", err)
-		return []interface{}{}
+		return []any{}
 	}
 	return result
 }
@@ -185,14 +185,14 @@ func Has(keys ...string) bool {
 }
 
 // 设置缓存数据
-func Set(key string, value interface{}) bool {
+func Set(key string, value any) bool {
 	ctx := context.Background()
 	err := rdb.Set(ctx, key, value, 0).Err()
 	return err == nil
 }
 
 // 设置缓存数据与过期时间
-func SetByExpire(key string, value interface{}, expiration time.Duration) bool {
+func SetByExpire(key string, value any, expiration time.Duration) bool {
 	ctx := context.Background()
 	err := rdb.Set(ctx, key, value, expiration).Err()
 	return err == nil

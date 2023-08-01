@@ -93,7 +93,7 @@ func ReadSheet(filePath, sheetName string) ([]map[string]string, error) {
 // fileName 文件名称
 //
 // sheetName 工作簿名称， 空字符默认Sheet1
-func WriteSheet(headerCells map[string]string, dataCells []map[string]interface{}, fileName, sheetName string) (string, error) {
+func WriteSheet(headerCells map[string]string, dataCells []map[string]any, fileName, sheetName string) (string, error) {
 	f := excelize.NewFile()
 	defer func() {
 		if err := f.Close(); err != nil {

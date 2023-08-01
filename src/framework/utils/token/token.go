@@ -108,7 +108,7 @@ func RefreshIn(loginUser *vo.LoginUser) {
 
 // Verify 校验令牌是否有效
 func Verify(tokenString string) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		// 判断加密算法是预期的加密算法
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); ok {
 			secret := config.Get("jwt.secret").(string)
