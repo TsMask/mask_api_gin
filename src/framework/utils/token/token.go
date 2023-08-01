@@ -8,7 +8,6 @@ import (
 	tokenConstants "mask_api_gin/src/framework/constants/token"
 	"mask_api_gin/src/framework/logger"
 	redisCahe "mask_api_gin/src/framework/redis"
-	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/generate"
 	"mask_api_gin/src/framework/vo"
 	"time"
@@ -82,7 +81,7 @@ func Cache(loginUser *vo.LoginUser) {
 	// 计算配置的有效期
 	expTime := config.Get("jwt.expiresIn").(int)
 	expTimestamp := time.Duration(expTime) * time.Minute
-	iatTimestamp := date.NowTimestamp()
+	iatTimestamp := time.Now().UnixMilli()
 	loginUser.LoginTime = iatTimestamp
 	loginUser.ExpireTime = iatTimestamp + expTimestamp.Milliseconds()
 	// 根据登录标识将loginUser缓存
@@ -101,7 +100,7 @@ func RefreshIn(loginUser *vo.LoginUser) {
 	refreshTimestamp := time.Duration(refreshTime) * time.Minute
 	// 过期时间
 	expireTimestamp := loginUser.ExpireTime
-	currentTimestamp := date.NowTimestamp()
+	currentTimestamp := time.Now().UnixMilli()
 	if expireTimestamp-currentTimestamp <= refreshTimestamp.Milliseconds() {
 		Cache(loginUser)
 	}

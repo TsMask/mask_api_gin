@@ -42,7 +42,10 @@ func ParseDateToStr(date interface{}, formatStr string) string {
 	if !ok {
 		switch v := date.(type) {
 		case int64:
-			t = time.Unix(v, 0)
+			if v == 0 {
+				return ""
+			}
+			t = time.UnixMilli(v)
 		case string:
 			parsedTime, err := time.Parse(formatStr, v)
 			if err != nil {
@@ -62,17 +65,4 @@ func ParseDateToStr(date interface{}, formatStr string) string {
 // 年/月 列如：2022/12
 func ParseDatePath(date time.Time) string {
 	return date.Format("2006/01")
-}
-
-// 判断两次时间差
-//
-// 单位秒
-func DiffSeconds(endDate, startDate time.Time) int64 {
-	duration := endDate.Sub(startDate)
-	return int64(duration.Seconds() + 0.5)
-}
-
-// 获取当前时间的毫秒数
-func NowTimestamp() int64 {
-	return time.Now().UnixNano() / int64(time.Millisecond)
 }
