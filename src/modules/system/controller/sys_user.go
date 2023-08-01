@@ -5,12 +5,16 @@ import (
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/constants/admin"
 	"mask_api_gin/src/framework/utils/ctx"
+	"mask_api_gin/src/framework/utils/date"
+	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -18,9 +22,10 @@ import (
 
 // 实例化控制层 SysUserController 结构体
 var NewSysUser = &SysUserController{
-	sysUserService: service.NewSysUserImpl,
-	sysRoleService: service.NewSysRoleImpl,
-	sysPostService: service.NewSysPostImpl,
+	sysUserService:     service.NewSysUserImpl,
+	sysRoleService:     service.NewSysRoleImpl,
+	sysPostService:     service.NewSysPostImpl,
+	sysDictDataService: service.NewSysDictDataImpl,
 }
 
 // 用户信息
@@ -33,13 +38,15 @@ type SysUserController struct {
 	sysRoleService service.ISysRole
 	// 岗位服务
 	sysPostService service.ISysPost
+	// 字典数据服务
+	sysDictDataService service.ISysDictData
 }
 
 // 用户信息列表
 //
 // GET /list
 func (s *SysUserController) List(c *gin.Context) {
-	querys := ctx.QueryMapString(c)
+	querys := ctx.QueryMap(c)
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
 	data := s.sysUserService.SelectUserPage(querys, dataScopeSQL)
 	c.JSON(200, result.Ok(data))
@@ -74,8 +81,8 @@ func (s *SysUserController) Info(c *gin.Context) {
 
 	// 新增用户时，用户ID为0
 	if userId == "0" {
-		c.JSON(200, result.OkData(map[string]interface{}{
-			"user":    map[string]interface{}{},
+		c.JSON(200, result.OkData(map[string]any{
+			"user":    map[string]any{},
 			"roleIds": []string{},
 			"postIds": []string{},
 			"roles":   roles,
@@ -104,7 +111,7 @@ func (s *SysUserController) Info(c *gin.Context) {
 		postIds = append(postIds, p.PostID)
 	}
 
-	c.JSON(200, result.OkData(map[string]interface{}{
+	c.JSON(200, result.OkData(map[string]any{
 		"user":    user,
 		"roleIds": roleIds,
 		"postIds": postIds,
@@ -353,4 +360,121 @@ func (s *SysUserController) Status(c *gin.Context) {
 		return
 	}
 	c.JSON(200, result.Err(nil))
+}
+
+// 用户信息列表导出
+//
+// POST /export
+func (s *SysUserController) Export(c *gin.Context) {
+	// 查询结果，根据查询条件结果，单页最大值限制
+	querys := ctx.BodyJSONMap(c)
+	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
+	data := s.sysUserService.SelectUserPage(querys, dataScopeSQL)
+	if data["total"].(int64) == 0 {
+		c.JSON(200, result.ErrMsg("导出数据记录为空"))
+		return
+	}
+	rows := data["rows"].([]model.SysUser)
+
+	// 导出文件名称
+	fileName := fmt.Sprintf("user_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
+	// 第一行表头标题
+	headerCells := map[string]string{
+		"A1": "用户序号",
+		"B1": "登录名称",
+		"C1": "用户名称",
+		"D1": "用户邮箱",
+		"E1": "手机号码",
+		"F1": "用户性别",
+		"G1": "帐号状态",
+		"H1": "最后登录IP",
+		"I1": "最后登录时间",
+		"J1": "部门名称",
+		"K1": "部门负责人",
+	}
+	// 读取用户性别字典数据
+	dictSysUserSex := s.sysDictDataService.SelectDictDataByType("sys_user_sex")
+	// 从第二行开始的数据
+	dataCells := make([]map[string]any, 0)
+	for i, row := range rows {
+		idx := strconv.Itoa(i + 2)
+		// 用户性别
+		sysUserSex := "未知"
+		for _, v := range dictSysUserSex {
+			if row.Sex == v.DictValue {
+				sysUserSex = v.DictLabel
+				break
+			}
+		}
+		// 帐号状态
+		statusValue := "停用"
+		if row.Status == "1" {
+			statusValue = "正常"
+		}
+		dataCells = append(dataCells, map[string]any{
+			"A" + idx: row.UserID,
+			"B" + idx: row.UserName,
+			"C" + idx: row.NickName,
+			"D" + idx: row.Email,
+			"E" + idx: row.PhoneNumber,
+			"F" + idx: sysUserSex,
+			"G" + idx: statusValue,
+			"H" + idx: row.LoginIP,
+			"I" + idx: date.ParseDateToStr(row.LoginDate, date.YYYY_MM_DD_HH_MM_SS),
+			"J" + idx: row.Dept.DeptName,
+			"K" + idx: row.Dept.Leader,
+		})
+	}
+
+	// 导出数据表格
+	saveFilePath, err := file.WriteSheet(headerCells, dataCells, fileName, "")
+	if err != nil {
+		c.JSON(200, result.ErrMsg(err.Error()))
+		return
+	}
+
+	c.FileAttachment(saveFilePath, fileName)
+}
+
+// 用户信息列表导入模板下载
+//
+// GET /importTemplate
+func (s *SysUserController) Template(c *gin.Context) {
+	fileName := fmt.Sprintf("user_import_template_%d.xlsx", time.Now().UnixMilli())
+	asserPath := "src/assets/template/excel/user_import_template.xlsx"
+	c.FileAttachment(asserPath, fileName)
+}
+
+// 用户信息列表导入
+//
+// POST /importData
+func (s *SysUserController) ImportData(c *gin.Context) {
+	// 允许进行更新
+	updateSupport := c.PostForm("updateSupport")
+	// 上传的文件
+	formFile, err := c.FormFile("file")
+	if err != nil || updateSupport == "" {
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
+		return
+	}
+
+	// 保存表格文件
+	filePath, err := file.TransferExeclUploadFile(formFile)
+	if err != nil {
+		c.JSON(200, result.ErrMsg(err.Error()))
+		return
+	}
+
+	// 读取表格数据
+	rows, err := file.ReadSheet(filePath, "")
+	if err != nil {
+		c.JSON(200, result.ErrMsg(err.Error()))
+		return
+	}
+
+	// 获取操作人名称
+	operName := ctx.LoginUserToUserName(c)
+	isUpdateSupport := parse.Boolean(updateSupport)
+	message := s.sysUserService.ImportUser(rows, isUpdateSupport, operName)
+	c.JSON(200, result.OkMsg(message))
 }

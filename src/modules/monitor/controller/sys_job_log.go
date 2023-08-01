@@ -4,27 +4,33 @@ import (
 	"fmt"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/date"
+	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/service"
+	systemService "mask_api_gin/src/modules/system/service"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xuri/excelize/v2"
 )
 
 // 实例化控制层 SysJobLogController 结构体
 var NewSysJobLog = &SysJobLogController{
-	sysJobLogService: service.NewSysJobLogImpl,
+	sysJobLogService:   service.NewSysJobLogImpl,
+	sysDictDataService: systemService.NewSysDictDataImpl,
 }
 
 // 调度任务日志信息
 //
 // PATH /monitor/jobLog
 type SysJobLogController struct {
+	// 调度任务日志服务
 	sysJobLogService service.ISysJobLog
+	// 字典数据服务
+	sysDictDataService systemService.ISysDictData
 }
 
 // 调度任务日志列表
@@ -32,7 +38,7 @@ type SysJobLogController struct {
 // GET /list
 func (s *SysJobLogController) List(c *gin.Context) {
 	// 查询参数转换map
-	querys := ctx.QueryMapString(c)
+	querys := ctx.QueryMap(c)
 	list := s.sysJobLogService.SelectJobLogPage(querys)
 	c.JSON(200, result.Ok(list))
 }
@@ -97,55 +103,64 @@ func (s *SysJobLogController) Clean(c *gin.Context) {
 // POST /export
 func (s *SysJobLogController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	querys := ctx.QueryMapString(c)
+	querys := ctx.BodyJSONMap(c)
 	data := s.sysJobLogService.SelectJobLogPage(querys)
-
-	// 导出数据组装
-	fileName := fmt.Sprintf("jobLog_export_%d_%d.xlsx", data["total"], date.NowTimestamp())
-	file := excelize.NewFile()
-	defer func() {
-		if err := file.Close(); err != nil {
-			fmt.Println(err)
-		}
-	}()
-	// 创建一个工作表
-	sheet := "Sheet1"
-	index, err := file.NewSheet(sheet)
-	if err != nil {
-		fmt.Println(err)
+	if data["total"].(int64) == 0 {
+		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return
 	}
-	// 设置工作簿的默认工作表
-	file.SetActiveSheet(index)
-	// 设置名为 Sheet1 工作表上 A 到 H 列的宽度为 20
-	file.SetColWidth("Sheet1", "A", "H", 20)
-	// 设置单元格的值
-	file.SetCellValue(sheet, "A1", "日志序号")
-	file.SetCellValue(sheet, "B1", "任务名称")
-	file.SetCellValue(sheet, "C1", "任务组名")
-	file.SetCellValue(sheet, "D1", "调用目标")
-	file.SetCellValue(sheet, "E1", "传入参数")
-	file.SetCellValue(sheet, "F1", "日志信息")
-	file.SetCellValue(sheet, "G1", "执行状态")
-	file.SetCellValue(sheet, "H1", "记录时间")
+	rows := data["rows"].([]model.SysJobLog)
 
-	for i, row := range data["rows"].([]model.SysJobLog) {
-		idx := i + 2
-		file.SetCellValue(sheet, "A"+strconv.Itoa(idx), row.JobLogID)
-		file.SetCellValue(sheet, "B"+strconv.Itoa(idx), row.JobName)
-		file.SetCellValue(sheet, "C"+strconv.Itoa(idx), row.JobGroup)
-		file.SetCellValue(sheet, "D"+strconv.Itoa(idx), row.InvokeTarget)
-		file.SetCellValue(sheet, "E"+strconv.Itoa(idx), row.TargetParams)
-		file.SetCellValue(sheet, "F"+strconv.Itoa(idx), row.JobMsg)
-		file.SetCellValue(sheet, "G"+strconv.Itoa(idx), row.Status)
-		file.SetCellValue(sheet, "H"+strconv.Itoa(idx), row.CreateTime)
-
+	// 导出文件名称
+	fileName := fmt.Sprintf("jobLog_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
+	// 第一行表头标题
+	headerCells := map[string]string{
+		"A1": "日志序号",
+		"B1": "任务名称",
+		"C1": "任务组名",
+		"D1": "调用目标",
+		"E1": "传入参数",
+		"F1": "日志信息",
+		"G1": "执行状态",
+		"H1": "记录时间",
+	}
+	// 读取任务组名字典数据
+	dictSysJobGroup := s.sysDictDataService.SelectDictDataByType("sys_job_group")
+	// 从第二行开始的数据
+	dataCells := make([]map[string]any, 0)
+	for i, row := range rows {
+		idx := strconv.Itoa(i + 2)
+		// 任务组名
+		sysJobGroup := ""
+		for _, v := range dictSysJobGroup {
+			if row.JobGroup == v.DictValue {
+				sysJobGroup = v.DictLabel
+				break
+			}
+		}
+		// 状态
+		statusValue := "失败"
+		if row.Status == "1" {
+			statusValue = "成功"
+		}
+		dataCells = append(dataCells, map[string]any{
+			"A" + idx: row.JobLogID,
+			"B" + idx: row.JobName,
+			"C" + idx: sysJobGroup,
+			"D" + idx: row.InvokeTarget,
+			"E" + idx: row.TargetParams,
+			"F" + idx: row.JobMsg,
+			"G" + idx: statusValue,
+			"H" + idx: date.ParseDateToStr(row.CreateTime, date.YYYY_MM_DD_HH_MM_SS),
+		})
 	}
 
-	// 根据指定路径保存文件
-	if err := file.SaveAs(fileName); err != nil {
-		fmt.Println(err)
-	}
 	// 导出数据表格
-	c.FileAttachment(fileName, fileName)
+	saveFilePath, err := file.WriteSheet(headerCells, dataCells, fileName, "")
+	if err != nil {
+		c.JSON(200, result.ErrMsg(err.Error()))
+		return
+	}
+
+	c.FileAttachment(saveFilePath, fileName)
 }

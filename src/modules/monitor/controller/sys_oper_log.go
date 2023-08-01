@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/date"
+	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/service"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xuri/excelize/v2"
 )
 
 // 实例化控制层 SysOperLogController 结构体
@@ -32,7 +33,7 @@ type SysOperLogController struct {
 //
 // GET /list
 func (s *SysOperLogController) List(c *gin.Context) {
-	querys := ctx.QueryMapString(c)
+	querys := ctx.QueryMap(c)
 	data := s.sysOperLogService.SelectOperLogPage(querys)
 	c.JSON(200, result.Ok(data))
 }
@@ -80,70 +81,74 @@ func (s *SysOperLogController) Clean(c *gin.Context) {
 // POST /export
 func (s *SysOperLogController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	querys := ctx.QueryMapString(c)
+	querys := ctx.BodyJSONMap(c)
 	data := s.sysOperLogService.SelectOperLogPage(querys)
-
-	// 导出数据组装
-	fileName := fmt.Sprintf("operlog_export_%d_%d.xlsx", data["total"], date.NowTimestamp())
-	file := excelize.NewFile()
-	defer func() {
-		if err := file.Close(); err != nil {
-			fmt.Println(err)
-		}
-	}()
-	// 创建一个工作表
-	sheet := "Sheet1"
-	index, err := file.NewSheet(sheet)
-	if err != nil {
-		fmt.Println(err)
+	if data["total"].(int64) == 0 {
+		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return
 	}
-	// 设置工作簿的默认工作表
-	file.SetActiveSheet(index)
-	// 设置名为 Sheet1 工作表上 A 到 H 列的宽度为 20
-	file.SetColWidth("Sheet1", "A", "H", 20)
-	// 设置单元格的值
-	file.SetCellValue(sheet, "A1", "操作序号")
-	file.SetCellValue(sheet, "B1", "操作模块")
-	file.SetCellValue(sheet, "C1", "业务类型")
-	file.SetCellValue(sheet, "D1", "请求方法")
-	file.SetCellValue(sheet, "E1", "请求方式")
-	file.SetCellValue(sheet, "F1", "操作类别")
-	file.SetCellValue(sheet, "G1", "操作人员")
-	file.SetCellValue(sheet, "H1", "部门名称")
-	file.SetCellValue(sheet, "I1", "请求地址")
-	file.SetCellValue(sheet, "J1", "操作地点")
-	file.SetCellValue(sheet, "K1", "请求参数")
-	file.SetCellValue(sheet, "L1", "操作消息")
-	file.SetCellValue(sheet, "M1", "状态")
-	file.SetCellValue(sheet, "N1", "操作时间")
+	rows := data["rows"].([]model.SysOperLog)
 
-	for i, row := range data["rows"].([]model.SysOperLog) {
-		idx := i + 2
-		file.SetCellValue(sheet, "A"+strconv.Itoa(idx), row.OperID)
-		file.SetCellValue(sheet, "B"+strconv.Itoa(idx), row.Title)
-		file.SetCellValue(sheet, "C"+strconv.Itoa(idx), row.BusinessType)
-		file.SetCellValue(sheet, "D"+strconv.Itoa(idx), row.Method)
-		file.SetCellValue(sheet, "E"+strconv.Itoa(idx), row.RequestMethod)
-		file.SetCellValue(sheet, "F"+strconv.Itoa(idx), row.OperatorType)
-		file.SetCellValue(sheet, "G"+strconv.Itoa(idx), row.OperName)
-		file.SetCellValue(sheet, "H"+strconv.Itoa(idx), row.DeptName)
-		file.SetCellValue(sheet, "I"+strconv.Itoa(idx), row.OperURL)
-		file.SetCellValue(sheet, "J"+strconv.Itoa(idx), row.OperIP)
-		file.SetCellValue(sheet, "K"+strconv.Itoa(idx), row.OperLocation)
-		file.SetCellValue(sheet, "L"+strconv.Itoa(idx), row.OperParam)
-		if row.Status == "0" {
-			file.SetCellValue(sheet, "M"+strconv.Itoa(idx), "失败")
-		} else {
-			file.SetCellValue(sheet, "M"+strconv.Itoa(idx), "成功")
+	// 导出文件名称
+	fileName := fmt.Sprintf("operlog_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
+	// 第一行表头标题
+	headerCells := map[string]string{
+		"A1": "操作序号",
+		"B1": "操作模块",
+		"C1": "业务类型",
+		"D1": "请求方法",
+		"E1": "请求方式",
+		"F1": "操作类别",
+		"G1": "操作人员",
+		"H1": "部门名称",
+		"I1": "请求地址",
+		"J1": "操作地址",
+		"K1": "操作地点",
+		"L1": "请求参数",
+		"M1": "操作消息",
+		"N1": "状态",
+		"O1": "消耗时间（毫秒）",
+		"P1": "操作时间",
+	}
+	// 从第二行开始的数据
+	dataCells := make([]map[string]any, 0)
+	for i, row := range rows {
+		idx := strconv.Itoa(i + 2)
+		// 业务类型
+		businessType := ""
+		// 操作类别
+		operatorType := ""
+		// 状态
+		statusValue := "失败"
+		if row.Status == "1" {
+			statusValue = "成功"
 		}
-		file.SetCellValue(sheet, "N"+strconv.Itoa(idx), row.OperTime)
+		dataCells = append(dataCells, map[string]any{
+			"A" + idx: row.OperID,
+			"B" + idx: row.Title,
+			"C" + idx: businessType,
+			"D" + idx: row.Method,
+			"E" + idx: row.RequestMethod,
+			"F" + idx: operatorType,
+			"G" + idx: row.OperName,
+			"H" + idx: row.DeptName,
+			"I" + idx: row.OperURL,
+			"J" + idx: row.OperIP,
+			"K" + idx: row.OperLocation,
+			"L" + idx: row.OperParam,
+			"M" + idx: row.OperMsg,
+			"N" + idx: statusValue,
+			"O" + idx: row.CostTime,
+			"P" + idx: date.ParseDateToStr(row.OperTime, date.YYYY_MM_DD_HH_MM_SS),
+		})
 	}
 
-	// 根据指定路径保存文件
-	if err := file.SaveAs(fileName); err != nil {
-		fmt.Println(err)
-	}
 	// 导出数据表格
-	c.FileAttachment(fileName, fileName)
+	saveFilePath, err := file.WriteSheet(headerCells, dataCells, fileName, "")
+	if err != nil {
+		c.JSON(200, result.ErrMsg(err.Error()))
+		return
+	}
+
+	c.FileAttachment(saveFilePath, fileName)
 }

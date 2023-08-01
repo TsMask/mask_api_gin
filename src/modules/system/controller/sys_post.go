@@ -3,17 +3,17 @@ package controller
 import (
 	"fmt"
 	"mask_api_gin/src/framework/utils/ctx"
-	"mask_api_gin/src/framework/utils/date"
+	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"github.com/xuri/excelize/v2"
 )
 
 // 实例化控制层 SysPostController 结构体
@@ -33,7 +33,7 @@ type SysPostController struct {
 //
 // GET /list
 func (s *SysPostController) List(c *gin.Context) {
-	querys := ctx.QueryMapString(c)
+	querys := ctx.QueryMap(c)
 	data := s.sysPostService.SelectPostPage(querys)
 	c.JSON(200, result.Ok(data))
 }
@@ -164,52 +164,47 @@ func (s *SysPostController) Remove(c *gin.Context) {
 // POST /export
 func (s *SysPostController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	querys := ctx.BodyJSONMapString(c)
+	querys := ctx.BodyJSONMap(c)
 	data := s.sysPostService.SelectPostPage(querys)
-
-	// 导出数据组装
-	fileName := fmt.Sprintf("post_export_%d_%d.xlsx", data["total"], date.NowTimestamp())
-	file := excelize.NewFile()
-	defer func() {
-		if err := file.Close(); err != nil {
-			fmt.Println(err)
-		}
-	}()
-	// 创建一个工作表
-	sheet := "Sheet1"
-	index, err := file.NewSheet(sheet)
-	if err != nil {
-		fmt.Println(err)
+	if data["total"].(int64) == 0 {
+		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return
 	}
-	// 设置工作簿的默认工作表
-	file.SetActiveSheet(index)
-	// 设置名为 Sheet1 工作表上 A 到 H 列的宽度为 20
-	file.SetColWidth("Sheet1", "A", "H", 20)
-	// 设置单元格的值
-	file.SetCellValue(sheet, "A1", "岗位编号")
-	file.SetCellValue(sheet, "B1", "岗位编码")
-	file.SetCellValue(sheet, "C1", "岗位名称")
-	file.SetCellValue(sheet, "D1", "岗位排序")
-	file.SetCellValue(sheet, "E1", "状态")
+	rows := data["rows"].([]model.SysPost)
 
-	for i, row := range data["rows"].([]model.SysPost) {
-		idx := i + 2
-		file.SetCellValue(sheet, "A"+strconv.Itoa(idx), row.PostID)
-		file.SetCellValue(sheet, "B"+strconv.Itoa(idx), row.PostCode)
-		file.SetCellValue(sheet, "C"+strconv.Itoa(idx), row.PostName)
-		file.SetCellValue(sheet, "D"+strconv.Itoa(idx), row.PostSort)
-		if row.Status == "0" {
-			file.SetCellValue(sheet, "E"+strconv.Itoa(idx), "停用")
-		} else {
-			file.SetCellValue(sheet, "E"+strconv.Itoa(idx), "正常")
+	// 导出文件名称
+	fileName := fmt.Sprintf("post_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
+	// 第一行表头标题
+	headerCells := map[string]string{
+		"A1": "岗位编号",
+		"B1": "岗位编码",
+		"C1": "岗位名称",
+		"D1": "岗位排序",
+		"E1": "状态",
+	}
+	// 从第二行开始的数据
+	dataCells := make([]map[string]any, 0)
+	for i, row := range rows {
+		idx := strconv.Itoa(i + 2)
+		statusValue := "停用"
+		if row.Status == "1" {
+			statusValue = "正常"
 		}
+		dataCells = append(dataCells, map[string]any{
+			"A" + idx: row.PostID,
+			"B" + idx: row.PostCode,
+			"C" + idx: row.PostName,
+			"D" + idx: row.PostSort,
+			"E" + idx: statusValue,
+		})
 	}
 
-	// 根据指定路径保存文件
-	if err := file.SaveAs(fileName); err != nil {
-		fmt.Println(err)
-	}
 	// 导出数据表格
-	c.FileAttachment(fileName, fileName)
+	saveFilePath, err := file.WriteSheet(headerCells, dataCells, fileName, "")
+	if err != nil {
+		c.JSON(200, result.ErrMsg(err.Error()))
+		return
+	}
+
+	c.FileAttachment(saveFilePath, fileName)
 }

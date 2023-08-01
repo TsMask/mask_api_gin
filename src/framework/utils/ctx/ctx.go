@@ -17,9 +17,9 @@ import (
 )
 
 // QueryMap 查询参数转换Map
-func QueryMap(c *gin.Context) map[string]interface{} {
+func QueryMap(c *gin.Context) map[string]any {
 	queryValues := c.Request.URL.Query()
-	queryParams := make(map[string]interface{})
+	queryParams := make(map[string]any)
 	for key, values := range queryValues {
 		queryParams[key] = values[0]
 	}
@@ -27,15 +27,15 @@ func QueryMap(c *gin.Context) map[string]interface{} {
 }
 
 // BodyJSONMap JSON参数转换Map
-func BodyJSONMap(c *gin.Context) map[string]interface{} {
-	params := make(map[string]interface{})
+func BodyJSONMap(c *gin.Context) map[string]any {
+	params := make(map[string]any)
 	c.ShouldBindBodyWith(&params, binding.JSON)
 	return params
 }
 
 // RequestParamsMap 请求参数转换Map
 func RequestParamsMap(c *gin.Context) map[string]any {
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	// json
 	if strings.HasPrefix(c.ContentType(), "application/json") {
 		c.ShouldBindBodyWith(&params, binding.JSON)
