@@ -73,15 +73,13 @@ func generateFileName(fileName string) string {
 func isAllowWrite(fileName string, allowExts []string, fileSize int64) error {
 	// 判断上传文件名称长度
 	if len(fileName) > DEFAULT_FILE_NAME_LENGTH {
-		msg := fmt.Sprintf("上传文件名称长度限制最长为 %d", DEFAULT_FILE_NAME_LENGTH)
-		return errors.New(msg)
+		return fmt.Errorf("上传文件名称长度限制最长为 %d", DEFAULT_FILE_NAME_LENGTH)
 	}
 
 	// 最大上传文件大小
 	maxFileSize := uploadFileSize()
 	if fileSize > maxFileSize {
-		msg := fmt.Sprintf("最大上传文件大小 %s", parse.Bit(float64(maxFileSize)))
-		return errors.New(msg)
+		return fmt.Errorf("最大上传文件大小 %s", parse.Bit(float64(maxFileSize)))
 	}
 
 	// 判断文件拓展是否为允许的拓展类型
@@ -97,8 +95,7 @@ func isAllowWrite(fileName string, allowExts []string, fileSize int64) error {
 		}
 	}
 	if !hasExt {
-		msg := fmt.Sprintf("上传文件类型不支持，仅支持以下类型：%s", strings.Join(allowExts, "、"))
-		return errors.New(msg)
+		return fmt.Errorf("上传文件类型不支持，仅支持以下类型：%s", strings.Join(allowExts, "、"))
 	}
 
 	return nil
@@ -110,7 +107,7 @@ func isAllowWrite(fileName string, allowExts []string, fileSize int64) error {
 func isAllowRead(filePath string) error {
 	// 禁止目录上跳级别
 	if strings.Contains(filePath, "..") {
-		return errors.New("禁止目录上跳级别")
+		return fmt.Errorf("禁止目录上跳级别")
 	}
 
 	// 检查允许下载的文件规则
@@ -123,8 +120,7 @@ func isAllowRead(filePath string) error {
 		}
 	}
 	if !hasExt {
-		msg := fmt.Sprintf("非法下载的文件规则：%s", fileExt)
-		return errors.New(msg)
+		return fmt.Errorf("非法下载的文件规则：%s", fileExt)
 	}
 
 	return nil
@@ -153,33 +149,6 @@ func TransferUploadFile(file *multipart.FileHeader, subPath string, allowExts []
 		return "", err
 	}
 	urlPath := filepath.Join(prefix, filePath, fileName)
-	return filepath.ToSlash(urlPath), nil
-}
-
-// TransferChunkUploadFile 上传资源切片文件转存
-//
-// file 上传文件对象
-//
-// index 切片文件序号
-//
-// identifier 切片文件目录标识符
-func TransferChunkUploadFile(file *multipart.FileHeader, index, identifier string) (string, error) {
-	// 上传文件检查
-	err := isAllowWrite(file.Filename, []string{}, file.Size)
-	if err != nil {
-		return "", err
-	}
-	// 上传资源路径
-	prefix, dir := resourceUpload()
-	// 新文件名称并组装文件地址
-	filePath := filepath.Join(uploadsubpath.CHUNK, date.ParseDatePath(time.Now()), identifier)
-	writePathFile := filepath.Join(dir, filePath, index)
-	// 存入新文件路径
-	err = transferToNewFile(file, writePathFile)
-	if err != nil {
-		return "", err
-	}
-	urlPath := filepath.Join(prefix, filePath, index)
 	return filepath.ToSlash(urlPath), nil
 }
 
@@ -245,6 +214,33 @@ func ReadUploadFileStream(filePath, headerRange string) (map[string]interface{},
 	}
 	result["data"] = byteArr
 	return result, nil
+}
+
+// TransferChunkUploadFile 上传资源切片文件转存
+//
+// file 上传文件对象
+//
+// index 切片文件序号
+//
+// identifier 切片文件目录标识符
+func TransferChunkUploadFile(file *multipart.FileHeader, index, identifier string) (string, error) {
+	// 上传文件检查
+	err := isAllowWrite(file.Filename, []string{}, file.Size)
+	if err != nil {
+		return "", err
+	}
+	// 上传资源路径
+	prefix, dir := resourceUpload()
+	// 新文件名称并组装文件地址
+	filePath := filepath.Join(uploadsubpath.CHUNK, date.ParseDatePath(time.Now()), identifier)
+	writePathFile := filepath.Join(dir, filePath, index)
+	// 存入新文件路径
+	err = transferToNewFile(file, writePathFile)
+	if err != nil {
+		return "", err
+	}
+	urlPath := filepath.Join(prefix, filePath, index)
+	return filepath.ToSlash(urlPath), nil
 }
 
 // 上传资源切片文件检查

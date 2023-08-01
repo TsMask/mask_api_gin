@@ -387,9 +387,20 @@ func Setup(router *gin.Engine) {
 			operlog.OperLog(operlog.OptionNew("用户信息", operlog.BUSINESS_TYPE_UPDATE)),
 			controller.NewSysUser.Status,
 		)
-		// 用户信息列表导入模板下载 TODO
-		// 用户信息列表导入 TODO
-		// 用户信息列表导出 TODO
+		sysUserGroup.POST("/export",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:export"}}),
+			operlog.OperLog(operlog.OptionNew("用户信息", operlog.BUSINESS_TYPE_EXPORT)),
+			controller.NewSysUser.Export,
+		)
+		sysUserGroup.GET("/importTemplate",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:import"}}),
+			controller.NewSysUser.Template,
+		)
+		sysUserGroup.POST("/importData",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:import"}}),
+			operlog.OperLog(operlog.OptionNew("用户信息", operlog.BUSINESS_TYPE_INSERT)),
+			controller.NewSysUser.ImportData,
+		)
 	}
 }
 

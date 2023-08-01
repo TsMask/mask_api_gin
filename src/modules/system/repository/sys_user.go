@@ -5,10 +5,10 @@ import "mask_api_gin/src/modules/system/model"
 // ISysUser 用户表 数据层接口
 type ISysUser interface {
 	// SelectUserPage 根据条件分页查询用户列表
-	SelectUserPage(query map[string]string, dataScopeSQL string) map[string]interface{}
+	SelectUserPage(query map[string]any, dataScopeSQL string) map[string]any
 
 	// SelectAllocatedPage 根据条件分页查询分配用户角色列表
-	SelectAllocatedPage(query map[string]string, dataScopeSQL string) map[string]interface{}
+	SelectAllocatedPage(query map[string]any, dataScopeSQL string) map[string]any
 
 	// SelectUserList 根据条件查询用户列表
 	SelectUserList(sysUser model.SysUser, dataScopeSQL string) []model.SysUser

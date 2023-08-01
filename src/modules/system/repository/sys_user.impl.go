@@ -10,6 +10,7 @@ import (
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
+	"time"
 )
 
 // 实例化数据层 SysUserImpl 结构体
@@ -122,7 +123,7 @@ func (r *SysUserImpl) convertResultRows(rows []map[string]interface{}) []model.S
 }
 
 // SelectUserPage 根据条件分页查询用户列表
-func (r *SysUserImpl) SelectUserPage(query map[string]string, dataScopeSQL string) map[string]interface{} {
+func (r *SysUserImpl) SelectUserPage(query map[string]any, dataScopeSQL string) map[string]any {
 	selectUserSql := `select 
     u.user_id, u.dept_id, u.nick_name, u.user_name, u.email, u.avatar, u.phonenumber, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time, u.remark, d.dept_name, d.leader 
     from sys_user u 
@@ -133,33 +134,33 @@ func (r *SysUserImpl) SelectUserPage(query map[string]string, dataScopeSQL strin
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
-	if v, ok := query["userId"]; ok {
+	if v, ok := query["userId"]; ok && v != "" {
 		conditions = append(conditions, "u.user_id = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["userName"]; ok {
+	if v, ok := query["userName"]; ok && v != "" {
 		conditions = append(conditions, "u.user_name like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["status"]; ok {
+	if v, ok := query["status"]; ok && v != "" {
 		conditions = append(conditions, "u.status = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["phonenumber"]; ok {
+	if v, ok := query["phonenumber"]; ok && v != "" {
 		conditions = append(conditions, "u.phonenumber like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["beginTime"]; ok {
+	if v, ok := query["beginTime"]; ok && v != "" {
 		conditions = append(conditions, "u.login_date >= ?")
-		beginDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
-		params = append(params, beginDate.UnixNano()/1e6)
+		beginDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		params = append(params, beginDate.UnixMilli())
 	}
-	if v, ok := query["endTime"]; ok {
+	if v, ok := query["endTime"]; ok && v != "" {
 		conditions = append(conditions, "u.login_date <= ?")
-		endDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
-		params = append(params, endDate.UnixNano()/1e6)
+		endDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		params = append(params, endDate.UnixMilli())
 	}
-	if v, ok := query["deptId"]; ok {
+	if v, ok := query["deptId"]; ok && v != "" {
 		conditions = append(conditions, "(u.dept_id = ? or u.dept_id in ( select t.dept_id from sys_dept t where find_in_set(?, ancestors) ))")
 		params = append(params, v)
 		params = append(params, v)
@@ -178,10 +179,10 @@ func (r *SysUserImpl) SelectUserPage(query map[string]string, dataScopeSQL strin
 		logger.Errorf("total err => %v", err)
 	}
 	total := parse.Number(totalRows[0]["total"])
-	if total <= 0 {
+	if total == 0 {
 		return map[string]interface{}{
-			"total": 0,
-			"rows":  []interface{}{},
+			"total": total,
+			"rows":  []model.SysUser{},
 		}
 	}
 
@@ -207,25 +208,25 @@ func (r *SysUserImpl) SelectUserPage(query map[string]string, dataScopeSQL strin
 }
 
 // SelectAllocatedPage 根据条件分页查询分配用户角色列表
-func (r *SysUserImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL string) map[string]interface{} {
+func (r *SysUserImpl) SelectAllocatedPage(query map[string]any, dataScopeSQL string) map[string]any {
 	// 查询条件拼接
 	var conditions []string
 	var params []interface{}
-	if v, ok := query["userName"]; ok {
+	if v, ok := query["userName"]; ok && v != "" {
 		conditions = append(conditions, "u.user_name like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["phonenumber"]; ok {
+	if v, ok := query["phonenumber"]; ok && v != "" {
 		conditions = append(conditions, "u.phonenumber like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["status"]; ok {
+	if v, ok := query["status"]; ok && v != "" {
 		conditions = append(conditions, "u.status = ?")
 		params = append(params, v)
 	}
 	// 分配角色用户
-	if allocated, ok := query["allocated"]; ok {
-		if roleId, ok := query["roleId"]; ok {
+	if allocated, ok := query["allocated"]; ok && allocated != "" {
+		if roleId, ok := query["roleId"]; ok && roleId != "" {
 			if parse.Boolean(allocated) {
 				conditions = append(conditions, "r.role_id = ?")
 				params = append(params, roleId)
@@ -259,10 +260,10 @@ func (r *SysUserImpl) SelectAllocatedPage(query map[string]string, dataScopeSQL 
 		logger.Errorf("total err => %v", err)
 	}
 	total := parse.Number(totalRows[0]["total"])
-	if total <= 0 {
+	if total == 0 {
 		return map[string]interface{}{
-			"total": 0,
-			"rows":  []interface{}{},
+			"total": total,
+			"rows":  []model.SysUser{},
 		}
 	}
 
@@ -410,7 +411,7 @@ func (r *SysUserImpl) InsertUser(sysUser model.SysUser) string {
 	}
 	if sysUser.CreateBy != "" {
 		params["create_by"] = sysUser.CreateBy
-		params["create_time"] = date.NowTimestamp()
+		params["create_time"] = time.Now().UnixMilli()
 	}
 
 	// 构建执行语句
@@ -488,7 +489,7 @@ func (r *SysUserImpl) UpdateUser(sysUser model.SysUser) int64 {
 	}
 	if sysUser.UpdateBy != "" {
 		params["update_by"] = sysUser.UpdateBy
-		params["update_time"] = date.NowTimestamp()
+		params["update_time"] = time.Now().UnixMilli()
 	}
 	if sysUser.LoginIP != "" {
 		params["login_ip"] = sysUser.LoginIP
