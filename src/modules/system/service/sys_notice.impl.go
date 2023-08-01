@@ -18,7 +18,7 @@ type SysNoticeImpl struct {
 }
 
 // SelectNoticePage 分页查询公告列表
-func (r *SysNoticeImpl) SelectNoticePage(query map[string]string) map[string]interface{} {
+func (r *SysNoticeImpl) SelectNoticePage(query map[string]any) map[string]any {
 	return r.sysNoticeRepository.SelectNoticePage(query)
 }
 

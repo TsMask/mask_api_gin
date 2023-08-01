@@ -5,7 +5,7 @@ import "mask_api_gin/src/modules/monitor/model"
 // ISysOperLog 操作日志表 服务层接口
 type ISysOperLog interface {
 	// SelectOperLogPage 分页查询系统操作日志集合
-	SelectOperLogPage(query map[string]string) map[string]interface{}
+	SelectOperLogPage(query map[string]any) map[string]any
 
 	// SelectOperLogList 查询系统操作日志集合
 	SelectOperLogList(sysOperLog model.SysOperLog) []model.SysOperLog

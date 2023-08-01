@@ -5,7 +5,7 @@ import "mask_api_gin/src/modules/system/model"
 // ISysRole 角色 服务层接口
 type ISysRole interface {
 	// SelectRolePage 根据条件分页查询角色数据
-	SelectRolePage(query map[string]string, dataScopeSQL string) map[string]interface{}
+	SelectRolePage(query map[string]any, dataScopeSQL string) map[string]any
 
 	// SelectRoleList 根据条件查询角色数据
 	SelectRoleList(sysRole model.SysRole, dataScopeSQL string) []model.SysRole

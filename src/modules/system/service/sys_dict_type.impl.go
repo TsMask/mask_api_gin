@@ -26,7 +26,7 @@ type SysDictTypeImpl struct {
 }
 
 // SelectDictTypePage 根据条件分页查询字典类型
-func (r *SysDictTypeImpl) SelectDictTypePage(query map[string]string) map[string]interface{} {
+func (r *SysDictTypeImpl) SelectDictTypePage(query map[string]any) map[string]any {
 	return r.sysDictTypeRepository.SelectDictTypePage(query)
 }
 

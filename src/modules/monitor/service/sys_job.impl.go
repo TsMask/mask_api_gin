@@ -20,7 +20,7 @@ type SysJobImpl struct {
 }
 
 // SelectJobPage 分页查询调度任务集合
-func (r *SysJobImpl) SelectJobPage(query map[string]string) map[string]interface{} {
+func (r *SysJobImpl) SelectJobPage(query map[string]any) map[string]any {
 	return r.sysJobRepository.SelectJobPage(query)
 }
 

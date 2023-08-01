@@ -17,7 +17,7 @@ type SysOperLogImpl struct {
 }
 
 // SelectOperLogPage 分页查询系统操作日志集合
-func (r *SysOperLogImpl) SelectOperLogPage(query map[string]string) map[string]interface{} {
+func (r *SysOperLogImpl) SelectOperLogPage(query map[string]any) map[string]any {
 	return r.sysOperLogService.SelectOperLogPage(query)
 }
 

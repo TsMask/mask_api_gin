@@ -17,7 +17,7 @@ type SysLogininforImpl struct {
 }
 
 // SelectLogininforPage 分页查询系统登录日志集合
-func (s *SysLogininforImpl) SelectLogininforPage(query map[string]string) map[string]interface{} {
+func (s *SysLogininforImpl) SelectLogininforPage(query map[string]any) map[string]any {
 	return s.sysLogininforService.SelectLogininforPage(query)
 }
 

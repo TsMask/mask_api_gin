@@ -17,7 +17,7 @@ type SysJobLogImpl struct {
 }
 
 // SelectJobLogPage 分页查询调度任务日志集合
-func (s *SysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]interface{} {
+func (s *SysJobLogImpl) SelectJobLogPage(query map[string]any) map[string]any {
 	return s.sysJobLogRepository.SelectJobLogPage(query)
 }
 

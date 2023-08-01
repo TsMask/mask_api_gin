@@ -21,7 +21,7 @@ type SysDictDataImpl struct {
 }
 
 // SelectDictDataPage 根据条件分页查询字典数据
-func (r *SysDictDataImpl) SelectDictDataPage(query map[string]string) map[string]interface{} {
+func (r *SysDictDataImpl) SelectDictDataPage(query map[string]any) map[string]any {
 	return r.sysDictDataRepository.SelectDictDataPage(query)
 }
 

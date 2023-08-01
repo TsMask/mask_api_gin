@@ -28,7 +28,7 @@ type SysRoleImpl struct {
 }
 
 // SelectRolePage 根据条件分页查询角色数据
-func (r *SysRoleImpl) SelectRolePage(query map[string]string, dataScopeSQL string) map[string]interface{} {
+func (r *SysRoleImpl) SelectRolePage(query map[string]any, dataScopeSQL string) map[string]any {
 	return r.sysRoleRepository.SelectRolePage(query, dataScopeSQL)
 }
 

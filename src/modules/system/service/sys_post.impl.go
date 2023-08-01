@@ -22,7 +22,7 @@ type SysPostImpl struct {
 }
 
 // SelectPostPage 查询岗位分页数据集合
-func (r *SysPostImpl) SelectPostPage(query map[string]string) map[string]interface{} {
+func (r *SysPostImpl) SelectPostPage(query map[string]any) map[string]any {
 	return r.sysPostRepository.SelectPostPage(query)
 }
 

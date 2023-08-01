@@ -20,7 +20,7 @@ type SysConfigImpl struct {
 }
 
 // SelectDictDataPage 分页查询参数配置列表数据
-func (r *SysConfigImpl) SelectConfigPage(query map[string]string) map[string]interface{} {
+func (r *SysConfigImpl) SelectConfigPage(query map[string]any) map[string]any {
 	return r.sysConfigRepository.SelectConfigPage(query)
 }
 

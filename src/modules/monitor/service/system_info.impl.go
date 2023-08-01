@@ -24,7 +24,7 @@ var NewSystemInfoImpl = &SystemInfoImpl{}
 type SystemInfoImpl struct{}
 
 // ProjectInfo 程序项目信息
-func (s *SystemInfoImpl) ProjectInfo() map[string]interface{} {
+func (s *SystemInfoImpl) ProjectInfo() map[string]any {
 	// 获取工作目录
 	appDir, err := os.Getwd()
 	if err != nil {
@@ -32,7 +32,7 @@ func (s *SystemInfoImpl) ProjectInfo() map[string]interface{} {
 	}
 	// 项目依赖
 	dependencies := s.dependencies()
-	return map[string]interface{}{
+	return map[string]any{
 		"appDir":       appDir,
 		"env":          config.Env(),
 		"name":         config.Get("framework.name"),
@@ -80,7 +80,7 @@ func (s *SystemInfoImpl) dependencies() map[string]string {
 }
 
 // SystemInfo 系统信息
-func (s *SystemInfoImpl) SystemInfo() map[string]interface{} {
+func (s *SystemInfoImpl) SystemInfo() map[string]any {
 	info, err := host.Info()
 	if err != nil {
 		info.Platform = err.Error()
@@ -94,7 +94,7 @@ func (s *SystemInfoImpl) SystemInfo() map[string]interface{} {
 	if err != nil {
 		cmd = ""
 	}
-	return map[string]interface{}{
+	return map[string]any{
 		"platform":    info.Platform,
 		"go":          runtime.Version(),
 		"processId":   os.Getpid(),
@@ -128,7 +128,7 @@ func (s *SystemInfoImpl) TimeInfo() map[string]string {
 }
 
 // MemoryInfo 内存信息
-func (s *SystemInfoImpl) MemoryInfo() map[string]interface{} {
+func (s *SystemInfoImpl) MemoryInfo() map[string]any {
 	memInfo, err := mem.VirtualMemory()
 	if err != nil {
 		memInfo.UsedPercent = 0
@@ -139,7 +139,7 @@ func (s *SystemInfoImpl) MemoryInfo() map[string]interface{} {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
-	return map[string]interface{}{
+	return map[string]any{
 		"usage":     fmt.Sprintf("%.2f", memInfo.UsedPercent),            // 内存利用率
 		"freemem":   parse.Bit(float64(memInfo.Available)),               // 可用内存大小（GB）
 		"totalmem":  parse.Bit(float64(memInfo.Total)),                   // 总内存大小（GB）
@@ -151,7 +151,7 @@ func (s *SystemInfoImpl) MemoryInfo() map[string]interface{} {
 }
 
 // CPUInfo CPU信息
-func (s *SystemInfoImpl) CPUInfo() map[string]interface{} {
+func (s *SystemInfoImpl) CPUInfo() map[string]any {
 	var core int32 = 0
 	var speed string = "未知"
 	var model string = "未知"
@@ -170,7 +170,7 @@ func (s *SystemInfoImpl) CPUInfo() map[string]interface{} {
 		}
 	}
 
-	return map[string]interface{}{
+	return map[string]any{
 		"model":    model,
 		"speed":    speed,
 		"core":     core,

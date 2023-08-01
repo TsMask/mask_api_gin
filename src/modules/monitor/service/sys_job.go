@@ -7,7 +7,7 @@ import (
 // ISysJob 调度任务信息 服务层接口
 type ISysJob interface {
 	// SelectJobPage 分页查询调度任务集合
-	SelectJobPage(query map[string]string) map[string]interface{}
+	SelectJobPage(query map[string]any) map[string]any
 
 	// SelectJobList 查询调度任务集合
 	SelectJobList(sysJob model.SysJob) []model.SysJob

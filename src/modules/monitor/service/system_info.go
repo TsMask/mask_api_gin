@@ -3,19 +3,19 @@ package service
 // ISystemInfo 服务器系统相关信息 服务层接口
 type ISystemInfo interface {
 	// ProjectInfo 程序项目信息
-	ProjectInfo() map[string]interface{}
+	ProjectInfo() map[string]any
 
 	// SystemInfo 系统信息
-	SystemInfo() map[string]interface{}
+	SystemInfo() map[string]any
 
 	// TimeInfo 系统时间信息
 	TimeInfo() map[string]string
 
 	// MemoryInfo 内存信息
-	MemoryInfo() map[string]interface{}
+	MemoryInfo() map[string]any
 
 	// CPUInfo CPU信息
-	CPUInfo() map[string]interface{}
+	CPUInfo() map[string]any
 
 	// NetworkInfo 网络信息
 	NetworkInfo() map[string]string
