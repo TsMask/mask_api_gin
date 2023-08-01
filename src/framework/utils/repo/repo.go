@@ -3,19 +3,16 @@ package repo
 import (
 	"fmt"
 	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/utils/parse"
 	"reflect"
 	"strconv"
 	"strings"
 )
 
 // PageNumSize 分页页码记录数
-func PageNumSize(pageNum, pageSize string) (int, int) {
+func PageNumSize(pageNum, pageSize interface{}) (int64, int64) {
 	// 记录起始索引
-	num, err := strconv.Atoi(pageNum)
-	if err != nil {
-		logger.Errorf("PageNumSize strconv int num err %v", err)
-		num = 0
-	}
+	num := parse.Number(pageNum)
 	if num > 5000 {
 		num = 5000
 	}
@@ -24,11 +21,7 @@ func PageNumSize(pageNum, pageSize string) (int, int) {
 	}
 
 	// 显示记录数
-	size, err := strconv.Atoi(pageSize)
-	if err != nil {
-		logger.Errorf("PageNumSize strconv int size err %v", err)
-		size = 10
-	}
+	size := parse.Number(pageSize)
 	if size > 50000 {
 		size = 50000
 	}
