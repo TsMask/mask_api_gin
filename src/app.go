@@ -58,7 +58,7 @@ func initDefeat(app *gin.Engine) {
 
 	// 静态目录-静态资源
 	if v := config.Get("staticFile.default"); v != nil {
-		fsMap := v.(map[string]interface{})
+		fsMap := v.(map[string]any)
 		prefix, dir := fsMap["prefix"], fsMap["dir"]
 		if prefix != nil && dir != nil {
 			app.StaticFS(prefix.(string), gin.Dir(dir.(string), true))
@@ -67,7 +67,7 @@ func initDefeat(app *gin.Engine) {
 
 	// 静态目录-上传资源
 	if v := config.Get("staticFile.upload"); v != nil {
-		fsMap := v.(map[string]interface{})
+		fsMap := v.(map[string]any)
 		prefix, dir := fsMap["prefix"], fsMap["dir"]
 		if prefix != nil && dir != nil {
 			app.StaticFS(prefix.(string), gin.Dir(dir.(string), true))
