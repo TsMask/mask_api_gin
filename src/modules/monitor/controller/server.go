@@ -24,7 +24,7 @@ type ServerController struct {
 //
 // GET /
 func (s *ServerController) Info(c *gin.Context) {
-	c.JSON(200, result.OkData(map[string]interface{}{
+	c.JSON(200, result.OkData(map[string]any{
 		"project": s.systemInfogService.ProjectInfo(),
 		"cpu":     s.systemInfogService.CPUInfo(),
 		"memory":  s.systemInfogService.MemoryInfo(),

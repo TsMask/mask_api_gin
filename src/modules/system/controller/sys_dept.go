@@ -301,7 +301,7 @@ func (s *SysDeptController) RoleDeptTreeSelect(c *gin.Context) {
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")
 	deptTreeSelect := s.sysDeptService.SelectDeptTreeSelect(model.SysDept{}, dataScopeSQL)
 	checkedKeys := s.sysDeptService.SelectDeptListByRoleId(roleId)
-	c.JSON(200, result.OkData(map[string]interface{}{
+	c.JSON(200, result.OkData(map[string]any{
 		"depts":       deptTreeSelect,
 		"checkedKeys": checkedKeys,
 	}))

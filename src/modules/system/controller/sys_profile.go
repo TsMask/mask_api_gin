@@ -69,7 +69,7 @@ func (s *SysProfileController) Info(c *gin.Context) {
 		postGroup = append(postGroup, post.PostName)
 	}
 
-	c.JSON(200, result.OkData(map[string]interface{}{
+	c.JSON(200, result.OkData(map[string]any{
 		"user":      loginUser.User,
 		"roleGroup": parse.RemoveDuplicates(roleGroup),
 		"postGroup": parse.RemoveDuplicates(postGroup),

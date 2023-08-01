@@ -36,7 +36,7 @@ func (s *CaptchaController) Image(c *gin.Context) {
 	captchaEnabledStr := s.sysConfigService.SelectConfigValueByKey("sys.account.captchaEnabled")
 	captchaEnabled := parse.Boolean(captchaEnabledStr)
 	if !captchaEnabled {
-		c.JSON(200, result.Ok(map[string]interface{}{
+		c.JSON(200, result.Ok(map[string]any{
 			"captchaEnabled": captchaEnabled,
 		}))
 		return
@@ -44,7 +44,7 @@ func (s *CaptchaController) Image(c *gin.Context) {
 
 	// 生成唯一标识
 	verifyKey := ""
-	data := map[string]interface{}{
+	data := map[string]any{
 		"captchaEnabled": captchaEnabled,
 		"uuid":           "",
 		"img":            "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
@@ -53,7 +53,7 @@ func (s *CaptchaController) Image(c *gin.Context) {
 	// 从数据库配置获取验证码类型 math 数值计算 char 字符验证
 	captchaType := s.sysConfigService.SelectConfigValueByKey("sys.account.captchaType")
 	if captchaType == captcha.TYPE_MATH {
-		math := config.Get("mathCaptcha").(map[string]interface{})
+		math := config.Get("mathCaptcha").(map[string]any)
 		driverCaptcha := &base64Captcha.DriverMath{
 			//Height png height in pixel.
 			Height: math["height"].(int),
@@ -83,7 +83,7 @@ func (s *CaptchaController) Image(c *gin.Context) {
 		}
 	}
 	if captchaType == captcha.TYPE_CHAR {
-		char := config.Get("charCaptcha").(map[string]interface{})
+		char := config.Get("charCaptcha").(map[string]any)
 		driverCaptcha := &base64Captcha.DriverString{
 			//Height png height in pixel.
 			Height: char["height"].(int),

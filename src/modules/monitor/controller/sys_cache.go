@@ -21,7 +21,7 @@ type SysCacheController struct{}
 //
 // GET /
 func (s *SysCacheController) Info(c *gin.Context) {
-	c.JSON(200, result.OkData(map[string]interface{}{
+	c.JSON(200, result.OkData(map[string]any{
 		"info":         redis.Info(),
 		"dbSize":       redis.KeySize(),
 		"commandStats": redis.CommandStats(),

@@ -264,7 +264,7 @@ func (s *SysMenuController) RoleMenuTreeSelect(c *gin.Context) {
 	}
 	menuTreeSelect := s.sysMenuService.SelectMenuTreeSelectByUserId(query, userId)
 	checkedKeys := s.sysMenuService.SelectMenuListByRoleId(roleId)
-	c.JSON(200, result.OkData(map[string]interface{}{
+	c.JSON(200, result.OkData(map[string]any{
 		"menus":       menuTreeSelect,
 		"checkedKeys": checkedKeys,
 	}))

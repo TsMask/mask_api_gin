@@ -10,7 +10,7 @@ import (
 var progress = 0
 
 // Execute 队列任务处理
-func Execute(options cron.Options) interface{} {
+func Execute(options cron.Options) any {
 	defer func() {
 		progress = 0
 	}()
@@ -29,7 +29,7 @@ func Execute(options cron.Options) interface{} {
 	}
 
 	// 返回结果，用于记录执行结果
-	return map[string]interface{}{
+	return map[string]any{
 		"repeat":       options.Repeat,
 		"jobName":      sysJob.JobName,
 		"invokeTarget": sysJob.InvokeTarget,

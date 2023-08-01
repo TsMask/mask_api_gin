@@ -102,9 +102,9 @@ func (s *SysUserOnlineController) List(c *gin.Context) {
 		return filteredUserOnlines[j].LoginTime > filteredUserOnlines[i].LoginTime
 	})
 
-	c.JSON(200, result.Ok(map[string]interface{}{
-		"rows":  filteredUserOnlines,
+	c.JSON(200, result.Ok(map[string]any{
 		"total": len(userOnlines),
+		"rows":  filteredUserOnlines,
 	}))
 }
 

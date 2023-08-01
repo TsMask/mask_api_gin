@@ -79,7 +79,7 @@ func (s *AccountController) Login(c *gin.Context) {
 		)
 	}
 
-	c.JSON(200, result.OkData(map[string]interface{}{
+	c.JSON(200, result.OkData(map[string]any{
 		tokenConstants.RESPONSE_FIELD: tokenStr,
 	}))
 }
@@ -98,7 +98,7 @@ func (s *AccountController) Info(c *gin.Context) {
 	isAdmin := config.IsAdmin(loginUser.UserID)
 	roles, perms := s.accountService.RoleAndMenuPerms(loginUser.UserID, isAdmin)
 
-	c.JSON(200, result.OkData(map[string]interface{}{
+	c.JSON(200, result.OkData(map[string]any{
 		"user":        loginUser.User,
 		"roles":       roles,
 		"permissions": perms,
