@@ -26,7 +26,7 @@ type zzorm struct {
 //
 // GET /list
 func (s *zzorm) List(c *gin.Context) {
-	querys := ctx.QueryMapString(c)
+	querys := ctx.QueryMap(c)
 	data, err := s.zzOrmService.SelectPage(querys)
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))

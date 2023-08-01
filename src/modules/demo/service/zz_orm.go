@@ -2,8 +2,8 @@ package service
 
 import (
 	"mask_api_gin/src/framework/datasource"
+	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/demo/model"
-	"strconv"
 
 	"gorm.io/gorm"
 )
@@ -20,28 +20,20 @@ type ZzOrmService struct {
 }
 
 // SelectPage 分页查询
-func (s *ZzOrmService) SelectPage(query map[string]string) (map[string]any, error) {
+func (s *ZzOrmService) SelectPage(query map[string]any) (map[string]any, error) {
 	var (
-		pageSize int
-		pageNum  int
+		pageSize int64
+		pageNum  int64
 		title    string
 	)
-	if v, ok := query["pageSize"]; ok {
-		num, err := strconv.Atoi(v)
-		if err != nil {
-			num = 0
-		}
-		pageSize = num
+	if v, ok := query["pageSize"]; ok && v != "" {
+		pageSize = parse.Number(v)
 	}
-	if v, ok := query["pageNum"]; ok {
-		num, err := strconv.Atoi(v)
-		if err != nil {
-			num = 0
-		}
-		pageNum = num
+	if v, ok := query["pageNum"]; ok && v != "" {
+		pageNum = parse.Number(v)
 	}
-	if v, ok := query["title"]; ok {
-		title = v
+	if v, ok := query["title"]; ok && v != "" {
+		title = v.(string)
 	}
 
 	// 检查分页条件
@@ -63,8 +55,8 @@ func (s *ZzOrmService) SelectPage(query map[string]string) (map[string]any, erro
 	totalResult := s.db().Model(&model.ZzOrm{}).Where(where).Count(&total)
 	if total == 0 || totalResult.Error != nil {
 		return map[string]any{
-			"total": 0,
-			"rows":  []any{},
+			"total": total,
+			"rows":  []model.ZzOrm{},
 		}, totalResult.Error
 	}
 
@@ -73,8 +65,8 @@ func (s *ZzOrmService) SelectPage(query map[string]string) (map[string]any, erro
 	rowsResult := s.db().Where(where).Limit(int(pageSize)).Offset(int((pageNum - 1) * pageSize)).Find(&rows)
 	if rowsResult.Error != nil {
 		return map[string]any{
-			"total": 0,
-			"rows":  []any{},
+			"total": total,
+			"rows":  []model.ZzOrm{},
 		}, rowsResult.Error
 	}
 
