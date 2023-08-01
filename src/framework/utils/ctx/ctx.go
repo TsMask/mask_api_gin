@@ -16,19 +16,19 @@ import (
 	"github.com/gin-gonic/gin/binding"
 )
 
-// QueryMapString 查询参数转换MapString
-func QueryMapString(c *gin.Context) map[string]string {
+// QueryMap 查询参数转换Map
+func QueryMap(c *gin.Context) map[string]interface{} {
 	queryValues := c.Request.URL.Query()
-	queryParams := make(map[string]string)
+	queryParams := make(map[string]interface{})
 	for key, values := range queryValues {
 		queryParams[key] = values[0]
 	}
 	return queryParams
 }
 
-// BodyJSONMapString JSON参数转换MapString
-func BodyJSONMapString(c *gin.Context) map[string]string {
-	params := make(map[string]string)
+// BodyJSONMap JSON参数转换Map
+func BodyJSONMap(c *gin.Context) map[string]interface{} {
+	params := make(map[string]interface{})
 	c.ShouldBindBodyWith(&params, binding.JSON)
 	return params
 }
