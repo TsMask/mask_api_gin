@@ -70,16 +70,16 @@ func Setup(router *gin.Engine) {
 	// 通用请求
 	commonGroup := router.Group("/common")
 	{
-		commonGroup.GET("/hash", controller.NewCommont.Hash)
+		commonGroup.GET("/hash", middleware.PreAuthorize(nil), controller.NewCommont.Hash)
 	}
 
 	// 文件操作处理
 	fileGroup := router.Group("/file")
 	{
-		fileGroup.GET("/download/:filePath", controller.NewFile.Download)
-		fileGroup.POST("/upload", controller.NewFile.Upload)
-		fileGroup.POST("/chunkCheck", controller.NewFile.ChunkCheck)
-		fileGroup.POST("/chunkUpload", controller.NewFile.ChunkUpload)
-		fileGroup.POST("/chunkMerge", controller.NewFile.ChunkMerge)
+		fileGroup.GET("/download/:filePath", middleware.PreAuthorize(nil), controller.NewFile.Download)
+		fileGroup.POST("/upload", middleware.PreAuthorize(nil), controller.NewFile.Upload)
+		fileGroup.POST("/chunkCheck", middleware.PreAuthorize(nil), controller.NewFile.ChunkCheck)
+		fileGroup.POST("/chunkUpload", middleware.PreAuthorize(nil), controller.NewFile.ChunkUpload)
+		fileGroup.POST("/chunkMerge", middleware.PreAuthorize(nil), controller.NewFile.ChunkMerge)
 	}
 }

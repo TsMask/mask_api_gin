@@ -3,16 +3,17 @@ package file
 import (
 	"errors"
 	"fmt"
-	"io"
 	"mask_api_gin/src/framework/config"
+	"mask_api_gin/src/framework/constants/uploadsubpath"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/generate"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
 	"mime/multipart"
-	"os"
+	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -66,10 +67,10 @@ func generateFileName(fileName string) string {
 
 // 检查文件允许写入本地
 //
-// allowExts 允许上传拓展类型，['.png']
-//
 // fileName 原始文件名称含后缀，如：midway1_logo_iipc68.png
-func isAllowWrite(fileName string, fileSize int64, allowExts []string) error {
+//
+// allowExts 允许上传拓展类型，['.png']
+func isAllowWrite(fileName string, allowExts []string, fileSize int64) error {
 	// 判断上传文件名称长度
 	if len(fileName) > DEFAULT_FILE_NAME_LENGTH {
 		msg := fmt.Sprintf("上传文件名称长度限制最长为 %d", DEFAULT_FILE_NAME_LENGTH)
@@ -86,6 +87,9 @@ func isAllowWrite(fileName string, fileSize int64, allowExts []string) error {
 	// 判断文件拓展是否为允许的拓展类型
 	fileExt := filepath.Ext(fileName)
 	hasExt := false
+	if len(allowExts) == 0 {
+		allowExts = uploadWhiteList()
+	}
 	for _, ext := range allowExts {
 		if ext == fileExt {
 			hasExt = true
@@ -126,42 +130,18 @@ func isAllowRead(filePath string) error {
 	return nil
 }
 
-// transferToNewFile 读取目标文件转移到新路径下
-func transferToNewFile(file *multipart.FileHeader, dst string) error {
-	src, err := file.Open()
-	if err != nil {
-		return err
-	}
-	defer src.Close()
-
-	if err = os.MkdirAll(filepath.Dir(dst), 0750); err != nil {
-		return err
-	}
-
-	out, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, src)
-	return err
-}
-
-// 上传资源文件转存
+// TransferUploadFile 上传资源文件转存
 //
 // subPath 子路径，默认 UploadSubPath.DEFAULT
 //
 // allowExts 允许上传拓展类型（含“.”)，如 ['.png','.jpg']
 func TransferUploadFile(file *multipart.FileHeader, subPath string, allowExts []string) (string, error) {
-	if len(allowExts) == 0 {
-		allowExts = uploadWhiteList()
-	}
 	// 上传文件检查
-	err := isAllowWrite(file.Filename, file.Size, allowExts)
+	err := isAllowWrite(file.Filename, allowExts, file.Size)
 	if err != nil {
 		return "", err
 	}
+	// 上传资源路径
 	prefix, dir := resourceUpload()
 	// 新文件名称并组装文件地址
 	fileName := generateFileName(file.Filename)
@@ -176,25 +156,145 @@ func TransferUploadFile(file *multipart.FileHeader, subPath string, allowExts []
 	return filepath.ToSlash(urlPath), nil
 }
 
-// SaveUploadedFile uploads the form file to specific dst.
-func SaveUploadedFile(file *multipart.FileHeader, dst string) error {
-	isAllowRead(file.Filename)
-	src, err := file.Open()
+// TransferChunkUploadFile 上传资源切片文件转存
+//
+// file 上传文件对象
+//
+// index 切片文件序号
+//
+// identifier 切片文件目录标识符
+func TransferChunkUploadFile(file *multipart.FileHeader, index, identifier string) (string, error) {
+	// 上传文件检查
+	err := isAllowWrite(file.Filename, []string{}, file.Size)
 	if err != nil {
-		return err
+		return "", err
 	}
-	defer src.Close()
-
-	if err = os.MkdirAll(filepath.Dir(dst), 0750); err != nil {
-		return err
-	}
-
-	out, err := os.Create(dst)
+	// 上传资源路径
+	prefix, dir := resourceUpload()
+	// 新文件名称并组装文件地址
+	filePath := filepath.Join(uploadsubpath.CHUNK, date.ParseDatePath(time.Now()), identifier)
+	writePathFile := filepath.Join(dir, filePath, index)
+	// 存入新文件路径
+	err = transferToNewFile(file, writePathFile)
 	if err != nil {
-		return err
+		return "", err
 	}
-	defer out.Close()
+	urlPath := filepath.Join(prefix, filePath, index)
+	return filepath.ToSlash(urlPath), nil
+}
 
-	_, err = io.Copy(out, src)
-	return err
+// ReadUploadFileStream 上传资源文件读取
+//
+// filePath 文件存放资源路径，URL相对地址 如：/upload/common/2023/06/xxx.png
+//
+// headerRange 断点续传范围区间，bytes=0-12131
+func ReadUploadFileStream(filePath, headerRange string) (map[string]interface{}, error) {
+	// 读取文件检查
+	err := isAllowRead(filePath)
+	if err != nil {
+		return map[string]interface{}{}, err
+	}
+	// 上传资源路径
+	prefix, dir := resourceUpload()
+	fileAsbPath := strings.Replace(filePath, prefix, dir, 1)
+
+	// 响应结果
+	result := map[string]interface{}{
+		"range":     "",
+		"chunkSize": 0,
+		"fileSize":  0,
+		"data":      nil,
+	}
+
+	// 文件大小
+	fileSize := getFileSize(fileAsbPath)
+	if fileSize <= 0 {
+		return result, nil
+	}
+	result["fileSize"] = fileSize
+
+	if headerRange != "" {
+		partsStr := strings.Replace(headerRange, "bytes=", "", 1)
+		parts := strings.Split(partsStr, "-")
+		start, err := strconv.ParseInt(parts[0], 10, 64)
+		if err != nil || start > fileSize {
+			start = 0
+		}
+		end, err := strconv.ParseInt(parts[1], 10, 64)
+		if err != nil || end > fileSize {
+			end = fileSize - 1
+		}
+		if start > end {
+			start = end
+		}
+
+		// 分片结果
+		result["range"] = fmt.Sprintf("bytes %d-%d/%d", start, end, fileSize)
+		result["chunkSize"] = end - start + 1
+		byteArr, err := getFileStream(fileAsbPath, start, end)
+		if err != nil {
+			return map[string]interface{}{}, errors.New("读取文件失败")
+		}
+		result["data"] = byteArr
+		return result, nil
+	}
+
+	byteArr, err := getFileStream(fileAsbPath, 0, fileSize)
+	if err != nil {
+		return map[string]interface{}{}, errors.New("读取文件失败")
+	}
+	result["data"] = byteArr
+	return result, nil
+}
+
+// 上传资源切片文件检查
+//
+// identifier 切片文件目录标识符
+//
+// originalFileName 原始文件名称，如logo.png
+func ChunkCheckFile(identifier, originalFileName string) ([]string, error) {
+	// 读取文件检查
+	err := isAllowWrite(originalFileName, []string{}, 0)
+	if err != nil {
+		return []string{}, err
+	}
+	// 上传资源路径
+	_, dir := resourceUpload()
+	dirPath := path.Join(uploadsubpath.CHUNK, date.ParseDatePath(time.Now()), identifier)
+	readPath := path.Join(dir, dirPath)
+	fileList, err := getDirFileNameList(readPath)
+	if err != nil {
+		return []string{}, errors.New("读取文件失败")
+	}
+	return fileList, nil
+}
+
+// 上传资源切片文件检查
+//
+// identifier 切片文件目录标识符
+//
+// originalFileName 原始文件名称，如logo.png
+//
+// subPath 子路径，默认 DEFAULT
+func ChunkMergeFile(identifier, originalFileName, subPath string) (string, error) {
+	// 读取文件检查
+	err := isAllowWrite(originalFileName, []string{}, 0)
+	if err != nil {
+		return "", err
+	}
+	// 上传资源路径
+	prefix, dir := resourceUpload()
+	// 切片存放目录
+	dirPath := path.Join(uploadsubpath.CHUNK, date.ParseDatePath(time.Now()), identifier)
+	readPath := path.Join(dir, dirPath)
+	// 组合存放文件路径
+	fileName := generateFileName(originalFileName)
+	filePath := path.Join(subPath, date.ParseDatePath(time.Now()))
+	writePath := path.Join(dir, filePath)
+	err = mergeToNewFile(readPath, writePath, fileName)
+	if err != nil {
+		return "", err
+	}
+	urlPath := filepath.Join(prefix, filePath, fileName)
+	return filepath.ToSlash(urlPath), nil
 }
