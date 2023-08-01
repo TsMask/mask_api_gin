@@ -5,7 +5,7 @@ import "mask_api_gin/src/modules/monitor/model"
 // ISysLogininfor 系统登录访问表 数据层接口
 type ISysLogininfor interface {
 	// SelectLogininforPage 分页查询系统登录日志集合
-	SelectLogininforPage(query map[string]string) map[string]interface{}
+	SelectLogininforPage(query map[string]any) map[string]any
 
 	// SelectLogininforList 查询系统登录日志集合
 	SelectLogininforList(sysLogininfor model.SysLogininfor) []model.SysLogininfor

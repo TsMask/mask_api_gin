@@ -79,7 +79,7 @@ type SysUserImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysUserImpl) convertResultRows(rows []map[string]interface{}) []model.SysUser {
+func (r *SysUserImpl) convertResultRows(rows []map[string]any) []model.SysUser {
 	arr := make([]model.SysUser, 0)
 
 	for _, row := range rows {
@@ -133,7 +133,7 @@ func (r *SysUserImpl) SelectUserPage(query map[string]any, dataScopeSQL string) 
 
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if v, ok := query["userId"]; ok && v != "" {
 		conditions = append(conditions, "u.user_id = ?")
 		params = append(params, v)
@@ -180,7 +180,7 @@ func (r *SysUserImpl) SelectUserPage(query map[string]any, dataScopeSQL string) 
 	}
 	total := parse.Number(totalRows[0]["total"])
 	if total == 0 {
-		return map[string]interface{}{
+		return map[string]any{
 			"total": total,
 			"rows":  []model.SysUser{},
 		}
@@ -201,7 +201,7 @@ func (r *SysUserImpl) SelectUserPage(query map[string]any, dataScopeSQL string) 
 
 	// 转换实体
 	rows := r.convertResultRows(results)
-	return map[string]interface{}{
+	return map[string]any{
 		"total": total,
 		"rows":  rows,
 	}
@@ -211,7 +211,7 @@ func (r *SysUserImpl) SelectUserPage(query map[string]any, dataScopeSQL string) 
 func (r *SysUserImpl) SelectAllocatedPage(query map[string]any, dataScopeSQL string) map[string]any {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if v, ok := query["userName"]; ok && v != "" {
 		conditions = append(conditions, "u.user_name like concat(?, '%')")
 		params = append(params, v)
@@ -261,7 +261,7 @@ func (r *SysUserImpl) SelectAllocatedPage(query map[string]any, dataScopeSQL str
 	}
 	total := parse.Number(totalRows[0]["total"])
 	if total == 0 {
-		return map[string]interface{}{
+		return map[string]any{
 			"total": total,
 			"rows":  []model.SysUser{},
 		}
@@ -289,7 +289,7 @@ func (r *SysUserImpl) SelectAllocatedPage(query map[string]any, dataScopeSQL str
 
 	// 转换实体
 	rows := r.convertResultRows(results)
-	return map[string]interface{}{
+	return map[string]any{
 		"total": total,
 		"rows":  rows,
 	}
@@ -304,7 +304,7 @@ func (r *SysUserImpl) SelectUserList(sysUser model.SysUser, dataScopeSQL string)
 
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysUser.UserID != "" {
 		conditions = append(conditions, "u.user_id = ?")
 		params = append(params, sysUser.UserID)
@@ -355,7 +355,7 @@ func (r *SysUserImpl) SelectUserByIds(userIds []string) []model.SysUser {
 // SelectUserByUserName 通过用户登录账号查询用户
 func (r *SysUserImpl) SelectUserByUserName(userName string) model.SysUser {
 	querySql := r.selectSql + " where u.del_flag = '0' and u.user_name = ?"
-	results, err := datasource.RawDB("", querySql, []interface{}{userName})
+	results, err := datasource.RawDB("", querySql, []any{userName})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return model.SysUser{}
@@ -371,7 +371,7 @@ func (r *SysUserImpl) SelectUserByUserName(userName string) model.SysUser {
 // InsertUser 新增用户信息
 func (r *SysUserImpl) InsertUser(sysUser model.SysUser) string {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysUser.UserID != "" {
 		params["user_id"] = sysUser.UserID
 	}
@@ -444,7 +444,7 @@ func (r *SysUserImpl) InsertUser(sysUser model.SysUser) string {
 // UpdateUser 修改用户信息
 func (r *SysUserImpl) UpdateUser(sysUser model.SysUser) int64 {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysUser.DeptID != "" {
 		params["dept_id"] = sysUser.DeptID
 	}
@@ -529,7 +529,7 @@ func (r *SysUserImpl) DeleteUserByIds(userIds []string) int64 {
 func (r *SysUserImpl) CheckUniqueUser(sysUser model.SysUser) string {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysUser.UserName != "" {
 		conditions = append(conditions, "user_name = ?")
 		params = append(params, sysUser.UserName)

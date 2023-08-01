@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
+	"time"
 )
 
 // 实例化数据层 SysDictDataImpl 结构体
@@ -43,7 +43,7 @@ type SysDictDataImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysDictDataImpl) convertResultRows(rows []map[string]interface{}) []model.SysDictData {
+func (r *SysDictDataImpl) convertResultRows(rows []map[string]any) []model.SysDictData {
 	arr := make([]model.SysDictData, 0)
 	for _, row := range rows {
 		sysDictData := model.SysDictData{}
@@ -58,19 +58,19 @@ func (r *SysDictDataImpl) convertResultRows(rows []map[string]interface{}) []mod
 }
 
 // SelectDictDataPage 根据条件分页查询字典数据
-func (r *SysDictDataImpl) SelectDictDataPage(query map[string]string) map[string]interface{} {
+func (r *SysDictDataImpl) SelectDictDataPage(query map[string]any) map[string]any {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
-	if v, ok := query["dictType"]; ok {
+	var params []any
+	if v, ok := query["dictType"]; ok && v != "" {
 		conditions = append(conditions, "dict_type = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["dictLabel"]; ok {
+	if v, ok := query["dictLabel"]; ok && v != "" {
 		conditions = append(conditions, "dict_label like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["status"]; ok {
+	if v, ok := query["status"]; ok && v != "" {
 		conditions = append(conditions, "status = ?")
 		params = append(params, v)
 	}
@@ -88,10 +88,10 @@ func (r *SysDictDataImpl) SelectDictDataPage(query map[string]string) map[string
 		logger.Errorf("total err => %v", err)
 	}
 	total := parse.Number(totalRows[0]["total"])
-	if total <= 0 {
-		return map[string]interface{}{
-			"total": 0,
-			"rows":  []interface{}{},
+	if total == 0 {
+		return map[string]any{
+			"total": total,
+			"rows":  []model.SysDictData{},
 		}
 	}
 
@@ -110,7 +110,7 @@ func (r *SysDictDataImpl) SelectDictDataPage(query map[string]string) map[string
 
 	// 转换实体
 	rows := r.convertResultRows(results)
-	return map[string]interface{}{
+	return map[string]any{
 		"total": total,
 		"rows":  rows,
 	}
@@ -120,7 +120,7 @@ func (r *SysDictDataImpl) SelectDictDataPage(query map[string]string) map[string
 func (r *SysDictDataImpl) SelectDictDataList(sysDictData model.SysDictData) []model.SysDictData {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysDictData.DictLabel != "" {
 		conditions = append(conditions, "dict_label like concat(?, '%')")
 		params = append(params, sysDictData.DictLabel)
@@ -170,7 +170,7 @@ func (r *SysDictDataImpl) SelectDictDataByCodes(dictCodes []string) []model.SysD
 // CountDictDataByType 查询字典数据
 func (r *SysDictDataImpl) CountDictDataByType(dictType string) int64 {
 	querySql := "select count(1) as 'total' from sys_dict_data where dict_type = ?"
-	results, err := datasource.RawDB("", querySql, []interface{}{dictType})
+	results, err := datasource.RawDB("", querySql, []any{dictType})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return 0
@@ -185,7 +185,7 @@ func (r *SysDictDataImpl) CountDictDataByType(dictType string) int64 {
 func (r *SysDictDataImpl) CheckUniqueDictData(sysDictData model.SysDictData) string {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysDictData.DictType != "" {
 		conditions = append(conditions, "dict_type = ?")
 		params = append(params, sysDictData.DictType)
@@ -236,7 +236,7 @@ func (r *SysDictDataImpl) DeleteDictDataByCodes(dictCodes []string) int64 {
 // InsertDictData 新增字典数据信息
 func (r *SysDictDataImpl) InsertDictData(sysDictData model.SysDictData) string {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysDictData.DictSort > 0 {
 		params["dict_sort"] = sysDictData.DictSort
 	}
@@ -263,7 +263,7 @@ func (r *SysDictDataImpl) InsertDictData(sysDictData model.SysDictData) string {
 	}
 	if sysDictData.CreateBy != "" {
 		params["create_by"] = sysDictData.CreateBy
-		params["create_time"] = date.NowTimestamp()
+		params["create_time"] = time.Now().UnixMilli()
 	}
 
 	// 构建执行语句
@@ -296,7 +296,7 @@ func (r *SysDictDataImpl) InsertDictData(sysDictData model.SysDictData) string {
 // UpdateDictData 修改字典数据信息
 func (r *SysDictDataImpl) UpdateDictData(sysDictData model.SysDictData) int64 {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysDictData.DictSort > 0 {
 		params["dict_sort"] = sysDictData.DictSort
 	}
@@ -323,7 +323,7 @@ func (r *SysDictDataImpl) UpdateDictData(sysDictData model.SysDictData) int64 {
 	}
 	if sysDictData.UpdateBy != "" {
 		params["update_by"] = sysDictData.UpdateBy
-		params["update_time"] = date.NowTimestamp()
+		params["update_time"] = time.Now().UnixMilli()
 	}
 
 	// 构建执行语句
@@ -343,7 +343,7 @@ func (r *SysDictDataImpl) UpdateDictData(sysDictData model.SysDictData) int64 {
 // UpdateDictDataType 同步修改字典类型
 func (r *SysDictDataImpl) UpdateDictDataType(oldDictType string, newDictType string) int64 {
 	// 参数拼接
-	params := make([]interface{}, 0)
+	params := make([]any, 0)
 	if oldDictType == "" || newDictType == "" {
 		return 0
 	}

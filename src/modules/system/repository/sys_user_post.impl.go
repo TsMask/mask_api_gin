@@ -19,7 +19,7 @@ type SysUserPostImpl struct{}
 // CountUserPostByPostId 通过岗位ID查询岗位使用数量
 func (r *SysUserPostImpl) CountUserPostByPostId(postId string) int64 {
 	querySql := "select count(1) as total from sys_user_role where role_id = ?"
-	results, err := datasource.RawDB("", querySql, []interface{}{postId})
+	results, err := datasource.RawDB("", querySql, []any{postId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return 0

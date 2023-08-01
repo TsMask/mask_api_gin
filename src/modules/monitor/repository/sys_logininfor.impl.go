@@ -8,6 +8,7 @@ import (
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/monitor/model"
 	"strings"
+	"time"
 )
 
 // 实例化数据层 SysLogininforImpl 结构体
@@ -37,7 +38,7 @@ type SysLogininforImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysLogininforImpl) convertResultRows(rows []map[string]interface{}) []model.SysLogininfor {
+func (r *SysLogininforImpl) convertResultRows(rows []map[string]any) []model.SysLogininfor {
 	arr := make([]model.SysLogininfor, 0)
 	for _, row := range rows {
 		sysLogininfor := model.SysLogininfor{}
@@ -52,31 +53,31 @@ func (r *SysLogininforImpl) convertResultRows(rows []map[string]interface{}) []m
 }
 
 // SelectLogininforPage 分页查询系统登录日志集合
-func (r *SysLogininforImpl) SelectLogininforPage(query map[string]string) map[string]interface{} {
+func (r *SysLogininforImpl) SelectLogininforPage(query map[string]any) map[string]any {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
-	if v, ok := query["ipaddr"]; ok {
+	var params []any
+	if v, ok := query["ipaddr"]; ok && v != "" {
 		conditions = append(conditions, "ipaddr like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["userName"]; ok {
+	if v, ok := query["userName"]; ok && v != "" {
 		conditions = append(conditions, "user_name like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["status"]; ok {
+	if v, ok := query["status"]; ok && v != "" {
 		conditions = append(conditions, "status = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["beginTime"]; ok {
+	if v, ok := query["beginTime"]; ok && v != "" {
 		conditions = append(conditions, "login_time >= ?")
-		beginDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
-		params = append(params, beginDate.UnixNano()/1e6)
+		beginDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		params = append(params, beginDate.UnixMilli())
 	}
-	if v, ok := query["endTime"]; ok {
+	if v, ok := query["endTime"]; ok && v != "" {
 		conditions = append(conditions, "login_time <= ?")
-		endDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
-		params = append(params, endDate.UnixNano()/1e6)
+		endDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		params = append(params, endDate.UnixMilli())
 	}
 
 	// 构建查询条件语句
@@ -92,10 +93,10 @@ func (r *SysLogininforImpl) SelectLogininforPage(query map[string]string) map[st
 		logger.Errorf("total err => %v", err)
 	}
 	total := parse.Number(totalRows[0]["total"])
-	if total <= 0 {
-		return map[string]interface{}{
-			"total": 0,
-			"rows":  []interface{}{},
+	if total == 0 {
+		return map[string]any{
+			"total": total,
+			"rows":  []model.SysLogininfor{},
 		}
 	}
 
@@ -114,7 +115,7 @@ func (r *SysLogininforImpl) SelectLogininforPage(query map[string]string) map[st
 
 	// 转换实体
 	rows := r.convertResultRows(results)
-	return map[string]interface{}{
+	return map[string]any{
 		"total": total,
 		"rows":  rows,
 	}
@@ -124,7 +125,7 @@ func (r *SysLogininforImpl) SelectLogininforPage(query map[string]string) map[st
 func (r *SysLogininforImpl) SelectLogininforList(sysLogininfor model.SysLogininfor) []model.SysLogininfor {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysLogininfor.IPAddr != "" {
 		conditions = append(conditions, "title like concat(?, '%')")
 		params = append(params, sysLogininfor.IPAddr)
@@ -159,8 +160,8 @@ func (r *SysLogininforImpl) SelectLogininforList(sysLogininfor model.SysLogininf
 // InsertLogininfor 新增系统登录日志
 func (r *SysLogininforImpl) InsertLogininfor(sysLogininfor model.SysLogininfor) string {
 	// 参数拼接
-	params := make(map[string]interface{})
-	params["login_time"] = date.NowTimestamp()
+	params := make(map[string]any)
+	params["login_time"] = time.Now().UnixMilli()
 	if sysLogininfor.UserName != "" {
 		params["user_name"] = sysLogininfor.UserName
 	}
@@ -226,6 +227,6 @@ func (r *SysLogininforImpl) DeleteLogininforByIds(infoIds []string) int64 {
 // CleanLogininfor 清空系统登录日志
 func (r *SysLogininforImpl) CleanLogininfor() error {
 	sql := "truncate table sys_logininfor"
-	_, err := datasource.ExecDB("", sql, []interface{}{})
+	_, err := datasource.ExecDB("", sql, []any{})
 	return err
 }

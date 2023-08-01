@@ -5,7 +5,7 @@ import "mask_api_gin/src/modules/system/model"
 // ISysPost 岗位表 数据层接口
 type ISysPost interface {
 	// SelectPostPage 查询岗位分页数据集合
-	SelectPostPage(query map[string]string) map[string]interface{}
+	SelectPostPage(query map[string]any) map[string]any
 
 	// SelectPostList 查询岗位数据集合
 	SelectPostList(sysPost model.SysPost) []model.SysPost

@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
+	"time"
 )
 
 // 实例化数据层 SysPostImpl 结构体
@@ -40,7 +40,7 @@ type SysPostImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysPostImpl) convertResultRows(rows []map[string]interface{}) []model.SysPost {
+func (r *SysPostImpl) convertResultRows(rows []map[string]any) []model.SysPost {
 	arr := make([]model.SysPost, 0)
 	for _, row := range rows {
 		sysPost := model.SysPost{}
@@ -55,19 +55,19 @@ func (r *SysPostImpl) convertResultRows(rows []map[string]interface{}) []model.S
 }
 
 // SelectPostPage 查询岗位分页数据集合
-func (r *SysPostImpl) SelectPostPage(query map[string]string) map[string]interface{} {
+func (r *SysPostImpl) SelectPostPage(query map[string]any) map[string]any {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
-	if v, ok := query["postCode"]; ok {
+	var params []any
+	if v, ok := query["postCode"]; ok && v != "" {
 		conditions = append(conditions, "post_code like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["postName"]; ok {
+	if v, ok := query["postName"]; ok && v != "" {
 		conditions = append(conditions, "post_name like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["status"]; ok {
+	if v, ok := query["status"]; ok && v != "" {
 		conditions = append(conditions, "status = ?")
 		params = append(params, v)
 	}
@@ -85,10 +85,10 @@ func (r *SysPostImpl) SelectPostPage(query map[string]string) map[string]interfa
 		logger.Errorf("total err => %v", err)
 	}
 	total := parse.Number(totalRows[0]["total"])
-	if total <= 0 {
-		return map[string]interface{}{
-			"total": 0,
-			"rows":  []interface{}{},
+	if total == 0 {
+		return map[string]any{
+			"total": total,
+			"rows":  []model.SysPost{},
 		}
 	}
 
@@ -107,7 +107,7 @@ func (r *SysPostImpl) SelectPostPage(query map[string]string) map[string]interfa
 
 	// 转换实体
 	rows := r.convertResultRows(results)
-	return map[string]interface{}{
+	return map[string]any{
 		"total": total,
 		"rows":  rows,
 	}
@@ -117,7 +117,7 @@ func (r *SysPostImpl) SelectPostPage(query map[string]string) map[string]interfa
 func (r *SysPostImpl) SelectPostList(sysPost model.SysPost) []model.SysPost {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysPost.PostCode != "" {
 		conditions = append(conditions, "post_code like concat(?, '%')")
 		params = append(params, sysPost.PostCode)
@@ -171,7 +171,7 @@ func (r *SysPostImpl) SelectPostListByUserId(userId string) []model.SysPost {
     left join sys_user_post up on up.post_id = p.post_id 
     left join sys_user u on u.user_id = up.user_id 
     where u.user_id = ? order by p.post_id`
-	rows, err := datasource.RawDB("", querySql, []interface{}{userId})
+	rows, err := datasource.RawDB("", querySql, []any{userId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysPost{}
@@ -195,7 +195,7 @@ func (r *SysPostImpl) DeletePostByIds(postIds []string) int64 {
 // UpdatePost 修改岗位信息
 func (r *SysPostImpl) UpdatePost(sysPost model.SysPost) int64 {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysPost.PostCode != "" {
 		params["post_code"] = sysPost.PostCode
 	}
@@ -213,7 +213,7 @@ func (r *SysPostImpl) UpdatePost(sysPost model.SysPost) int64 {
 	}
 	if sysPost.UpdateBy != "" {
 		params["update_by"] = sysPost.UpdateBy
-		params["update_time"] = date.NowTimestamp()
+		params["update_time"] = time.Now().UnixMilli()
 	}
 
 	// 构建执行语句
@@ -233,7 +233,7 @@ func (r *SysPostImpl) UpdatePost(sysPost model.SysPost) int64 {
 // InsertPost 新增岗位信息
 func (r *SysPostImpl) InsertPost(sysPost model.SysPost) string {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysPost.PostID != "" {
 		params["post_id"] = sysPost.PostID
 	}
@@ -254,7 +254,7 @@ func (r *SysPostImpl) InsertPost(sysPost model.SysPost) string {
 	}
 	if sysPost.CreateBy != "" {
 		params["create_by"] = sysPost.CreateBy
-		params["create_time"] = date.NowTimestamp()
+		params["create_time"] = time.Now().UnixMilli()
 	}
 
 	// 构建执行语句
@@ -288,7 +288,7 @@ func (r *SysPostImpl) InsertPost(sysPost model.SysPost) string {
 func (r *SysPostImpl) CheckUniquePost(sysPost model.SysPost) string {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysPost.PostName != "" {
 		conditions = append(conditions, "post_name= ?")
 		params = append(params, sysPost.PostName)

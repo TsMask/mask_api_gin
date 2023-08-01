@@ -8,6 +8,7 @@ import (
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
+	"time"
 )
 
 // 实例化数据层 SysNoticeImpl 结构体
@@ -40,7 +41,7 @@ type SysNoticeImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysNoticeImpl) convertResultRows(rows []map[string]interface{}) []model.SysNotice {
+func (r *SysNoticeImpl) convertResultRows(rows []map[string]any) []model.SysNotice {
 	arr := make([]model.SysNotice, 0)
 	for _, row := range rows {
 		sysNotice := model.SysNotice{}
@@ -55,35 +56,35 @@ func (r *SysNoticeImpl) convertResultRows(rows []map[string]interface{}) []model
 }
 
 // SelectNoticePage 分页查询公告列表
-func (r *SysNoticeImpl) SelectNoticePage(query map[string]string) map[string]interface{} {
+func (r *SysNoticeImpl) SelectNoticePage(query map[string]any) map[string]any {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
-	if v, ok := query["noticeTitle"]; ok {
+	var params []any
+	if v, ok := query["noticeTitle"]; ok && v != "" {
 		conditions = append(conditions, "notice_title like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["noticeType"]; ok {
+	if v, ok := query["noticeType"]; ok && v != "" {
 		conditions = append(conditions, "notice_type = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["createBy"]; ok {
+	if v, ok := query["createBy"]; ok && v != "" {
 		conditions = append(conditions, "create_by like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["status"]; ok {
+	if v, ok := query["status"]; ok && v != "" {
 		conditions = append(conditions, "status = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["beginTime"]; ok {
+	if v, ok := query["beginTime"]; ok && v != "" {
 		conditions = append(conditions, "create_time >= ?")
-		beginDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
-		params = append(params, beginDate.UnixNano()/1e6)
+		beginDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		params = append(params, beginDate.UnixMilli())
 	}
-	if v, ok := query["endTime"]; ok {
+	if v, ok := query["endTime"]; ok && v != "" {
 		conditions = append(conditions, "create_time <= ?")
-		endDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
-		params = append(params, endDate.UnixNano()/1e6)
+		endDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		params = append(params, endDate.UnixMilli())
 	}
 
 	// 构建查询条件语句
@@ -99,10 +100,10 @@ func (r *SysNoticeImpl) SelectNoticePage(query map[string]string) map[string]int
 		logger.Errorf("total err => %v", err)
 	}
 	total := parse.Number(totalRows[0]["total"])
-	if total <= 0 {
-		return map[string]interface{}{
-			"total": 0,
-			"rows":  []interface{}{},
+	if total == 0 {
+		return map[string]any{
+			"total": total,
+			"rows":  []model.SysNotice{},
 		}
 	}
 
@@ -121,7 +122,7 @@ func (r *SysNoticeImpl) SelectNoticePage(query map[string]string) map[string]int
 
 	// 转换实体
 	rows := r.convertResultRows(results)
-	return map[string]interface{}{
+	return map[string]any{
 		"total": total,
 		"rows":  rows,
 	}
@@ -131,7 +132,7 @@ func (r *SysNoticeImpl) SelectNoticePage(query map[string]string) map[string]int
 func (r *SysNoticeImpl) SelectNoticeList(sysNotice model.SysNotice) []model.SysNotice {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysNotice.NoticeTitle != "" {
 		conditions = append(conditions, "notice_title like concat(?, '%')")
 		params = append(params, sysNotice.NoticeTitle)
@@ -184,7 +185,7 @@ func (r *SysNoticeImpl) SelectNoticeByIds(noticeIds []string) []model.SysNotice 
 // InsertNotice 新增公告
 func (r *SysNoticeImpl) InsertNotice(sysNotice model.SysNotice) string {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysNotice.NoticeTitle != "" {
 		params["notice_title"] = sysNotice.NoticeTitle
 	}
@@ -202,7 +203,7 @@ func (r *SysNoticeImpl) InsertNotice(sysNotice model.SysNotice) string {
 	}
 	if sysNotice.CreateBy != "" {
 		params["create_by"] = sysNotice.CreateBy
-		params["create_time"] = date.NowTimestamp()
+		params["create_time"] = time.Now().UnixMilli()
 	}
 
 	// 构建执行语句
@@ -235,7 +236,7 @@ func (r *SysNoticeImpl) InsertNotice(sysNotice model.SysNotice) string {
 // UpdateNotice 修改公告
 func (r *SysNoticeImpl) UpdateNotice(sysNotice model.SysNotice) int64 {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysNotice.NoticeTitle != "" {
 		params["notice_title"] = sysNotice.NoticeTitle
 	}
@@ -253,7 +254,7 @@ func (r *SysNoticeImpl) UpdateNotice(sysNotice model.SysNotice) int64 {
 	}
 	if sysNotice.UpdateBy != "" {
 		params["update_by"] = sysNotice.UpdateBy
-		params["update_time"] = date.NowTimestamp()
+		params["update_time"] = time.Now().UnixMilli()
 	}
 
 	// 构建执行语句

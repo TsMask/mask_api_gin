@@ -7,7 +7,7 @@ import (
 // 调度任务日志表 数据层接口
 type ISysJobLog interface {
 	// 分页查询调度任务日志集合
-	SelectJobLogPage(query map[string]string) map[string]interface{}
+	SelectJobLogPage(query map[string]any) map[string]any
 
 	// 查询调度任务日志集合
 	SelectJobLogList(sysJobLog model.SysJobLog) []model.SysJobLog

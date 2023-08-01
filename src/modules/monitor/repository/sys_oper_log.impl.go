@@ -8,6 +8,7 @@ import (
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/monitor/model"
 	"strings"
+	"time"
 )
 
 // 实例化数据层 SysOperLogImpl 结构体
@@ -46,7 +47,7 @@ type SysOperLogImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysOperLogImpl) convertResultRows(rows []map[string]interface{}) []model.SysOperLog {
+func (r *SysOperLogImpl) convertResultRows(rows []map[string]any) []model.SysOperLog {
 	arr := make([]model.SysOperLog, 0)
 	for _, row := range rows {
 		sysOperLog := model.SysOperLog{}
@@ -61,35 +62,35 @@ func (r *SysOperLogImpl) convertResultRows(rows []map[string]interface{}) []mode
 }
 
 // SelectOperLogPage 分页查询系统操作日志集合
-func (r *SysOperLogImpl) SelectOperLogPage(query map[string]string) map[string]interface{} {
+func (r *SysOperLogImpl) SelectOperLogPage(query map[string]any) map[string]any {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
-	if v, ok := query["title"]; ok {
+	var params []any
+	if v, ok := query["title"]; ok && v != "" {
 		conditions = append(conditions, "title like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["businessType"]; ok {
+	if v, ok := query["businessType"]; ok && v != "" {
 		conditions = append(conditions, "business_type = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["operName"]; ok {
+	if v, ok := query["operName"]; ok && v != "" {
 		conditions = append(conditions, "oper_name like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["status"]; ok {
+	if v, ok := query["status"]; ok && v != "" {
 		conditions = append(conditions, "status = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["beginTime"]; ok {
+	if v, ok := query["beginTime"]; ok && v != "" {
 		conditions = append(conditions, "oper_time >= ?")
-		beginDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
-		params = append(params, beginDate.UnixNano()/1e6)
+		beginDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		params = append(params, beginDate.UnixMilli())
 	}
-	if v, ok := query["endTime"]; ok {
+	if v, ok := query["endTime"]; ok && v != "" {
 		conditions = append(conditions, "oper_time <= ?")
-		endDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
-		params = append(params, endDate.UnixNano()/1e6)
+		endDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		params = append(params, endDate.UnixMilli())
 	}
 
 	// 构建查询条件语句
@@ -105,10 +106,10 @@ func (r *SysOperLogImpl) SelectOperLogPage(query map[string]string) map[string]i
 		logger.Errorf("total err => %v", err)
 	}
 	total := parse.Number(totalRows[0]["total"])
-	if total <= 0 {
-		return map[string]interface{}{
-			"total": 0,
-			"rows":  []interface{}{},
+	if total == 0 {
+		return map[string]any{
+			"total": total,
+			"rows":  []model.SysOperLog{},
 		}
 	}
 
@@ -127,7 +128,7 @@ func (r *SysOperLogImpl) SelectOperLogPage(query map[string]string) map[string]i
 
 	// 转换实体
 	rows := r.convertResultRows(results)
-	return map[string]interface{}{
+	return map[string]any{
 		"total": total,
 		"rows":  rows,
 	}
@@ -137,7 +138,7 @@ func (r *SysOperLogImpl) SelectOperLogPage(query map[string]string) map[string]i
 func (r *SysOperLogImpl) SelectOperLogList(sysOperLog model.SysOperLog) []model.SysOperLog {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysOperLog.Title != "" {
 		conditions = append(conditions, "title like concat(?, '%')")
 		params = append(params, sysOperLog.Title)
@@ -176,7 +177,7 @@ func (r *SysOperLogImpl) SelectOperLogList(sysOperLog model.SysOperLog) []model.
 // SelectOperLogById 查询操作日志详细
 func (r *SysOperLogImpl) SelectOperLogById(operId string) model.SysOperLog {
 	querySql := r.selectSql + " where oper_id = ?"
-	results, err := datasource.RawDB("", querySql, []interface{}{operId})
+	results, err := datasource.RawDB("", querySql, []any{operId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return model.SysOperLog{}
@@ -192,8 +193,8 @@ func (r *SysOperLogImpl) SelectOperLogById(operId string) model.SysOperLog {
 // InsertOperLog 新增操作日志
 func (r *SysOperLogImpl) InsertOperLog(sysOperLog model.SysOperLog) string {
 	// 参数拼接
-	params := make(map[string]interface{})
-	params["oper_time"] = date.NowTimestamp()
+	params := make(map[string]any)
+	params["oper_time"] = time.Now().UnixMilli()
 	if sysOperLog.Title != "" {
 		params["title"] = sysOperLog.Title
 	}
@@ -280,6 +281,6 @@ func (r *SysOperLogImpl) DeleteOperLogByIds(operIds []string) int64 {
 // CleanOperLog 清空操作日志
 func (r *SysOperLogImpl) CleanOperLog() error {
 	sql := "truncate table sys_oper_log"
-	_, err := datasource.ExecDB("", sql, []interface{}{})
+	_, err := datasource.ExecDB("", sql, []any{})
 	return err
 }

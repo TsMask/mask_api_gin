@@ -5,7 +5,7 @@ import "mask_api_gin/src/modules/system/model"
 // ISysConfig 参数配置表 数据层接口
 type ISysConfig interface {
 	// SelectDictDataPage 分页查询参数配置列表数据
-	SelectConfigPage(query map[string]string) map[string]interface{}
+	SelectConfigPage(query map[string]any) map[string]any
 
 	// SelectConfigList 查询参数配置列表
 	SelectConfigList(sysConfig model.SysConfig) []model.SysConfig

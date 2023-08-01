@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
+	"time"
 )
 
 // 实例化数据层 SysDeptImpl 结构体
@@ -45,7 +45,7 @@ type SysDeptImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysDeptImpl) convertResultRows(rows []map[string]interface{}) []model.SysDept {
+func (r *SysDeptImpl) convertResultRows(rows []map[string]any) []model.SysDept {
 	arr := make([]model.SysDept, 0)
 	for _, row := range rows {
 		sysDept := model.SysDept{}
@@ -63,7 +63,7 @@ func (r *SysDeptImpl) convertResultRows(rows []map[string]interface{}) []model.S
 func (r *SysDeptImpl) SelectDeptList(sysDept model.SysDept, dataScopeSQL string) []model.SysDept {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysDept.DeptID != "" {
 		conditions = append(conditions, "dept_id = ?")
 		params = append(params, sysDept.DeptID)
@@ -105,7 +105,7 @@ func (r *SysDeptImpl) SelectDeptListByRoleId(roleId string, deptCheckStrictly bo
 	querySql := `select d.dept_id as 'str' from sys_dept d
     left join sys_role_dept rd on d.dept_id = rd.dept_id
     where rd.role_id = ? `
-	var params []interface{}
+	var params []any
 	params = append(params, roleId)
 	// 展开
 	if deptCheckStrictly {
@@ -140,7 +140,7 @@ func (r *SysDeptImpl) SelectDeptById(deptId string) model.SysDept {
 	d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status,
 	(select dept_name from sys_dept where dept_id = d.parent_id) parent_name
 	from sys_dept d where d.dept_id = ?`
-	results, err := datasource.RawDB("", querySql, []interface{}{deptId})
+	results, err := datasource.RawDB("", querySql, []any{deptId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return model.SysDept{}
@@ -156,7 +156,7 @@ func (r *SysDeptImpl) SelectDeptById(deptId string) model.SysDept {
 // SelectChildrenDeptById 根据ID查询所有子部门
 func (r *SysDeptImpl) SelectChildrenDeptById(deptId string) []model.SysDept {
 	querySql := r.selectSql + " where find_in_set(?, d.ancestors)"
-	results, err := datasource.RawDB("", querySql, []interface{}{deptId})
+	results, err := datasource.RawDB("", querySql, []any{deptId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysDept{}
@@ -169,7 +169,7 @@ func (r *SysDeptImpl) SelectChildrenDeptById(deptId string) []model.SysDept {
 // HasChildByDeptId 是否存在子节点
 func (r *SysDeptImpl) HasChildByDeptId(deptId string) int64 {
 	querySql := "select count(1) as 'total' from sys_dept where del_flag = '0' and parent_id = ? limit 1"
-	results, err := datasource.RawDB("", querySql, []interface{}{deptId})
+	results, err := datasource.RawDB("", querySql, []any{deptId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return 0
@@ -183,7 +183,7 @@ func (r *SysDeptImpl) HasChildByDeptId(deptId string) int64 {
 // CheckDeptExistUser 查询部门是否存在用户
 func (r *SysDeptImpl) CheckDeptExistUser(deptId string) int64 {
 	querySql := "select count(1) as 'total' from sys_user where dept_id = ? and del_flag = '0'"
-	results, err := datasource.RawDB("", querySql, []interface{}{deptId})
+	results, err := datasource.RawDB("", querySql, []any{deptId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return 0
@@ -198,7 +198,7 @@ func (r *SysDeptImpl) CheckDeptExistUser(deptId string) int64 {
 func (r *SysDeptImpl) CheckUniqueDept(sysDept model.SysDept) string {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysDept.DeptName != "" {
 		conditions = append(conditions, "dept_name = ?")
 		params = append(params, sysDept.DeptName)
@@ -233,7 +233,7 @@ func (r *SysDeptImpl) CheckUniqueDept(sysDept model.SysDept) string {
 // InsertDept 新增部门信息
 func (r *SysDeptImpl) InsertDept(sysDept model.SysDept) string {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysDept.DeptID != "" {
 		params["dept_id"] = sysDept.DeptID
 	}
@@ -263,7 +263,7 @@ func (r *SysDeptImpl) InsertDept(sysDept model.SysDept) string {
 	}
 	if sysDept.CreateBy != "" {
 		params["create_by"] = sysDept.CreateBy
-		params["create_time"] = date.NowTimestamp()
+		params["create_time"] = time.Now().UnixMilli()
 	}
 
 	// 构建执行语句
@@ -296,7 +296,7 @@ func (r *SysDeptImpl) InsertDept(sysDept model.SysDept) string {
 // UpdateDept 修改部门信息
 func (r *SysDeptImpl) UpdateDept(sysDept model.SysDept) int64 {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysDept.ParentID != "" {
 		params["parent_id"] = sysDept.ParentID
 	}
@@ -323,7 +323,7 @@ func (r *SysDeptImpl) UpdateDept(sysDept model.SysDept) int64 {
 	}
 	if sysDept.UpdateBy != "" {
 		params["update_by"] = sysDept.UpdateBy
-		params["update_time"] = date.NowTimestamp()
+		params["update_time"] = time.Now().UnixMilli()
 	}
 
 	// 构建执行语句
@@ -362,7 +362,7 @@ func (r *SysDeptImpl) UpdateDeptChildren(sysDepts []model.SysDept) int64 {
 
 	// 更新条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	for _, dept := range sysDepts {
 		caseSql := fmt.Sprintf("case when %s then %s end", dept.DeptID, dept.Ancestors)
 		conditions = append(conditions, caseSql)
@@ -383,7 +383,7 @@ func (r *SysDeptImpl) UpdateDeptChildren(sysDepts []model.SysDept) int64 {
 // DeleteDeptById 删除部门管理信息
 func (r *SysDeptImpl) DeleteDeptById(deptId string) int64 {
 	sql := "update sys_dept set del_flag = '1' where dept_id = ?"
-	results, err := datasource.ExecDB("", sql, []interface{}{deptId})
+	results, err := datasource.ExecDB("", sql, []any{deptId})
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
 		return 0

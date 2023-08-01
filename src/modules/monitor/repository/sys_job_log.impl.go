@@ -8,6 +8,7 @@ import (
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/monitor/model"
 	"strings"
+	"time"
 )
 
 // 实例化数据层 SysJobLogImpl 结构体
@@ -36,7 +37,7 @@ type SysJobLogImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysJobLogImpl) convertResultRows(rows []map[string]interface{}) []model.SysJobLog {
+func (r *SysJobLogImpl) convertResultRows(rows []map[string]any) []model.SysJobLog {
 	arr := make([]model.SysJobLog, 0)
 	for _, row := range rows {
 		sysJobLog := model.SysJobLog{}
@@ -51,35 +52,35 @@ func (r *SysJobLogImpl) convertResultRows(rows []map[string]interface{}) []model
 }
 
 // 分页查询调度任务日志集合
-func (r *SysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]interface{} {
+func (r *SysJobLogImpl) SelectJobLogPage(query map[string]any) map[string]any {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
-	if v, ok := query["jobName"]; ok {
+	var params []any
+	if v, ok := query["jobName"]; ok && v != "" {
 		conditions = append(conditions, "job_name like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["jobGroup"]; ok {
+	if v, ok := query["jobGroup"]; ok && v != "" {
 		conditions = append(conditions, "job_group = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["status"]; ok {
+	if v, ok := query["status"]; ok && v != "" {
 		conditions = append(conditions, "status = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["invokeTarget"]; ok {
+	if v, ok := query["invokeTarget"]; ok && v != "" {
 		conditions = append(conditions, "invoke_target like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["beginTime"]; ok {
+	if v, ok := query["beginTime"]; ok && v != "" {
 		conditions = append(conditions, "create_time >= ?")
-		beginDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
-		params = append(params, beginDate.UnixNano()/1e6)
+		beginDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		params = append(params, beginDate.UnixMilli())
 	}
-	if v, ok := query["endTime"]; ok {
+	if v, ok := query["endTime"]; ok && v != "" {
 		conditions = append(conditions, "create_time <= ?")
-		endDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
-		params = append(params, endDate.UnixNano()/1e6)
+		endDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		params = append(params, endDate.UnixMilli())
 	}
 
 	// 构建查询条件语句
@@ -95,10 +96,10 @@ func (r *SysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]int
 		logger.Errorf("total err => %v", err)
 	}
 	total := parse.Number(totalRows[0]["total"])
-	if total <= 0 {
-		return map[string]interface{}{
-			"total": 0,
-			"rows":  []interface{}{},
+	if total == 0 {
+		return map[string]any{
+			"total": total,
+			"rows":  []model.SysJobLog{},
 		}
 	}
 
@@ -117,7 +118,7 @@ func (r *SysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]int
 
 	// 转换实体
 	rows := r.convertResultRows(results)
-	return map[string]interface{}{
+	return map[string]any{
 		"total": total,
 		"rows":  rows,
 	}
@@ -127,7 +128,7 @@ func (r *SysJobLogImpl) SelectJobLogPage(query map[string]string) map[string]int
 func (r *SysJobLogImpl) SelectJobLogList(sysJobLog model.SysJobLog) []model.SysJobLog {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysJobLog.JobName != "" {
 		conditions = append(conditions, "job_name like concat(?, '%')")
 		params = append(params, sysJobLog.JobName)
@@ -166,7 +167,7 @@ func (r *SysJobLogImpl) SelectJobLogList(sysJobLog model.SysJobLog) []model.SysJ
 // 通过调度ID查询调度任务日志信息
 func (r *SysJobLogImpl) SelectJobLogById(jobLogId string) model.SysJobLog {
 	querySql := r.selectSql + " where job_log_id = ?"
-	results, err := datasource.RawDB("", querySql, []interface{}{jobLogId})
+	results, err := datasource.RawDB("", querySql, []any{jobLogId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return model.SysJobLog{}
@@ -182,8 +183,8 @@ func (r *SysJobLogImpl) SelectJobLogById(jobLogId string) model.SysJobLog {
 // 新增调度任务日志信息
 func (r *SysJobLogImpl) InsertJobLog(sysJobLog model.SysJobLog) string {
 	// 参数拼接
-	params := make(map[string]interface{})
-	params["create_time"] = date.NowTimestamp()
+	params := make(map[string]any)
+	params["create_time"] = time.Now().UnixMilli()
 	if sysJobLog.JobLogID != "" {
 		params["job_log_id"] = sysJobLog.JobLogID
 	}
@@ -249,6 +250,6 @@ func (r *SysJobLogImpl) DeleteJobLogByIds(jobLogIds []string) int64 {
 // 清空调度任务日志
 func (r *SysJobLogImpl) CleanJobLog() error {
 	sql := "truncate table sys_job_log"
-	_, err := datasource.ExecDB("", sql, []interface{}{})
+	_, err := datasource.ExecDB("", sql, []any{})
 	return err
 }

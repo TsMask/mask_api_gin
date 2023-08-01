@@ -9,6 +9,7 @@ import (
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
+	"time"
 )
 
 // 实例化数据层 SysRoleImpl 结构体
@@ -48,7 +49,7 @@ type SysRoleImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysRoleImpl) convertResultRows(rows []map[string]interface{}) []model.SysRole {
+func (r *SysRoleImpl) convertResultRows(rows []map[string]any) []model.SysRole {
 	arr := make([]model.SysRole, 0)
 	for _, row := range rows {
 		sysRole := model.SysRole{}
@@ -63,37 +64,37 @@ func (r *SysRoleImpl) convertResultRows(rows []map[string]interface{}) []model.S
 }
 
 // SelectRolePage 根据条件分页查询角色数据
-func (r *SysRoleImpl) SelectRolePage(query map[string]string, dataScopeSQL string) map[string]interface{} {
+func (r *SysRoleImpl) SelectRolePage(query map[string]any, dataScopeSQL string) map[string]any {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
-	if v, ok := query["roleId"]; ok {
+	var params []any
+	if v, ok := query["roleId"]; ok && v != "" {
 		conditions = append(conditions, "r.role_id = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["roleName"]; ok {
+	if v, ok := query["roleName"]; ok && v != "" {
 		conditions = append(conditions, "r.role_name like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["roleKey"]; ok {
+	if v, ok := query["roleKey"]; ok && v != "" {
 		conditions = append(conditions, "r.role_key like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["status"]; ok {
+	if v, ok := query["status"]; ok && v != "" {
 		conditions = append(conditions, "r.status = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["beginTime"]; ok {
+	if v, ok := query["beginTime"]; ok && v != "" {
 		conditions = append(conditions, "r.create_time >= ?")
-		beginDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
-		params = append(params, beginDate.UnixNano()/1e6)
+		beginDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		params = append(params, beginDate.UnixMilli())
 	}
-	if v, ok := query["endTime"]; ok {
+	if v, ok := query["endTime"]; ok && v != "" {
 		conditions = append(conditions, "r.create_time <= ?")
-		endDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
-		params = append(params, endDate.UnixNano()/1e6)
+		endDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		params = append(params, endDate.UnixMilli())
 	}
-	if v, ok := query["deptId"]; ok {
+	if v, ok := query["deptId"]; ok && v != "" {
 		conditions = append(conditions, `(u.dept_id = ? or u.dept_id in ( 
 			select t.dept_id from sys_dept t where find_in_set(?, ancestors)
 		))`)
@@ -117,10 +118,10 @@ func (r *SysRoleImpl) SelectRolePage(query map[string]string, dataScopeSQL strin
 		logger.Errorf("total err => %v", err)
 	}
 	total := parse.Number(totalRows[0]["total"])
-	if total <= 0 {
-		return map[string]interface{}{
-			"total": 0,
-			"rows":  []interface{}{},
+	if total == 0 {
+		return map[string]any{
+			"total": total,
+			"rows":  []model.SysRole{},
 		}
 	}
 
@@ -139,7 +140,7 @@ func (r *SysRoleImpl) SelectRolePage(query map[string]string, dataScopeSQL strin
 
 	// 转换实体
 	rows := r.convertResultRows(results)
-	return map[string]interface{}{
+	return map[string]any{
 		"total": total,
 		"rows":  rows,
 	}
@@ -149,7 +150,7 @@ func (r *SysRoleImpl) SelectRolePage(query map[string]string, dataScopeSQL strin
 func (r *SysRoleImpl) SelectRoleList(sysRole model.SysRole, dataScopeSQL string) []model.SysRole {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysRole.RoleID != "" {
 		conditions = append(conditions, "r.role_id = ?")
 		params = append(params, sysRole.RoleID)
@@ -187,7 +188,7 @@ func (r *SysRoleImpl) SelectRoleList(sysRole model.SysRole, dataScopeSQL string)
 // SelectRoleListByUserId 根据用户ID获取角色选择框列表
 func (r *SysRoleImpl) SelectRoleListByUserId(userId string) []model.SysRole {
 	querySql := r.selectSql + " where r.del_flag = '0' and ur.user_id = ?"
-	results, err := datasource.RawDB("", querySql, []interface{}{userId})
+	results, err := datasource.RawDB("", querySql, []any{userId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysRole{}
@@ -212,7 +213,7 @@ func (r *SysRoleImpl) SelectRoleByIds(roleIds []string) []model.SysRole {
 // UpdateRole 修改角色信息
 func (r *SysRoleImpl) UpdateRole(sysRole model.SysRole) int64 {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysRole.RoleName != "" {
 		params["role_name"] = sysRole.RoleName
 	}
@@ -239,7 +240,7 @@ func (r *SysRoleImpl) UpdateRole(sysRole model.SysRole) int64 {
 	}
 	if sysRole.UpdateBy != "" {
 		params["update_by"] = sysRole.UpdateBy
-		params["update_time"] = date.NowTimestamp()
+		params["update_time"] = time.Now().UnixMilli()
 	}
 
 	// 构建执行语句
@@ -259,7 +260,7 @@ func (r *SysRoleImpl) UpdateRole(sysRole model.SysRole) int64 {
 // InsertRole 新增角色信息
 func (r *SysRoleImpl) InsertRole(sysRole model.SysRole) string {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysRole.RoleID != "" {
 		params["role_id"] = sysRole.RoleID
 	}
@@ -289,7 +290,7 @@ func (r *SysRoleImpl) InsertRole(sysRole model.SysRole) string {
 	}
 	if sysRole.CreateBy != "" {
 		params["create_by"] = sysRole.CreateBy
-		params["create_time"] = date.NowTimestamp()
+		params["create_time"] = time.Now().UnixMilli()
 	}
 
 	// 构建执行语句
@@ -336,7 +337,7 @@ func (r *SysRoleImpl) DeleteRoleByIds(roleIds []string) int64 {
 func (r *SysRoleImpl) CheckUniqueRole(sysRole model.SysRole) string {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysRole.RoleName != "" {
 		conditions = append(conditions, "r.role_name = ?")
 		params = append(params, sysRole.RoleName)

@@ -183,7 +183,7 @@ func Setup(router *gin.Engine) {
 			operlog.OperLog(operlog.OptionNew("登录访问信息", operlog.BUSINESS_TYPE_CLEAN)),
 			controller.NewSysLogininfor.Unlock,
 		)
-		sysLogininforGroup.DELETE("/export",
+		sysLogininforGroup.POST("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:logininfor:export"}}),
 			operlog.OperLog(operlog.OptionNew("登录访问信息", operlog.BUSINESS_TYPE_EXPORT)),
 			controller.NewSysLogininfor.Export,

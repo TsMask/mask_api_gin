@@ -19,7 +19,7 @@ type SysUserRoleImpl struct{}
 // CountUserRoleByRoleId 通过角色ID查询角色使用数量
 func (r *SysUserRoleImpl) CountUserRoleByRoleId(roleId string) int64 {
 	querySql := "select count(1) as total from sys_user_role where role_id = ?"
-	results, err := datasource.RawDB("", querySql, []interface{}{roleId})
+	results, err := datasource.RawDB("", querySql, []any{roleId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return 0
@@ -63,7 +63,7 @@ func (r *SysUserRoleImpl) DeleteUserRoleByRoleId(roleId string, userIds []string
 	placeholder := repo.KeyPlaceholderByQuery(len(userIds))
 	sql := "delete from sys_user_role where role_id= ? and user_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(userIds)
-	parameters = append([]interface{}{roleId}, parameters...)
+	parameters = append([]any{roleId}, parameters...)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)

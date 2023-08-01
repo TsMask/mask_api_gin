@@ -5,11 +5,11 @@ import (
 	"mask_api_gin/src/framework/constants/menu"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
+	"time"
 )
 
 // 实例化数据层 SysMenuImpl 结构体
@@ -59,7 +59,7 @@ type SysMenuImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysMenuImpl) convertResultRows(rows []map[string]interface{}) []model.SysMenu {
+func (r *SysMenuImpl) convertResultRows(rows []map[string]any) []model.SysMenu {
 	arr := make([]model.SysMenu, 0)
 	for _, row := range rows {
 		sysMenu := model.SysMenu{}
@@ -77,7 +77,7 @@ func (r *SysMenuImpl) convertResultRows(rows []map[string]interface{}) []model.S
 func (r *SysMenuImpl) SelectMenuList(sysMenu model.SysMenu, userId string) []model.SysMenu {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysMenu.MenuName != "" {
 		conditions = append(conditions, "m.menu_name like concat(?, '%')")
 		params = append(params, sysMenu.MenuName)
@@ -128,7 +128,7 @@ func (r *SysMenuImpl) SelectMenuPermsByUserId(userId string) []string {
 	where m.status = '1' and r.status = '1' and ur.user_id = ? `
 
 	// 查询结果
-	results, err := datasource.RawDB("", querySql, []interface{}{userId})
+	results, err := datasource.RawDB("", querySql, []any{userId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []string{}
@@ -144,7 +144,7 @@ func (r *SysMenuImpl) SelectMenuPermsByUserId(userId string) []string {
 
 // SelectMenuTreeByUserId 根据用户ID查询菜单
 func (r *SysMenuImpl) SelectMenuTreeByUserId(userId string) []model.SysMenu {
-	var params []interface{}
+	var params []any
 	var querySql string
 
 	if userId == "*" {
@@ -184,7 +184,7 @@ func (r *SysMenuImpl) SelectMenuListByRoleId(roleId string, menuCheckStrictly bo
 	querySql := `select m.menu_id as 'str' from sys_menu m 
     left join sys_role_menu rm on m.menu_id = rm.menu_id
     where rm.role_id = ? `
-	var params []interface{}
+	var params []any
 	params = append(params, roleId)
 	// 展开
 	if menuCheckStrictly {
@@ -229,7 +229,7 @@ func (r *SysMenuImpl) SelectMenuByIds(menuIds []string) []model.SysMenu {
 // HasChildByMenuId 存在菜单子节点数量
 func (r *SysMenuImpl) HasChildByMenuId(menuId string) int64 {
 	querySql := "select count(1) as 'total' from sys_menu where parent_id = ?"
-	results, err := datasource.RawDB("", querySql, []interface{}{menuId})
+	results, err := datasource.RawDB("", querySql, []any{menuId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return 0
@@ -243,7 +243,7 @@ func (r *SysMenuImpl) HasChildByMenuId(menuId string) int64 {
 // InsertMenu 新增菜单信息
 func (r *SysMenuImpl) InsertMenu(sysMenu model.SysMenu) string {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysMenu.MenuID != "" {
 		params["menu_id"] = sysMenu.MenuID
 	}
@@ -290,7 +290,7 @@ func (r *SysMenuImpl) InsertMenu(sysMenu model.SysMenu) string {
 	}
 	if sysMenu.CreateBy != "" {
 		params["create_by"] = sysMenu.CreateBy
-		params["create_time"] = date.NowTimestamp()
+		params["create_time"] = time.Now().UnixMilli()
 	}
 
 	// 根据菜单类型重置参数
@@ -338,7 +338,7 @@ func (r *SysMenuImpl) InsertMenu(sysMenu model.SysMenu) string {
 // UpdateMenu 修改菜单信息
 func (r *SysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int64 {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysMenu.MenuID != "" {
 		params["menu_id"] = sysMenu.MenuID
 	}
@@ -385,7 +385,7 @@ func (r *SysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int64 {
 	}
 	if sysMenu.UpdateBy != "" {
 		params["update_by"] = sysMenu.UpdateBy
-		params["update_time"] = date.NowTimestamp()
+		params["update_time"] = time.Now().UnixMilli()
 	}
 
 	// 根据菜单类型重置参数
@@ -420,7 +420,7 @@ func (r *SysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int64 {
 // DeleteMenuById 删除菜单管理信息
 func (r *SysMenuImpl) DeleteMenuById(menuId string) int64 {
 	sql := "delete from sys_menu where menu_id = ?"
-	results, err := datasource.ExecDB("", sql, []interface{}{menuId})
+	results, err := datasource.ExecDB("", sql, []any{menuId})
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
 		return 0
@@ -432,7 +432,7 @@ func (r *SysMenuImpl) DeleteMenuById(menuId string) int64 {
 func (r *SysMenuImpl) CheckUniqueMenu(sysMenu model.SysMenu) string {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysMenu.MenuName != "" {
 		conditions = append(conditions, "menu_name = ?")
 		params = append(params, sysMenu.MenuName)

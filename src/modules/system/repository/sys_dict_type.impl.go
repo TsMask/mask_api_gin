@@ -9,6 +9,7 @@ import (
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
+	"time"
 )
 
 // 实例化数据层 SysDictTypeImpl 结构体
@@ -39,7 +40,7 @@ type SysDictTypeImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysDictTypeImpl) convertResultRows(rows []map[string]interface{}) []model.SysDictType {
+func (r *SysDictTypeImpl) convertResultRows(rows []map[string]any) []model.SysDictType {
 	arr := make([]model.SysDictType, 0)
 	for _, row := range rows {
 		sysDictType := model.SysDictType{}
@@ -54,31 +55,31 @@ func (r *SysDictTypeImpl) convertResultRows(rows []map[string]interface{}) []mod
 }
 
 // SelectDictTypePage 根据条件分页查询字典类型
-func (r *SysDictTypeImpl) SelectDictTypePage(query map[string]string) map[string]interface{} {
+func (r *SysDictTypeImpl) SelectDictTypePage(query map[string]any) map[string]any {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
-	if v, ok := query["dictName"]; ok {
+	var params []any
+	if v, ok := query["dictName"]; ok && v != "" {
 		conditions = append(conditions, "dict_name like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["dictType"]; ok {
+	if v, ok := query["dictType"]; ok && v != "" {
 		conditions = append(conditions, "dict_type like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["status"]; ok {
+	if v, ok := query["status"]; ok && v != "" {
 		conditions = append(conditions, "status = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["beginTime"]; ok {
+	if v, ok := query["beginTime"]; ok && v != "" {
 		conditions = append(conditions, "create_time >= ?")
-		beginDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
-		params = append(params, beginDate.UnixNano()/1e6)
+		beginDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		params = append(params, beginDate.UnixMilli())
 	}
-	if v, ok := query["endTime"]; ok {
+	if v, ok := query["endTime"]; ok && v != "" {
 		conditions = append(conditions, "create_time <= ?")
-		endDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
-		params = append(params, endDate.UnixNano()/1e6)
+		endDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		params = append(params, endDate.UnixMilli())
 	}
 
 	// 构建查询条件语句
@@ -94,10 +95,10 @@ func (r *SysDictTypeImpl) SelectDictTypePage(query map[string]string) map[string
 		logger.Errorf("total err => %v", err)
 	}
 	total := parse.Number(totalRows[0]["total"])
-	if total <= 0 {
-		return map[string]interface{}{
-			"total": 0,
-			"rows":  []interface{}{},
+	if total == 0 {
+		return map[string]any{
+			"total": total,
+			"rows":  []model.SysDictType{},
 		}
 	}
 
@@ -116,7 +117,7 @@ func (r *SysDictTypeImpl) SelectDictTypePage(query map[string]string) map[string
 
 	// 转换实体
 	rows := r.convertResultRows(results)
-	return map[string]interface{}{
+	return map[string]any{
 		"total": total,
 		"rows":  rows,
 	}
@@ -126,7 +127,7 @@ func (r *SysDictTypeImpl) SelectDictTypePage(query map[string]string) map[string
 func (r *SysDictTypeImpl) SelectDictTypeList(sysDictType model.SysDictType) []model.SysDictType {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysDictType.DictName != "" {
 		conditions = append(conditions, "dict_name like concat(?, '%')")
 		params = append(params, sysDictType.DictName)
@@ -175,7 +176,7 @@ func (r *SysDictTypeImpl) SelectDictTypeByIDs(dictIDs []string) []model.SysDictT
 // SelectDictTypeByType 根据字典类型查询信息
 func (r *SysDictTypeImpl) SelectDictTypeByType(dictType string) model.SysDictType {
 	querySql := r.selectSql + " where dict_type = ?"
-	results, err := datasource.RawDB("", querySql, []interface{}{dictType})
+	results, err := datasource.RawDB("", querySql, []any{dictType})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return model.SysDictType{}
@@ -192,7 +193,7 @@ func (r *SysDictTypeImpl) SelectDictTypeByType(dictType string) model.SysDictTyp
 func (r *SysDictTypeImpl) CheckUniqueDictType(sysDictType model.SysDictType) string {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysDictType.DictName != "" {
 		conditions = append(conditions, "dict_name = ?")
 		params = append(params, sysDictType.DictName)
@@ -226,7 +227,7 @@ func (r *SysDictTypeImpl) CheckUniqueDictType(sysDictType model.SysDictType) str
 // InsertDictType 新增字典类型信息
 func (r *SysDictTypeImpl) InsertDictType(sysDictType model.SysDictType) string {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysDictType.DictName != "" {
 		params["dict_name"] = sysDictType.DictName
 	}
@@ -241,7 +242,7 @@ func (r *SysDictTypeImpl) InsertDictType(sysDictType model.SysDictType) string {
 	}
 	if sysDictType.CreateBy != "" {
 		params["create_by"] = sysDictType.CreateBy
-		params["create_time"] = date.NowTimestamp()
+		params["create_time"] = time.Now().UnixMilli()
 	}
 
 	// 构建执行语句
@@ -274,7 +275,7 @@ func (r *SysDictTypeImpl) InsertDictType(sysDictType model.SysDictType) string {
 // UpdateDictType 修改字典类型信息
 func (r *SysDictTypeImpl) UpdateDictType(sysDictType model.SysDictType) int64 {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysDictType.DictName != "" {
 		params["dict_name"] = sysDictType.DictName
 	}
@@ -289,7 +290,7 @@ func (r *SysDictTypeImpl) UpdateDictType(sysDictType model.SysDictType) int64 {
 	}
 	if sysDictType.UpdateBy != "" {
 		params["update_by"] = sysDictType.UpdateBy
-		params["update_time"] = date.NowTimestamp()
+		params["update_time"] = time.Now().UnixMilli()
 	}
 
 	// 构建执行语句

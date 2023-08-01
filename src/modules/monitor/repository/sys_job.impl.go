@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/monitor/model"
 	"strings"
+	"time"
 )
 
 // 实例化数据层 SysJobImpl 结构体
@@ -43,7 +43,7 @@ type SysJobImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysJobImpl) convertResultRows(rows []map[string]interface{}) []model.SysJob {
+func (r *SysJobImpl) convertResultRows(rows []map[string]any) []model.SysJob {
 	arr := make([]model.SysJob, 0)
 	for _, row := range rows {
 		sysJob := model.SysJob{}
@@ -58,23 +58,23 @@ func (r *SysJobImpl) convertResultRows(rows []map[string]interface{}) []model.Sy
 }
 
 // SelectJobPage 分页查询调度任务集合
-func (r *SysJobImpl) SelectJobPage(query map[string]string) map[string]interface{} {
+func (r *SysJobImpl) SelectJobPage(query map[string]any) map[string]any {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
-	if v, ok := query["jobName"]; ok {
+	var params []any
+	if v, ok := query["jobName"]; ok && v != "" {
 		conditions = append(conditions, "job_name like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["jobGroup"]; ok {
+	if v, ok := query["jobGroup"]; ok && v != "" {
 		conditions = append(conditions, "job_group = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["invokeTarget"]; ok {
+	if v, ok := query["invokeTarget"]; ok && v != "" {
 		conditions = append(conditions, "invoke_target like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["status"]; ok {
+	if v, ok := query["status"]; ok && v != "" {
 		conditions = append(conditions, "status = ?")
 		params = append(params, v)
 	}
@@ -92,10 +92,10 @@ func (r *SysJobImpl) SelectJobPage(query map[string]string) map[string]interface
 		logger.Errorf("total err => %v", err)
 	}
 	total := parse.Number(totalRows[0]["total"])
-	if total <= 0 {
-		return map[string]interface{}{
-			"total": 0,
-			"rows":  []interface{}{},
+	if total == 0 {
+		return map[string]any{
+			"total": total,
+			"rows":  []model.SysJob{},
 		}
 	}
 
@@ -114,7 +114,7 @@ func (r *SysJobImpl) SelectJobPage(query map[string]string) map[string]interface
 
 	// 转换实体
 	rows := r.convertResultRows(results)
-	return map[string]interface{}{
+	return map[string]any{
 		"total": total,
 		"rows":  rows,
 	}
@@ -124,7 +124,7 @@ func (r *SysJobImpl) SelectJobPage(query map[string]string) map[string]interface
 func (r *SysJobImpl) SelectJobList(sysJob model.SysJob) []model.SysJob {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysJob.JobName != "" {
 		conditions = append(conditions, "job_name like concat(?, '%')")
 		params = append(params, sysJob.JobName)
@@ -178,7 +178,7 @@ func (r *SysJobImpl) SelectJobByIds(jobIds []string) []model.SysJob {
 func (r *SysJobImpl) CheckUniqueJob(sysJob model.SysJob) string {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysJob.JobName != "" {
 		conditions = append(conditions, "job_name = ?")
 		params = append(params, sysJob.JobName)
@@ -212,7 +212,7 @@ func (r *SysJobImpl) CheckUniqueJob(sysJob model.SysJob) string {
 // InsertJob 新增调度任务信息
 func (r *SysJobImpl) InsertJob(sysJob model.SysJob) string {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysJob.JobID != "" {
 		params["job_id"] = sysJob.JobID
 	}
@@ -245,7 +245,7 @@ func (r *SysJobImpl) InsertJob(sysJob model.SysJob) string {
 	}
 	if sysJob.CreateBy != "" {
 		params["create_by"] = sysJob.CreateBy
-		params["create_time"] = date.NowTimestamp()
+		params["create_time"] = time.Now().UnixMilli()
 	}
 
 	// 构建执行语句
@@ -278,7 +278,7 @@ func (r *SysJobImpl) InsertJob(sysJob model.SysJob) string {
 // UpdateJob 修改调度任务信息
 func (r *SysJobImpl) UpdateJob(sysJob model.SysJob) int64 {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysJob.JobName != "" {
 		params["job_name"] = sysJob.JobName
 	}
@@ -308,7 +308,7 @@ func (r *SysJobImpl) UpdateJob(sysJob model.SysJob) int64 {
 	}
 	if sysJob.UpdateBy != "" {
 		params["update_by"] = sysJob.UpdateBy
-		params["update_time"] = date.NowTimestamp()
+		params["update_time"] = time.Now().UnixMilli()
 	}
 
 	// 构建执行语句

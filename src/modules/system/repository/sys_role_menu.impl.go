@@ -19,7 +19,7 @@ type SysRoleMenuImpl struct{}
 // CheckMenuExistRole 查询菜单分配给角色使用数量
 func (r *SysRoleMenuImpl) CheckMenuExistRole(menuId string) int64 {
 	querySql := "select count(1) as 'total' from sys_role_menu where menu_id = ?"
-	results, err := datasource.RawDB("", querySql, []interface{}{menuId})
+	results, err := datasource.RawDB("", querySql, []any{menuId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return 0

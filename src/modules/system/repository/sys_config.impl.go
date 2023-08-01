@@ -9,6 +9,7 @@ import (
 	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
+	"time"
 )
 
 // 实例化数据层 SysConfigImpl 结构体
@@ -40,7 +41,7 @@ type SysConfigImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysConfigImpl) convertResultRows(rows []map[string]interface{}) []model.SysConfig {
+func (r *SysConfigImpl) convertResultRows(rows []map[string]any) []model.SysConfig {
 	arr := make([]model.SysConfig, 0)
 	for _, row := range rows {
 		sysConfig := model.SysConfig{}
@@ -55,31 +56,31 @@ func (r *SysConfigImpl) convertResultRows(rows []map[string]interface{}) []model
 }
 
 // SelectDictDataPage 分页查询参数配置列表数据
-func (r *SysConfigImpl) SelectConfigPage(query map[string]string) map[string]interface{} {
+func (r *SysConfigImpl) SelectConfigPage(query map[string]any) map[string]any {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
-	if v, ok := query["configName"]; ok {
+	var params []any
+	if v, ok := query["configName"]; ok && v != "" {
 		conditions = append(conditions, "config_name like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["configType"]; ok {
+	if v, ok := query["configType"]; ok && v != "" {
 		conditions = append(conditions, "config_type = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["configKey"]; ok {
+	if v, ok := query["configKey"]; ok && v != "" {
 		conditions = append(conditions, "config_key like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["beginTime"]; ok {
+	if v, ok := query["beginTime"]; ok && v != "" {
 		conditions = append(conditions, "create_time >= ?")
-		beginDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
-		params = append(params, beginDate.UnixNano()/1e6)
+		beginDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		params = append(params, beginDate.UnixMilli())
 	}
 	if v, ok := query["endTime"]; ok {
 		conditions = append(conditions, "create_time <= ?")
-		endDate := date.ParseStrToDate(v, date.YYYY_MM_DD)
-		params = append(params, endDate.UnixNano()/1e6)
+		endDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		params = append(params, endDate.UnixMilli())
 	}
 
 	// 构建查询条件语句
@@ -95,10 +96,10 @@ func (r *SysConfigImpl) SelectConfigPage(query map[string]string) map[string]int
 		logger.Errorf("total err => %v", err)
 	}
 	total := parse.Number(totalRows[0]["total"])
-	if total <= 0 {
-		return map[string]interface{}{
-			"total": 0,
-			"rows":  []interface{}{},
+	if total == 0 {
+		return map[string]any{
+			"total": total,
+			"rows":  []model.SysConfig{},
 		}
 	}
 
@@ -117,7 +118,7 @@ func (r *SysConfigImpl) SelectConfigPage(query map[string]string) map[string]int
 
 	// 转换实体
 	rows := r.convertResultRows(results)
-	return map[string]interface{}{
+	return map[string]any{
 		"total": total,
 		"rows":  rows,
 	}
@@ -127,7 +128,7 @@ func (r *SysConfigImpl) SelectConfigPage(query map[string]string) map[string]int
 func (r *SysConfigImpl) SelectConfigList(sysConfig model.SysConfig) []model.SysConfig {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysConfig.ConfigName != "" {
 		conditions = append(conditions, "config_name like concat(?, '%')")
 		params = append(params, sysConfig.ConfigName)
@@ -166,7 +167,7 @@ func (r *SysConfigImpl) SelectConfigList(sysConfig model.SysConfig) []model.SysC
 // SelectConfigValueByKey 通过参数键名查询参数键值
 func (r *SysConfigImpl) SelectConfigValueByKey(configKey string) string {
 	querySql := "select config_value as 'str' from sys_config where config_key = ?"
-	results, err := datasource.RawDB("", querySql, []interface{}{configKey})
+	results, err := datasource.RawDB("", querySql, []any{configKey})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return ""
@@ -195,7 +196,7 @@ func (r *SysConfigImpl) SelectConfigByIds(configIds []string) []model.SysConfig 
 func (r *SysConfigImpl) CheckUniqueConfig(sysConfig model.SysConfig) string {
 	// 查询条件拼接
 	var conditions []string
-	var params []interface{}
+	var params []any
 	if sysConfig.ConfigKey != "" {
 		conditions = append(conditions, "config_key = ?")
 		params = append(params, sysConfig.ConfigKey)
@@ -225,7 +226,7 @@ func (r *SysConfigImpl) CheckUniqueConfig(sysConfig model.SysConfig) string {
 // InsertConfig 新增参数配置
 func (r *SysConfigImpl) InsertConfig(sysConfig model.SysConfig) string {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysConfig.ConfigName != "" {
 		params["config_name"] = sysConfig.ConfigName
 	}
@@ -243,7 +244,7 @@ func (r *SysConfigImpl) InsertConfig(sysConfig model.SysConfig) string {
 	}
 	if sysConfig.CreateBy != "" {
 		params["create_by"] = sysConfig.CreateBy
-		params["create_time"] = date.NowTimestamp()
+		params["create_time"] = time.Now().UnixMilli()
 	}
 
 	// 构建执行语句
@@ -276,7 +277,7 @@ func (r *SysConfigImpl) InsertConfig(sysConfig model.SysConfig) string {
 // UpdateConfig 修改参数配置
 func (r *SysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int64 {
 	// 参数拼接
-	params := make(map[string]interface{})
+	params := make(map[string]any)
 	if sysConfig.ConfigName != "" {
 		params["config_name"] = sysConfig.ConfigName
 	}
@@ -294,7 +295,7 @@ func (r *SysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int64 {
 	}
 	if sysConfig.UpdateBy != "" {
 		params["update_by"] = sysConfig.UpdateBy
-		params["update_time"] = date.NowTimestamp()
+		params["update_time"] = time.Now().UnixMilli()
 	}
 
 	// 构建执行语句

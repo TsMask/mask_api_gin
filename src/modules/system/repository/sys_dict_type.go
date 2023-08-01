@@ -5,7 +5,7 @@ import "mask_api_gin/src/modules/system/model"
 // ISysDictType 字典类型表 数据层接口
 type ISysDictType interface {
 	// SelectDictTypePage 根据条件分页查询字典类型
-	SelectDictTypePage(query map[string]string) map[string]interface{}
+	SelectDictTypePage(query map[string]any) map[string]any
 
 	// SelectDictTypeList 根据条件查询字典类型
 	SelectDictTypeList(sysDictType model.SysDictType) []model.SysDictType
