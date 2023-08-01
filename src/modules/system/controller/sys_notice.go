@@ -30,7 +30,7 @@ type SysNoticeController struct {
 //
 // GET /list
 func (s *SysNoticeController) List(c *gin.Context) {
-	querys := ctx.QueryMapString(c)
+	querys := ctx.QueryMap(c)
 	data := s.sysNoticeService.SelectNoticePage(querys)
 	c.JSON(200, result.Ok(data))
 }
