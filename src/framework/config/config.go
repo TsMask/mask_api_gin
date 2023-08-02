@@ -31,7 +31,7 @@ func initViper() {
 	logger.Warnf("当期服务环境运行配置 => %s", env)
 
 	// 在当前工作目录中寻找配置
-	viper.AddConfigPath("src/config")
+	viper.AddConfigPath("config")
 	// 如果配置文件名中没有扩展名，则需要设置Type
 	viper.SetConfigType("yaml")
 	// 配置文件的名称（无扩展名）

@@ -13,7 +13,7 @@ const LOCAT_HOST = "127.0.0.1"
 var searcher *Searcher
 
 func init() {
-	dbPath := "src/assets/ip2region.xdb"
+	dbPath := "assets/ip2region.xdb"
 
 	// 从 dbPath 加载整个 xdb 到内存
 	cBuff, err := LoadContentFromFile(dbPath)

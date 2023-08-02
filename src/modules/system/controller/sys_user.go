@@ -441,7 +441,7 @@ func (s *SysUserController) Export(c *gin.Context) {
 // GET /importTemplate
 func (s *SysUserController) Template(c *gin.Context) {
 	fileName := fmt.Sprintf("user_import_template_%d.xlsx", time.Now().UnixMilli())
-	asserPath := "src/assets/template/excel/user_import_template.xlsx"
+	asserPath := "assets/template/excel/user_import_template.xlsx"
 	c.FileAttachment(asserPath, fileName)
 }
 
