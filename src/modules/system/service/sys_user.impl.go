@@ -229,6 +229,7 @@ func (r *SysUserImpl) ImportUser(rows []map[string]string, isUpdateSupport bool,
 
 		// 构建用户实体信息
 		newSysUser := model.SysUser{
+			UserType:    "sys",
 			Password:    initPassword,
 			DeptID:      row["B"],
 			UserName:    row["C"],
