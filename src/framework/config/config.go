@@ -16,7 +16,7 @@ func InitConfig() {
 
 // 指定参数绑定
 func initFlag() {
-	// -env prod
+	// --env prod
 	pflag.String("env", "local", "指定运行环境配置，读取config配置文件 local、prod")
 	pflag.Parse()
 	viper.BindPFlags(pflag.CommandLine)
@@ -24,14 +24,9 @@ func initFlag() {
 
 // 配置文件读取
 func initViper() {
-	env := viper.GetString("env")
-	if env != "local" && env != "prod" {
-		logger.Panicf("无效环境值 %s ，请指定local、prod", env)
-	}
-	logger.Warnf("当期服务环境运行配置 => %s", env)
-
 	// 在当前工作目录中寻找配置
 	viper.AddConfigPath("config")
+	viper.AddConfigPath("src/config")
 	// 如果配置文件名中没有扩展名，则需要设置Type
 	viper.SetConfigType("yaml")
 	// 配置文件的名称（无扩展名）
@@ -40,6 +35,12 @@ func initViper() {
 	if err := viper.ReadInConfig(); err != nil {
 		logger.Panicf("fatal error config default file: %s", err)
 	}
+
+	env := viper.GetString("env")
+	if env != "local" && env != "prod" {
+		logger.Panicf("fatal error config env for local or prod : %s", env)
+	}
+	logger.Warnf("当期服务环境运行配置 => %s", env)
 
 	// 加载运行配置文件合并相同配置
 	if env == "prod" {
