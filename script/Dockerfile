@@ -16,6 +16,7 @@ ENV TZ="Asia/Shanghai"
 WORKDIR /home/mask_api_gin
 
 ## 复制实际需要的文件到工作目录
+COPY ./assets ./assets
 COPY ./src ./src
 COPY ./go.sum ./
 COPY ./go.mod ./

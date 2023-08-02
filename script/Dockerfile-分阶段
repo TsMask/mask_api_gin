@@ -14,6 +14,7 @@ ENV GOPROXY https://goproxy.cn,direct
 WORKDIR /home/mask_api_gin
 
 ## 复制实际需要的文件到工作目录
+COPY ./assets ./assets
 COPY ./src ./src
 COPY ./go.sum ./
 COPY ./go.mod ./
@@ -39,7 +40,8 @@ ENV TZ="Asia/Shanghai"
 
 ## 将第一阶段必要文件复制到
 COPY --from=builder /home/mask_api_gin/assets /home/mask_api_gin/assets
-COPY --from=builder /home/mask_api_gin/config /home/mask_api_gin/config
+COPY --from=builder /home/mask_api_gin/src/config /home/mask_api_gin/config
+COPY --from=builder /home/mask_api_gin/go.mod /home/mask_api_gin/go.mod
 COPY --from=builder /home/mask_api_gin/app /home/mask_api_gin/app
 
 ## 暴露端口要与程序端口一致
