@@ -1,7 +1,6 @@
 package ctx
 
 import (
-	"errors"
 	"fmt"
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/constants/common"
@@ -64,7 +63,7 @@ func IPAddrLocation(c *gin.Context) (string, string) {
 
 // Authorization 解析请求头
 func Authorization(c *gin.Context) string {
-	authHeader := c.GetHeader("Authorization")
+	authHeader := c.GetHeader(token.HEADER_KEY)
 	if authHeader == "" {
 		return ""
 	}
@@ -101,7 +100,7 @@ func LoginUser(c *gin.Context) (vo.LoginUser, error) {
 	if exists {
 		return value.(vo.LoginUser), nil
 	}
-	return vo.LoginUser{}, errors.New("无效登录用户信息")
+	return vo.LoginUser{}, fmt.Errorf("无效登录用户信息")
 }
 
 // LoginUserToUserID 登录用户信息-用户ID
@@ -124,7 +123,7 @@ func LoginUserToUserName(c *gin.Context) string {
 	return ""
 }
 
-// LoginUserToDataScopeSQL 登录用户信息-角色数据范围过滤SQL字符串
+// LoginUserToDataScopeSQL 登录用户信息-角色数据范围过滤SQL字符串 TODO
 func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string) string {
 	loginUser, err := LoginUser(c)
 	if err != nil {
