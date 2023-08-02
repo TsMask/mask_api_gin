@@ -48,10 +48,10 @@
 
 ```text
 mask_api_gin
+├── assets                      目录-程序内部静态资源文件
+├── config                      目录-程序相关运行参数配置
 ├── script                      目录-程序可用脚本
 ├── src                         目录-源代码
-├   ├── assets                  目录-程序内部静态资源文件
-├   ├── config                  目录-程序相关运行参数配置
 ├   ├── framework               目录-程序核心通用代码
 ├   ├── modules                 目录-业务模块
 ├   ├   ├── system              目录-系统内部接口模块
@@ -90,7 +90,7 @@ mask_api_gin
 #### 本地开发-Window/Liunx
 
 ```bash
-# 修改配置参数 /src/connfig/config.local.go
+# 修改配置参数 connfig/config.local.go
 go mod download              # 下载项目所需依赖
 go run main.go               # 开发模式启动项目
 open http://localhost:6275   # 启动成功后得到服务访问地址
@@ -100,14 +100,19 @@ go run main.go --env prod    # 生产模式启动项目
 
 #### 生产部署-Liunx
 
-启动依赖同级目录 `src/assets` 和 `src/config` 两个文件夹，如果打包后移动编译打包文件，需要将两个文件夹一并移动至同级目录。
-
 ```bash
-# 修改配置参数 /src/connfig/config.prod.go
+# 修改配置参数 connfig/config.prod.go
 go mod download             # 下载项目所需依赖
 go build -ldflags="-s -w"   # 构建项目二进制文件
 ./xxx --env prod            # 二进制文件启动时指定生产模式
 ```
+
+启动依赖同级目录 `assets` 和 `config` 两个文件夹，如果打包后移动编译打包文件，需要将两个文件夹一并移动至同级目录。
+
+目录dir
+├── assets                      目录-程序内部静态资源文件
+├── config                      目录-程序相关运行参数配置
+└── xxx                         文件-可执行程序
 
 > 有任何问题或者建议，可以在 [_Issues_](https://gitee.com/TsMask/mask_api_gin/issues) 或通过QQ群：[_57242844_](https://jq.qq.com/?_wv=1027&k=z6Y4YQcB) 提出想法。  
 > 如果觉得项目对您有帮助，可以来个Star ⭐

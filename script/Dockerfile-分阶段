@@ -22,14 +22,14 @@ COPY ./main.go ./
 ## 安装程序依赖，需要编译
 RUN go mod download
 
-## 进行源码编译，生产文件 /home/app
-RUN go build -ldflags="-s -w" -o /home/app .
+## 进行源码编译，生产文件 app
+RUN go build -ldflags="-s -w" -o app
 
 ## 第二阶段 ====> 构建可执行文件镜像
 FROM alpine
 
-## 工作目录存放程序源码
-WORKDIR /home
+## 工作目录存放程序可执行程序
+WORKDIR /home/mask_api_gin
 
 ## 安装时区工具
 RUN apk add --no-cache tzdata
@@ -38,9 +38,9 @@ RUN apk add --no-cache tzdata
 ENV TZ="Asia/Shanghai"
 
 ## 将第一阶段必要文件复制到
-COPY --from=builder /home/mask_api_gin/src/assets /home/src/assets
-COPY --from=builder /home/mask_api_gin/src/config /home/src/config
-COPY --from=builder /home/app /home/app
+COPY --from=builder /home/mask_api_gin/assets /home/mask_api_gin/assets
+COPY --from=builder /home/mask_api_gin/config /home/mask_api_gin/config
+COPY --from=builder /home/mask_api_gin/app /home/mask_api_gin/app
 
 ## 暴露端口要与程序端口一致
 EXPOSE 6275
