@@ -79,19 +79,19 @@ func Connect() {
 		// 创建连接
 		db, err := gorm.Open(info.dialector, opts)
 		if err != nil {
-			logger.Panicf("fatal error db connect: %s", err)
+			logger.Panicf("failed error db connect: %s", err)
 		}
 		// 获取底层 SQL 数据库连接
 		sqlDB, err := db.DB()
 		if err != nil {
-			logger.Panicf("Failed to get underlying SQL database: %v", err)
+			logger.Panicf("failed error underlying SQL database: %v", err)
 		}
 		// 测试数据库连接
 		err = sqlDB.Ping()
 		if err != nil {
-			logger.Panicf("Failed to ping database: %v", err)
+			logger.Panicf("failed error ping database: %v", err)
 		}
-		logger.Infof("Database %s connection is successful.", key)
+		logger.Infof("database %s connection is successful.", key)
 		dbMap[key] = db
 	}
 }

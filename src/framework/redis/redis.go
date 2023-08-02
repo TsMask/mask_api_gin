@@ -43,9 +43,9 @@ func Connect() {
 	// 测试数据库连接
 	pong, err := rdb.Ping(ctx).Result()
 	if err != nil {
-		logger.Panicf("Failed to ping redis: %v", err)
+		logger.Panicf("failed error ping redis: %v", err)
 	}
-	logger.Infof("Redis %s connection is successful.", pong)
+	logger.Infof("redis %s connection is successful.", pong)
 }
 
 // 关闭Redis实例

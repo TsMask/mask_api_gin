@@ -18,14 +18,14 @@ func init() {
 	// 从 dbPath 加载整个 xdb 到内存
 	cBuff, err := LoadContentFromFile(dbPath)
 	if err != nil {
-		logger.Errorf("failed to load content from `%s`: %s\n", dbPath, err)
+		logger.Panicf("failed error load content from : %s\n", err)
 		return
 	}
 
 	// 用全局的 cBuff 创建完全基于内存的查询对象。
 	base, err := NewWithBuffer(cBuff)
 	if err != nil {
-		logger.Errorf("failed to create searcher with content: %s\n", err)
+		logger.Errorf("failed error create searcher with content: %s\n", err)
 		return
 	}
 
