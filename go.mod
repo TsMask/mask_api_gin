@@ -6,7 +6,7 @@ require (
 	github.com/dlclark/regexp2 v1.10.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang-jwt/jwt/v5 v5.0.0
-	github.com/jaevor/go-nanoid v1.3.0
+	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/mojocn/base64Captcha v1.3.5
 	github.com/mssola/user_agent v0.6.0
 	github.com/redis/go-redis/v9 v9.0.5
