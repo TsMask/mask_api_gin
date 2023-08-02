@@ -13,7 +13,7 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-// TransferChunkUploadFile 表格文件上传保存
+// TransferExeclUploadFile 表格文件上传保存
 //
 // file 上传文件对象
 func TransferExeclUploadFile(file *multipart.FileHeader) (string, error) {
@@ -26,7 +26,8 @@ func TransferExeclUploadFile(file *multipart.FileHeader) (string, error) {
 	_, dir := resourceUpload()
 	// 新文件名称并组装文件地址
 	filePath := filepath.Join(uploadsubpath.IMPORT, date.ParseDatePath(time.Now()))
-	writePathFile := filepath.Join(dir, filePath, file.Filename)
+	fileName := generateFileName(file.Filename)
+	writePathFile := filepath.Join(dir, filePath, fileName)
 	// 存入新文件路径
 	err = transferToNewFile(file, writePathFile)
 	if err != nil {
