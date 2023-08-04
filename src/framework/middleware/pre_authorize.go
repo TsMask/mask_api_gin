@@ -83,39 +83,39 @@ func verifyRolePermission(roles, perms []string, options map[string][]string) bo
 	if contains(roles, AdminConstants.ROLE_KEY) || contains(perms, AdminConstants.PERMISSION) {
 		return true
 	}
-	opts := make([]bool, 0, 4)
+	opts := make([]bool, 4)
 
 	// 只需含有其中角色
 	hasRole := false
-	if arr, ok := options["hasRoles"]; ok {
+	if arr, ok := options["hasRoles"]; ok && len(arr) > 0 {
 		hasRole = some(roles, arr)
 		opts[0] = true
 	}
 
 	// 只需含有其中权限
 	hasPerms := false
-	if arr, ok := options["hasPerms"]; ok {
+	if arr, ok := options["hasPerms"]; ok && len(arr) > 0 {
 		hasPerms = some(perms, arr)
 		opts[1] = true
 	}
 
 	// 同时匹配其中角色
 	matchRoles := false
-	if arr, ok := options["matchRoles"]; ok {
+	if arr, ok := options["matchRoles"]; ok && len(arr) > 0 {
 		matchRoles = every(roles, arr)
 		opts[2] = true
 	}
 
 	// 同时匹配其中权限
 	matchPerms := false
-	if arr, ok := options["matchPerms"]; ok {
+	if arr, ok := options["matchPerms"]; ok && len(arr) > 0 {
 		matchPerms = every(perms, arr)
 		opts[3] = true
 	}
 
-	// 同时判断 只需含有其中
+	// 同时判断 含有其中
 	if opts[0] && opts[1] {
-		return hasRole || hasPerms
+		return hasRole && hasPerms
 	}
 	// 同时判断 匹配其中
 	if opts[2] && opts[3] {
