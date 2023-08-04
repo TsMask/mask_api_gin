@@ -2,7 +2,6 @@ package repo
 
 import (
 	"fmt"
-	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/parse"
 	"reflect"
 	"strconv"
@@ -75,20 +74,6 @@ func SetFieldValue(obj any, fieldName string, value any) {
 			fieldValue.Set(reflect.ValueOf(value).Convert(fieldValue.Type()))
 		}
 	}
-}
-
-// 转换记录结果 TODO
-func ConvertResultRows(results any) []any {
-	s := reflect.ValueOf(results)
-	if s.Kind() != reflect.Slice {
-		logger.Errorf("ConvertResultRows not a slice")
-	}
-
-	rows := make([]any, s.Len())
-	for i := 0; i < s.Len(); i++ {
-		rows[i] = s.Index(i).Interface()
-	}
-	return rows
 }
 
 // ConvertIdsSlice 将 []string 转换为 []any
