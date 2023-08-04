@@ -130,7 +130,7 @@ func RemoveDuplicates(ids []string) []string {
 
 	for _, id := range ids {
 		_, ok := uniqueIDs[id]
-		if !ok || id != "" {
+		if !ok && id != "" {
 			uniqueIDs[id] = true
 			uniqueIDSlice = append(uniqueIDSlice, id)
 		}
