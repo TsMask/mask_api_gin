@@ -3,6 +3,7 @@ package src
 import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
+	errorcatch "mask_api_gin/src/framework/error-catch"
 	"mask_api_gin/src/framework/middleware"
 	"mask_api_gin/src/framework/middleware/security"
 	"mask_api_gin/src/modules/common"
@@ -54,7 +55,7 @@ func initAppEngine() *gin.Engine {
 // 初始全局默认
 func initDefeat(app *gin.Engine) {
 	// 全局中间件
-	app.Use(middleware.Report(), middleware.Cors(), security.Security())
+	app.Use(errorcatch.ErrorCatch(), middleware.Report(), middleware.Cors(), security.Security())
 
 	// 静态目录-静态资源
 	if v := config.Get("staticFile.default"); v != nil {
