@@ -123,23 +123,23 @@ func LoginUserToUserName(c *gin.Context) string {
 	return ""
 }
 
-// LoginUserToDataScopeSQL 登录用户信息-角色数据范围过滤SQL字符串 TODO
+// LoginUserToDataScopeSQL 登录用户信息-角色数据范围过滤SQL字符串
 func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string) string {
+	dataScopeSQL := ""
+	// 登录用户信息
 	loginUser, err := LoginUser(c)
 	if err != nil {
-		return ""
+		return dataScopeSQL
 	}
-
-	// 登录用户信息
 	userInfo := loginUser.User
 
 	// 如果是管理员，则不过滤数据
 	if config.IsAdmin(userInfo.UserID) {
-		return ""
+		return dataScopeSQL
 	}
 	// 无用户角色
 	if len(userInfo.Roles) <= 0 {
-		return ""
+		return dataScopeSQL
 	}
 
 	// 记录角色权限范围定义添加过, 非自定数据权限不需要重复拼接SQL
@@ -166,22 +166,22 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 		}
 
 		if roledatascope.CUSTOM == dataScope {
-			sql := fmt.Sprintf(`%s.dept_id IN ( SELECT dept_id FROM sys_role_dept WHERE role_id = %s )`, deptAlias, role.RoleID)
+			sql := fmt.Sprintf(`%s.dept_id IN ( SELECT dept_id FROM sys_role_dept WHERE role_id = '%s' )`, deptAlias, role.RoleID)
 			conditions = append(conditions, sql)
 		}
 
 		if roledatascope.DEPT_AND_CHILD == dataScope {
-			sql := fmt.Sprintf(`%s.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = %s or find_in_set(%s , ancestors ) )`, deptAlias, userInfo.DeptID, userInfo.DeptID)
+			sql := fmt.Sprintf(`%s.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = '%s' or find_in_set('%s' , ancestors ) )`, deptAlias, userInfo.DeptID, userInfo.DeptID)
 			conditions = append(conditions, sql)
 		}
 
 		if roledatascope.SELF == dataScope {
 			// 数据权限为仅本人且没有userAlias别名不查询任何数据
 			if userAlias == "" {
-				sql := fmt.Sprintf(`%s.dept_id = 0`, deptAlias)
+				sql := fmt.Sprintf(`%s.dept_id = '0'`, deptAlias)
 				conditions = append(conditions, sql)
 			} else {
-				sql := fmt.Sprintf(`%s.user_id = %s`, userAlias, userInfo.UserID)
+				sql := fmt.Sprintf(`%s.user_id = '%s'`, userAlias, userInfo.UserID)
 				conditions = append(conditions, sql)
 			}
 		}
@@ -191,10 +191,8 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 	}
 
 	// 构建查询条件语句
-	dataScopeSQL := ""
 	if len(conditions) > 0 {
-		dataScopeSQL = fmt.Sprintf(" and ( %s ) ", strings.Join(conditions, " or "))
+		dataScopeSQL = fmt.Sprintf(" AND ( %s ) ", strings.Join(conditions, " OR "))
 	}
-	fmt.Println("dataScopeSQL======> ", dataScopeSQL)
 	return dataScopeSQL
 }
