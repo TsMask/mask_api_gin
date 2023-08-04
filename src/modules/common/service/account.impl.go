@@ -132,7 +132,7 @@ func (s *AccountImpl) passwordRetryCount(username string) (string, int64, time.D
 	return retrykey, int64(maxRetryCount), time.Duration(lockTime) * time.Minute, nil
 }
 
-// RoleAndMenuPerms 角色和菜单数据权限 TODO
+// RoleAndMenuPerms 角色和菜单数据权限
 func (s *AccountImpl) RoleAndMenuPerms(userId string, isAdmin bool) ([]string, []string) {
 	if isAdmin {
 		return []string{adminConstants.ROLE_KEY}, []string{adminConstants.PERMISSION}
@@ -149,7 +149,7 @@ func (s *AccountImpl) RoleAndMenuPerms(userId string, isAdmin bool) ([]string, [
 	}
 }
 
-// RouteMenus 前端路由所需要的菜单 TODO
+// RouteMenus 前端路由所需要的菜单
 func (s *AccountImpl) RouteMenus(userId string, isAdmin bool) []vo.Router {
 	var buildMenus []vo.Router
 	if isAdmin {

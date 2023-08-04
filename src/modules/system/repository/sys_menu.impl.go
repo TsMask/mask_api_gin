@@ -125,7 +125,7 @@ func (r *SysMenuImpl) SelectMenuPermsByUserId(userId string) []string {
     left join sys_role_menu rm on m.menu_id = rm.menu_id 
     left join sys_user_role ur on rm.role_id = ur.role_id 
     left join sys_role r on r.role_id = ur.role_id
-	where m.status = '1' and r.status = '1' and ur.user_id = ? `
+	where m.status = '1' and m.perms != '' and r.status = '1' and ur.user_id = ? `
 
 	// 查询结果
 	results, err := datasource.RawDB("", querySql, []any{userId})
@@ -149,24 +149,20 @@ func (r *SysMenuImpl) SelectMenuTreeByUserId(userId string) []model.SysMenu {
 
 	if userId == "*" {
 		// 管理员全部菜单
-		querySql = `select distinct m.menu_id, m.parent_id, m.menu_name, m.path, m.component, m.visible, m.status, ifnull(m.perms,'') as perms, m.is_frame, m.is_cache, m.menu_type, m.icon, m.menu_sort, m.create_time, m.remark
-		from sys_menu m where m.menu_type in (?,?) and m.status = '1'
+		querySql = r.selectSql + ` where 
+		m.menu_type in (?,?) and m.status = '1'
 		order by m.parent_id, m.menu_sort`
 		params = append(params, menu.TYPE_DIR)
 		params = append(params, menu.TYPE_MENU)
 	} else {
 		// 用户ID权限
-		querySql = `select distinct m.menu_id, m.parent_id, m.menu_name, m.path, m.component, m.visible, m.status, ifnull(m.perms,'') as perms, m.is_frame, m.is_cache, m.menu_type, m.icon, m.menu_sort, m.create_time, m.remark
-		from sys_menu m
-		left join sys_role_menu rm on m.menu_id = rm.menu_id
-		left join sys_user_role ur on rm.role_id = ur.role_id
-		left join sys_role ro on ur.role_id = ro.role_id
-		left join sys_user u on ur.user_id = u.user_id
-		where u.user_id = ? and m.menu_type in (?,?) and m.status = '1'  AND ro.status = 0
+		querySql = r.selectSqlByUser + ` where 
+		m.menu_type in (?, ?) and m.status = '1'
+		and ur.user_id = ? and ro.status = '1'
 		order by m.parent_id, m.menu_sort`
-		params = append(params, userId)
 		params = append(params, menu.TYPE_DIR)
 		params = append(params, menu.TYPE_MENU)
+		params = append(params, userId)
 	}
 
 	// 查询结果

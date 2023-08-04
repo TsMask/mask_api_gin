@@ -37,8 +37,4 @@ type SysRole struct {
 	MenuIds []string `json:"menuIds,omitempty"`
 	// 部门组（数据权限）
 	DeptIds []string `json:"deptIds,omitempty"`
-	// 角色菜单权限
-	Permissions []string `json:"permissions,omitempty"`
-	// 用户是否存在此角色标识 默认不存在
-	Flag bool `json:"flag,omitempty"`
 }
