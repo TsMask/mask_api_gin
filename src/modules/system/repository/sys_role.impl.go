@@ -84,14 +84,22 @@ func (r *SysRoleImpl) SelectRolePage(query map[string]any, dataScopeSQL string) 
 		conditions = append(conditions, "r.status = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["beginTime"]; ok && v != "" {
+	beginTime, ok := query["beginTime"]
+	if !ok {
+		beginTime, ok = query["params[beginTime]"]
+	}
+	if ok && beginTime != "" {
 		conditions = append(conditions, "r.create_time >= ?")
-		beginDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		beginDate := date.ParseStrToDate(beginTime.(string), date.YYYY_MM_DD)
 		params = append(params, beginDate.UnixMilli())
 	}
-	if v, ok := query["endTime"]; ok && v != "" {
+	endTime, ok := query["endTime"]
+	if !ok {
+		endTime, ok = query["params[endTime]"]
+	}
+	if ok && endTime != "" {
 		conditions = append(conditions, "r.create_time <= ?")
-		endDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		endDate := date.ParseStrToDate(endTime.(string), date.YYYY_MM_DD)
 		params = append(params, endDate.UnixMilli())
 	}
 	if v, ok := query["deptId"]; ok && v != "" {

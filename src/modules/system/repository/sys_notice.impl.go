@@ -76,14 +76,22 @@ func (r *SysNoticeImpl) SelectNoticePage(query map[string]any) map[string]any {
 		conditions = append(conditions, "status = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["beginTime"]; ok && v != "" {
+	beginTime, ok := query["beginTime"]
+	if !ok {
+		beginTime, ok = query["params[beginTime]"]
+	}
+	if ok && beginTime != "" {
 		conditions = append(conditions, "create_time >= ?")
-		beginDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		beginDate := date.ParseStrToDate(beginTime.(string), date.YYYY_MM_DD)
 		params = append(params, beginDate.UnixMilli())
 	}
-	if v, ok := query["endTime"]; ok && v != "" {
+	endTime, ok := query["endTime"]
+	if !ok {
+		endTime, ok = query["params[endTime]"]
+	}
+	if ok && endTime != "" {
 		conditions = append(conditions, "create_time <= ?")
-		endDate := date.ParseStrToDate(v.(string), date.YYYY_MM_DD)
+		endDate := date.ParseStrToDate(endTime.(string), date.YYYY_MM_DD)
 		params = append(params, endDate.UnixMilli())
 	}
 
