@@ -168,7 +168,7 @@ func (r *SysDeptImpl) SelectChildrenDeptById(deptId string) []model.SysDept {
 
 // HasChildByDeptId 是否存在子节点
 func (r *SysDeptImpl) HasChildByDeptId(deptId string) int64 {
-	querySql := "select count(1) as 'total' from sys_dept where del_flag = '0' and parent_id = ? limit 1"
+	querySql := "select count(1) as 'total' from sys_dept where status = '1' and parent_id = ? limit 1"
 	results, err := datasource.RawDB("", querySql, []any{deptId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -364,14 +364,14 @@ func (r *SysDeptImpl) UpdateDeptChildren(sysDepts []model.SysDept) int64 {
 	var conditions []string
 	var params []any
 	for _, dept := range sysDepts {
-		caseSql := fmt.Sprintf("case when %s then %s end", dept.DeptID, dept.Ancestors)
+		caseSql := fmt.Sprintf("WHEN dept_id = '%s' THEN '%s'", dept.DeptID, dept.Ancestors)
 		conditions = append(conditions, caseSql)
 		params = append(params, dept.DeptID)
 	}
 
 	cases := strings.Join(conditions, " ")
 	placeholders := repo.KeyPlaceholderByQuery(len(params))
-	sql := "update sys_dept set ancestors = " + cases + " where dept_id in (" + placeholders + ")"
+	sql := "update sys_dept set ancestors = CASE " + cases + " END where dept_id in (" + placeholders + ")"
 	results, err := datasource.ExecDB("", sql, params)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
@@ -382,7 +382,7 @@ func (r *SysDeptImpl) UpdateDeptChildren(sysDepts []model.SysDept) int64 {
 
 // DeleteDeptById 删除部门管理信息
 func (r *SysDeptImpl) DeleteDeptById(deptId string) int64 {
-	sql := "update sys_dept set del_flag = '1' where dept_id = ?"
+	sql := "update sys_dept set status = '0', del_flag = '1' where dept_id = ?"
 	results, err := datasource.ExecDB("", sql, []any{deptId})
 	if err != nil {
 		logger.Errorf("delete err => %v", err)

@@ -79,17 +79,20 @@ func (r *SysDeptImpl) InsertDept(sysDept model.SysDept) string {
 
 // UpdateDept 修改部门信息
 func (r *SysDeptImpl) UpdateDept(sysDept model.SysDept) int64 {
-	newParentDept := r.sysDeptRepository.SelectDeptById(sysDept.ParentID)
-	oldDept := r.sysDeptRepository.SelectDeptById(sysDept.DeptID)
-	// 修改子元素关系
-	if newParentDept.DeptID == sysDept.ParentID && oldDept.DeptID == sysDept.DeptID {
-		newAncestors := newParentDept.Ancestors + "," + newParentDept.DeptID
-		oldAncestors := oldDept.Ancestors
-		sysDept.Ancestors = newAncestors
-		r.updateDeptChildren(sysDept.DeptID, newAncestors, oldAncestors)
+	parentDept := r.sysDeptRepository.SelectDeptById(sysDept.ParentID)
+	dept := r.sysDeptRepository.SelectDeptById(sysDept.DeptID)
+	// 上级与当前部门祖级列表更新
+	if parentDept.DeptID == sysDept.ParentID && dept.DeptID == sysDept.DeptID {
+		newAncestors := parentDept.Ancestors + "," + parentDept.DeptID
+		oldAncestors := dept.Ancestors
+		// 祖级列表不一致时更新
+		if newAncestors != oldAncestors {
+			sysDept.Ancestors = newAncestors
+			r.updateDeptChildren(sysDept.DeptID, newAncestors, oldAncestors)
+		}
 	}
 	// 如果该部门是启用状态，则启用该部门的所有上级部门
-	if sysDept.Status == common.STATUS_YES && sysDept.Ancestors != "0" {
+	if sysDept.Status == common.STATUS_YES && parentDept.Status == common.STATUS_NO {
 		r.updateDeptStatusNormal(sysDept.Ancestors)
 	}
 	return r.sysDeptRepository.UpdateDept(sysDept)
@@ -111,7 +114,8 @@ func (r *SysDeptImpl) updateDeptChildren(deptId, newAncestors, oldAncestors stri
 		return 0
 	}
 	// 替换父ID
-	for _, child := range childrens {
+	for i := range childrens {
+		child := &childrens[i]
 		ancestors := strings.Replace(child.Ancestors, oldAncestors, newAncestors, -1)
 		child.Ancestors = ancestors
 	}
