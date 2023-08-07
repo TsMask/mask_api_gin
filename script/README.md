@@ -9,6 +9,13 @@ go env -w GO111MODULE=on
 go env -w GOPROXY=https://goproxy.cn,https://goproxy.io,direct
 ```
 
+打包时改变编译平台
+
+```shell
+go env -w GOOS=linux
+go env -w GOOS=windows
+```
+
 ## 初始化数据库
 
 - `db_init.sql` 初始化MySQL数据库数据
