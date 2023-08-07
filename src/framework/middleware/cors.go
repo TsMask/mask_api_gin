@@ -27,10 +27,8 @@ func Cors() gin.HandlerFunc {
 		}
 		c.Header("Access-Control-Allow-Origin", origin)
 
-		if v := config.Get("cors.credentials"); v != nil {
-			if v.(bool) {
-				c.Header("Access-Control-Allow-Credentials", "true")
-			}
+		if v := config.Get("cors.credentials"); v != nil && v.(bool) {
+			c.Header("Access-Control-Allow-Credentials", "true")
 		}
 
 		// OPTIONS
@@ -42,10 +40,8 @@ func Cors() gin.HandlerFunc {
 			}
 
 			// 响应最大时间值
-			if v := config.Get("cors.maxAge"); v != nil {
-				if v.(int) > 10000 {
-					c.Header("Access-Control-Max-Age", fmt.Sprint(v))
-				}
+			if v := config.Get("cors.maxAge"); v != nil && v.(int) > 10000 {
+				c.Header("Access-Control-Max-Age", fmt.Sprint(v))
 			}
 
 			// 允许方法
