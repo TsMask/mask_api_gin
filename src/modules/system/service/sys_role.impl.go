@@ -57,10 +57,12 @@ func (r *SysRoleImpl) SelectRoleById(roleId string) model.SysRole {
 // UpdateRole 修改角色信息
 func (r *SysRoleImpl) UpdateRole(sysRole model.SysRole) int64 {
 	rows := r.sysRoleRepository.UpdateRole(sysRole)
-	if rows > 0 && len(sysRole.MenuIds) > 0 {
+	if rows > 0 {
 		// 删除角色与菜单关联
 		r.sysRoleMenuRepository.DeleteRoleMenu([]string{sysRole.RoleID})
-		r.insertRoleMenu(sysRole.RoleID, sysRole.MenuIds)
+		if len(sysRole.MenuIds) > 0 {
+			r.insertRoleMenu(sysRole.RoleID, sysRole.MenuIds)
+		}
 	}
 	return rows
 }
