@@ -19,7 +19,7 @@ gorm:
   dataSource:
     default:
       type: "mysql"
-      host: "192.168.56.101"
+      host: "192.168.56.102"
       port: 3306
       username: "root"
       password: "root@1234"
@@ -30,6 +30,6 @@ gorm:
 redis:
   client:
     port: 6379
-    host: "192.168.56.101"
+    host: "192.168.56.102"
     password: "redis@1234"
     db: 0
