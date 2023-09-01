@@ -20,7 +20,7 @@ type ISysMenu interface {
 	SelectMenuByIds(menuIds []string) []model.SysMenu
 
 	// HasChildByMenuIdAndStatus 存在菜单子节点数量与状态
-	HasChildByMenuIdAndStatus(menuId string) int64
+	HasChildByMenuIdAndStatus(menuId, status string) int64
 
 	// InsertMenu 新增菜单信息
 	InsertMenu(sysMenu model.SysMenu) string

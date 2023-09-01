@@ -223,9 +223,19 @@ func (r *SysMenuImpl) SelectMenuByIds(menuIds []string) []model.SysMenu {
 }
 
 // HasChildByMenuIdAndStatus 存在菜单子节点数量与状态
-func (r *SysMenuImpl) HasChildByMenuIdAndStatus(menuId string) int64 {
+func (r *SysMenuImpl) HasChildByMenuIdAndStatus(menuId, status string) int64 {
 	querySql := "select count(1) as 'total' from sys_menu where parent_id = ?"
-	results, err := datasource.RawDB("", querySql, []any{menuId})
+	params := []any{menuId}
+
+	// 菜单状态
+	if status != "" {
+		querySql += " and status = ? and menu_type in (?, ?) "
+		params = append(params, status)
+		params = append(params, menu.TYPE_DIR)
+		params = append(params, menu.TYPE_MENU)
+	}
+
+	results, err := datasource.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return 0

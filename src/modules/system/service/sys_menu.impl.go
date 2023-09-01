@@ -84,8 +84,8 @@ func (r *SysMenuImpl) SelectMenuById(menuId string) model.SysMenu {
 }
 
 // HasChildByMenuIdAndStatus 存在菜单子节点数量与状态
-func (r *SysMenuImpl) HasChildByMenuIdAndStatus(menuId string) int64 {
-	return r.sysMenuRepository.HasChildByMenuIdAndStatus(menuId)
+func (r *SysMenuImpl) HasChildByMenuIdAndStatus(menuId, status string) int64 {
+	return r.sysMenuRepository.HasChildByMenuIdAndStatus(menuId, status)
 }
 
 // CheckMenuExistRole 查询菜单是否存在角色
