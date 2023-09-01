@@ -141,6 +141,11 @@ func (s *SysMenuController) Edit(c *gin.Context) {
 			c.JSON(200, result.ErrMsg("没有权限访问菜单数据"))
 			return
 		}
+				// 禁用菜单时检查父菜单是否使用
+				if body.Status == "1" && menuParent.Status == "0" {
+					ctx.JSON(w, 200, result.ErrMsg("父菜单未启用！"))
+					return
+				}
 	}
 
 	// 目录和菜单检查地址唯一
@@ -167,6 +172,23 @@ func (s *SysMenuController) Edit(c *gin.Context) {
 		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
+
+	// 外链菜单需要符合网站http(s)开头
+	if body.Status == common.STATUS_NO {
+		msg := fmt.Sprintf("菜单修改【%s】失败，非内部地址必须以http(s)://开头", body.MenuName)
+		c.JSON(200, result.ErrMsg(msg))
+		return
+	}
+
+		// 禁用菜单时检查子菜单是否使用
+		if body.Status == "0" {
+			hasStatus := s.sysMenuService.HasChildByMenuIdAndStatus(body.MenuID, "1")
+			if hasStatus > 0 {
+				msg := fmt.Sprintf("不允许禁用，存在使用子菜单数：%d", hasStatus)
+				ctx.JSON(w, 200, result.ErrMsg(msg))
+				return
+			}
+		}
 
 	body.UpdateBy = ctx.LoginUserToUserName(c)
 	rows := s.sysMenuService.UpdateMenu(body)
@@ -195,7 +217,7 @@ func (s *SysMenuController) Remove(c *gin.Context) {
 	}
 
 	// 检查是否存在子菜单
-	hasChild := s.sysMenuService.HasChildByMenuId(menuId)
+	hasChild := s.sysMenuService.HasChildByMenuIdAndStatus(menuId, "")
 	if hasChild > 0 {
 		msg := fmt.Sprintf("不允许删除，存在子菜单数：%d", hasChild)
 		c.JSON(200, result.ErrMsg(msg))

@@ -347,7 +347,7 @@ func (r *SysDeptImpl) UpdateDeptStatusNormal(deptIds []string) int64 {
 	parameters := repo.ConvertIdsSlice(deptIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
-		logger.Errorf("delete err => %v", err)
+		logger.Errorf("update err => %v", err)
 		return 0
 	}
 	return results

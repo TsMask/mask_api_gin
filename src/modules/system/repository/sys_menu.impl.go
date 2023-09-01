@@ -222,8 +222,8 @@ func (r *SysMenuImpl) SelectMenuByIds(menuIds []string) []model.SysMenu {
 	return r.convertResultRows(results)
 }
 
-// HasChildByMenuId 存在菜单子节点数量
-func (r *SysMenuImpl) HasChildByMenuId(menuId string) int64 {
+// HasChildByMenuIdAndStatus 存在菜单子节点数量与状态
+func (r *SysMenuImpl) HasChildByMenuIdAndStatus(menuId string) int64 {
 	querySql := "select count(1) as 'total' from sys_menu where parent_id = ?"
 	results, err := datasource.RawDB("", querySql, []any{menuId})
 	if err != nil {

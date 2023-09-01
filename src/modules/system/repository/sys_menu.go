@@ -19,8 +19,8 @@ type ISysMenu interface {
 	// SelectMenuByIds 根据菜单ID查询信息
 	SelectMenuByIds(menuIds []string) []model.SysMenu
 
-	// HasChildByMenuId 存在菜单子节点数量
-	HasChildByMenuId(menuId string) int64
+	// HasChildByMenuIdAndStatus 存在菜单子节点数量与状态
+	HasChildByMenuIdAndStatus(menuId string) int64
 
 	// InsertMenu 新增菜单信息
 	InsertMenu(sysMenu model.SysMenu) string

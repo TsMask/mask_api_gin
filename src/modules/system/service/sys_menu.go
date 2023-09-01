@@ -25,8 +25,8 @@ type ISysMenu interface {
 	// SelectMenuById 根据菜单ID查询信息
 	SelectMenuById(menuId string) model.SysMenu
 
-	// HasChildByMenuId 存在菜单子节点数量
-	HasChildByMenuId(menuId string) int64
+	// HasChildByMenuIdAndStatus 存在菜单子节点数量与状态
+	HasChildByMenuIdAndStatus(menuId string) int64
 
 	// CheckMenuExistRole 查询菜单分配角色数量
 	CheckMenuExistRole(menuId string) int64
