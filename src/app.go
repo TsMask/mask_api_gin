@@ -90,5 +90,5 @@ func initModulesRoute(app *gin.Engine) {
 
 	common.Setup(app)
 	monitor.Setup(app)
-	system.Setup(app) // 一定放最后，定时任务加载
+	system.Setup(app)
 }
