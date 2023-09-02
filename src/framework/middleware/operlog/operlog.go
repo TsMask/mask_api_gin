@@ -153,20 +153,27 @@ func OperLog(option Option) gin.HandlerFunc {
 		// 调用下一个处理程序
 		c.Next()
 
+		// 响应状态
+		status := c.Writer.Status()
+		if status == 200 {
+			operLog.Status = common.STATUS_YES
+		} else {
+			operLog.Status = common.STATUS_NO
+		}
+
 		// 是否需要保存response，参数和值
 		if option.IsSaveResponseData {
 			contentDisposition := c.Writer.Header().Get("Content-Disposition")
 			contentType := c.Writer.Header().Get("Content-Type")
 			content := contentType + contentDisposition
-			msg := fmt.Sprintf(`{"status":"%d","size":"%d","content-type":"%s"}`, c.Writer.Status(), c.Writer.Size(), content)
+			msg := fmt.Sprintf(`{"status":"%d","size":"%d","content-type":"%s"}`, status, c.Writer.Size(), content)
 			operLog.OperMsg = msg
 		}
 
 		// 日志记录时间
 		duration := time.Since(c.GetTime("startTime"))
 		operLog.CostTime = duration.Milliseconds()
-		operLog.OperTime = time.Now().UnixNano() / 1e6
-		operLog.Status = common.STATUS_YES
+		operLog.OperTime = time.Now().UnixMilli()
 
 		// 保存操作记录到数据库
 		service.NewSysOperLogImpl.InsertOperLog(operLog)
