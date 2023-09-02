@@ -33,12 +33,12 @@ func initViper() {
 	viper.SetConfigName("config.default")
 	// 读取默认配置文件
 	if err := viper.ReadInConfig(); err != nil {
-		logger.Panicf("fatal error config default file: %s", err)
+		logger.Fatalf("fatal error config default file: %s", err)
 	}
 
 	env := viper.GetString("env")
 	if env != "local" && env != "prod" {
-		logger.Panicf("fatal error config env for local or prod : %s", env)
+		logger.Fatalf("fatal error config env for local or prod : %s", env)
 	}
 	logger.Warnf("当期服务环境运行配置 => %s", env)
 
@@ -49,7 +49,7 @@ func initViper() {
 		viper.SetConfigName("config.local")
 	}
 	if err := viper.MergeInConfig(); err != nil {
-		logger.Panicf("fatal error config local file: %s", err)
+		logger.Fatalf("fatal error config local file: %s", err)
 	}
 
 	// 记录程序开始运行的时间点

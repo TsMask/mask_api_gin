@@ -18,7 +18,7 @@ func init() {
 	// 从 dbPath 加载整个 xdb 到内存
 	cBuff, err := LoadContentFromFile(dbPath)
 	if err != nil {
-		logger.Panicf("failed error load content from : %s\n", err)
+		logger.Fatalf("failed error load xdb from : %s\n", err)
 		return
 	}
 

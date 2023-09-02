@@ -45,7 +45,7 @@ func Errorf(format string, v ...any) {
 	logWithLevel(err, format, v...)
 }
 
-// Panicf 抛出错误并退出程序
-func Panicf(format string, v ...any) {
+// Fatalf 抛出错误并退出程序
+func Fatalf(format string, v ...any) {
 	log.Fatalf(format, v...)
 }
