@@ -3,7 +3,7 @@ package src
 import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
-	errorcatch "mask_api_gin/src/framework/error-catch"
+	"mask_api_gin/src/framework/errorcatch"
 	"mask_api_gin/src/framework/middleware"
 	"mask_api_gin/src/framework/middleware/security"
 	"mask_api_gin/src/modules/common"
