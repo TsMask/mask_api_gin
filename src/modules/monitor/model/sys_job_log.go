@@ -18,4 +18,6 @@ type SysJobLog struct {
 	Status string `json:"status"`
 	// 创建时间
 	CreateTime int64 `json:"createTime"`
+	// 消耗时间（毫秒）
+	CostTime int64 `json:"costTime"`
 }

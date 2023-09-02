@@ -165,8 +165,8 @@ func (r *SysJobImpl) insertQueueJob(sysJob model.SysJob, repeat bool) bool {
 		status := queue.RunJob(options, cron.JobOptions{
 			JobId: sysJob.JobID,
 		})
-		// 执行中或不是失败情况都返回正常
-		return status == cron.Active || status != cron.Failed
+		// 执行中或等待中的都返回正常
+		return status == cron.Active || status == cron.Waiting
 	}
 
 	// 执行重复任务

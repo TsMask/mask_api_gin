@@ -5,6 +5,7 @@ import (
 	"mask_api_gin/src/framework/constants/common"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/repository"
+	"time"
 )
 
 // 实例任务执行日志收集
@@ -41,6 +42,7 @@ func (s cronlog) Error(err error, msg string, keysAndValues ...any) {
 
 		// 读取任务信息创建日志对象
 		if data, ok := job.Data.(JobData); ok {
+			duration := time.Since(time.UnixMilli(job.Timestamp))
 			sysJob := data.SysJob
 			if sysJob.JobID == job.Opts.JobId {
 				sysJobLog := model.SysJobLog{
@@ -50,6 +52,7 @@ func (s cronlog) Error(err error, msg string, keysAndValues ...any) {
 					TargetParams: sysJob.TargetParams,
 					Status:       common.STATUS_NO,
 					JobMsg:       jobMsg,
+					CostTime:     duration.Milliseconds(),
 				}
 				// 插入数据
 				repository.NewSysJobLogImpl.InsertJobLog(sysJobLog)
@@ -80,6 +83,7 @@ func (s cronlog) Completed(result any, msg string, keysAndValues ...any) {
 
 		// 读取任务信息创建日志对象
 		if data, ok := job.Data.(JobData); ok {
+			duration := time.Since(time.UnixMilli(job.Timestamp))
 			sysJob := data.SysJob
 			if sysJob.JobID == job.Opts.JobId {
 				sysJobLog := model.SysJobLog{
@@ -89,6 +93,7 @@ func (s cronlog) Completed(result any, msg string, keysAndValues ...any) {
 					TargetParams: sysJob.TargetParams,
 					Status:       common.STATUS_YES,
 					JobMsg:       jobMsg,
+					CostTime:     duration.Milliseconds(),
 				}
 				// 插入数据
 				repository.NewSysJobLogImpl.InsertJobLog(sysJobLog)

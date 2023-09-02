@@ -14,7 +14,7 @@ import (
 // 实例化数据层 SysJobLogImpl 结构体
 var NewSysJobLogImpl = &SysJobLogImpl{
 	selectSql: `select job_log_id, job_name, job_group, invoke_target, 
-	target_params, job_msg, status, create_time from sys_job_log`,
+	target_params, job_msg, status, create_time, cost_time from sys_job_log`,
 
 	resultMap: map[string]string{
 		"job_log_id":    "JobLogID",
@@ -25,6 +25,7 @@ var NewSysJobLogImpl = &SysJobLogImpl{
 		"job_msg":       "JobMsg",
 		"status":        "Status",
 		"create_time":   "CreateTime",
+		"cost_time":     "CostTime",
 	},
 }
 
@@ -213,6 +214,9 @@ func (r *SysJobLogImpl) InsertJobLog(sysJobLog model.SysJobLog) string {
 	}
 	if sysJobLog.Status != "" {
 		params["status"] = sysJobLog.Status
+	}
+	if sysJobLog.CostTime > 0 {
+		params["cost_time"] = sysJobLog.CostTime
 	}
 
 	// 构建执行语句
