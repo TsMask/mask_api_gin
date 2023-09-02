@@ -78,35 +78,43 @@ func (q *Queue) RunJob(data any, opts JobOptions) int {
 
 	// 非重复任务立即执行
 	if opts.Cron == "" {
-		one := job.runJob(false)
-		newLog.Info("RunJob", one.cid, opts.JobId, one.Status)
-		if one.Status == Waiting || one.Status == Completed {
-			go one.Run()
+		// 获取执行的任务
+		currentJob := job.GetJob(false)
+		if currentJob.Status == Active {
+			return Active
 		}
-		return one.Status
+		// 从切片 jobs 中删除指定索引位置的元素
+		for i, v := range *q.Job {
+			if v.cid == 0 {
+				jobs := *q.Job
+				jobs = append(jobs[:i], jobs[i+1:]...)
+				*q.Job = jobs
+				break
+			}
+		}
+		go job.Run()
+	} else {
+		// 移除已存的任务ID
+		q.RemoveJob(opts.JobId)
+		// 添加新任务
+		cid, err := c.AddJob(opts.Cron, job)
+		if err != nil {
+			newLog.Error(err, "err")
+			job.Status = Failed
+		}
+		job.cid = cid
 	}
 
-	// 移除已存的任务ID
-	q.RemoveJob(opts.JobId)
-
-	// 添加新任务
-	cid, err := c.AddJob(opts.Cron, job)
-	if err != nil {
-		newLog.Error(err, "err")
-		job.Status = Failed
-	}
-	job.cid = cid
 	*q.Job = append(*q.Job, job)
-	newLog.Info("RunJob", cid, opts.JobId)
+	newLog.Info("RunJob", job.cid, opts.JobId, job.Status)
 	return job.Status
 }
 
 // RemoveJob 移除任务
 func (q *Queue) RemoveJob(jobId string) bool {
-	// 移除已存的任务ID
 	for i, v := range *q.Job {
 		if jobId == v.Opts.JobId {
-			newLog.Info("RemoveJob", v.cid, jobId)
+			newLog.Info("RemoveJob", v.cid, jobId, v.Status)
 			c.Remove(v.cid)
 			// 从切片 jobs 中删除指定索引位置的元素
 			jobs := *q.Job
@@ -145,31 +153,27 @@ type QueueJob struct {
 	queueProcessor *QueueProcessor
 }
 
-// runJob 通过队列名获取当前执行ID任务
-func (job *QueueJob) runJob(repeat bool) *QueueJob {
+// GetJob 获取当前执行任务
+func (job *QueueJob) GetJob(repeat bool) *QueueJob {
 	q := GetQueue(job.queueName)
 	for _, v := range *q.Job {
-		if repeat {
-			if v.Opts.JobId == job.Opts.JobId {
-				return v
-			}
-		} else {
-			if v.Opts.JobId == job.Opts.JobId && v.cid == 0 {
-				return v
-			}
+		if repeat && v.Opts.JobId == job.Opts.JobId {
+			return v
+		}
+		if !repeat && v.cid == 0 {
+			return v
 		}
 	}
-	*q.Job = append(*q.Job, job)
 	return job
 }
 
 // Run 实现的接口函数
 func (s QueueJob) Run() {
 	// 检查当前任务
-	job := s.runJob(s.cid != 0)
+	job := s.GetJob(s.cid != 0)
 
 	// Active 状态不执行
-	if Active == job.Status {
+	if job.Status == Active {
 		return
 	}
 
