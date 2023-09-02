@@ -5,10 +5,15 @@ import (
 	"mask_api_gin/src/framework/logger"
 )
 
-// Execute 队列任务处理
-func Execute(options cron.Options) any {
-	sysJob := options.SysJob
+var NewProcessor = &simpleProcessor{}
 
+// simple 队列任务处理
+type simpleProcessor struct{}
+
+func (s *simpleProcessor) Execute(data any) any {
+	options := data.(cron.JobData)
+
+	sysJob := options.SysJob
 	logger.Infof("重复 %v 任务ID %s", options.Repeat, sysJob.JobID)
 
 	// 返回结果，用于记录执行结果

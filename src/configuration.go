@@ -15,8 +15,8 @@ func ConfigurationInit() {
 	datasource.Connect()
 	// 连接Redis实例
 	redis.Connect()
-	// 初始调度任务实例
-	cron.InitNew()
+	// 启动调度任务实例
+	cron.StartCron()
 }
 
 // 配置中心相关配置关闭连接
@@ -25,4 +25,6 @@ func ConfigurationClose() {
 	datasource.Close()
 	// 关闭Redis实例
 	redis.Close()
+	// 停止调度任务实例
+	cron.StopCron()
 }

@@ -99,14 +99,6 @@ func (r *SysJobImpl) DeleteJobByIds(jobIds []string) (int64, error) {
 
 // ChangeStatus 任务调度状态修改
 func (r *SysJobImpl) ChangeStatus(sysJob model.SysJob) bool {
-	//状态正常添加队列任务
-	if sysJob.Status == common.STATUS_YES {
-		r.insertQueueJob(sysJob, true)
-	}
-	// 状态禁用删除队列任务
-	if sysJob.Status == common.STATUS_NO {
-		r.deleteQueueJob(sysJob)
-	}
 	// 更新状态
 	newSysJob := model.SysJob{
 		JobID:    sysJob.JobID,
@@ -114,14 +106,25 @@ func (r *SysJobImpl) ChangeStatus(sysJob model.SysJob) bool {
 		UpdateBy: sysJob.UpdateBy,
 	}
 	rows := r.sysJobRepository.UpdateJob(newSysJob)
-	return rows > 0
+	if rows > 0 {
+		//状态正常添加队列任务
+		if sysJob.Status == common.STATUS_YES {
+			r.insertQueueJob(sysJob, true)
+		}
+		// 状态禁用删除队列任务
+		if sysJob.Status == common.STATUS_NO {
+			r.deleteQueueJob(sysJob)
+		}
+		return true
+	}
+	return false
 }
 
 // ResetQueueJob 重置初始调度任务
 func (r *SysJobImpl) ResetQueueJob() {
-	// 获取注册的队列列表
-	queueList := cron.QueueList()
-	if len(queueList) == 0 {
+	// 获取注册的队列名称
+	queueNames := cron.QueueNames()
+	if len(queueNames) == 0 {
 		return
 	}
 	// 查询系统中定义状态为正常启用的任务
@@ -129,8 +132,8 @@ func (r *SysJobImpl) ResetQueueJob() {
 		Status: common.STATUS_YES,
 	})
 	for _, sysJob := range sysJobs {
-		for _, queue := range queueList {
-			if queue.Name == sysJob.InvokeTarget {
+		for _, name := range queueNames {
+			if name == sysJob.InvokeTarget {
 				r.insertQueueJob(sysJob, true)
 			}
 		}
@@ -145,18 +148,32 @@ func (r *SysJobImpl) RunQueueJob(sysJob model.SysJob) bool {
 // insertQueueJob 添加调度任务
 func (r *SysJobImpl) insertQueueJob(sysJob model.SysJob, repeat bool) bool {
 	// 获取队列 Processor
-	queue, err := cron.GetQueue(sysJob.InvokeTarget)
-	if err != nil {
+	queue := cron.GetQueue(sysJob.InvokeTarget)
+	if queue.Name != sysJob.InvokeTarget {
 		return false
 	}
 
 	// 给执行任务数据参数
-	options := cron.Options{
+	options := cron.JobData{
 		Repeat: repeat,
 		SysJob: sysJob,
 	}
 
-	queue.RunJob(options, sysJob.JobID, sysJob.CronExpression)
+	// 不是重复任务的情况，立即执行一次
+	if !repeat {
+		// 执行单次任务
+		status := queue.RunJob(options, cron.JobOptions{
+			JobId: sysJob.JobID,
+		})
+		// 执行中或不是失败情况都返回正常
+		return status == cron.Active || status != cron.Failed
+	}
+
+	// 执行重复任务
+	queue.RunJob(options, cron.JobOptions{
+		JobId: sysJob.JobID,
+		Cron:  sysJob.CronExpression,
+	})
 
 	return true
 }
@@ -164,8 +181,8 @@ func (r *SysJobImpl) insertQueueJob(sysJob model.SysJob, repeat bool) bool {
 // deleteQueueJob 删除调度任务
 func (r *SysJobImpl) deleteQueueJob(sysJob model.SysJob) bool {
 	// 获取队列 Processor
-	queue, err := cron.GetQueue(sysJob.InvokeTarget)
-	if err != nil {
+	queue := cron.GetQueue(sysJob.InvokeTarget)
+	if queue.Name != sysJob.InvokeTarget {
 		return false
 	}
 	return queue.RemoveJob(sysJob.JobID)

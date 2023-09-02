@@ -9,7 +9,7 @@ import (
 
 // InitCronQueue 初始定时任务队列
 func InitCronQueue() {
-	cron.AddQueue("simple", simple.Execute)
-	cron.AddQueue("foo", foo.Execute)
-	cron.AddQueue("bar", bar.Execute)
+	cron.CreateQueue("simple", simple.NewProcessor)
+	cron.CreateQueue("foo", foo.NewProcessor)
+	cron.CreateQueue("bar", bar.NewProcessor)
 }
