@@ -115,7 +115,7 @@ func verifyRolePermission(roles, perms []string, options map[string][]string) bo
 
 	// 同时判断 含有其中
 	if opts[0] && opts[1] {
-		return hasRole && hasPerms
+		return hasRole || hasPerms
 	}
 	// 同时判断 匹配其中
 	if opts[2] && opts[3] {
