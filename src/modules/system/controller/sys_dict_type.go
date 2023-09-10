@@ -135,7 +135,7 @@ func (s *SysDictTypeController) Edit(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 部门删除
+// 字典类型删除
 //
 // DELETE /:dictIds
 func (s *SysDictTypeController) Remove(c *gin.Context) {
