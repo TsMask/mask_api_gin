@@ -111,7 +111,7 @@ func (s *CaptchaController) Image(c *gin.Context) {
 		} else {
 			data["uuid"] = id
 			data["img"] = item.EncodeB64string()
-			expiration := captcha.EXPIRATION * time.Millisecond
+			expiration := captcha.EXPIRATION * time.Second
 			verifyKey = cachekey.CAPTCHA_CODE_KEY + id
 			redis.SetByExpire(verifyKey, answer, expiration)
 		}
