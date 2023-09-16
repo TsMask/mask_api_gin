@@ -98,18 +98,24 @@ func (r *SysJobLogImpl) SelectJobLogPage(query map[string]any) map[string]any {
 		whereSql += " where " + strings.Join(conditions, " and ")
 	}
 
+	// 查询结果
+	result := map[string]any{
+		"total": 0,
+		"rows":  []model.SysJobLog{},
+	}
+
 	// 查询数量 长度为0直接返回
 	totalSql := "select count(1) as 'total' from sys_job_log"
 	totalRows, err := datasource.RawDB("", totalSql+whereSql, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
+		return result
 	}
 	total := parse.Number(totalRows[0]["total"])
 	if total == 0 {
-		return map[string]any{
-			"total": total,
-			"rows":  []model.SysJobLog{},
-		}
+		return result
+	} else {
+		result["total"] = total
 	}
 
 	// 分页
@@ -123,14 +129,12 @@ func (r *SysJobLogImpl) SelectJobLogPage(query map[string]any) map[string]any {
 	results, err := datasource.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
+		return result
 	}
 
 	// 转换实体
-	rows := r.convertResultRows(results)
-	return map[string]any{
-		"total": total,
-		"rows":  rows,
-	}
+	result["rows"] = r.convertResultRows(results)
+	return result
 }
 
 // 查询调度任务日志集合

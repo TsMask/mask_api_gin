@@ -101,18 +101,24 @@ func (r *SysNoticeImpl) SelectNoticePage(query map[string]any) map[string]any {
 		whereSql += " and " + strings.Join(conditions, " and ")
 	}
 
+	// 查询结果
+	result := map[string]any{
+		"total": 0,
+		"rows":  []model.SysNotice{},
+	}
+
 	// 查询数量 长度为0直接返回
 	totalSql := "select count(1) as 'total' from sys_notice"
 	totalRows, err := datasource.RawDB("", totalSql+whereSql, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
+		return result
 	}
 	total := parse.Number(totalRows[0]["total"])
 	if total == 0 {
-		return map[string]any{
-			"total": total,
-			"rows":  []model.SysNotice{},
-		}
+		return result
+	} else {
+		result["total"] = total
 	}
 
 	// 分页
@@ -129,11 +135,8 @@ func (r *SysNoticeImpl) SelectNoticePage(query map[string]any) map[string]any {
 	}
 
 	// 转换实体
-	rows := r.convertResultRows(results)
-	return map[string]any{
-		"total": total,
-		"rows":  rows,
-	}
+	result["rows"] = r.convertResultRows(results)
+	return result
 }
 
 // SelectNoticeList 查询公告列表

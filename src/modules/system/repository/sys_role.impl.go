@@ -116,6 +116,12 @@ func (r *SysRoleImpl) SelectRolePage(query map[string]any, dataScopeSQL string) 
 		whereSql += " and " + strings.Join(conditions, " and ")
 	}
 
+	// 查询结果
+	result := map[string]any{
+		"total": 0,
+		"rows":  []model.SysRole{},
+	}
+
 	// 查询数量 长度为0直接返回
 	totalSql := `select count(distinct r.role_id) as 'total' from sys_role r
     left join sys_user_role ur on ur.role_id = r.role_id
@@ -124,13 +130,13 @@ func (r *SysRoleImpl) SelectRolePage(query map[string]any, dataScopeSQL string) 
 	totalRows, err := datasource.RawDB("", totalSql+whereSql+dataScopeSQL, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
+		return result
 	}
 	total := parse.Number(totalRows[0]["total"])
 	if total == 0 {
-		return map[string]any{
-			"total": total,
-			"rows":  []model.SysRole{},
-		}
+		return result
+	} else {
+		result["total"] = total
 	}
 
 	// 分页
@@ -144,14 +150,12 @@ func (r *SysRoleImpl) SelectRolePage(query map[string]any, dataScopeSQL string) 
 	results, err := datasource.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
+		return result
 	}
 
 	// 转换实体
-	rows := r.convertResultRows(results)
-	return map[string]any{
-		"total": total,
-		"rows":  rows,
-	}
+	result["rows"] = r.convertResultRows(results)
+	return result
 }
 
 // SelectRoleList 根据条件查询角色数据
