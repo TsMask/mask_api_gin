@@ -16,7 +16,6 @@ import (
 
 // 数据库连接实例
 var dbMap = make(map[string]*gorm.DB)
-var Default = dbMap
 
 type dialectInfo struct {
 	dialector gorm.Dialector
@@ -104,7 +103,7 @@ func Close() {
 			continue
 		}
 		if err := sqlDB.Close(); err != nil {
-			logger.Fatalf("fatal error db close: %s", err)
+			logger.Errorf("fatal error db close: %s", err)
 		}
 	}
 }
@@ -127,6 +126,7 @@ func RawDB(source string, sql string, parameters []any) ([]map[string]any, error
 	if source != "" {
 		db = DB(source)
 	}
+
 	// 使用正则表达式替换连续的空白字符为单个空格
 	fmtSql := regexp.MustCompile(`\s+`).ReplaceAllString(sql, " ")
 
