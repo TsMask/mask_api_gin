@@ -44,7 +44,7 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 		repeatKey := cachekey.REPEAT_SUBMIT_KEY + clientIP + ":" + c.Request.RequestURI
 
 		// 在Redis查询并记录请求次数
-		repeatStr := redis.Get(repeatKey)
+		repeatStr, _ := redis.Get("", repeatKey)
 		if repeatStr != "" {
 			var rp repeatParam
 			err := json.Unmarshal([]byte(repeatStr), &rp)
@@ -75,7 +75,7 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 			logger.Errorf("RepeatSubmit rp json marshal err: %v", err)
 		}
 		// 保存请求时间和参数
-		redis.SetByExpire(repeatKey, string(rpJSON), time.Duration(interval)*time.Second)
+		redis.SetByExpire("", repeatKey, string(rpJSON), time.Duration(interval)*time.Second)
 
 		// 调用下一个处理程序
 		c.Next()

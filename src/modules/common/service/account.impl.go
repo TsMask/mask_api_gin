@@ -46,11 +46,11 @@ func (s *AccountImpl) ValidateCaptcha(code, uuid string) error {
 		return errors.New("验证码信息错误")
 	}
 	verifyKey := cachekey.CAPTCHA_CODE_KEY + uuid
-	captcha := redis.Get(verifyKey)
+	captcha, _ := redis.Get("", verifyKey)
 	if captcha == "" {
 		return errors.New("验证码已失效")
 	}
-	redis.Del(verifyKey)
+	redis.Del("", verifyKey)
 	if captcha != code {
 		return errors.New("验证码错误")
 	}
@@ -82,7 +82,7 @@ func (s *AccountImpl) LoginByUsername(username, password string) (vo.LoginUser, 
 	// 检验用户密码
 	compareBool := crypto.BcryptCompare(password, sysUser.Password)
 	if !compareBool {
-		redis.SetByExpire(retrykey, retryCount+1, lockTime)
+		redis.SetByExpire("", retrykey, retryCount+1, lockTime)
 		return loginUser, errors.New("用户不存在或密码错误")
 	} else {
 		// 清除错误记录次数
@@ -107,8 +107,10 @@ func (s *AccountImpl) LoginByUsername(username, password string) (vo.LoginUser, 
 // ClearLoginRecordCache 清除错误记录次数
 func (s *AccountImpl) ClearLoginRecordCache(username string) bool {
 	cacheKey := cachekey.PWD_ERR_CNT_KEY + username
-	if redis.Has(cacheKey) {
-		return redis.Del(cacheKey)
+	hasKey, _ := redis.Has("", cacheKey)
+	if hasKey {
+		delOk, _ := redis.Del("", cacheKey)
+		return delOk
 	}
 	return false
 }
@@ -120,8 +122,8 @@ func (s *AccountImpl) passwordRetryCount(username string) (string, int64, time.D
 	lockTime := config.Get("user.password.lockTime").(int)
 	// 验证缓存记录次数
 	retrykey := cachekey.PWD_ERR_CNT_KEY + username
-	retryCount := redis.Get(retrykey)
-	if retryCount == "" {
+	retryCount, err := redis.Get("", retrykey)
+	if retryCount == "" || err != nil {
 		retryCount = "0"
 	}
 	// 是否超过错误值

@@ -39,11 +39,11 @@ func (s *RegisterImpl) ValidateCaptcha(code, uuid string) error {
 		return errors.New("验证码信息错误")
 	}
 	verifyKey := cachekey.CAPTCHA_CODE_KEY + uuid
-	captcha := redis.Get(verifyKey)
-	if captcha == "" {
+	captcha, err := redis.Get("", verifyKey)
+	if captcha == "" || err != nil {
 		return errors.New("验证码已失效")
 	}
-	redis.Del(verifyKey)
+	redis.Del("", verifyKey)
 	if captcha != code {
 		return errors.New("验证码错误")
 	}

@@ -79,7 +79,7 @@ func (s *CaptchaController) Image(c *gin.Context) {
 			data["img"] = item.EncodeB64string()
 			expiration := captcha.EXPIRATION * time.Second
 			verifyKey = cachekey.CAPTCHA_CODE_KEY + id
-			redis.SetByExpire(verifyKey, answer, expiration)
+			redis.SetByExpire("", verifyKey, answer, expiration)
 		}
 	}
 	if captchaType == captcha.TYPE_CHAR {
@@ -113,13 +113,13 @@ func (s *CaptchaController) Image(c *gin.Context) {
 			data["img"] = item.EncodeB64string()
 			expiration := captcha.EXPIRATION * time.Second
 			verifyKey = cachekey.CAPTCHA_CODE_KEY + id
-			redis.SetByExpire(verifyKey, answer, expiration)
+			redis.SetByExpire("", verifyKey, answer, expiration)
 		}
 	}
 
 	// 本地开发下返回验证码结果，方便接口调试
 	if config.Env() == "local" {
-		text := redis.Get(verifyKey)
+		text, _ := redis.Get("", verifyKey)
 		data["text"] = text
 		c.JSON(200, result.Ok(data))
 		return

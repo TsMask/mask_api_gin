@@ -147,7 +147,7 @@ func (r *SysDictTypeImpl) LoadingDictCache(dictType string) {
 		sysDictData.DictType = dictType
 		// 删除缓存
 		key := r.getDictCache(dictType)
-		redis.Del(key)
+		redis.Del("", key)
 	}
 
 	sysDictDataList := r.sysDictDataRepository.SelectDictDataList(sysDictData)
@@ -170,22 +170,26 @@ func (r *SysDictTypeImpl) LoadingDictCache(dictType string) {
 	for k, v := range m {
 		key := r.getDictCache(k)
 		values, _ := json.Marshal(v)
-		redis.Set(key, string(values))
+		redis.Set("", key, string(values))
 	}
 }
 
 // ClearDictCache 清空字典缓存数据
 func (r *SysDictTypeImpl) ClearDictCache(dictType string) bool {
 	key := r.getDictCache(dictType)
-	keys := redis.GetKeys(key)
-	return redis.DelKeys(keys)
+	keys, err := redis.GetKeys("", key)
+	if err != nil {
+		return false
+	}
+	delOk, _ := redis.DelKeys("", keys)
+	return delOk
 }
 
 // DictDataCache 获取字典数据缓存数据
 func (r *SysDictTypeImpl) DictDataCache(dictType string) []model.SysDictData {
 	data := []model.SysDictData{}
 	key := r.getDictCache(dictType)
-	jsonStr := redis.Get(key)
+	jsonStr, _ := redis.Get("", key)
 	if len(jsonStr) > 7 {
 		err := json.Unmarshal([]byte(jsonStr), &data)
 		if err != nil {
@@ -197,9 +201,9 @@ func (r *SysDictTypeImpl) DictDataCache(dictType string) []model.SysDictData {
 			DictType: dictType,
 		})
 		if len(data) > 0 {
-			redis.Del(key)
+			redis.Del("", key)
 			values, _ := json.Marshal(data)
-			redis.Set(key, string(values))
+			redis.Set("", key, string(values))
 		}
 	}
 	return data

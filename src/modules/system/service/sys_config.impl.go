@@ -33,14 +33,14 @@ func (r *SysConfigImpl) SelectConfigList(sysConfig model.SysConfig) []model.SysC
 func (r *SysConfigImpl) SelectConfigValueByKey(configKey string) string {
 	cacheKey := r.getCacheKey(configKey)
 	// 从缓存中读取
-	cacheValue := redis.Get(cacheKey)
-	if cacheValue != "" {
+	cacheValue, err := redis.Get("", cacheKey)
+	if cacheValue != "" || err != nil {
 		return cacheValue
 	}
 	// 无缓存时读取数据放入缓存中
 	configValue := r.sysConfigRepository.SelectConfigValueByKey(configKey)
 	if configValue != "" {
-		redis.Set(cacheKey, configValue)
+		redis.Set("", cacheKey, configValue)
 		return configValue
 	}
 	return ""
@@ -127,8 +127,8 @@ func (r *SysConfigImpl) loadingConfigCache(configKey string) {
 		sysConfigs := r.SelectConfigList(model.SysConfig{})
 		for _, v := range sysConfigs {
 			key := r.getCacheKey(v.ConfigKey)
-			redis.Del(key)
-			redis.Set(key, v.ConfigValue)
+			redis.Del("", key)
+			redis.Set("", key, v.ConfigValue)
 		}
 		return
 	}
@@ -137,8 +137,8 @@ func (r *SysConfigImpl) loadingConfigCache(configKey string) {
 		cacheValue := r.sysConfigRepository.SelectConfigValueByKey(configKey)
 		if cacheValue != "" {
 			key := r.getCacheKey(configKey)
-			redis.Del(key)
-			redis.Set(key, cacheValue)
+			redis.Del("", key)
+			redis.Set("", key, cacheValue)
 		}
 		return
 	}
@@ -147,6 +147,10 @@ func (r *SysConfigImpl) loadingConfigCache(configKey string) {
 // clearConfigCache 清空参数缓存数据
 func (r *SysConfigImpl) clearConfigCache(configKey string) bool {
 	key := r.getCacheKey(configKey)
-	keys := redis.GetKeys(key)
-	return redis.DelKeys(keys)
+	keys, err := redis.GetKeys("", key)
+	if err != nil {
+		return false
+	}
+	delOk, _ := redis.DelKeys("", keys)
+	return delOk
 }

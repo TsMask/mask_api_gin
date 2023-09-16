@@ -25,8 +25,9 @@ func Remove(tokenStr string) string {
 	// 清除缓存KEY
 	uuid := claims[tokenConstants.JWT_UUID].(string)
 	tokenKey := cachekeyConstants.LOGIN_TOKEN_KEY + uuid
-	if redisCahe.Has(tokenKey) {
-		redisCahe.Del(tokenKey)
+	hasKey, _ := redisCahe.Has("", tokenKey)
+	if hasKey {
+		redisCahe.Del("", tokenKey)
 	}
 	return claims[tokenConstants.JWT_NAME].(string)
 }
@@ -90,7 +91,7 @@ func Cache(loginUser *vo.LoginUser) {
 	if err != nil {
 		return
 	}
-	redisCahe.SetByExpire(tokenKey, string(jsonBytes), expTimestamp)
+	redisCahe.SetByExpire("", tokenKey, string(jsonBytes), expTimestamp)
 }
 
 // RefreshIn 验证令牌有效期，相差不足xx分钟，自动刷新缓存
@@ -131,9 +132,10 @@ func Verify(tokenString string) (jwt.MapClaims, error) {
 func LoginUser(claims jwt.MapClaims) vo.LoginUser {
 	uuid := claims[tokenConstants.JWT_UUID].(string)
 	tokenKey := cachekeyConstants.LOGIN_TOKEN_KEY + uuid
+	hasKey, _ := redisCahe.Has("", tokenKey)
 	var loginUser vo.LoginUser
-	if redisCahe.Has(tokenKey) {
-		loginUserStr := redisCahe.Get(tokenKey)
+	if hasKey {
+		loginUserStr, _ := redisCahe.Get("", tokenKey)
 		if loginUserStr == "" {
 			return loginUser
 		}

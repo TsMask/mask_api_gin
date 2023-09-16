@@ -22,9 +22,9 @@ type SysCacheController struct{}
 // GET /
 func (s *SysCacheController) Info(c *gin.Context) {
 	c.JSON(200, result.OkData(map[string]any{
-		"info":         redis.Info(),
-		"dbSize":       redis.KeySize(),
-		"commandStats": redis.CommandStats(),
+		"info":         redis.Info(""),
+		"dbSize":       redis.KeySize(""),
+		"commandStats": redis.CommandStats(""),
 	}))
 }
 
@@ -56,7 +56,7 @@ func (s *SysCacheController) Keys(c *gin.Context) {
 	caches := []model.SysCache{}
 
 	// 遍历组装
-	cacheKeys := redis.GetKeys(cacheName + ":*")
+	cacheKeys, _ := redis.GetKeys("", cacheName+":*")
 	for _, key := range cacheKeys {
 		caches = append(caches, model.NewSysCacheKeys(cacheName, key))
 	}
@@ -75,7 +75,11 @@ func (s *SysCacheController) Value(c *gin.Context) {
 		return
 	}
 
-	cacheValue := redis.Get(cacheName + ":" + cacheKey)
+	cacheValue, err := redis.Get("", cacheName+":"+cacheKey)
+	if err != nil {
+		c.JSON(200, result.ErrMsg(err.Error()))
+		return
+	}
 	sysCache := model.NewSysCacheValue(cacheName, cacheKey, cacheValue)
 	c.JSON(200, result.OkData(sysCache))
 }
@@ -90,8 +94,12 @@ func (s *SysCacheController) ClearCacheName(c *gin.Context) {
 		return
 	}
 
-	cacheKeys := redis.GetKeys(cacheName + ":*")
-	ok := redis.DelKeys(cacheKeys)
+	cacheKeys, err := redis.GetKeys("", cacheName+":*")
+	if err != nil {
+		c.JSON(200, result.ErrMsg(err.Error()))
+		return
+	}
+	ok, _ := redis.DelKeys("", cacheKeys)
 	if ok {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -110,7 +118,7 @@ func (s *SysCacheController) ClearCacheKey(c *gin.Context) {
 		return
 	}
 
-	ok := redis.Del(cacheName + ":" + cacheKey)
+	ok, _ := redis.Del("", cacheName+":"+cacheKey)
 	if ok {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -131,8 +139,11 @@ func (s *SysCacheController) ClearCacheSafe(c *gin.Context) {
 		model.NewSysCacheNames("密码错误次数", cachekey.PWD_ERR_CNT_KEY),
 	}
 	for _, v := range caches {
-		cacheKeys := redis.GetKeys(v.CacheName + ":*")
-		redis.DelKeys(cacheKeys)
+		cacheKeys, err := redis.GetKeys("", v.CacheName+":*")
+		if err != nil {
+			continue
+		}
+		redis.DelKeys("", cacheKeys)
 	}
 	c.JSON(200, result.Ok(nil))
 }

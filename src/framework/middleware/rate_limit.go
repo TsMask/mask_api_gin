@@ -80,8 +80,8 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 		}
 
 		// 在Redis查询并记录请求次数
-		rateCount := redis.RateLimit(limitKey, option.Time, option.Count)
-		rateTime := redis.GetExpire(limitKey)
+		rateCount, _ := redis.RateLimit("", limitKey, option.Time, option.Count)
+		rateTime, _ := redis.GetExpire("", limitKey)
 
 		// 设置响应头中的限流声明字段
 		c.Header("X-RateLimit-Limit", fmt.Sprintf("%d", option.Count))                      // 总请求数限制
