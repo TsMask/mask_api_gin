@@ -145,11 +145,14 @@ gorm:
 
 # Redis 缓存数据
 redis:
-  client:
-    port: 6379 # Redis port
-    host: "127.0.0.1" # Redis host
-    password: "<密码>"
-    db: 0 # Redis db_num
+  dataSource:
+    default:
+      port: 6379 # Redis port
+      host: "127.0.0.1" # Redis host
+      password: "<密码>"
+      db: 0 # Redis db_num
+  # 多个数据源时可以用这个指定默认的数据源
+  defaultDataSourceName: "default"
 
 # 用户配置
 user:

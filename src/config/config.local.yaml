@@ -28,8 +28,9 @@ gorm:
 
 # Redis 缓存数据
 redis:
-  client:
-    port: 6379
-    host: "192.168.56.102"
-    password: "redis@1234"
-    db: 0
+  dataSource:
+    default:
+      port: 6379 # Redis port
+      host: "192.168.56.102"
+      password: "redis@1234"
+      db: 0 # Redis db_num
