@@ -1,7 +1,7 @@
 package config
 
 import (
-	"mask_api_gin/src/framework/logger"
+	"log"
 	"time"
 
 	"github.com/spf13/pflag"
@@ -33,14 +33,14 @@ func initViper() {
 	viper.SetConfigName("config.default")
 	// 读取默认配置文件
 	if err := viper.ReadInConfig(); err != nil {
-		logger.Fatalf("fatal error config default file: %s", err)
+		log.Fatalf("fatal error config default file: %s", err)
 	}
 
 	env := viper.GetString("env")
 	if env != "local" && env != "prod" {
-		logger.Fatalf("fatal error config env for local or prod : %s", env)
+		log.Fatalf("fatal error config env for local or prod : %s", env)
 	}
-	logger.Warnf("当期服务环境运行配置 => %s", env)
+	log.Printf("当期服务环境运行配置 => %s \n", env)
 
 	// 加载运行配置文件合并相同配置
 	if env == "prod" {
@@ -49,7 +49,7 @@ func initViper() {
 		viper.SetConfigName("config.local")
 	}
 	if err := viper.MergeInConfig(); err != nil {
-		logger.Fatalf("fatal error config local file: %s", err)
+		log.Fatalf("fatal error config local file: %s", err)
 	}
 
 	// 记录程序开始运行的时间点

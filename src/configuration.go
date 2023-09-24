@@ -4,6 +4,7 @@ import (
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/cron"
 	"mask_api_gin/src/framework/datasource"
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/redis"
 )
 
@@ -11,6 +12,8 @@ import (
 func ConfigurationInit() {
 	// 初始配置参数
 	config.InitConfig()
+	// 初始程序日志
+	logger.InitLogger()
 	// 连接数据库实例
 	datasource.Connect()
 	// 连接Redis实例
@@ -21,10 +24,12 @@ func ConfigurationInit() {
 
 // 配置中心相关配置关闭连接
 func ConfigurationClose() {
-	// 关闭数据库实例
-	datasource.Close()
-	// 关闭Redis实例
-	redis.Close()
 	// 停止调度任务实例
 	cron.StopCron()
+	// 关闭Redis实例
+	redis.Close()
+	// 关闭数据库实例
+	datasource.Close()
+	// 关闭程序日志
+	logger.Close()
 }

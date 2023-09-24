@@ -2,6 +2,10 @@
 server:
   port: 6276
 
+# 日志
+logger:
+  level: 0 # 输出最低等级
+
 # security 安全
 security:
   csrf:

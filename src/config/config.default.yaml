@@ -10,6 +10,14 @@ server:
   # 是否开启代理
   proxy: false
 
+# 日志
+logger:
+  fileDir: "../mask_file/logs"
+  fileName: "mask-app.log"
+  level: 2 # 日志记录的等级 0:silent<1:info<2:warn<3:error
+  maxDay: 30 # 日志会保留 30 天
+  maxSize: 10 # 调整按 10MB 大小的切割
+
 # 静态文件配置, 相对项目根路径或填绝对路径
 staticFile:
   # 默认资源，dir目录需要预先创建
