@@ -34,6 +34,9 @@ const (
 // NewLogger 实例日志器对象
 func NewLogger(env, fileDir, fileName string, level, maxDay, maxSize int) (*Logger, error) {
 	logFilePath := filepath.Join(fileDir, fileName)
+	if err := os.MkdirAll(filepath.Dir(logFilePath), 0750); err != nil {
+		return nil, fmt.Errorf("failed to mkdir logger dir: %v", err)
+	}
 	fileHandle, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open log file: %v", err)

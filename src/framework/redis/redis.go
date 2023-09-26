@@ -48,7 +48,7 @@ func Connect() {
 		if err != nil {
 			logger.Fatalf("failed error ping redis %s is %v", client["host"], err)
 		}
-		logger.Infof("redis %s %s connection is successful.", client["host"], pong)
+		logger.Infof("redis %s %s connection is successful.", k, pong)
 		rdbMap[k] = rdb
 	}
 }
