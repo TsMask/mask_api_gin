@@ -46,9 +46,9 @@ func Connect() {
 		// 测试数据库连接
 		pong, err := rdb.Ping(ctx).Result()
 		if err != nil {
-			logger.Fatalf("failed error ping redis %s is %v", client["host"], err)
+			logger.Fatalf("Ping redis %s is %v", k, err)
 		}
-		logger.Infof("redis %s %s connection is successful.", k, pong)
+		logger.Infof("redis %s %d %s connection is successful.", k, client["db"].(int), pong)
 		rdbMap[k] = rdb
 	}
 }
@@ -57,7 +57,7 @@ func Connect() {
 func Close() {
 	for _, rdb := range rdbMap {
 		if err := rdb.Close(); err != nil {
-			logger.Errorf("fatal error db close: %s", err)
+			logger.Errorf("redis db close: %s", err)
 		}
 	}
 }
@@ -278,7 +278,7 @@ func Set(source, key string, value any) (bool, error) {
 	ctx := context.Background()
 	err := rdb.Set(ctx, key, value, 0).Err()
 	if err != nil {
-		logger.Errorf("redis lua script err %v", err)
+		logger.Errorf("redis Set err %v", err)
 		return false, err
 	}
 	return true, nil
@@ -295,7 +295,7 @@ func SetByExpire(source, key string, value any, expiration time.Duration) (bool,
 	ctx := context.Background()
 	err := rdb.Set(ctx, key, value, expiration).Err()
 	if err != nil {
-		logger.Errorf("redis lua script err %v", err)
+		logger.Errorf("redis SetByExpire err %v", err)
 		return false, err
 	}
 	return true, nil
@@ -312,7 +312,7 @@ func Del(source string, key string) (bool, error) {
 	ctx := context.Background()
 	err := rdb.Del(ctx, key).Err()
 	if err != nil {
-		logger.Errorf("redis lua script err %v", err)
+		logger.Errorf("redis Del err %v", err)
 		return false, err
 	}
 	return true, nil
@@ -333,7 +333,7 @@ func DelKeys(source string, keys []string) (bool, error) {
 	ctx := context.Background()
 	err := rdb.Del(ctx, keys...).Err()
 	if err != nil {
-		logger.Errorf("redis lua script err %v", err)
+		logger.Errorf("redis DelKeys err %v", err)
 		return false, err
 	}
 	return true, nil
