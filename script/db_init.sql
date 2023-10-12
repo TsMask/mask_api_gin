@@ -497,11 +497,11 @@ insert into sys_config values(3, '账号自助-验证码类型',           'sys.
 insert into sys_config values(4, '账号自助-是否开启用户注册功能',  'sys.account.registerUser',      'false',         'Y', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '是否开启注册用户功能（true开启，false关闭）');
 
 -- ----------------------------
--- 14、系统访问记录
+-- 14、系统登录记录
 -- ----------------------------
 drop table if exists sys_logininfor;
 create table sys_logininfor (
-  info_id        bigint         not null auto_increment   comment '访问ID',
+  info_id        bigint         not null auto_increment   comment '登录ID',
   user_name      varchar(50)    default ''                comment '用户账号',
   ipaddr         varchar(128)   default ''                comment '登录IP地址',
   login_location varchar(50)    default ''                comment '登录地点',
@@ -509,9 +509,9 @@ create table sys_logininfor (
   os             varchar(50)    default ''                comment '操作系统',
   status         char(1)        default '0'               comment '登录状态（0失败 1成功）',
   msg            varchar(255)   default ''                comment '提示消息',
-  login_time     bigint         default 0                 comment '访问时间',
+  login_time     bigint         default 0                 comment '登录时间',
   primary key (info_id)
-) engine=innodb auto_increment=100 comment = '系统访问记录';
+) engine=innodb auto_increment=100 comment = '系统登录记录';
 
 
 -- ----------------------------
