@@ -184,6 +184,15 @@ func (s *SystemInfoImpl) NetworkInfo() map[string]string {
 	interfaces, err := net.Interfaces()
 	if err == nil {
 		for _, iface := range interfaces {
+			name := iface.Name
+			if name[len(name)-1] == '0' {
+				name = name[0 : len(name)-1]
+				name = strings.Trim(name, "")
+			}
+			// ignore localhost
+			if name == "lo" {
+				continue
+			}
 			var addrs []string
 			for _, v := range iface.Addrs {
 				prefix := strings.Split(v.Addr, "/")[0]
@@ -194,7 +203,7 @@ func (s *SystemInfoImpl) NetworkInfo() map[string]string {
 					addrs = append(addrs, fmt.Sprintf("IPv4 %s", prefix))
 				}
 			}
-			ipAddrs[iface.Name] = strings.Join(addrs, " / ")
+			ipAddrs[name] = strings.Join(addrs, " / ")
 		}
 	}
 	return ipAddrs
