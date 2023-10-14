@@ -2,7 +2,7 @@
 
 [![star](https://gitee.com/TsMask/mask_api_gin/badge/star.svg?theme=dark)](https://gitee.com/TsMask/mask_api_gin/stargazers)
 ![Build Gin](https://img.shields.io/badge/Build-Gin-green.svg)
-![Release V0.1.8](https://img.shields.io/badge/Release-V0.1.8-orange.svg)
+![Release V0.1.9](https://img.shields.io/badge/Release-V0.1.9-orange.svg)
 ![License MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
 ## 介绍
@@ -107,7 +107,7 @@ go build -ldflags="-s -w"   # 构建项目二进制文件
 ./xxx --env prod            # 二进制文件启动时指定生产模式
 ```
 
-部署目录结构
+部署目录结构，可以将[资源文件内嵌到可执行文件中](https://juejin.cn/post/7288963080855568421)
 
 ```text
 dir
