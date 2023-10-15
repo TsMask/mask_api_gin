@@ -1,4 +1,4 @@
-package operlog
+package collectlogs
 
 import (
 	"encoding/json"
@@ -7,8 +7,8 @@ import (
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo/result"
-	"mask_api_gin/src/modules/monitor/model"
-	"mask_api_gin/src/modules/monitor/service"
+	"mask_api_gin/src/modules/system/model"
+	"mask_api_gin/src/modules/system/service"
 	"strings"
 	"time"
 
@@ -56,7 +56,7 @@ const (
 )
 
 // Option 操作日志参数
-type Option struct {
+type Options struct {
 	Title              string `json:"title"`              // 标题
 	BusinessType       string `json:"businessType"`       // 类型，默认常量 BUSINESS_TYPE_OTHER
 	OperatorType       string `json:"operatorType"`       // 操作人类别，默认常量 OPERATOR_TYPE_OTHER
@@ -71,8 +71,8 @@ type Option struct {
 // 类型 "businessType": BUSINESS_TYPE_OTHER
 //
 // 注意之后JSON反序列使用：c.ShouldBindBodyWith(&params, binding.JSON)
-func OptionNew(title, businessType string) Option {
-	return Option{
+func OptionNew(title, businessType string) Options {
+	return Options{
 		Title:              title,
 		BusinessType:       businessType,
 		OperatorType:       OPERATOR_TYPE_OTHER,
@@ -89,10 +89,10 @@ var maskProperties []string = []string{
 	"confirmPassword",
 }
 
-// OperLog 访问操作日志记录
+// OperateLog 访问操作日志记录
 //
 // 请在用户身份授权认证校验后使用以便获取登录用户信息
-func OperLog(option Option) gin.HandlerFunc {
+func OperateLog(options Options) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set("startTime", time.Now())
 
@@ -113,10 +113,10 @@ func OperLog(option Option) gin.HandlerFunc {
 		}
 
 		// 操作日志记录
-		operLog := model.SysOperLog{
-			Title:         option.Title,
-			BusinessType:  option.BusinessType,
-			OperatorType:  option.OperatorType,
+		operLog := model.SysLogOperate{
+			Title:         options.Title,
+			BusinessType:  options.BusinessType,
+			OperatorType:  options.OperatorType,
 			Method:        funcName,
 			OperURL:       c.Request.RequestURI,
 			RequestMethod: c.Request.Method,
@@ -131,7 +131,7 @@ func OperLog(option Option) gin.HandlerFunc {
 		}
 
 		// 是否需要保存request，参数和值
-		if option.IsSaveRequestData {
+		if options.IsSaveRequestData {
 			params := ctx.RequestParamsMap(c)
 			for k, v := range params {
 				// 敏感属性字段进行掩码
@@ -162,7 +162,7 @@ func OperLog(option Option) gin.HandlerFunc {
 		}
 
 		// 是否需要保存response，参数和值
-		if option.IsSaveResponseData {
+		if options.IsSaveResponseData {
 			contentDisposition := c.Writer.Header().Get("Content-Disposition")
 			contentType := c.Writer.Header().Get("Content-Type")
 			content := contentType + contentDisposition
@@ -176,6 +176,6 @@ func OperLog(option Option) gin.HandlerFunc {
 		operLog.OperTime = time.Now().UnixMilli()
 
 		// 保存操作记录到数据库
-		service.NewSysOperLogImpl.InsertOperLog(operLog)
+		service.NewSysLogOperateImpl.InsertSysLogOperate(operLog)
 	}
 }
