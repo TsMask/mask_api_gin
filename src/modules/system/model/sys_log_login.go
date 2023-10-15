@@ -1,9 +1,9 @@
 package model
 
-// SysLogininfor 系统访问记录表 sys_logininfor
-type SysLogininfor struct {
-	// 访问ID
-	InfoID string `json:"infoId"`
+// SysLogLogin 系统登录日志表 sys_log_login
+type SysLogLogin struct {
+	// 登录ID
+	LoginID string `json:"loginId"`
 	// 用户账号
 	UserName string `json:"userName"`
 	// 登录IP地址

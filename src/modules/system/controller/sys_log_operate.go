@@ -7,8 +7,8 @@ import (
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo/result"
-	"mask_api_gin/src/modules/monitor/model"
-	"mask_api_gin/src/modules/monitor/service"
+	"mask_api_gin/src/modules/system/model"
+	"mask_api_gin/src/modules/system/service"
 	"strconv"
 	"strings"
 	"time"
@@ -16,32 +16,32 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 实例化控制层 SysOperLogController 结构体
-var NewSysOperLog = &SysOperLogController{
-	sysOperLogService: service.NewSysOperLogImpl,
+// 实例化控制层 SysLogOperateController 结构体
+var NewSysLogOperate = &SysLogOperateController{
+	SysLogOperateService: service.NewSysLogOperateImpl,
 }
 
 // 操作日志记录信息
 //
-// PATH /monitor/operlog
-type SysOperLogController struct {
+// PATH /system/log/operate
+type SysLogOperateController struct {
 	// 操作日志服务
-	sysOperLogService service.ISysOperLog
+	SysLogOperateService service.ISysLogOperate
 }
 
 // 操作日志列表
 //
 // GET /list
-func (s *SysOperLogController) List(c *gin.Context) {
+func (s *SysLogOperateController) List(c *gin.Context) {
 	querys := ctx.QueryMap(c)
-	data := s.sysOperLogService.SelectOperLogPage(querys)
+	data := s.SysLogOperateService.SelectSysLogOperatePage(querys)
 	c.JSON(200, result.Ok(data))
 }
 
 // 操作日志删除
 //
 // DELETE /:operIds
-func (s *SysOperLogController) Remove(c *gin.Context) {
+func (s *SysLogOperateController) Remove(c *gin.Context) {
 	operIds := c.Param("operIds")
 	if operIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -55,7 +55,7 @@ func (s *SysOperLogController) Remove(c *gin.Context) {
 		c.JSON(200, result.Err(nil))
 		return
 	}
-	rows := s.sysOperLogService.DeleteOperLogByIds(uniqueIDs)
+	rows := s.SysLogOperateService.DeleteSysLogOperateByIds(uniqueIDs)
 	if rows > 0 {
 		msg := fmt.Sprintf("删除成功：%d", rows)
 		c.JSON(200, result.OkMsg(msg))
@@ -67,8 +67,8 @@ func (s *SysOperLogController) Remove(c *gin.Context) {
 // 操作日志清空
 //
 // DELETE /clean
-func (s *SysOperLogController) Clean(c *gin.Context) {
-	err := s.sysOperLogService.CleanOperLog()
+func (s *SysLogOperateController) Clean(c *gin.Context) {
+	err := s.SysLogOperateService.CleanSysLogOperate()
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
@@ -79,18 +79,18 @@ func (s *SysOperLogController) Clean(c *gin.Context) {
 // 导出操作日志
 //
 // POST /export
-func (s *SysOperLogController) Export(c *gin.Context) {
+func (s *SysLogOperateController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	querys := ctx.BodyJSONMap(c)
-	data := s.sysOperLogService.SelectOperLogPage(querys)
+	data := s.SysLogOperateService.SelectSysLogOperatePage(querys)
 	if data["total"].(int64) == 0 {
 		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return
 	}
-	rows := data["rows"].([]model.SysOperLog)
+	rows := data["rows"].([]model.SysLogOperate)
 
 	// 导出文件名称
-	fileName := fmt.Sprintf("operlog_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
+	fileName := fmt.Sprintf("sys_log_operate_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
 	// 第一行表头标题
 	headerCells := map[string]string{
 		"A1": "操作序号",
@@ -117,7 +117,7 @@ func (s *SysOperLogController) Export(c *gin.Context) {
 		// 业务类型
 		businessType := ""
 		// 操作类别
-		operatorType := ""
+		OperatorType := ""
 		// 状态
 		statusValue := "失败"
 		if row.Status == "1" {
@@ -129,7 +129,7 @@ func (s *SysOperLogController) Export(c *gin.Context) {
 			"C" + idx: businessType,
 			"D" + idx: row.Method,
 			"E" + idx: row.RequestMethod,
-			"F" + idx: operatorType,
+			"F" + idx: OperatorType,
 			"G" + idx: row.OperName,
 			"H" + idx: row.DeptName,
 			"I" + idx: row.OperURL,

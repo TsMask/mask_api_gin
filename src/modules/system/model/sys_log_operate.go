@@ -1,7 +1,7 @@
 package model
 
-// SysOperLog 操作日志记录表 sys_oper_log
-type SysOperLog struct {
+// SysLogOperate 系统操作日志表 sys_log_operate
+type SysLogOperate struct {
 	// 日志主键
 	OperID string `json:"operId"`
 	// 模块标题
@@ -12,7 +12,7 @@ type SysOperLog struct {
 	Method string `json:"method"`
 	// 请求方式
 	RequestMethod string `json:"requestMethod"`
-	// 操作类别（0其它 1后台用户 2手机端用户）
+	// 操作人员类别（0其它 1后台用户 2手机端用户）
 	OperatorType string `json:"operatorType"`
 	// 操作人员
 	OperName string `json:"operName"`

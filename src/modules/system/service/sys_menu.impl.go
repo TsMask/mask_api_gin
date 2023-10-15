@@ -196,12 +196,13 @@ func (r *SysMenuImpl) BuildRouteMenus(sysMenus []model.SysMenu, prefix string) [
 
 // getRouteName 获取路由名称 路径英文首字母大写
 func (r *SysMenuImpl) getRouteName(sysMenu model.SysMenu) string {
-	routerName := parse.FirstUpper(sysMenu.Path)
+	routerName := parse.ConvertToCamelCase(sysMenu.Path)
 	// 路径链接
 	if regular.ValidHttp(sysMenu.Path) {
-		return routerName[:5] + "Link" + sysMenu.MenuID
+		routerName = routerName[:5] + "Link"
 	}
-	return routerName
+	// 拼上菜单ID防止name重名
+	return routerName + "_" + sysMenu.MenuID
 }
 
 // getRouterPath 获取路由地址

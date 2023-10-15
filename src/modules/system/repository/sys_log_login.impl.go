@@ -6,18 +6,18 @@ import (
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/repo"
-	"mask_api_gin/src/modules/monitor/model"
+	"mask_api_gin/src/modules/system/model"
 	"strings"
 	"time"
 )
 
-// 实例化数据层 SysLogininforImpl 结构体
-var NewSysLogininforImpl = &SysLogininforImpl{
-	selectSql: `select info_id, user_name, ipaddr, login_location, 
-	browser, os, status, msg, login_time from sys_logininfor`,
+// 实例化数据层 SysLogLoginImpl 结构体
+var NewSysLogLoginImpl = &SysLogLoginImpl{
+	selectSql: `select login_id, user_name, ipaddr, login_location, 
+	browser, os, status, msg, login_time from sys_log_login`,
 
 	resultMap: map[string]string{
-		"info_id":        "InfoID",
+		"login_id":       "LoginID",
 		"user_name":      "UserName",
 		"status":         "Status",
 		"ipaddr":         "IPAddr",
@@ -29,8 +29,8 @@ var NewSysLogininforImpl = &SysLogininforImpl{
 	},
 }
 
-// SysLogininforImpl 系统登录访问表 数据层处理
-type SysLogininforImpl struct {
+// SysLogLoginImpl 系统登录访问表 数据层处理
+type SysLogLoginImpl struct {
 	// 查询视图对象SQL
 	selectSql string
 	// 结果字段与实体映射
@@ -38,22 +38,22 @@ type SysLogininforImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysLogininforImpl) convertResultRows(rows []map[string]any) []model.SysLogininfor {
-	arr := make([]model.SysLogininfor, 0)
+func (r *SysLogLoginImpl) convertResultRows(rows []map[string]any) []model.SysLogLogin {
+	arr := make([]model.SysLogLogin, 0)
 	for _, row := range rows {
-		sysLogininfor := model.SysLogininfor{}
+		SysLogLogin := model.SysLogLogin{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				repo.SetFieldValue(&sysLogininfor, keyMapper, value)
+				repo.SetFieldValue(&SysLogLogin, keyMapper, value)
 			}
 		}
-		arr = append(arr, sysLogininfor)
+		arr = append(arr, SysLogLogin)
 	}
 	return arr
 }
 
-// SelectLogininforPage 分页查询系统登录日志集合
-func (r *SysLogininforImpl) SelectLogininforPage(query map[string]any) map[string]any {
+// SelectSysLogLoginPage 分页查询系统登录日志集合
+func (r *SysLogLoginImpl) SelectSysLogLoginPage(query map[string]any) map[string]any {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -97,11 +97,11 @@ func (r *SysLogininforImpl) SelectLogininforPage(query map[string]any) map[strin
 	// 查询结果
 	result := map[string]any{
 		"total": 0,
-		"rows":  []model.SysLogininfor{},
+		"rows":  []model.SysLogLogin{},
 	}
 
 	// 查询数量 长度为0直接返回
-	totalSql := "select count(1) as 'total' from sys_logininfor"
+	totalSql := "select count(1) as 'total' from sys_log_login"
 	totalRows, err := datasource.RawDB("", totalSql+whereSql, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
@@ -116,7 +116,7 @@ func (r *SysLogininforImpl) SelectLogininforPage(query map[string]any) map[strin
 
 	// 分页
 	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
-	pageSql := " order by info_id desc limit ?,? "
+	pageSql := " order by login_id desc limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
 
@@ -133,22 +133,22 @@ func (r *SysLogininforImpl) SelectLogininforPage(query map[string]any) map[strin
 	return result
 }
 
-// SelectLogininforList 查询系统登录日志集合
-func (r *SysLogininforImpl) SelectLogininforList(sysLogininfor model.SysLogininfor) []model.SysLogininfor {
+// SelectSysLogLoginList 查询系统登录日志集合
+func (r *SysLogLoginImpl) SelectSysLogLoginList(SysLogLogin model.SysLogLogin) []model.SysLogLogin {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
-	if sysLogininfor.IPAddr != "" {
+	if SysLogLogin.IPAddr != "" {
 		conditions = append(conditions, "title like concat(?, '%')")
-		params = append(params, sysLogininfor.IPAddr)
+		params = append(params, SysLogLogin.IPAddr)
 	}
-	if sysLogininfor.UserName != "" {
+	if SysLogLogin.UserName != "" {
 		conditions = append(conditions, "user_name like concat(?, '%')")
-		params = append(params, sysLogininfor.UserName)
+		params = append(params, SysLogLogin.UserName)
 	}
-	if sysLogininfor.Status != "" {
+	if SysLogLogin.Status != "" {
 		conditions = append(conditions, "status = ?")
-		params = append(params, sysLogininfor.Status)
+		params = append(params, SysLogLogin.Status)
 	}
 
 	// 构建查询条件语句
@@ -162,43 +162,43 @@ func (r *SysLogininforImpl) SelectLogininforList(sysLogininfor model.SysLogininf
 	results, err := datasource.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
-		return []model.SysLogininfor{}
+		return []model.SysLogLogin{}
 	}
 
 	// 转换实体
 	return r.convertResultRows(results)
 }
 
-// InsertLogininfor 新增系统登录日志
-func (r *SysLogininforImpl) InsertLogininfor(sysLogininfor model.SysLogininfor) string {
+// InsertSysLogLogin 新增系统登录日志
+func (r *SysLogLoginImpl) InsertSysLogLogin(SysLogLogin model.SysLogLogin) string {
 	// 参数拼接
 	params := make(map[string]any)
 	params["login_time"] = time.Now().UnixMilli()
-	if sysLogininfor.UserName != "" {
-		params["user_name"] = sysLogininfor.UserName
+	if SysLogLogin.UserName != "" {
+		params["user_name"] = SysLogLogin.UserName
 	}
-	if sysLogininfor.Status != "" {
-		params["status"] = sysLogininfor.Status
+	if SysLogLogin.Status != "" {
+		params["status"] = SysLogLogin.Status
 	}
-	if sysLogininfor.IPAddr != "" {
-		params["ipaddr"] = sysLogininfor.IPAddr
+	if SysLogLogin.IPAddr != "" {
+		params["ipaddr"] = SysLogLogin.IPAddr
 	}
-	if sysLogininfor.LoginLocation != "" {
-		params["login_location"] = sysLogininfor.LoginLocation
+	if SysLogLogin.LoginLocation != "" {
+		params["login_location"] = SysLogLogin.LoginLocation
 	}
-	if sysLogininfor.Browser != "" {
-		params["browser"] = sysLogininfor.Browser
+	if SysLogLogin.Browser != "" {
+		params["browser"] = SysLogLogin.Browser
 	}
-	if sysLogininfor.OS != "" {
-		params["os"] = sysLogininfor.OS
+	if SysLogLogin.OS != "" {
+		params["os"] = SysLogLogin.OS
 	}
-	if sysLogininfor.Msg != "" {
-		params["msg"] = sysLogininfor.Msg
+	if SysLogLogin.Msg != "" {
+		params["msg"] = SysLogLogin.Msg
 	}
 
 	// 构建执行语句
 	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
-	sql := "insert into sys_logininfor (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+	sql := "insert into sys_log_login (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
 
 	db := datasource.DefaultDB()
 	// 开启事务
@@ -223,11 +223,11 @@ func (r *SysLogininforImpl) InsertLogininfor(sysLogininfor model.SysLogininfor) 
 	return insertedID
 }
 
-// DeleteLogininforByIds 批量删除系统登录日志
-func (r *SysLogininforImpl) DeleteLogininforByIds(infoIds []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(infoIds))
-	sql := "delete from sys_logininfor where info_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(infoIds)
+// DeleteSysLogLoginByIds 批量删除系统登录日志
+func (r *SysLogLoginImpl) DeleteSysLogLoginByIds(loginIds []string) int64 {
+	placeholder := repo.KeyPlaceholderByQuery(len(loginIds))
+	sql := "delete from sys_log_login where login_id in (" + placeholder + ")"
+	parameters := repo.ConvertIdsSlice(loginIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
@@ -236,9 +236,9 @@ func (r *SysLogininforImpl) DeleteLogininforByIds(infoIds []string) int64 {
 	return results
 }
 
-// CleanLogininfor 清空系统登录日志
-func (r *SysLogininforImpl) CleanLogininfor() error {
-	sql := "truncate table sys_logininfor"
+// CleanSysLogLogin 清空系统登录日志
+func (r *SysLogLoginImpl) CleanSysLogLogin() error {
+	sql := "truncate table sys_log_login"
 	_, err := datasource.ExecDB("", sql, []any{})
 	return err
 }

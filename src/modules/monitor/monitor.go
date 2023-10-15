@@ -3,7 +3,7 @@ package monitor
 import (
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/middleware"
-	"mask_api_gin/src/framework/middleware/operlog"
+	"mask_api_gin/src/framework/middleware/collectlogs"
 	"mask_api_gin/src/framework/middleware/repeat"
 	"mask_api_gin/src/modules/monitor/controller"
 	"mask_api_gin/src/modules/monitor/processor"
@@ -19,13 +19,13 @@ func Setup(router *gin.Engine) {
 	// 启动时需要的初始参数
 	InitLoad()
 
-	// 服务器监控信息
-	router.GET("/monitor/server",
-		middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:server:info"}}),
-		controller.NewServer.Info,
+	// 服务器服务信息
+	router.GET("/monitor/system-info",
+		middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:system:info"}}),
+		controller.NewSystemInfo.Info,
 	)
 
-	// 缓存监控信息
+	// 缓存服务信息
 	sysCacheGroup := router.Group("/monitor/cache")
 	{
 		sysCacheGroup.GET("",
@@ -71,18 +71,18 @@ func Setup(router *gin.Engine) {
 		)
 		sysJobLogGroup.DELETE("/:jobLogIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
-			operlog.OperLog(operlog.OptionNew("调度任务日志信息", operlog.BUSINESS_TYPE_DELETE)),
+			collectlogs.OperateLog(collectlogs.OptionNew("调度任务日志信息", collectlogs.BUSINESS_TYPE_DELETE)),
 			controller.NewSysJobLog.Remove,
 		)
 		sysJobLogGroup.DELETE("/clean",
 			repeat.RepeatSubmit(5),
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
-			operlog.OperLog(operlog.OptionNew("调度任务日志信息", operlog.BUSINESS_TYPE_CLEAN)),
+			collectlogs.OperateLog(collectlogs.OptionNew("调度任务日志信息", collectlogs.BUSINESS_TYPE_CLEAN)),
 			controller.NewSysJobLog.Clean,
 		)
 		sysJobLogGroup.POST("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:export"}}),
-			operlog.OperLog(operlog.OptionNew("调度任务日志信息", operlog.BUSINESS_TYPE_EXPORT)),
+			collectlogs.OperateLog(collectlogs.OptionNew("调度任务日志信息", collectlogs.BUSINESS_TYPE_EXPORT)),
 			controller.NewSysJobLog.Export,
 		)
 	}
@@ -100,93 +100,40 @@ func Setup(router *gin.Engine) {
 		)
 		sysJobGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:add"}}),
-			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_INSERT)),
+			collectlogs.OperateLog(collectlogs.OptionNew("调度任务信息", collectlogs.BUSINESS_TYPE_INSERT)),
 			controller.NewSysJob.Add,
 		)
 		sysJobGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:edit"}}),
-			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_UPDATE)),
+			collectlogs.OperateLog(collectlogs.OptionNew("调度任务信息", collectlogs.BUSINESS_TYPE_UPDATE)),
 			controller.NewSysJob.Edit,
 		)
 		sysJobGroup.DELETE("/:jobIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
-			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_DELETE)),
+			collectlogs.OperateLog(collectlogs.OptionNew("调度任务信息", collectlogs.BUSINESS_TYPE_DELETE)),
 			controller.NewSysJob.Remove,
 		)
 		sysJobGroup.PUT("/changeStatus",
 			repeat.RepeatSubmit(5),
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
-			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_UPDATE)),
+			collectlogs.OperateLog(collectlogs.OptionNew("调度任务信息", collectlogs.BUSINESS_TYPE_UPDATE)),
 			controller.NewSysJob.Status,
 		)
 		sysJobGroup.PUT("/run/:jobId",
 			repeat.RepeatSubmit(10),
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
-			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_UPDATE)),
+			collectlogs.OperateLog(collectlogs.OptionNew("调度任务信息", collectlogs.BUSINESS_TYPE_UPDATE)),
 			controller.NewSysJob.Run,
 		)
 		sysJobGroup.PUT("/resetQueueJob",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
-			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_CLEAN)),
+			collectlogs.OperateLog(collectlogs.OptionNew("调度任务信息", collectlogs.BUSINESS_TYPE_CLEAN)),
 			controller.NewSysJob.ResetQueueJob,
 		)
 		sysJobGroup.POST("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:export"}}),
-			operlog.OperLog(operlog.OptionNew("调度任务信息", operlog.BUSINESS_TYPE_EXPORT)),
+			collectlogs.OperateLog(collectlogs.OptionNew("调度任务信息", collectlogs.BUSINESS_TYPE_EXPORT)),
 			controller.NewSysJob.Export,
-		)
-	}
-
-	// 操作日志记录信息
-	sysOperLogGroup := router.Group("/monitor/operlog")
-	{
-		sysOperLogGroup.GET("/list",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:operlog:list"}}),
-			controller.NewSysOperLog.List,
-		)
-		sysOperLogGroup.DELETE("/:operIds",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:operlog:remove"}}),
-			operlog.OperLog(operlog.OptionNew("操作日志", operlog.BUSINESS_TYPE_DELETE)),
-			controller.NewSysOperLog.Remove,
-		)
-		sysOperLogGroup.DELETE("/clean",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:operlog:remove"}}),
-			operlog.OperLog(operlog.OptionNew("操作日志", operlog.BUSINESS_TYPE_CLEAN)),
-			controller.NewSysOperLog.Clean,
-		)
-		sysOperLogGroup.POST("/export",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:operlog:export"}}),
-			operlog.OperLog(operlog.OptionNew("操作日志", operlog.BUSINESS_TYPE_EXPORT)),
-			controller.NewSysOperLog.Export,
-		)
-	}
-
-	// 登录访问信息
-	sysLogininforGroup := router.Group("/monitor/logininfor")
-	{
-		sysLogininforGroup.GET("/list",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:logininfor:list"}}),
-			controller.NewSysLogininfor.List,
-		)
-		sysLogininforGroup.DELETE("/:infoIds",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:logininfor:remove"}}),
-			operlog.OperLog(operlog.OptionNew("登录访问信息", operlog.BUSINESS_TYPE_DELETE)),
-			controller.NewSysLogininfor.Remove,
-		)
-		sysLogininforGroup.DELETE("/clean",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:logininfor:remove"}}),
-			operlog.OperLog(operlog.OptionNew("登录访问信息", operlog.BUSINESS_TYPE_CLEAN)),
-			controller.NewSysLogininfor.Clean,
-		)
-		sysLogininforGroup.PUT("/unlock/:userName",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:logininfor:unlock"}}),
-			operlog.OperLog(operlog.OptionNew("登录访问信息", operlog.BUSINESS_TYPE_CLEAN)),
-			controller.NewSysLogininfor.Unlock,
-		)
-		sysLogininforGroup.POST("/export",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:logininfor:export"}}),
-			operlog.OperLog(operlog.OptionNew("登录访问信息", operlog.BUSINESS_TYPE_EXPORT)),
-			controller.NewSysLogininfor.Export,
 		)
 	}
 

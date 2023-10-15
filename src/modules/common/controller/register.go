@@ -7,7 +7,7 @@ import (
 	"mask_api_gin/src/framework/vo/result"
 	commonModel "mask_api_gin/src/modules/common/model"
 	commonService "mask_api_gin/src/modules/common/service"
-	monitorService "mask_api_gin/src/modules/monitor/service"
+	systemService "mask_api_gin/src/modules/system/service"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -15,8 +15,8 @@ import (
 
 // 实例化控制层 RegisterController 结构体
 var NewRegister = &RegisterController{
-	registerService:      commonService.NewRegisterImpl,
-	sysLogininforService: monitorService.NewSysLogininforImpl,
+	registerService:    commonService.NewRegisterImpl,
+	sysLogLoginService: systemService.NewSysLogLoginImpl,
 }
 
 // 账号注册操作处理
@@ -26,7 +26,7 @@ type RegisterController struct {
 	// 账号注册操作服务
 	registerService commonService.IRegister
 	// 系统登录访问
-	sysLogininforService monitorService.ISysLogininfor
+	sysLogLoginService systemService.ISysLogLogin
 }
 
 // 账号注册
@@ -65,7 +65,7 @@ func (s *RegisterController) UserName(c *gin.Context) {
 	// 根据错误信息，创建系统访问记录
 	if err != nil {
 		msg := err.Error() + " " + registerBody.Code
-		s.sysLogininforService.NewLogininfor(
+		s.sysLogLoginService.NewSysLogLogin(
 			registerBody.Username, commonConstants.STATUS_NO, msg,
 			ipaddr, location, os, browser,
 		)
@@ -76,7 +76,7 @@ func (s *RegisterController) UserName(c *gin.Context) {
 	infoStr := s.registerService.ByUserName(registerBody.Username, registerBody.Password, registerBody.UserType)
 	if !strings.HasPrefix(infoStr, "注册") {
 		msg := registerBody.Username + " 注册成功 " + infoStr
-		s.sysLogininforService.NewLogininfor(
+		s.sysLogLoginService.NewSysLogLogin(
 			registerBody.Username, commonConstants.STATUS_NO, msg,
 			ipaddr, location, os, browser,
 		)

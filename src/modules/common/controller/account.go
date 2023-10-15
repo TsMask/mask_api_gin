@@ -9,15 +9,15 @@ import (
 	"mask_api_gin/src/framework/vo/result"
 	commonModel "mask_api_gin/src/modules/common/model"
 	commonService "mask_api_gin/src/modules/common/service"
-	monitorService "mask_api_gin/src/modules/monitor/service"
+	systemService "mask_api_gin/src/modules/system/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 // 实例化控制层 AccountController 结构体
 var NewAccount = &AccountController{
-	accountService:       commonService.NewAccountImpl,
-	sysLogininforService: monitorService.NewSysLogininforImpl,
+	accountService:     commonService.NewAccountImpl,
+	sysLogLoginService: systemService.NewSysLogLoginImpl,
 }
 
 // 账号身份操作处理
@@ -27,7 +27,7 @@ type AccountController struct {
 	// 账号身份操作服务
 	accountService commonService.IAccount
 	// 系统登录访问
-	sysLogininforService monitorService.ISysLogininfor
+	sysLogLoginService systemService.ISysLogLogin
 }
 
 // 系统登录
@@ -52,7 +52,7 @@ func (s *AccountController) Login(c *gin.Context) {
 	// 根据错误信息，创建系统访问记录
 	if err != nil {
 		msg := err.Error() + " " + loginBody.Code
-		s.sysLogininforService.NewLogininfor(
+		s.sysLogLoginService.NewSysLogLogin(
 			loginBody.Username, commonConstants.STATUS_NO, msg,
 			ipaddr, location, os, browser,
 		)
@@ -73,7 +73,7 @@ func (s *AccountController) Login(c *gin.Context) {
 		c.JSON(200, result.Err(nil))
 		return
 	} else {
-		s.sysLogininforService.NewLogininfor(
+		s.sysLogLoginService.NewSysLogLogin(
 			loginBody.Username, commonConstants.STATUS_YES, "登录成功",
 			ipaddr, location, os, browser,
 		)
@@ -130,7 +130,7 @@ func (s *AccountController) Logout(c *gin.Context) {
 			ipaddr, location := ctxUtils.IPAddrLocation(c)
 			os, browser := ctxUtils.UaOsBrowser(c)
 			// 创建系统访问记录
-			s.sysLogininforService.NewLogininfor(
+			s.sysLogLoginService.NewSysLogLogin(
 				userName, commonConstants.STATUS_NO, "退出成功",
 				ipaddr, location, os, browser,
 			)

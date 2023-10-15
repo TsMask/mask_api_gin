@@ -6,17 +6,17 @@ import (
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/repo"
-	"mask_api_gin/src/modules/monitor/model"
+	"mask_api_gin/src/modules/system/model"
 	"strings"
 	"time"
 )
 
-// 实例化数据层 SysOperLogImpl 结构体
-var NewSysOperLogImpl = &SysOperLogImpl{
+// 实例化数据层 SysLogOperateImpl 结构体
+var NewSysLogOperateImpl = &SysLogOperateImpl{
 	selectSql: `select 
 	oper_id, title, business_type, method, request_method, operator_type, oper_name, dept_name, 
 	oper_url, oper_ip, oper_location, oper_param, oper_msg, status, oper_time, cost_time
-	from sys_oper_log`,
+	from sys_log_operate`,
 
 	resultMap: map[string]string{
 		"oper_id":        "OperID",
@@ -38,8 +38,8 @@ var NewSysOperLogImpl = &SysOperLogImpl{
 	},
 }
 
-// SysOperLogImpl 操作日志表 数据层处理
-type SysOperLogImpl struct {
+// SysLogOperateImpl 操作日志表 数据层处理
+type SysLogOperateImpl struct {
 	// 查询视图对象SQL
 	selectSql string
 	// 结果字段与实体映射
@@ -47,22 +47,22 @@ type SysOperLogImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysOperLogImpl) convertResultRows(rows []map[string]any) []model.SysOperLog {
-	arr := make([]model.SysOperLog, 0)
+func (r *SysLogOperateImpl) convertResultRows(rows []map[string]any) []model.SysLogOperate {
+	arr := make([]model.SysLogOperate, 0)
 	for _, row := range rows {
-		sysOperLog := model.SysOperLog{}
+		SysLogOperate := model.SysLogOperate{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				repo.SetFieldValue(&sysOperLog, keyMapper, value)
+				repo.SetFieldValue(&SysLogOperate, keyMapper, value)
 			}
 		}
-		arr = append(arr, sysOperLog)
+		arr = append(arr, SysLogOperate)
 	}
 	return arr
 }
 
-// SelectOperLogPage 分页查询系统操作日志集合
-func (r *SysOperLogImpl) SelectOperLogPage(query map[string]any) map[string]any {
+// SelectSysLogOperatePage 分页查询系统操作日志集合
+func (r *SysLogOperateImpl) SelectSysLogOperatePage(query map[string]any) map[string]any {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -110,11 +110,11 @@ func (r *SysOperLogImpl) SelectOperLogPage(query map[string]any) map[string]any 
 	// 查询结果
 	result := map[string]any{
 		"total": 0,
-		"rows":  []model.SysOperLog{},
+		"rows":  []model.SysLogOperate{},
 	}
 
 	// 查询数量 长度为0直接返回
-	totalSql := "select count(1) as 'total' from sys_oper_log"
+	totalSql := "select count(1) as 'total' from sys_log_operate"
 	totalRows, err := datasource.RawDB("", totalSql+whereSql, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
@@ -146,26 +146,26 @@ func (r *SysOperLogImpl) SelectOperLogPage(query map[string]any) map[string]any 
 	return result
 }
 
-// SelectOperLogList 查询系统操作日志集合
-func (r *SysOperLogImpl) SelectOperLogList(sysOperLog model.SysOperLog) []model.SysOperLog {
+// SelectSysLogOperateList 查询系统操作日志集合
+func (r *SysLogOperateImpl) SelectSysLogOperateList(SysLogOperate model.SysLogOperate) []model.SysLogOperate {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
-	if sysOperLog.Title != "" {
+	if SysLogOperate.Title != "" {
 		conditions = append(conditions, "title like concat(?, '%')")
-		params = append(params, sysOperLog.Title)
+		params = append(params, SysLogOperate.Title)
 	}
-	if sysOperLog.BusinessType != "" {
+	if SysLogOperate.BusinessType != "" {
 		conditions = append(conditions, "business_type = ?")
-		params = append(params, sysOperLog.BusinessType)
+		params = append(params, SysLogOperate.BusinessType)
 	}
-	if sysOperLog.OperName != "" {
+	if SysLogOperate.OperName != "" {
 		conditions = append(conditions, "oper_name like concat(?, '%')")
-		params = append(params, sysOperLog.OperName)
+		params = append(params, SysLogOperate.OperName)
 	}
-	if sysOperLog.Status != "" {
+	if SysLogOperate.Status != "" {
 		conditions = append(conditions, "status = ?")
-		params = append(params, sysOperLog.Status)
+		params = append(params, SysLogOperate.Status)
 	}
 
 	// 构建查询条件语句
@@ -179,80 +179,80 @@ func (r *SysOperLogImpl) SelectOperLogList(sysOperLog model.SysOperLog) []model.
 	results, err := datasource.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
-		return []model.SysOperLog{}
+		return []model.SysLogOperate{}
 	}
 
 	// 转换实体
 	return r.convertResultRows(results)
 }
 
-// SelectOperLogById 查询操作日志详细
-func (r *SysOperLogImpl) SelectOperLogById(operId string) model.SysOperLog {
+// SelectSysLogOperateById 查询操作日志详细
+func (r *SysLogOperateImpl) SelectSysLogOperateById(operId string) model.SysLogOperate {
 	querySql := r.selectSql + " where oper_id = ?"
 	results, err := datasource.RawDB("", querySql, []any{operId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
-		return model.SysOperLog{}
+		return model.SysLogOperate{}
 	}
 	// 转换实体
 	rows := r.convertResultRows(results)
 	if len(rows) > 0 {
 		return rows[0]
 	}
-	return model.SysOperLog{}
+	return model.SysLogOperate{}
 }
 
-// InsertOperLog 新增操作日志
-func (r *SysOperLogImpl) InsertOperLog(sysOperLog model.SysOperLog) string {
+// InsertSysLogOperate 新增操作日志
+func (r *SysLogOperateImpl) InsertSysLogOperate(SysLogOperate model.SysLogOperate) string {
 	// 参数拼接
 	params := make(map[string]any)
 	params["oper_time"] = time.Now().UnixMilli()
-	if sysOperLog.Title != "" {
-		params["title"] = sysOperLog.Title
+	if SysLogOperate.Title != "" {
+		params["title"] = SysLogOperate.Title
 	}
-	if sysOperLog.BusinessType != "" {
-		params["business_type"] = sysOperLog.BusinessType
+	if SysLogOperate.BusinessType != "" {
+		params["business_type"] = SysLogOperate.BusinessType
 	}
-	if sysOperLog.Method != "" {
-		params["method"] = sysOperLog.Method
+	if SysLogOperate.Method != "" {
+		params["method"] = SysLogOperate.Method
 	}
-	if sysOperLog.RequestMethod != "" {
-		params["request_method"] = sysOperLog.RequestMethod
+	if SysLogOperate.RequestMethod != "" {
+		params["request_method"] = SysLogOperate.RequestMethod
 	}
-	if sysOperLog.OperatorType != "" {
-		params["operator_type"] = sysOperLog.OperatorType
+	if SysLogOperate.OperatorType != "" {
+		params["operator_type"] = SysLogOperate.OperatorType
 	}
-	if sysOperLog.DeptName != "" {
-		params["dept_name"] = sysOperLog.DeptName
+	if SysLogOperate.DeptName != "" {
+		params["dept_name"] = SysLogOperate.DeptName
 	}
-	if sysOperLog.OperName != "" {
-		params["oper_name"] = sysOperLog.OperName
+	if SysLogOperate.OperName != "" {
+		params["oper_name"] = SysLogOperate.OperName
 	}
-	if sysOperLog.OperURL != "" {
-		params["oper_url"] = sysOperLog.OperURL
+	if SysLogOperate.OperURL != "" {
+		params["oper_url"] = SysLogOperate.OperURL
 	}
-	if sysOperLog.OperIP != "" {
-		params["oper_ip"] = sysOperLog.OperIP
+	if SysLogOperate.OperIP != "" {
+		params["oper_ip"] = SysLogOperate.OperIP
 	}
-	if sysOperLog.OperLocation != "" {
-		params["oper_location"] = sysOperLog.OperLocation
+	if SysLogOperate.OperLocation != "" {
+		params["oper_location"] = SysLogOperate.OperLocation
 	}
-	if sysOperLog.OperParam != "" {
-		params["oper_param"] = sysOperLog.OperParam
+	if SysLogOperate.OperParam != "" {
+		params["oper_param"] = SysLogOperate.OperParam
 	}
-	if sysOperLog.OperMsg != "" {
-		params["oper_msg"] = sysOperLog.OperMsg
+	if SysLogOperate.OperMsg != "" {
+		params["oper_msg"] = SysLogOperate.OperMsg
 	}
-	if sysOperLog.Status != "" {
-		params["status"] = sysOperLog.Status
+	if SysLogOperate.Status != "" {
+		params["status"] = SysLogOperate.Status
 	}
-	if sysOperLog.CostTime > 0 {
-		params["cost_time"] = sysOperLog.CostTime
+	if SysLogOperate.CostTime > 0 {
+		params["cost_time"] = SysLogOperate.CostTime
 	}
 
 	// 构建执行语句
 	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
-	sql := "insert into sys_oper_log (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+	sql := "insert into sys_log_operate (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
 
 	db := datasource.DefaultDB()
 	// 开启事务
@@ -277,10 +277,10 @@ func (r *SysOperLogImpl) InsertOperLog(sysOperLog model.SysOperLog) string {
 	return insertedID
 }
 
-// DeleteOperLogByIds 批量删除系统操作日志
-func (r *SysOperLogImpl) DeleteOperLogByIds(operIds []string) int64 {
+// DeleteSysLogOperateByIds 批量删除系统操作日志
+func (r *SysLogOperateImpl) DeleteSysLogOperateByIds(operIds []string) int64 {
 	placeholder := repo.KeyPlaceholderByQuery(len(operIds))
-	sql := "delete from sys_oper_log where oper_id in (" + placeholder + ")"
+	sql := "delete from sys_log_operate where oper_id in (" + placeholder + ")"
 	parameters := repo.ConvertIdsSlice(operIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
@@ -290,9 +290,9 @@ func (r *SysOperLogImpl) DeleteOperLogByIds(operIds []string) int64 {
 	return results
 }
 
-// CleanOperLog 清空操作日志
-func (r *SysOperLogImpl) CleanOperLog() error {
-	sql := "truncate table sys_oper_log"
+// CleanSysLogOperate 清空操作日志
+func (r *SysLogOperateImpl) CleanSysLogOperate() error {
+	sql := "truncate table sys_log_operate"
 	_, err := datasource.ExecDB("", sql, []any{})
 	return err
 }
