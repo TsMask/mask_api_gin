@@ -56,16 +56,26 @@ func Boolean(str any) bool {
 	}
 }
 
-// FirstUpper 首字母转大写
+// ConvertToCamelCase 字符串转换驼峰形式
 //
-// 字符串 abc_123!@# 结果 Abc_123
-func FirstUpper(str string) string {
+// 字符串 dict/inline/data/:dictId 结果 DictInlineDataDictId
+func ConvertToCamelCase(str string) string {
 	if len(str) == 0 {
 		return str
 	}
-	reg := regexp.MustCompile(`[^_\w]+`)
-	str = reg.ReplaceAllString(str, "")
-	return strings.ToUpper(str[:1]) + str[1:]
+	reg := regexp.MustCompile(`[-_:/]\w`)
+	result := reg.ReplaceAllStringFunc(str, func(match string) string {
+		return strings.ToUpper(string(match[1]))
+	})
+
+	words := strings.Fields(result)
+	for i, word := range words {
+		str := word[1:]
+		str = strings.ReplaceAll(str, "/", "")
+		words[i] = strings.ToUpper(word[:1]) + str
+	}
+
+	return strings.Join(words, "")
 }
 
 // Bit 比特位为单位
@@ -102,7 +112,6 @@ func CronExpression(expression string) int64 {
 	specParser := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
 	schedule, err := specParser.Parse(expression)
 	if err != nil {
-		fmt.Println(err)
 		return 0
 	}
 	return schedule.Next(time.Now()).UnixMilli()
