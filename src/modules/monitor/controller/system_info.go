@@ -7,15 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 实例化控制层 ServerController 结构体
-var NewServer = &ServerController{
+// 实例化控制层 SystemInfoController 结构体
+var NewSystemInfo = &SystemInfoController{
 	systemInfogService: service.NewSystemInfoImpl,
 }
 
 // 服务器监控信息
 //
-// PATH /monitor/server
-type ServerController struct {
+// PATH /monitor/system-info
+type SystemInfoController struct {
 	// 服务器系统相关信息服务
 	systemInfogService service.ISystemInfo
 }
@@ -23,7 +23,7 @@ type ServerController struct {
 // 服务器信息
 //
 // GET /
-func (s *ServerController) Info(c *gin.Context) {
+func (s *SystemInfoController) Info(c *gin.Context) {
 	c.JSON(200, result.OkData(map[string]any{
 		"project": s.systemInfogService.ProjectInfo(),
 		"cpu":     s.systemInfogService.CPUInfo(),
