@@ -2,7 +2,6 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"mask_api_gin/src/framework/constants/cachekey"
 	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/framework/vo"
@@ -15,7 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 实例化控制层 SysOperLogController 结构体
+// 实例化控制层 SysUserOnlineController 结构体
 var NewSysUserOnline = &SysUserOnlineController{
 	sysUserOnlineService: service.NewSysUserOnlineImpl,
 }
@@ -32,8 +31,8 @@ type SysUserOnlineController struct {
 //
 // GET /list
 func (s *SysUserOnlineController) List(c *gin.Context) {
-	ipaddr := c.Param("ipaddr")
-	userName := c.Param("userName")
+	ipaddr := c.Query("ipaddr")
+	userName := c.Query("userName")
 
 	// 获取所有在线用户key
 	keys, _ := redis.GetKeys("", cachekey.LOGIN_TOKEN_KEY+"*")
@@ -97,13 +96,11 @@ func (s *SysUserOnlineController) List(c *gin.Context) {
 
 	// 按登录时间排序
 	sort.Slice(filteredUserOnlines, func(i, j int) bool {
-		fmt.Println(i, j)
-		fmt.Println(filteredUserOnlines[j].LoginTime, filteredUserOnlines[i].LoginTime)
 		return filteredUserOnlines[j].LoginTime > filteredUserOnlines[i].LoginTime
 	})
 
 	c.JSON(200, result.Ok(map[string]any{
-		"total": len(userOnlines),
+		"total": len(filteredUserOnlines),
 		"rows":  filteredUserOnlines,
 	}))
 }
