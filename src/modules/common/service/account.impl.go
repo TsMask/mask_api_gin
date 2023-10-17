@@ -127,11 +127,12 @@ func (s *AccountImpl) passwordRetryCount(username string) (string, int64, time.D
 		retryCount = "0"
 	}
 	// 是否超过错误值
-	if parse.Number(retryCount) >= int64(maxRetryCount) {
+	retryCountInt64 := parse.Number(retryCount)
+	if retryCountInt64 >= int64(maxRetryCount) {
 		msg := fmt.Sprintf("密码输入错误 %d 次，帐户锁定 %d 分钟", maxRetryCount, lockTime)
-		return retrykey, int64(maxRetryCount), time.Duration(lockTime) * time.Minute, errors.New(msg)
+		return retrykey, retryCountInt64, time.Duration(lockTime) * time.Minute, errors.New(msg)
 	}
-	return retrykey, int64(maxRetryCount), time.Duration(lockTime) * time.Minute, nil
+	return retrykey, retryCountInt64, time.Duration(lockTime) * time.Minute, nil
 }
 
 // RoleAndMenuPerms 角色和菜单数据权限
