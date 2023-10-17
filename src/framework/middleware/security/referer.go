@@ -14,6 +14,9 @@ func referer(c *gin.Context) {
 	if v := config.Get("security.csrf.enable"); v != nil {
 		enable = v.(bool)
 	}
+	if !enable {
+		return
+	}
 
 	// csrf 校验类型
 	okType := false
@@ -58,16 +61,15 @@ func referer(c *gin.Context) {
 		}
 	}
 
-	if enable && okType {
-		ok := false
-		for _, domain := range refererWhiteList {
-			if domain == host {
-				ok = true
-			}
+	// 遍历检查
+	ok := false
+	for _, domain := range refererWhiteList {
+		if domain == host {
+			ok = true
 		}
-		if !ok {
-			c.AbortWithStatusJSON(200, result.ErrMsg("无效 Referer "+host))
-			return
-		}
+	}
+	if !ok {
+		c.AbortWithStatusJSON(200, result.ErrMsg("无效 Referer "+host))
+		return
 	}
 }
