@@ -44,7 +44,7 @@ type ISysMenu interface {
 	CheckUniqueMenuName(menuName, parentId, menuId string) bool
 
 	// CheckUniqueMenuPath 校验路由地址是否唯一（针对目录和菜单）
-	CheckUniqueMenuPath(path, menuId string) bool
+	CheckUniqueMenuPath(path, parentId, menuId string) bool
 
 	// BuildRouteMenus 构建前端路由所需要的菜单
 	BuildRouteMenus(sysMenus []model.SysMenu, prefix string) []vo.Router

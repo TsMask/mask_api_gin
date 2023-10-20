@@ -123,9 +123,10 @@ func (r *SysMenuImpl) CheckUniqueMenuName(menuName, parentId, menuId string) boo
 }
 
 // CheckUniqueMenuPath 校验路由地址是否唯一（针对目录和菜单）
-func (r *SysMenuImpl) CheckUniqueMenuPath(path, menuId string) bool {
+func (r *SysMenuImpl) CheckUniqueMenuPath(path, parentId, menuId string) bool {
 	uniqueId := r.sysMenuRepository.CheckUniqueMenu(model.SysMenu{
-		Path: path,
+		Path:     path,
+		ParentID: parentId,
 	})
 	if uniqueId == menuId {
 		return true

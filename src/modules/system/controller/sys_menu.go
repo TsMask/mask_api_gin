@@ -78,7 +78,7 @@ func (s *SysMenuController) Add(c *gin.Context) {
 
 	// 目录和菜单检查地址唯一
 	if menu.TYPE_DIR == body.MenuType || menu.TYPE_MENU == body.MenuType {
-		uniqueNenuPath := s.sysMenuService.CheckUniqueMenuPath(body.Path, "")
+		uniqueNenuPath := s.sysMenuService.CheckUniqueMenuPath(body.Path, body.ParentID, "")
 		if !uniqueNenuPath {
 			msg := fmt.Sprintf("菜单新增【%s】失败，菜单路由地址已存在", body.MenuName)
 			c.JSON(200, result.ErrMsg(msg))
@@ -150,7 +150,7 @@ func (s *SysMenuController) Edit(c *gin.Context) {
 
 	// 目录和菜单检查地址唯一
 	if menu.TYPE_DIR == body.MenuType || menu.TYPE_MENU == body.MenuType {
-		uniqueNenuPath := s.sysMenuService.CheckUniqueMenuPath(body.Path, body.MenuID)
+		uniqueNenuPath := s.sysMenuService.CheckUniqueMenuPath(body.Path, body.ParentID, body.MenuID)
 		if !uniqueNenuPath {
 			msg := fmt.Sprintf("菜单修改【%s】失败，菜单路由地址已存在", body.MenuName)
 			c.JSON(200, result.ErrMsg(msg))
