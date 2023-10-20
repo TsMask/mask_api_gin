@@ -404,23 +404,23 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 操作日志记录信息
-	sysOperLogGroup := router.Group("/system/log/operate")
+	sysLogOperateGroup := router.Group("/system/log/operate")
 	{
-		sysOperLogGroup.GET("/list",
+		sysLogOperateGroup.GET("/list",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:operate:list"}}),
 			controller.NewSysLogOperate.List,
 		)
-		sysOperLogGroup.DELETE("/:operIds",
+		sysLogOperateGroup.DELETE("/:operIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:operate:remove"}}),
 			collectlogs.OperateLog(collectlogs.OptionNew("操作日志", collectlogs.BUSINESS_TYPE_DELETE)),
 			controller.NewSysLogOperate.Remove,
 		)
-		sysOperLogGroup.DELETE("/clean",
+		sysLogOperateGroup.DELETE("/clean",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:operate:remove"}}),
 			collectlogs.OperateLog(collectlogs.OptionNew("操作日志", collectlogs.BUSINESS_TYPE_CLEAN)),
 			controller.NewSysLogOperate.Clean,
 		)
-		sysOperLogGroup.POST("/export",
+		sysLogOperateGroup.POST("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:operate:export"}}),
 			collectlogs.OperateLog(collectlogs.OptionNew("操作日志", collectlogs.BUSINESS_TYPE_EXPORT)),
 			controller.NewSysLogOperate.Export,
@@ -428,28 +428,28 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 系统登录日志信息
-	sysLogininforGroup := router.Group("/system/log/login")
+	sysLogLoginGroup := router.Group("/system/log/login")
 	{
-		sysLogininforGroup.GET("/list",
+		sysLogLoginGroup.GET("/list",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:login:list"}}),
 			controller.NewSysLogLogin.List,
 		)
-		sysLogininforGroup.DELETE("/:loginIds",
+		sysLogLoginGroup.DELETE("/:loginIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:login:remove"}}),
 			collectlogs.OperateLog(collectlogs.OptionNew("系统登录信息", collectlogs.BUSINESS_TYPE_DELETE)),
 			controller.NewSysLogLogin.Remove,
 		)
-		sysLogininforGroup.DELETE("/clean",
+		sysLogLoginGroup.DELETE("/clean",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:login:remove"}}),
 			collectlogs.OperateLog(collectlogs.OptionNew("系统登录信息", collectlogs.BUSINESS_TYPE_CLEAN)),
 			controller.NewSysLogLogin.Clean,
 		)
-		sysLogininforGroup.PUT("/unlock/:userName",
+		sysLogLoginGroup.PUT("/unlock/:userName",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:login:unlock"}}),
 			collectlogs.OperateLog(collectlogs.OptionNew("系统登录信息", collectlogs.BUSINESS_TYPE_CLEAN)),
 			controller.NewSysLogLogin.Unlock,
 		)
-		sysLogininforGroup.POST("/export",
+		sysLogLoginGroup.POST("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:login:export"}}),
 			collectlogs.OperateLog(collectlogs.OptionNew("系统登录信息", collectlogs.BUSINESS_TYPE_EXPORT)),
 			controller.NewSysLogLogin.Export,
