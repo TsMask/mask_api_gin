@@ -41,8 +41,8 @@ func (s *SysLogLoginImpl) CleanSysLogLogin() error {
 	return s.sysLogLoginService.CleanSysLogLogin()
 }
 
-// NewSysLogLogin 生成系统登录日志
-func (s *SysLogLoginImpl) NewSysLogLogin(userName, status, msg string, ilobArgs ...string) string {
+// CreateSysLogLogin 创建系统登录日志
+func (s *SysLogLoginImpl) CreateSysLogLogin(userName, status, msg string, ilobArgs ...string) string {
 	sysSysLogLogin := model.SysLogLogin{
 		IPAddr:        ilobArgs[0],
 		LoginLocation: ilobArgs[1],

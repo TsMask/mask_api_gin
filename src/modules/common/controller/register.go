@@ -65,8 +65,8 @@ func (s *RegisterController) UserName(c *gin.Context) {
 	// 根据错误信息，创建系统访问记录
 	if err != nil {
 		msg := err.Error() + " " + registerBody.Code
-		s.sysLogLoginService.NewSysLogLogin(
-			registerBody.Username, commonConstants.STATUS_YES, msg,
+		s.sysLogLoginService.CreateSysLogLogin(
+			registerBody.Username, commonConstants.STATUS_NO, msg,
 			ipaddr, location, os, browser,
 		)
 		c.JSON(200, result.ErrMsg(err.Error()))
@@ -76,8 +76,8 @@ func (s *RegisterController) UserName(c *gin.Context) {
 	infoStr := s.registerService.ByUserName(registerBody.Username, registerBody.Password, registerBody.UserType)
 	if !strings.HasPrefix(infoStr, "注册") {
 		msg := registerBody.Username + " 注册成功 " + infoStr
-		s.sysLogLoginService.NewSysLogLogin(
-			registerBody.Username, commonConstants.STATUS_NO, msg,
+		s.sysLogLoginService.CreateSysLogLogin(
+			registerBody.Username, commonConstants.STATUS_YES, msg,
 			ipaddr, location, os, browser,
 		)
 		c.JSON(200, result.OkMsg("注册成功"))

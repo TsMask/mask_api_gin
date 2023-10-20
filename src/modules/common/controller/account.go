@@ -52,7 +52,7 @@ func (s *AccountController) Login(c *gin.Context) {
 	// 根据错误信息，创建系统访问记录
 	if err != nil {
 		msg := err.Error() + " " + loginBody.Code
-		s.sysLogLoginService.NewSysLogLogin(
+		s.sysLogLoginService.CreateSysLogLogin(
 			loginBody.Username, commonConstants.STATUS_NO, msg,
 			ipaddr, location, os, browser,
 		)
@@ -73,7 +73,7 @@ func (s *AccountController) Login(c *gin.Context) {
 		c.JSON(200, result.Err(nil))
 		return
 	} else {
-		s.sysLogLoginService.NewSysLogLogin(
+		s.sysLogLoginService.CreateSysLogLogin(
 			loginBody.Username, commonConstants.STATUS_YES, "登录成功",
 			ipaddr, location, os, browser,
 		)
@@ -130,8 +130,8 @@ func (s *AccountController) Logout(c *gin.Context) {
 			ipaddr, location := ctxUtils.IPAddrLocation(c)
 			os, browser := ctxUtils.UaOsBrowser(c)
 			// 创建系统访问记录
-			s.sysLogLoginService.NewSysLogLogin(
-				userName, commonConstants.STATUS_NO, "退出成功",
+			s.sysLogLoginService.CreateSysLogLogin(
+				userName, commonConstants.STATUS_YES, "退出成功",
 				ipaddr, location, os, browser,
 			)
 		}

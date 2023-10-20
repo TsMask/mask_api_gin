@@ -19,6 +19,6 @@ type ISysLogLogin interface {
 	// CleanSysLogLogin 清空系统登录日志
 	CleanSysLogLogin() error
 
-	// NewSysLogLogin 生成系统登录日志
-	NewSysLogLogin(userName, status, msg string, ilobArgs ...string) string
+	// CreateSysLogLogin 创建系统登录日志
+	CreateSysLogLogin(userName, status, msg string, ilobArgs ...string) string
 }
