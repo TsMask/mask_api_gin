@@ -15,7 +15,7 @@ func ErrorCatch() gin.HandlerFunc {
 		defer func() {
 			// 在这里处理 Panic 异常，例如记录日志或返回错误信息给客户端
 			if err := recover(); err != nil {
-				logger.Errorf("发生了 Panic 异常: %v", err)
+				logger.Errorf("Panic 异常: %s => %v", c.Request.URL, err)
 
 				// 返回错误响应给客户端
 				if config.Env() == "prod" {
