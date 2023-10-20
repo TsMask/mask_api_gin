@@ -66,7 +66,7 @@ func (s *RegisterController) UserName(c *gin.Context) {
 	if err != nil {
 		msg := err.Error() + " " + registerBody.Code
 		s.sysLogLoginService.NewSysLogLogin(
-			registerBody.Username, commonConstants.STATUS_NO, msg,
+			registerBody.Username, commonConstants.STATUS_YES, msg,
 			ipaddr, location, os, browser,
 		)
 		c.JSON(200, result.ErrMsg(err.Error()))
