@@ -131,6 +131,16 @@ func (s *SysUserController) Add(c *gin.Context) {
 		return
 	}
 
+	// 密码单独取，避免序列化输出
+	var bodyPassword struct {
+		Password string `json:"password" binding:"required"`
+	}
+	if err := c.ShouldBindBodyWith(&bodyPassword, binding.JSON); err != nil {
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
+		return
+	}
+	body.Password = bodyPassword.Password
+
 	// 检查用户登录账号是否唯一
 	uniqueUserName := s.sysUserService.CheckUniqueUserName(body.UserName, "")
 	if !uniqueUserName {
