@@ -10,6 +10,9 @@ type IAccount interface {
 	// LoginByUsername 登录生成token
 	LoginByUsername(username, password string) (vo.LoginUser, error)
 
+	// UpdateLoginDateAndIP 更新登录时间和IP
+	UpdateLoginDateAndIP(loginUser *vo.LoginUser) bool
+
 	// ClearLoginRecordCache 清除错误记录次数
 	ClearLoginRecordCache(username string) bool
 

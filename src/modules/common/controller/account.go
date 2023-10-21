@@ -73,6 +73,7 @@ func (s *AccountController) Login(c *gin.Context) {
 		c.JSON(200, result.Err(nil))
 		return
 	} else {
+		s.accountService.UpdateLoginDateAndIP(&loginUser)
 		s.sysLogLoginService.CreateSysLogLogin(
 			loginBody.Username, commonConstants.STATUS_YES, "登录成功",
 			ipaddr, location, os, browser,

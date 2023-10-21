@@ -46,6 +46,10 @@ func Create(loginUser *vo.LoginUser, ilobArgs ...string) string {
 	// 设置用户令牌有效期并存入缓存
 	Cache(loginUser)
 
+	// 设置新登录IP和登录时间
+	loginUser.User.LoginIP = loginUser.IPAddr
+	loginUser.User.LoginDate = loginUser.LoginTime
+
 	// 令牌算法 HS256 HS384 HS512
 	algorithm := config.Get("jwt.algorithm").(string)
 	var method *jwt.SigningMethodHMAC

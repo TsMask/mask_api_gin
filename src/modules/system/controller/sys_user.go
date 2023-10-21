@@ -255,6 +255,8 @@ func (s *SysUserController) Edit(c *gin.Context) {
 
 	body.UserName = "" // 忽略修改登录用户名称
 	body.Password = "" // 忽略修改密码
+	body.LoginIP = ""  // 忽略登录IP
+	body.LoginDate = 0 // 忽略登录时间
 	body.UpdateBy = ctx.LoginUserToUserName(c)
 	rows := s.sysUserService.UpdateUserAndRolePost(body)
 	if rows > 0 {

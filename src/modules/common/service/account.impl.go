@@ -11,6 +11,7 @@ import (
 	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo"
+	"mask_api_gin/src/modules/system/model"
 	systemService "mask_api_gin/src/modules/system/service"
 	"time"
 )
@@ -102,6 +103,19 @@ func (s *AccountImpl) LoginByUsername(username, password string) (vo.LoginUser, 
 		loginUser.Permissions = parse.RemoveDuplicates(perms)
 	}
 	return loginUser, nil
+}
+
+// UpdateLoginDateAndIP 更新登录时间和IP
+func (s *AccountImpl) UpdateLoginDateAndIP(loginUser *vo.LoginUser) bool {
+	sysUser := loginUser.User
+	userInfo := model.SysUser{
+		UserID:    sysUser.UserID,
+		LoginIP:   sysUser.LoginIP,
+		LoginDate: sysUser.LoginDate,
+		UpdateBy:  sysUser.UserName,
+	}
+	rows := s.sysUserService.UpdateUser(userInfo)
+	return rows > 0
 }
 
 // ClearLoginRecordCache 清除错误记录次数
