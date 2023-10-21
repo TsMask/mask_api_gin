@@ -63,7 +63,9 @@ type Queue struct {
 // QueueProcessor 队列处理函数接口
 type QueueProcessor interface {
 	// Execute 实际执行函数
-	Execute(data any) any
+	// any 返回有效值最终序列化为字符串，记录为成功
+	// error 存在错误，记录为失败
+	Execute(data any) (any, error)
 }
 
 // RunJob 运行任务，data是传入的数据
@@ -196,7 +198,12 @@ func (s QueueJob) Run() {
 
 	// 获取队列处理器接口实现
 	processor := *job.queueProcessor
-	result := processor.Execute(job.Data)
-	job.Status = Completed
-	newLog.Completed(result, "completed", job)
+	result, err := processor.Execute(job.Data)
+	if err != nil {
+		job.Status = Failed
+		newLog.Error(err, "failed", job)
+	} else {
+		job.Status = Completed
+		newLog.Completed(result, "completed", job)
+	}
 }

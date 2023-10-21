@@ -18,10 +18,10 @@ var NewSimple = &Simple{}
 
 type Simple struct{}
 
-func (s *Simple) Execute(data any) any {
+func (s *Simple) Execute(data any) (any, error) {
 	logger.Infof("执行=> %+v ", data)
 	// 实现任务处理逻辑
-	return data
+	return data, nil
 }
 
 func TestSimple(t *testing.T) {
@@ -67,7 +67,7 @@ type FooProcessor struct {
 	count    int
 }
 
-func (s *FooProcessor) Execute(data any) any {
+func (s *FooProcessor) Execute(data any) (any, error) {
 	logger.Infof("执行 %d %d => %+v ", s.count, s.progress, data)
 	s.count++
 
@@ -84,7 +84,7 @@ func (s *FooProcessor) Execute(data any) any {
 		// 改变任务进度
 		s.progress = i
 	}
-	return data
+	return data, nil
 }
 
 func TestFoo(t *testing.T) {
@@ -118,7 +118,7 @@ type BarProcessor struct {
 	count    int
 }
 
-func (s *BarProcessor) Execute(data any) any {
+func (s *BarProcessor) Execute(data any) (any, error) {
 	logger.Infof("执行 %d %d => %+v ", s.count, s.progress, data)
 	s.count++
 
@@ -144,7 +144,7 @@ func (s *BarProcessor) Execute(data any) any {
 		s.progress = i
 	}
 
-	return data
+	return data, nil
 }
 
 func TestBar(t *testing.T) {

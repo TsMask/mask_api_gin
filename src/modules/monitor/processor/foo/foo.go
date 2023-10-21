@@ -19,7 +19,7 @@ type FooProcessor struct {
 	count int
 }
 
-func (s *FooProcessor) Execute(data any) any {
+func (s *FooProcessor) Execute(data any) (any, error) {
 	logger.Infof("执行 %d 次，上次进度： %d ", s.count, s.progress)
 	s.count++
 
@@ -42,10 +42,11 @@ func (s *FooProcessor) Execute(data any) any {
 	}
 
 	// 返回结果，用于记录执行结果
-	return map[string]any{
+	result := map[string]any{
 		"repeat":       options.Repeat,
 		"jobName":      sysJob.JobName,
 		"invokeTarget": sysJob.InvokeTarget,
 		"targetParams": sysJob.TargetParams,
 	}
+	return result, nil
 }
