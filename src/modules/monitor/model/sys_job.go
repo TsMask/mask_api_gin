@@ -20,6 +20,8 @@ type SysJob struct {
 	Concurrent string `json:"concurrent"`
 	// 任务状态（0暂停 1正常）
 	Status string `json:"status"`
+	// 是否记录任务日志
+	SaveLog string `json:"saveLog"`
 	// 创建者
 	CreateBy string `json:"createBy"`
 	// 创建时间

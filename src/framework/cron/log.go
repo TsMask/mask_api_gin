@@ -30,33 +30,16 @@ func (s cronlog) Error(err error, msg string, keysAndValues ...any) {
 		// 任务对象
 		job := keysAndValues[0].(*QueueJob)
 
-		// 结果信息序列化字符串
-		jsonByte, _ := json.Marshal(map[string]any{
-			"name":    "failed",
-			"message": err.Error(),
-		})
-		jobMsg := string(jsonByte)
-		if len(jobMsg) > 500 {
-			jobMsg = jobMsg[:500]
-		}
-
-		// 读取任务信息创建日志对象
+		// 读取任务信息进行保存日志
 		if data, ok := job.Data.(JobData); ok {
-			duration := time.Since(time.UnixMilli(job.Timestamp))
-			sysJob := data.SysJob
-			if sysJob.JobID == job.Opts.JobId {
-				sysJobLog := model.SysJobLog{
-					JobName:      sysJob.JobName,
-					JobGroup:     sysJob.JobGroup,
-					InvokeTarget: sysJob.InvokeTarget,
-					TargetParams: sysJob.TargetParams,
-					Status:       common.STATUS_NO,
-					JobMsg:       jobMsg,
-					CostTime:     duration.Milliseconds(),
-				}
-				// 插入数据
-				repository.NewSysJobLogImpl.InsertJobLog(sysJobLog)
+			// 日志数据
+			jobLog := jobLogData{
+				JobID:     job.Opts.JobId,
+				Timestamp: job.Timestamp,
+				SysJob:    data.SysJob,
+				Result:    err.Error(),
 			}
+			jobLog.SaveLog(common.STATUS_NO)
 		}
 	}
 }
@@ -71,35 +54,72 @@ func (s cronlog) Completed(result any, msg string, keysAndValues ...any) {
 		// 任务对象
 		job := keysAndValues[0].(*QueueJob)
 
-		// 结果信息序列化字符串
-		jsonByte, _ := json.Marshal(map[string]any{
-			"name":    "completed",
-			"message": result,
-		})
-		jobMsg := string(jsonByte)
-		if len(jobMsg) > 500 {
-			jobMsg = jobMsg[:500]
-		}
-
-		// 读取任务信息创建日志对象
+		// 读取任务信息进行保存日志
 		if data, ok := job.Data.(JobData); ok {
-			duration := time.Since(time.UnixMilli(job.Timestamp))
-			sysJob := data.SysJob
-			if sysJob.JobID == job.Opts.JobId {
-				sysJobLog := model.SysJobLog{
-					JobName:      sysJob.JobName,
-					JobGroup:     sysJob.JobGroup,
-					InvokeTarget: sysJob.InvokeTarget,
-					TargetParams: sysJob.TargetParams,
-					Status:       common.STATUS_YES,
-					JobMsg:       jobMsg,
-					CostTime:     duration.Milliseconds(),
-				}
-				// 插入数据
-				repository.NewSysJobLogImpl.InsertJobLog(sysJobLog)
+			// 日志数据
+			jobLog := jobLogData{
+				JobID:     job.Opts.JobId,
+				Timestamp: job.Timestamp,
+				SysJob:    data.SysJob,
+				Result:    result,
 			}
+			jobLog.SaveLog(common.STATUS_YES)
 		}
 	}
+}
+
+// jobLogData 日志记录数据
+type jobLogData struct {
+	JobID     string
+	Timestamp int64
+	SysJob    model.SysJob
+	Result    any
+}
+
+// SaveLog 日志记录保存
+func (jl *jobLogData) SaveLog(status string) {
+	// 读取任务信息
+	sysJob := jl.SysJob
+
+	// 任务ID与任务信息ID不相同
+	if jl.JobID == "" || jl.JobID != sysJob.JobID {
+		return
+	}
+
+	// 任务日志不需要记录
+	if sysJob.SaveLog == "" || sysJob.SaveLog == common.STATUS_NO {
+		return
+	}
+
+	// 结果信息key的Name
+	resultNmae := "failed"
+	if status == common.STATUS_YES {
+		resultNmae = "completed"
+	}
+
+	// 结果信息序列化字符串
+	jsonByte, _ := json.Marshal(map[string]any{
+		"name":    resultNmae,
+		"message": jl.Result,
+	})
+	jobMsg := string(jsonByte)
+	if len(jobMsg) > 500 {
+		jobMsg = jobMsg[:500]
+	}
+
+	// 创建日志对象
+	duration := time.Since(time.UnixMilli(jl.Timestamp))
+	sysJobLog := model.SysJobLog{
+		JobName:      sysJob.JobName,
+		JobGroup:     sysJob.JobGroup,
+		InvokeTarget: sysJob.InvokeTarget,
+		TargetParams: sysJob.TargetParams,
+		Status:       status,
+		JobMsg:       jobMsg,
+		CostTime:     duration.Milliseconds(),
+	}
+	// 插入数据
+	repository.NewSysJobLogImpl.InsertJobLog(sysJobLog)
 }
 
 // JobData 调度任务日志收集结构体，执行任务时传入的接收参数

@@ -14,7 +14,7 @@ import (
 // 实例化数据层 SysJobImpl 结构体
 var NewSysJobImpl = &SysJobImpl{
 	selectSql: `select job_id, job_name, job_group, invoke_target, target_params, cron_expression, 
-	misfire_policy, concurrent, status, create_by, create_time, remark from sys_job`,
+	misfire_policy, concurrent, status, save_log, create_by, create_time, remark from sys_job`,
 
 	resultMap: map[string]string{
 		"job_id":          "JobID",
@@ -26,6 +26,7 @@ var NewSysJobImpl = &SysJobImpl{
 		"misfire_policy":  "MisfirePolicy",
 		"concurrent":      "Concurrent",
 		"status":          "Status",
+		"save_log":        "SaveLog",
 		"create_by":       "CreateBy",
 		"create_time":     "CreateTime",
 		"update_by":       "UpdateBy",
@@ -244,6 +245,9 @@ func (r *SysJobImpl) InsertJob(sysJob model.SysJob) string {
 	if sysJob.Status != "" {
 		params["status"] = sysJob.Status
 	}
+	if sysJob.SaveLog != "" {
+		params["save_log"] = sysJob.SaveLog
+	}
 	if sysJob.Remark != "" {
 		params["remark"] = sysJob.Remark
 	}
@@ -306,6 +310,9 @@ func (r *SysJobImpl) UpdateJob(sysJob model.SysJob) int64 {
 	}
 	if sysJob.Status != "" {
 		params["status"] = sysJob.Status
+	}
+	if sysJob.SaveLog != "" {
+		params["save_log"] = sysJob.SaveLog
 	}
 	if sysJob.Remark != "" {
 		params["remark"] = sysJob.Remark
