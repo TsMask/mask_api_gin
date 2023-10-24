@@ -152,12 +152,12 @@ func (s *SystemInfoImpl) MemoryInfo() map[string]any {
 
 // CPUInfo CPU信息
 func (s *SystemInfoImpl) CPUInfo() map[string]any {
-	var core int32 = 0
+	var core int = 0
 	var speed string = "未知"
 	var model string = "未知"
 	cpuInfo, err := cpu.Info()
 	if err == nil {
-		core = cpuInfo[0].Cores
+		core = runtime.NumCPU()
 		speed = fmt.Sprintf("%.0fMHz", cpuInfo[0].Mhz)
 		model = strings.TrimSpace(cpuInfo[0].ModelName)
 	}
