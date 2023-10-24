@@ -63,7 +63,7 @@ func Setup(router *gin.Engine) {
 				Count: 10,
 				Type:  middleware.LIMIT_IP,
 			}),
-			controller.NewRegister.UserName,
+			controller.NewRegister.Register,
 		)
 	}
 

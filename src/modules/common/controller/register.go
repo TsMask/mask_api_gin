@@ -8,7 +8,6 @@ import (
 	commonModel "mask_api_gin/src/modules/common/model"
 	commonService "mask_api_gin/src/modules/common/service"
 	systemService "mask_api_gin/src/modules/system/service"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,8 +30,8 @@ type RegisterController struct {
 
 // 账号注册
 //
-// GET /captchaImage
-func (s *RegisterController) UserName(c *gin.Context) {
+// POST /register
+func (s *RegisterController) Register(c *gin.Context) {
 	var registerBody commonModel.RegisterBody
 	if err := c.ShouldBindJSON(&registerBody); err != nil {
 		c.JSON(400, result.ErrMsg("参数错误"))
@@ -73,9 +72,9 @@ func (s *RegisterController) UserName(c *gin.Context) {
 		return
 	}
 
-	infoStr := s.registerService.ByUserName(registerBody.Username, registerBody.Password, registerBody.UserType)
-	if !strings.HasPrefix(infoStr, "注册") {
-		msg := registerBody.Username + " 注册成功 " + infoStr
+	userID, err := s.registerService.ByUserName(registerBody.Username, registerBody.Password, registerBody.UserType)
+	if err == nil {
+		msg := registerBody.Username + " 注册成功 " + userID
 		s.sysLogLoginService.CreateSysLogLogin(
 			registerBody.Username, commonConstants.STATUS_YES, msg,
 			ipaddr, location, os, browser,
@@ -83,5 +82,5 @@ func (s *RegisterController) UserName(c *gin.Context) {
 		c.JSON(200, result.OkMsg("注册成功"))
 		return
 	}
-	c.JSON(200, result.ErrMsg(infoStr))
+	c.JSON(200, result.ErrMsg(err.Error()))
 }

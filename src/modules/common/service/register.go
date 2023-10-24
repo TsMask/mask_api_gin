@@ -6,5 +6,5 @@ type IRegister interface {
 	ValidateCaptcha(code, uuid string) error
 
 	// ByUserName 账号注册
-	ByUserName(username, password, userType string) string
+	ByUserName(username, password, userType string) (string, error)
 }

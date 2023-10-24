@@ -51,11 +51,18 @@ func (s *RegisterImpl) ValidateCaptcha(code, uuid string) error {
 }
 
 // ByUserName 账号注册
-func (s *RegisterImpl) ByUserName(username, password, userType string) string {
+func (s *RegisterImpl) ByUserName(username, password, userType string) (string, error) {
+	// 是否开启用户注册功能 true开启，false关闭
+	registerUserStr := s.sysConfigService.SelectConfigValueByKey("sys.account.registerUser")
+	captchaEnabled := parse.Boolean(registerUserStr)
+	if !captchaEnabled {
+		return "", fmt.Errorf("注册用户【%s】失败，很抱歉，系统已关闭外部用户注册通道", username)
+	}
+
 	// 检查用户登录账号是否唯一
 	uniqueUserName := s.sysUserService.CheckUniqueUserName(username, "")
 	if !uniqueUserName {
-		return fmt.Sprintf("注册用户【%s】失败，注册账号已存在", username)
+		return "", fmt.Errorf("注册用户【%s】失败，注册账号已存在", username)
 	}
 
 	sysUser := systemModel.SysUser{
@@ -77,9 +84,9 @@ func (s *RegisterImpl) ByUserName(username, password, userType string) string {
 
 	insertId := s.sysUserService.InsertUser(sysUser)
 	if insertId != "" {
-		return insertId
+		return insertId, nil
 	}
-	return "注册失败，请联系系统管理人员"
+	return "", fmt.Errorf("注册用户【%s】失败，请联系系统管理人员", username)
 }
 
 // registerRoleInit 注册初始角色
