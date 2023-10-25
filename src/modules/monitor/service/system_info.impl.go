@@ -90,38 +90,45 @@ func (s *SystemInfoImpl) SystemInfo() map[string]any {
 	if err != nil {
 		homeDir = ""
 	}
+	// 执行命令
 	cmd, err := os.Executable()
 	if err != nil {
 		cmd = ""
 	}
+	// 获取主机运行时间
+	bootTime := time.Since(time.Unix(int64(info.BootTime), 0)).Seconds()
+	// 获取程序运行时间
+	runTime := time.Since(config.RunTime()).Abs().Seconds()
 	return map[string]any{
-		"platform":    info.Platform,
-		"go":          runtime.Version(),
-		"processId":   os.Getpid(),
-		"arch":        info.KernelArch,
-		"uname":       runtime.GOARCH,
-		"release":     info.OS,
-		"hostname":    info.Hostname,
-		"homeDir":     homeDir,
-		"cmd":         cmd,
-		"execCommand": strings.Join(os.Args, " "),
+		"platform":        info.Platform,
+		"platformVersion": info.PlatformVersion,
+		"arch":            info.KernelArch,
+		"archVersion":     info.KernelVersion,
+		"os":              info.OS,
+		"hostname":        info.Hostname,
+		"bootTime":        int64(bootTime),
+		"processId":       os.Getpid(),
+		"runArch":         runtime.GOARCH,
+		"runVersion":      runtime.Version(),
+		"runTime":         int64(runTime),
+		"homeDir":         homeDir,
+		"cmd":             cmd,
+		"execCommand":     strings.Join(os.Args, " "),
 	}
 }
 
 // TimeInfo 系统时间信息
 func (s *SystemInfoImpl) TimeInfo() map[string]string {
+	now := time.Now()
 	// 获取当前时间
-	current := time.Now().Format("2006-01-02 15:04:05")
-	// 获取程序运行时间
-	uptime := time.Since(config.RunTime()).String()
+	current := now.Format("2006-01-02 15:04:05")
 	// 获取时区
-	timezone := time.Now().Format("-0700 MST")
+	timezone := now.Format("-0700 MST")
 	// 获取时区名称
-	timezoneName := time.Now().Format("MST")
+	timezoneName := now.Format("MST")
 
 	return map[string]string{
 		"current":      current,
-		"uptime":       uptime,
 		"timezone":     timezone,
 		"timezoneName": timezoneName,
 	}
