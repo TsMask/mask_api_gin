@@ -34,7 +34,6 @@ func (s cronlog) Error(err error, msg string, keysAndValues ...any) {
 		if data, ok := job.Data.(JobData); ok {
 			// 日志数据
 			jobLog := jobLogData{
-				JobID:     job.Opts.JobId,
 				Timestamp: job.Timestamp,
 				Data:      data,
 				Result:    err.Error(),
@@ -58,7 +57,6 @@ func (s cronlog) Completed(result any, msg string, keysAndValues ...any) {
 		if data, ok := job.Data.(JobData); ok {
 			// 日志数据
 			jobLog := jobLogData{
-				JobID:     job.Opts.JobId,
 				Timestamp: job.Timestamp,
 				Data:      data,
 				Result:    result,
@@ -70,7 +68,6 @@ func (s cronlog) Completed(result any, msg string, keysAndValues ...any) {
 
 // jobLogData 日志记录数据
 type jobLogData struct {
-	JobID     string
 	Timestamp int64
 	Data      JobData
 	Result    any
@@ -80,11 +77,6 @@ type jobLogData struct {
 func (jl *jobLogData) SaveLog(status string) {
 	// 读取任务信息
 	sysJob := jl.Data.SysJob
-
-	// 任务ID与任务信息ID不相同
-	if jl.JobID == "" || jl.JobID != sysJob.JobID {
-		return
-	}
 
 	// 任务日志不需要记录
 	if sysJob.SaveLog == "" || sysJob.SaveLog == common.STATUS_NO {
