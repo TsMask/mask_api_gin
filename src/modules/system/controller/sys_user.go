@@ -399,10 +399,11 @@ func (s *SysUserController) Export(c *gin.Context) {
 		"E1": "手机号码",
 		"F1": "用户性别",
 		"G1": "帐号状态",
-		"H1": "最后登录IP",
-		"I1": "最后登录时间",
-		"J1": "部门名称",
-		"K1": "部门负责人",
+		"H1": "部门编号",
+		"I1": "部门名称",
+		"J1": "部门负责人",
+		"K1": "最后登录IP",
+		"L1": "最后登录时间",
 	}
 	// 读取用户性别字典数据
 	dictSysUserSex := s.sysDictDataService.SelectDictDataByType("sys_user_sex")
@@ -431,10 +432,11 @@ func (s *SysUserController) Export(c *gin.Context) {
 			"E" + idx: row.PhoneNumber,
 			"F" + idx: sysUserSex,
 			"G" + idx: statusValue,
-			"H" + idx: row.LoginIP,
-			"I" + idx: date.ParseDateToStr(row.LoginDate, date.YYYY_MM_DD_HH_MM_SS),
-			"J" + idx: row.Dept.DeptName,
-			"K" + idx: row.Dept.Leader,
+			"H" + idx: row.Dept.DeptID,
+			"I" + idx: row.Dept.DeptName,
+			"J" + idx: row.Dept.Leader,
+			"K" + idx: row.LoginIP,
+			"L" + idx: date.ParseDateToStr(row.LoginDate, date.YYYY_MM_DD_HH_MM_SS),
 		})
 	}
 

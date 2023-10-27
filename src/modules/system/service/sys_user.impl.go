@@ -197,7 +197,7 @@ func (r *SysUserImpl) ImportUser(rows []map[string]string, isUpdateSupport bool,
 	failureNum := 0
 	successMsgArr := []string{}
 	failureMsgArr := []string{}
-	mustItemArr := []string{"C", "D"}
+	mustItemArr := []string{"B", "C"}
 	for _, row := range rows {
 		// 检查必填列
 		ownItem := true
@@ -217,13 +217,13 @@ func (r *SysUserImpl) ImportUser(rows []map[string]string, isUpdateSupport bool,
 		// 用户性别转值
 		sysUserSex := "0"
 		for _, v := range dictSysUserSex {
-			if row["G"] == v.DictLabel {
+			if row["F"] == v.DictLabel {
 				sysUserSex = v.DictValue
 				break
 			}
 		}
 		sysUserStatus := common.STATUS_NO
-		if row["H"] == "正常" {
+		if row["G"] == "正常" {
 			sysUserStatus = common.STATUS_YES
 		}
 
@@ -231,11 +231,11 @@ func (r *SysUserImpl) ImportUser(rows []map[string]string, isUpdateSupport bool,
 		newSysUser := model.SysUser{
 			UserType:    "sys",
 			Password:    initPassword,
-			DeptID:      row["B"],
-			UserName:    row["C"],
-			NickName:    row["D"],
-			PhoneNumber: row["F"],
-			Email:       row["E"],
+			DeptID:      row["H"],
+			UserName:    row["B"],
+			NickName:    row["C"],
+			PhoneNumber: row["E"],
+			Email:       row["D"],
 			Status:      sysUserStatus,
 			Sex:         sysUserSex,
 		}
@@ -245,13 +245,13 @@ func (r *SysUserImpl) ImportUser(rows []map[string]string, isUpdateSupport bool,
 			if regular.ValidMobile(newSysUser.PhoneNumber) {
 				uniquePhone := r.CheckUniquePhone(newSysUser.PhoneNumber, "")
 				if !uniquePhone {
-					msg := fmt.Sprintf("序号：%s 手机号码 %s 已存在", row["A"], row["F"])
+					msg := fmt.Sprintf("序号：%s 手机号码 %s 已存在", row["A"], row["E"])
 					failureNum++
 					failureMsgArr = append(failureMsgArr, msg)
 					continue
 				}
 			} else {
-				msg := fmt.Sprintf("序号：%s 手机号码 %s 格式错误", row["A"], row["F"])
+				msg := fmt.Sprintf("序号：%s 手机号码 %s 格式错误", row["A"], row["E"])
 				failureNum++
 				failureMsgArr = append(failureMsgArr, msg)
 				continue
@@ -263,13 +263,13 @@ func (r *SysUserImpl) ImportUser(rows []map[string]string, isUpdateSupport bool,
 			if regular.ValidEmail(newSysUser.Email) {
 				uniqueEmail := r.CheckUniqueEmail(newSysUser.Email, "")
 				if !uniqueEmail {
-					msg := fmt.Sprintf("序号：%s 用户邮箱 %s 已存在", row["A"], row["E"])
+					msg := fmt.Sprintf("序号：%s 用户邮箱 %s 已存在", row["A"], row["D"])
 					failureNum++
 					failureMsgArr = append(failureMsgArr, msg)
 					continue
 				}
 			} else {
-				msg := fmt.Sprintf("序号：%s 用户邮箱 %s 格式错误", row["A"], row["E"])
+				msg := fmt.Sprintf("序号：%s 用户邮箱 %s 格式错误", row["A"], row["D"])
 				failureNum++
 				failureMsgArr = append(failureMsgArr, msg)
 				continue
@@ -282,11 +282,11 @@ func (r *SysUserImpl) ImportUser(rows []map[string]string, isUpdateSupport bool,
 			newSysUser.CreateBy = operName
 			insertId := r.InsertUser(newSysUser)
 			if insertId != "" {
-				msg := fmt.Sprintf("序号：%s 登录名称 %s 导入成功", row["A"], row["C"])
+				msg := fmt.Sprintf("序号：%s 登录名称 %s 导入成功", row["A"], row["B"])
 				successNum++
 				successMsgArr = append(successMsgArr, msg)
 			} else {
-				msg := fmt.Sprintf("序号：%s 登录名称 %s 导入失败", row["A"], row["E"])
+				msg := fmt.Sprintf("序号：%s 登录名称 %s 导入失败", row["A"], row["B"])
 				failureNum++
 				failureMsgArr = append(failureMsgArr, msg)
 			}
@@ -299,11 +299,11 @@ func (r *SysUserImpl) ImportUser(rows []map[string]string, isUpdateSupport bool,
 			newSysUser.UpdateBy = operName
 			rows := r.UpdateUser(newSysUser)
 			if rows > 0 {
-				msg := fmt.Sprintf("序号：%s 登录名称 %s 更新成功", row["A"], row["C"])
+				msg := fmt.Sprintf("序号：%s 登录名称 %s 更新成功", row["A"], row["B"])
 				successNum++
 				successMsgArr = append(successMsgArr, msg)
 			} else {
-				msg := fmt.Sprintf("序号：%s 登录名称 %s 更新失败", row["A"], row["E"])
+				msg := fmt.Sprintf("序号：%s 登录名称 %s 更新失败", row["A"], row["B"])
 				failureNum++
 				failureMsgArr = append(failureMsgArr, msg)
 			}
