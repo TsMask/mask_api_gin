@@ -2,7 +2,7 @@
 
 [![star](https://gitee.com/TsMask/mask_api_gin/badge/star.svg?theme=dark)](https://gitee.com/TsMask/mask_api_gin/stargazers)
 ![Build Gin](https://img.shields.io/badge/Build-Gin-green.svg)
-![Release V0.1.9](https://img.shields.io/badge/Release-V0.1.9-orange.svg)
+![Release V0.2.0](https://img.shields.io/badge/Release-V0.2.0-orange.svg)
 ![License MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
 ## 介绍
@@ -19,8 +19,8 @@
 
 ### 前端
 
-- `Vue3-Element` 仓库地址 => [mask_element_vue3](https://gitee.com/TsMask/mask_element_vue3)
-- `Vue3-Antd` 仓库地址 => [mask_antd_vue3](https://gitee.com/TsMask/mask_antd_vue3)
+- `Vue3-Element` 仓库地址 => [mask_vue3_element](https://gitee.com/TsMask/mask_vue3_element)
+- `Vue3-Antd` 仓库地址 => [mask_vue3_antd](https://gitee.com/TsMask/mask_vue3_antd)
 
 ### 后端
 
