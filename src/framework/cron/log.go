@@ -36,7 +36,7 @@ func (s cronlog) Error(err error, msg string, keysAndValues ...any) {
 			jobLog := jobLogData{
 				JobID:     job.Opts.JobId,
 				Timestamp: job.Timestamp,
-				SysJob:    data.SysJob,
+				Data:      data,
 				Result:    err.Error(),
 			}
 			jobLog.SaveLog(common.STATUS_NO)
@@ -60,7 +60,7 @@ func (s cronlog) Completed(result any, msg string, keysAndValues ...any) {
 			jobLog := jobLogData{
 				JobID:     job.Opts.JobId,
 				Timestamp: job.Timestamp,
-				SysJob:    data.SysJob,
+				Data:      data,
 				Result:    result,
 			}
 			jobLog.SaveLog(common.STATUS_YES)
@@ -72,14 +72,14 @@ func (s cronlog) Completed(result any, msg string, keysAndValues ...any) {
 type jobLogData struct {
 	JobID     string
 	Timestamp int64
-	SysJob    model.SysJob
+	Data      JobData
 	Result    any
 }
 
 // SaveLog 日志记录保存
 func (jl *jobLogData) SaveLog(status string) {
 	// 读取任务信息
-	sysJob := jl.SysJob
+	sysJob := jl.Data.SysJob
 
 	// 任务ID与任务信息ID不相同
 	if jl.JobID == "" || jl.JobID != sysJob.JobID {
@@ -99,6 +99,7 @@ func (jl *jobLogData) SaveLog(status string) {
 
 	// 结果信息序列化字符串
 	jsonByte, _ := json.Marshal(map[string]any{
+		"cron":    jl.Data.Repeat,
 		"name":    resultNmae,
 		"message": jl.Result,
 	})
