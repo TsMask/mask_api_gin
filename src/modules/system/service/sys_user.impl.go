@@ -245,13 +245,13 @@ func (r *SysUserImpl) ImportUser(rows []map[string]string, isUpdateSupport bool,
 			if regular.ValidMobile(newSysUser.PhoneNumber) {
 				uniquePhone := r.CheckUniquePhone(newSysUser.PhoneNumber, "")
 				if !uniquePhone {
-					msg := fmt.Sprintf("序号：%s 手机号码 %s 已存在", row["A"], row["E"])
+					msg := fmt.Sprintf("用户编号：%s 手机号码 %s 已存在", row["A"], row["E"])
 					failureNum++
 					failureMsgArr = append(failureMsgArr, msg)
 					continue
 				}
 			} else {
-				msg := fmt.Sprintf("序号：%s 手机号码 %s 格式错误", row["A"], row["E"])
+				msg := fmt.Sprintf("用户编号：%s 手机号码 %s 格式错误", row["A"], row["E"])
 				failureNum++
 				failureMsgArr = append(failureMsgArr, msg)
 				continue
@@ -263,13 +263,13 @@ func (r *SysUserImpl) ImportUser(rows []map[string]string, isUpdateSupport bool,
 			if regular.ValidEmail(newSysUser.Email) {
 				uniqueEmail := r.CheckUniqueEmail(newSysUser.Email, "")
 				if !uniqueEmail {
-					msg := fmt.Sprintf("序号：%s 用户邮箱 %s 已存在", row["A"], row["D"])
+					msg := fmt.Sprintf("用户编号：%s 用户邮箱 %s 已存在", row["A"], row["D"])
 					failureNum++
 					failureMsgArr = append(failureMsgArr, msg)
 					continue
 				}
 			} else {
-				msg := fmt.Sprintf("序号：%s 用户邮箱 %s 格式错误", row["A"], row["D"])
+				msg := fmt.Sprintf("用户编号：%s 用户邮箱 %s 格式错误", row["A"], row["D"])
 				failureNum++
 				failureMsgArr = append(failureMsgArr, msg)
 				continue
@@ -282,11 +282,11 @@ func (r *SysUserImpl) ImportUser(rows []map[string]string, isUpdateSupport bool,
 			newSysUser.CreateBy = operName
 			insertId := r.InsertUser(newSysUser)
 			if insertId != "" {
-				msg := fmt.Sprintf("序号：%s 登录名称 %s 导入成功", row["A"], row["B"])
+				msg := fmt.Sprintf("用户编号：%s 登录名称 %s 导入成功", row["A"], row["B"])
 				successNum++
 				successMsgArr = append(successMsgArr, msg)
 			} else {
-				msg := fmt.Sprintf("序号：%s 登录名称 %s 导入失败", row["A"], row["B"])
+				msg := fmt.Sprintf("用户编号：%s 登录名称 %s 导入失败", row["A"], row["B"])
 				failureNum++
 				failureMsgArr = append(failureMsgArr, msg)
 			}
@@ -299,11 +299,11 @@ func (r *SysUserImpl) ImportUser(rows []map[string]string, isUpdateSupport bool,
 			newSysUser.UpdateBy = operName
 			rows := r.UpdateUser(newSysUser)
 			if rows > 0 {
-				msg := fmt.Sprintf("序号：%s 登录名称 %s 更新成功", row["A"], row["B"])
+				msg := fmt.Sprintf("用户编号：%s 登录名称 %s 更新成功", row["A"], row["B"])
 				successNum++
 				successMsgArr = append(successMsgArr, msg)
 			} else {
-				msg := fmt.Sprintf("序号：%s 登录名称 %s 更新失败", row["A"], row["B"])
+				msg := fmt.Sprintf("用户编号：%s 登录名称 %s 更新失败", row["A"], row["B"])
 				failureNum++
 				failureMsgArr = append(failureMsgArr, msg)
 			}

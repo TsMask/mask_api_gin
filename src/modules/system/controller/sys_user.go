@@ -392,7 +392,7 @@ func (s *SysUserController) Export(c *gin.Context) {
 	fileName := fmt.Sprintf("user_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
 	// 第一行表头标题
 	headerCells := map[string]string{
-		"A1": "用户序号",
+		"A1": "用户编号",
 		"B1": "登录名称",
 		"C1": "用户名称",
 		"D1": "用户邮箱",
