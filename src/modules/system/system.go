@@ -93,7 +93,7 @@ func Setup(router *gin.Engine) {
 			controller.NewSysDept.TreeSelect,
 		)
 		sysDeptGroup.GET("/roleDeptTreeSelect/:roleId",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:query"}}),
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:query", "system:user:edit"}}),
 			controller.NewSysDept.RoleDeptTreeSelect,
 		)
 	}
@@ -208,7 +208,7 @@ func Setup(router *gin.Engine) {
 			controller.NewSysMenu.TreeSelect,
 		)
 		sysMenuGroup.GET("/roleMenuTreeSelect/:roleId",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:list"}}),
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:list", "system:role:query"}}),
 			controller.NewSysMenu.RoleMenuTreeSelect,
 		)
 	}
