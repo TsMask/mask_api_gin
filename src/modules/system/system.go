@@ -226,17 +226,17 @@ func Setup(router *gin.Engine) {
 		)
 		sysNoticeGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:add"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("参数配置信息", collectlogs.BUSINESS_TYPE_INSERT)),
+			collectlogs.OperateLog(collectlogs.OptionNew("通知公告信息", collectlogs.BUSINESS_TYPE_INSERT)),
 			controller.NewSysNotice.Add,
 		)
 		sysNoticeGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:edit"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("参数配置信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			collectlogs.OperateLog(collectlogs.OptionNew("通知公告信息", collectlogs.BUSINESS_TYPE_UPDATE)),
 			controller.NewSysNotice.Edit,
 		)
 		sysNoticeGroup.DELETE("/:noticeIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("参数配置信息", collectlogs.BUSINESS_TYPE_DELETE)),
+			collectlogs.OperateLog(collectlogs.OptionNew("通知公告信息", collectlogs.BUSINESS_TYPE_DELETE)),
 			controller.NewSysNotice.Remove,
 		)
 	}
