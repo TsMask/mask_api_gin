@@ -117,7 +117,7 @@ func (s *SysLogOperateController) Export(c *gin.Context) {
 		// 业务类型
 		businessType := ""
 		// 操作类别
-		OperatorType := ""
+		operatorType := ""
 		// 状态
 		statusValue := "失败"
 		if row.Status == "1" {
@@ -129,7 +129,7 @@ func (s *SysLogOperateController) Export(c *gin.Context) {
 			"C" + idx: businessType,
 			"D" + idx: row.Method,
 			"E" + idx: row.RequestMethod,
-			"F" + idx: OperatorType,
+			"F" + idx: operatorType,
 			"G" + idx: row.OperName,
 			"H" + idx: row.DeptName,
 			"I" + idx: row.OperURL,
