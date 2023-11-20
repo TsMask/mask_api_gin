@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
@@ -231,7 +230,11 @@ func (r *SysDictTypeImpl) CheckUniqueDictType(sysDictType model.SysDictType) str
 		return ""
 	}
 	if len(results) > 0 {
-		return fmt.Sprintf("%v", results[0]["str"])
+		v, ok := results[0]["str"].(string)
+		if ok {
+			return v
+		}
+		return ""
 	}
 	return ""
 }
