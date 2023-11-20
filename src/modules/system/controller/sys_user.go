@@ -282,6 +282,20 @@ func (s *SysUserController) Remove(c *gin.Context) {
 		c.JSON(200, result.Err(nil))
 		return
 	}
+
+	// 检查是否管理员用户
+	loginUserID := ctx.LoginUserToUserID(c)
+	for _, id := range uniqueIDs {
+		if id == loginUserID {
+			c.JSON(200, result.ErrMsg("当前用户不能删除"))
+			return
+		}
+		if config.IsAdmin(id) {
+			c.JSON(200, result.ErrMsg("不允许操作管理员用户"))
+			return
+		}
+	}
+
 	rows, err := s.sysUserService.DeleteUserByIds(uniqueIDs)
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
