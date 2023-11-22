@@ -5,13 +5,13 @@ import "mask_api_gin/src/modules/system/model"
 // ISysUser 用户 服务层接口
 type ISysUser interface {
 	// SelectUserPage 根据条件分页查询用户列表
-	SelectUserPage(query map[string]any, dataScopeSQL string) map[string]any
+	SelectUserPage(queryMap map[string]any, dataScopeSQL string) map[string]any
 
 	// SelectUserList 根据条件查询用户列表
 	SelectUserList(sysUser model.SysUser, dataScopeSQL string) []model.SysUser
 
 	// SelectAllocatedPage 根据条件分页查询分配用户角色列表
-	SelectAllocatedPage(query map[string]any, dataScopeSQL string) map[string]any
+	SelectAllocatedPage(queryMap map[string]any, dataScopeSQL string) map[string]any
 
 	// SelectUserByUserName 通过用户名查询用户
 	SelectUserByUserName(userName string) model.SysUser
@@ -35,11 +35,8 @@ type ISysUser interface {
 	CheckUniqueUserName(userName, userId string) bool
 
 	// CheckUniquePhone 校验手机号码是否唯一
-	CheckUniquePhone(phonenumber, userId string) bool
+	CheckUniquePhone(phone, userId string) bool
 
 	// CheckUniqueEmail 校验email是否唯一
 	CheckUniqueEmail(email, userId string) bool
-
-	// ImportUser 导入用户数据
-	ImportUser(rows []map[string]string, isUpdateSupport bool, operName string) string
 }
