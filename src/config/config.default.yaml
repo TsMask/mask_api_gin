@@ -1,7 +1,7 @@
 # 项目信息
 framework:
   name: "mask_api_gin"
-  version: "0.2.1"
+  version: "0.2.2"
 
 # 应用服务配置
 server:
@@ -13,7 +13,7 @@ server:
 # 日志
 logger:
   fileDir: "../mask_file/logs"
-  fileName: "mask-app.log"
+  fileName: "mask_api_gin.log"
   level: 2 # 日志记录的等级 0:silent<1:info<2:warn<3:error
   maxDay: 30 # 日志会保留 30 天
   maxSize: 10 # 调整按 10MB 大小的切割
