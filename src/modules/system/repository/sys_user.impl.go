@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/crypto"
@@ -123,7 +122,7 @@ func (r *SysUserImpl) convertResultRows(rows []map[string]any) []model.SysUser {
 }
 
 // SelectUserPage 根据条件分页查询用户列表
-func (r *SysUserImpl) SelectUserPage(query map[string]any, dataScopeSQL string) map[string]any {
+func (r *SysUserImpl) SelectUserPage(queryMap map[string]any, dataScopeSQL string) map[string]any {
 	selectUserSql := `select 
     u.user_id, u.dept_id, u.nick_name, u.user_name, u.email, u.avatar, u.phonenumber, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time, u.remark, d.dept_name, d.leader 
     from sys_user u 
@@ -134,41 +133,41 @@ func (r *SysUserImpl) SelectUserPage(query map[string]any, dataScopeSQL string) 
 	// 查询条件拼接
 	var conditions []string
 	var params []any
-	if v, ok := query["userId"]; ok && v != "" {
+	if v, ok := queryMap["userId"]; ok && v != "" {
 		conditions = append(conditions, "u.user_id = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["userName"]; ok && v != "" {
+	if v, ok := queryMap["userName"]; ok && v != "" {
 		conditions = append(conditions, "u.user_name like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["status"]; ok && v != "" {
+	if v, ok := queryMap["status"]; ok && v != "" {
 		conditions = append(conditions, "u.status = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["phonenumber"]; ok && v != "" {
+	if v, ok := queryMap["phonenumber"]; ok && v != "" {
 		conditions = append(conditions, "u.phonenumber like concat(?, '%')")
 		params = append(params, v)
 	}
-	beginTime, ok := query["beginTime"]
+	beginTime, ok := queryMap["beginTime"]
 	if !ok {
-		beginTime, ok = query["params[beginTime]"]
+		beginTime, ok = queryMap["params[beginTime]"]
 	}
 	if ok && beginTime != "" {
 		conditions = append(conditions, "u.login_date >= ?")
 		beginDate := date.ParseStrToDate(beginTime.(string), date.YYYY_MM_DD)
 		params = append(params, beginDate.UnixMilli())
 	}
-	endTime, ok := query["endTime"]
+	endTime, ok := queryMap["endTime"]
 	if !ok {
-		endTime, ok = query["params[endTime]"]
+		endTime, ok = queryMap["params[endTime]"]
 	}
 	if ok && endTime != "" {
 		conditions = append(conditions, "u.login_date <= ?")
 		endDate := date.ParseStrToDate(endTime.(string), date.YYYY_MM_DD)
 		params = append(params, endDate.UnixMilli())
 	}
-	if v, ok := query["deptId"]; ok && v != "" {
+	if v, ok := queryMap["deptId"]; ok && v != "" {
 		conditions = append(conditions, "(u.dept_id = ? or u.dept_id in ( select t.dept_id from sys_dept t where find_in_set(?, ancestors) ))")
 		params = append(params, v)
 		params = append(params, v)
@@ -201,7 +200,7 @@ func (r *SysUserImpl) SelectUserPage(query map[string]any, dataScopeSQL string) 
 	}
 
 	// 分页
-	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := repo.PageNumSize(queryMap["pageNum"], queryMap["pageSize"])
 	pageSql := " limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -573,7 +572,11 @@ func (r *SysUserImpl) CheckUniqueUser(sysUser model.SysUser) string {
 		logger.Errorf("query err %v", err)
 	}
 	if len(results) > 0 {
-		return fmt.Sprintf("%v", results[0]["str"])
+		v, ok := results[0]["str"].(string)
+		if ok {
+			return v
+		}
+		return ""
 	}
 	return ""
 }

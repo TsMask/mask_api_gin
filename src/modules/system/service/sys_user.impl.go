@@ -2,16 +2,12 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	"mask_api_gin/src/framework/constants/admin"
-	"mask_api_gin/src/framework/constants/common"
-	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
-	"strings"
 )
 
-// 实例化服务层 SysUserImpl 结构体
+// NewSysUserImpl 实例化服务层 SysUserImpl 结构体
 var NewSysUserImpl = &SysUserImpl{
 	sysUserRepository:     repository.NewSysUserImpl,
 	sysUserRoleRepository: repository.NewSysUserRoleImpl,
@@ -35,13 +31,13 @@ type SysUserImpl struct {
 }
 
 // SelectUserPage 根据条件分页查询用户列表
-func (r *SysUserImpl) SelectUserPage(query map[string]any, dataScopeSQL string) map[string]any {
-	return r.sysUserRepository.SelectUserPage(query, dataScopeSQL)
+func (r *SysUserImpl) SelectUserPage(queryMap map[string]any, dataScopeSQL string) map[string]any {
+	return r.sysUserRepository.SelectUserPage(queryMap, dataScopeSQL)
 }
 
 // SelectUserList 根据条件查询用户列表
 func (r *SysUserImpl) SelectUserList(sysUser model.SysUser, dataScopeSQL string) []model.SysUser {
-	return []model.SysUser{}
+	return r.sysUserRepository.SelectUserList(sysUser, dataScopeSQL)
 }
 
 // SelectAllocatedPage 根据条件分页查询分配用户角色列表
@@ -85,7 +81,7 @@ func (r *SysUserImpl) insertUserRole(userId string, roleIds []string) int64 {
 		return 0
 	}
 
-	sysUserRoles := []model.SysUserRole{}
+	var sysUserRoles []model.SysUserRole
 	for _, roleId := range roleIds {
 		// 管理员角色禁止操作，只能通过配置指定用户ID分配
 		if roleId == "" || roleId == admin.ROLE_ID {
@@ -103,7 +99,7 @@ func (r *SysUserImpl) insertUserPost(userId string, postIds []string) int64 {
 		return 0
 	}
 
-	sysUserPosts := []model.SysUserPost{}
+	var sysUserPosts []model.SysUserPost
 	for _, postId := range postIds {
 		if postId == "" {
 			continue
@@ -164,9 +160,9 @@ func (r *SysUserImpl) CheckUniqueUserName(userName, userId string) bool {
 }
 
 // CheckUniquePhone 校验手机号码是否唯一
-func (r *SysUserImpl) CheckUniquePhone(phonenumber, userId string) bool {
+func (r *SysUserImpl) CheckUniquePhone(phone, userId string) bool {
 	uniqueId := r.sysUserRepository.CheckUniqueUser(model.SysUser{
-		PhoneNumber: phonenumber,
+		PhoneNumber: phone,
 	})
 	if uniqueId == userId {
 		return true
@@ -183,139 +179,4 @@ func (r *SysUserImpl) CheckUniqueEmail(email, userId string) bool {
 		return true
 	}
 	return uniqueId == ""
-}
-
-// ImportUser 导入用户数据
-func (r *SysUserImpl) ImportUser(rows []map[string]string, isUpdateSupport bool, operName string) string {
-	// 读取默认初始密码
-	initPassword := r.sysConfigService.SelectConfigValueByKey("sys.user.initPassword")
-	// 读取用户性别字典数据
-	dictSysUserSex := r.sysDictDataService.SelectDictDataByType("sys_user_sex")
-
-	// 导入记录
-	successNum := 0
-	failureNum := 0
-	successMsgArr := []string{}
-	failureMsgArr := []string{}
-	mustItemArr := []string{"B", "C"}
-	for _, row := range rows {
-		// 检查必填列
-		ownItem := true
-		for _, item := range mustItemArr {
-			if v, ok := row[item]; !ok || v == "" {
-				ownItem = false
-				break
-			}
-		}
-		if !ownItem {
-			mustItemArrStr := strings.Join(mustItemArr, "、")
-			failureNum++
-			failureMsgArr = append(failureMsgArr, fmt.Sprintf("表格中必填列表项，%s}", mustItemArrStr))
-			continue
-		}
-
-		// 用户性别转值
-		sysUserSex := "0"
-		for _, v := range dictSysUserSex {
-			if row["F"] == v.DictLabel {
-				sysUserSex = v.DictValue
-				break
-			}
-		}
-		sysUserStatus := common.STATUS_NO
-		if row["G"] == "正常" {
-			sysUserStatus = common.STATUS_YES
-		}
-
-		// 构建用户实体信息
-		newSysUser := model.SysUser{
-			UserType:    "sys",
-			Password:    initPassword,
-			DeptID:      row["H"],
-			UserName:    row["B"],
-			NickName:    row["C"],
-			PhoneNumber: row["E"],
-			Email:       row["D"],
-			Status:      sysUserStatus,
-			Sex:         sysUserSex,
-		}
-
-		// 检查手机号码格式并判断是否唯一
-		if newSysUser.PhoneNumber != "" {
-			if regular.ValidMobile(newSysUser.PhoneNumber) {
-				uniquePhone := r.CheckUniquePhone(newSysUser.PhoneNumber, "")
-				if !uniquePhone {
-					msg := fmt.Sprintf("用户编号：%s 手机号码 %s 已存在", row["A"], row["E"])
-					failureNum++
-					failureMsgArr = append(failureMsgArr, msg)
-					continue
-				}
-			} else {
-				msg := fmt.Sprintf("用户编号：%s 手机号码 %s 格式错误", row["A"], row["E"])
-				failureNum++
-				failureMsgArr = append(failureMsgArr, msg)
-				continue
-			}
-		}
-
-		// 检查邮箱格式并判断是否唯一
-		if newSysUser.Email != "" {
-			if regular.ValidEmail(newSysUser.Email) {
-				uniqueEmail := r.CheckUniqueEmail(newSysUser.Email, "")
-				if !uniqueEmail {
-					msg := fmt.Sprintf("用户编号：%s 用户邮箱 %s 已存在", row["A"], row["D"])
-					failureNum++
-					failureMsgArr = append(failureMsgArr, msg)
-					continue
-				}
-			} else {
-				msg := fmt.Sprintf("用户编号：%s 用户邮箱 %s 格式错误", row["A"], row["D"])
-				failureNum++
-				failureMsgArr = append(failureMsgArr, msg)
-				continue
-			}
-		}
-
-		// 验证是否存在这个用户
-		userInfo := r.sysUserRepository.SelectUserByUserName(newSysUser.UserName)
-		if userInfo.UserName != newSysUser.UserName {
-			newSysUser.CreateBy = operName
-			insertId := r.InsertUser(newSysUser)
-			if insertId != "" {
-				msg := fmt.Sprintf("用户编号：%s 登录名称 %s 导入成功", row["A"], row["B"])
-				successNum++
-				successMsgArr = append(successMsgArr, msg)
-			} else {
-				msg := fmt.Sprintf("用户编号：%s 登录名称 %s 导入失败", row["A"], row["B"])
-				failureNum++
-				failureMsgArr = append(failureMsgArr, msg)
-			}
-			continue
-		}
-
-		// 如果用户已存在 同时 是否更新支持
-		if userInfo.UserName == newSysUser.UserName && isUpdateSupport {
-			newSysUser.UserID = userInfo.UserID
-			newSysUser.UpdateBy = operName
-			rows := r.UpdateUser(newSysUser)
-			if rows > 0 {
-				msg := fmt.Sprintf("用户编号：%s 登录名称 %s 更新成功", row["A"], row["B"])
-				successNum++
-				successMsgArr = append(successMsgArr, msg)
-			} else {
-				msg := fmt.Sprintf("用户编号：%s 登录名称 %s 更新失败", row["A"], row["B"])
-				failureNum++
-				failureMsgArr = append(failureMsgArr, msg)
-			}
-			continue
-		}
-	}
-
-	if failureNum > 0 {
-		failureMsgArr = append([]string{fmt.Sprintf("很抱歉，导入失败！共 %d 条数据格式不正确，错误如下：", failureNum)}, failureMsgArr...)
-		return strings.Join(failureMsgArr, "<br/>")
-	}
-
-	successMsgArr = append([]string{fmt.Sprintf("恭喜您，数据已全部导入成功！共 %d 条，数据如下：", successNum)}, successMsgArr...)
-	return strings.Join(successMsgArr, "<br/>")
 }

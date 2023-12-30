@@ -225,7 +225,11 @@ func (r *SysDeptImpl) CheckUniqueDept(sysDept model.SysDept) string {
 		return ""
 	}
 	if len(results) > 0 {
-		return fmt.Sprintf("%v", results[0]["str"])
+		v, ok := results[0]["str"].(string)
+		if ok {
+			return v
+		}
+		return ""
 	}
 	return ""
 }

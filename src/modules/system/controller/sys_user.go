@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/constants/admin"
+	"mask_api_gin/src/framework/constants/common"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
@@ -20,15 +21,16 @@ import (
 	"github.com/gin-gonic/gin/binding"
 )
 
-// 实例化控制层 SysUserController 结构体
+// NewSysUser 实例化控制层 SysUserController 结构体
 var NewSysUser = &SysUserController{
 	sysUserService:     service.NewSysUserImpl,
 	sysRoleService:     service.NewSysRoleImpl,
 	sysPostService:     service.NewSysPostImpl,
 	sysDictDataService: service.NewSysDictDataImpl,
+	sysConfigService:   service.NewSysConfigImpl,
 }
 
-// 用户信息
+// SysUserController 用户信息
 //
 // PATH /system/user
 type SysUserController struct {
@@ -40,19 +42,21 @@ type SysUserController struct {
 	sysPostService service.ISysPost
 	// 字典数据服务
 	sysDictDataService service.ISysDictData
+	// 参数配置服务
+	sysConfigService service.ISysConfig
 }
 
-// 用户信息列表
+// List 用户信息列表
 //
 // GET /list
 func (s *SysUserController) List(c *gin.Context) {
-	querys := ctx.QueryMap(c)
+	query := ctx.QueryMap(c)
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
-	data := s.sysUserService.SelectUserPage(querys, dataScopeSQL)
+	data := s.sysUserService.SelectUserPage(query, dataScopeSQL)
 	c.JSON(200, result.Ok(data))
 }
 
-// 用户信息详情
+// Info 用户信息详情
 //
 // GET /:userId
 func (s *SysUserController) Info(c *gin.Context) {
@@ -120,7 +124,7 @@ func (s *SysUserController) Info(c *gin.Context) {
 	}))
 }
 
-// 用户信息新增
+// Add 用户信息新增
 //
 // POST /
 func (s *SysUserController) Add(c *gin.Context) {
@@ -190,7 +194,7 @@ func (s *SysUserController) Add(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 用户信息修改
+// Edit 用户信息修改
 //
 // POST /
 func (s *SysUserController) Edit(c *gin.Context) {
@@ -266,7 +270,7 @@ func (s *SysUserController) Edit(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 用户信息删除
+// Remove 用户信息删除
 //
 // DELETE /:userIds
 func (s *SysUserController) Remove(c *gin.Context) {
@@ -282,6 +286,20 @@ func (s *SysUserController) Remove(c *gin.Context) {
 		c.JSON(200, result.Err(nil))
 		return
 	}
+
+	// 检查是否管理员用户
+	loginUserID := ctx.LoginUserToUserID(c)
+	for _, id := range uniqueIDs {
+		if id == loginUserID {
+			c.JSON(200, result.ErrMsg("当前用户不能删除"))
+			return
+		}
+		if config.IsAdmin(id) {
+			c.JSON(200, result.ErrMsg("不允许操作管理员用户"))
+			return
+		}
+	}
+
 	rows, err := s.sysUserService.DeleteUserByIds(uniqueIDs)
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
@@ -291,7 +309,7 @@ func (s *SysUserController) Remove(c *gin.Context) {
 	c.JSON(200, result.OkMsg(msg))
 }
 
-// 用户重置密码
+// ResetPwd 用户重置密码
 //
 // PUT /resetPwd
 func (s *SysUserController) ResetPwd(c *gin.Context) {
@@ -334,7 +352,7 @@ func (s *SysUserController) ResetPwd(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 用户状态修改
+// Status 用户状态修改
 //
 // PUT /changeStatus
 func (s *SysUserController) Status(c *gin.Context) {
@@ -374,14 +392,14 @@ func (s *SysUserController) Status(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 用户信息列表导出
+// Export 用户信息列表导出
 //
 // POST /export
 func (s *SysUserController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	querys := ctx.BodyJSONMap(c)
+	queryMap := ctx.BodyJSONMap(c)
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
-	data := s.sysUserService.SelectUserPage(querys, dataScopeSQL)
+	data := s.sysUserService.SelectUserPage(queryMap, dataScopeSQL)
 	if data["total"].(int64) == 0 {
 		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return
@@ -450,7 +468,7 @@ func (s *SysUserController) Export(c *gin.Context) {
 	c.FileAttachment(saveFilePath, fileName)
 }
 
-// 用户信息列表导入模板下载
+// Template 用户信息列表导入模板下载
 //
 // GET /importTemplate
 func (s *SysUserController) Template(c *gin.Context) {
@@ -459,7 +477,7 @@ func (s *SysUserController) Template(c *gin.Context) {
 	c.FileAttachment(asserPath, fileName)
 }
 
-// 用户信息列表导入
+// ImportData 用户信息列表导入
 //
 // POST /importData
 func (s *SysUserController) ImportData(c *gin.Context) {
@@ -487,8 +505,156 @@ func (s *SysUserController) ImportData(c *gin.Context) {
 	}
 
 	// 获取操作人名称
-	operName := ctx.LoginUserToUserName(c)
+	operaName := ctx.LoginUserToUserName(c)
 	isUpdateSupport := parse.Boolean(updateSupport)
-	message := s.sysUserService.ImportUser(rows, isUpdateSupport, operName)
+
+	// 读取默认初始密码
+	initPassword := s.sysConfigService.SelectConfigValueByKey("sys.user.initPassword")
+	// 读取用户性别字典数据
+	dictSysUserSex := s.sysDictDataService.SelectDictDataByType("sys_user_sex")
+
+	// 导入记录
+	successNum := 0
+	failureNum := 0
+	var successMsgArr []string
+	var failureMsgArr []string
+	mustItemArr := []string{"B", "C"}
+	for _, row := range rows {
+		// 检查必填列
+		ownItem := true
+		for _, item := range mustItemArr {
+			if v, ok := row[item]; !ok || v == "" {
+				ownItem = false
+				break
+			}
+		}
+		if !ownItem {
+			mustItemArrStr := strings.Join(mustItemArr, "、")
+			failureNum++
+			// 表格中必填列表项，
+			msg := fmt.Sprintf("表格中必填列表项，%s", mustItemArrStr)
+			failureMsgArr = append(failureMsgArr, msg)
+			continue
+		}
+
+		// 用户性别转值
+		sysUserSex := "0"
+		for _, v := range dictSysUserSex {
+			if row["F"] == v.DictLabel {
+				sysUserSex = v.DictValue
+				break
+			}
+		}
+		sysUserStatus := common.STATUS_NO
+		if row["G"] == "正常" {
+			sysUserStatus = common.STATUS_YES
+		}
+
+		// 构建用户实体信息
+		newSysUser := model.SysUser{
+			UserType:    "sys",
+			Password:    initPassword,
+			DeptID:      row["H"],
+			UserName:    row["B"],
+			NickName:    row["C"],
+			PhoneNumber: row["E"],
+			Email:       row["D"],
+			Status:      sysUserStatus,
+			Sex:         sysUserSex,
+		}
+
+		// 行用户编号
+		rowNo := row["A"]
+
+		// 检查手机号码格式并判断是否唯一
+		if newSysUser.PhoneNumber != "" {
+			if regular.ValidMobile(newSysUser.PhoneNumber) {
+				uniquePhone := s.sysUserService.CheckUniquePhone(newSysUser.PhoneNumber, "")
+				if !uniquePhone {
+					// 用户编号：%s 手机号码 %s 已存在
+					msg := fmt.Sprintf("用户编号：%s 手机号码：%s 已存在", rowNo, newSysUser.PhoneNumber)
+					failureNum++
+					failureMsgArr = append(failureMsgArr, msg)
+					continue
+				}
+			} else {
+				// 用户编号：%s 手机号码 %s 格式错误
+				msg := fmt.Sprintf("用户编号：%s 手机号码：%s 格式错误", rowNo, newSysUser.PhoneNumber)
+				failureNum++
+				failureMsgArr = append(failureMsgArr, msg)
+				continue
+			}
+		}
+
+		// 检查邮箱格式并判断是否唯一
+		if newSysUser.Email != "" {
+			if regular.ValidEmail(newSysUser.Email) {
+				uniqueEmail := s.sysUserService.CheckUniqueEmail(newSysUser.Email, "")
+				if !uniqueEmail {
+					// 用户编号：%s 用户邮箱 %s 已存在
+					msg := fmt.Sprintf("用户编号：%s 用户邮箱：%s 已存在", rowNo, newSysUser.Email)
+					failureNum++
+					failureMsgArr = append(failureMsgArr, msg)
+					continue
+				}
+			} else {
+				// 用户编号：%s 用户邮箱 %s 格式错误
+				msg := fmt.Sprintf("用户编号：%s 用户邮箱：%s 格式错误", rowNo, newSysUser.Email)
+				failureNum++
+				failureMsgArr = append(failureMsgArr, msg)
+				continue
+			}
+		}
+
+		// 验证是否存在这个用户
+		userInfo := s.sysUserService.SelectUserByUserName(newSysUser.UserName)
+		if userInfo.UserName != newSysUser.UserName {
+			newSysUser.CreateBy = operaName
+			insertId := s.sysUserService.InsertUser(newSysUser)
+			if insertId != "" {
+				// 用户编号：%s 登录名称 %s 导入成功
+				msg := fmt.Sprintf("用户编号：%s 登录名称：%s 导入成功", rowNo, newSysUser.UserName)
+				successNum++
+				successMsgArr = append(successMsgArr, msg)
+			} else {
+				// 用户编号：%s 登录名称 %s 导入失败
+				msg := fmt.Sprintf("用户编号：%s 登录名称：%s 导入失败", rowNo, newSysUser.UserName)
+				failureNum++
+				failureMsgArr = append(failureMsgArr, msg)
+			}
+			continue
+		}
+
+		// 如果用户已存在 同时 是否更新支持
+		if userInfo.UserName == newSysUser.UserName && isUpdateSupport {
+			newSysUser.UserID = userInfo.UserID
+			newSysUser.UpdateBy = operaName
+			rows := s.sysUserService.UpdateUser(newSysUser)
+			if rows > 0 {
+				// 用户编号：%s 登录名称 %s 更新成功
+				msg := fmt.Sprintf("用户编号：%s 登录名称：%s 更新成功", rowNo, newSysUser.UserName)
+				successNum++
+				successMsgArr = append(successMsgArr, msg)
+			} else {
+				// 用户编号：%s 登录名称 %s 更新失败
+				msg := fmt.Sprintf("用户编号：%s 登录名称：%s 更新失败", rowNo, newSysUser.UserName)
+				failureNum++
+				failureMsgArr = append(failureMsgArr, msg)
+			}
+			continue
+		}
+	}
+
+	message := ""
+	if failureNum > 0 {
+		// 很抱歉，导入失败！共 %d 条数据格式不正确，错误如下：
+		msg := fmt.Sprintf("很抱歉，导入失败！共 %d 条数据格式不正确，错误如下：", failureNum)
+		message = strings.Join(append([]string{msg}, failureMsgArr...), "<br/>")
+	} else {
+		// 恭喜您，数据已全部导入成功！共 %d 条，数据如下：
+		msg := fmt.Sprintf("恭喜您，数据已全部导入成功！共 %d 条，数据如下：", successNum)
+		message = strings.Join(append([]string{msg}, successMsgArr...), "<br/>")
+	}
+
 	c.JSON(200, result.OkMsg(message))
 }
