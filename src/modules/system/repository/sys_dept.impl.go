@@ -310,18 +310,12 @@ func (r *SysDeptImpl) UpdateDept(sysDept model.SysDept) int64 {
 	if sysDept.Ancestors != "" {
 		params["ancestors"] = sysDept.Ancestors
 	}
-	if sysDept.OrderNum > 0 {
+	if sysDept.OrderNum >= 0 {
 		params["order_num"] = sysDept.OrderNum
 	}
-	if sysDept.Leader != "" {
-		params["leader"] = sysDept.Leader
-	}
-	if sysDept.Phone != "" {
-		params["phone"] = sysDept.Phone
-	}
-	if sysDept.Email != "" {
-		params["email"] = sysDept.Email
-	}
+	params["leader"] = sysDept.Leader
+	params["phone"] = sysDept.Phone
+	params["email"] = sysDept.Email
 	if sysDept.Status != "" {
 		params["status"] = sysDept.Status
 	}

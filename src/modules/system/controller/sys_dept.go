@@ -148,6 +148,7 @@ func (s *SysDeptController) Edit(c *gin.Context) {
 		c.JSON(200, result.ErrMsg("没有权限访问部门数据！"))
 		return
 	}
+
 	// 父级ID不为0是要检查
 	if body.ParentID != "0" {
 		deptParent := s.sysDeptService.SelectDeptById(body.ParentID)
