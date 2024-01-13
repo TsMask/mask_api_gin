@@ -19,6 +19,7 @@ import (
 
 // 实例化控制层 SysJobLogController 结构体
 var NewSysJobLog = &SysJobLogController{
+	sysJobService:      service.NewSysJobImpl,
 	sysJobLogService:   service.NewSysJobLogImpl,
 	sysDictDataService: systemService.NewSysDictDataImpl,
 }
@@ -27,6 +28,8 @@ var NewSysJobLog = &SysJobLogController{
 //
 // PATH /monitor/jobLog
 type SysJobLogController struct {
+	// 调度任务服务
+	sysJobService service.ISysJob
 	// 调度任务日志服务
 	sysJobLogService service.ISysJobLog
 	// 字典数据服务
@@ -39,6 +42,11 @@ type SysJobLogController struct {
 func (s *SysJobLogController) List(c *gin.Context) {
 	// 查询参数转换map
 	querys := ctx.QueryMap(c)
+	if v, ok := querys["jobId"]; ok && v != "" && v != "0" {
+		job := s.sysJobService.SelectJobById(v.(string))
+		querys["jobName"] = job.JobName
+		querys["jobGroup"] = job.JobGroup
+	}
 	list := s.sysJobLogService.SelectJobLogPage(querys)
 	c.JSON(200, result.Ok(list))
 }

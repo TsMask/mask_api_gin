@@ -5,7 +5,7 @@ import (
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/repo"
+
 	"mask_api_gin/src/modules/monitor/model"
 	"strings"
 	"time"
@@ -44,7 +44,7 @@ func (r *SysJobLogImpl) convertResultRows(rows []map[string]any) []model.SysJobL
 		sysJobLog := model.SysJobLog{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				repo.SetFieldValue(&sysJobLog, keyMapper, value)
+				datasource.SetFieldValue(&sysJobLog, keyMapper, value)
 			}
 		}
 		arr = append(arr, sysJobLog)
@@ -58,7 +58,7 @@ func (r *SysJobLogImpl) SelectJobLogPage(query map[string]any) map[string]any {
 	var conditions []string
 	var params []any
 	if v, ok := query["jobName"]; ok && v != "" {
-		conditions = append(conditions, "job_name like concat(?, '%')")
+		conditions = append(conditions, "job_name = ?")
 		params = append(params, v)
 	}
 	if v, ok := query["jobGroup"]; ok && v != "" {
@@ -119,7 +119,7 @@ func (r *SysJobLogImpl) SelectJobLogPage(query map[string]any) map[string]any {
 	}
 
 	// 分页
-	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := datasource.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " order by job_log_id desc limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -224,8 +224,8 @@ func (r *SysJobLogImpl) InsertJobLog(sysJobLog model.SysJobLog) string {
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
-	sql := "insert into sys_job_log (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
+	sql := "insert into sys_job_log (" + keys + ")values(" + placeholder + ")"
 
 	db := datasource.DefaultDB()
 	// 开启事务
@@ -252,9 +252,9 @@ func (r *SysJobLogImpl) InsertJobLog(sysJobLog model.SysJobLog) string {
 
 // 批量删除调度任务日志信息
 func (r *SysJobLogImpl) DeleteJobLogByIds(jobLogIds []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(jobLogIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(jobLogIds))
 	sql := "delete from sys_job_log where job_log_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(jobLogIds)
+	parameters := datasource.ConvertIdsSlice(jobLogIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
