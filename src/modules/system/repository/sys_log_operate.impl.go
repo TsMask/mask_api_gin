@@ -244,7 +244,7 @@ func (r *SysLogOperateImpl) InsertSysLogOperate(SysLogOperate model.SysLogOperat
 		params["oper_msg"] = SysLogOperate.OperMsg
 	}
 	if SysLogOperate.Status != "" {
-		params["status"] = SysLogOperate.Status
+		params["status"] = parse.Number(SysLogOperate.Status)
 	}
 	if SysLogOperate.CostTime > 0 {
 		params["cost_time"] = SysLogOperate.CostTime

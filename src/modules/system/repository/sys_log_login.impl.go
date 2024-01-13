@@ -178,7 +178,7 @@ func (r *SysLogLoginImpl) InsertSysLogLogin(SysLogLogin model.SysLogLogin) strin
 		params["user_name"] = SysLogLogin.UserName
 	}
 	if SysLogLogin.Status != "" {
-		params["status"] = SysLogLogin.Status
+		params["status"] = parse.Number(SysLogLogin.Status)
 	}
 	if SysLogLogin.IPAddr != "" {
 		params["ipaddr"] = SysLogLogin.IPAddr
