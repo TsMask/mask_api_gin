@@ -303,7 +303,7 @@ func (r *SysDictDataImpl) InsertDictData(sysDictData model.SysDictData) string {
 func (r *SysDictDataImpl) UpdateDictData(sysDictData model.SysDictData) int64 {
 	// 参数拼接
 	params := make(map[string]any)
-	if sysDictData.DictSort > 0 {
+	if sysDictData.DictSort >= 0 {
 		params["dict_sort"] = sysDictData.DictSort
 	}
 	if sysDictData.DictLabel != "" {
@@ -315,18 +315,12 @@ func (r *SysDictDataImpl) UpdateDictData(sysDictData model.SysDictData) int64 {
 	if sysDictData.DictType != "" {
 		params["dict_type"] = sysDictData.DictType
 	}
-	if sysDictData.TagClass != "" {
-		params["tag_class"] = sysDictData.TagClass
-	}
-	if sysDictData.TagType != "" {
-		params["tag_type"] = sysDictData.TagType
-	}
+	params["tag_class"] = sysDictData.TagClass
+	params["tag_type"] = sysDictData.TagType
 	if sysDictData.Status != "" {
 		params["status"] = sysDictData.Status
 	}
-	if sysDictData.Remark != "" {
-		params["remark"] = sysDictData.Remark
-	}
+	params["remark"] = sysDictData.Remark
 	if sysDictData.UpdateBy != "" {
 		params["update_by"] = sysDictData.UpdateBy
 		params["update_time"] = time.Now().UnixMilli()

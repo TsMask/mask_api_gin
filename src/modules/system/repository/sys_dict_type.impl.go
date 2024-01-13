@@ -300,9 +300,7 @@ func (r *SysDictTypeImpl) UpdateDictType(sysDictType model.SysDictType) int64 {
 	if sysDictType.Status != "" {
 		params["status"] = sysDictType.Status
 	}
-	if sysDictType.Remark != "" {
-		params["remark"] = sysDictType.Remark
-	}
+	params["remark"] = sysDictType.Remark
 	if sysDictType.UpdateBy != "" {
 		params["update_by"] = sysDictType.UpdateBy
 		params["update_time"] = time.Now().UnixMilli()
