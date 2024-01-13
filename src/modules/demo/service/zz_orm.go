@@ -107,13 +107,14 @@ func (s *ZzOrmService) SelectById(id string) (*model.ZzOrm, error) {
 }
 
 // Insert 新增
-func (s *ZzOrmService) Insert(zzOrm model.ZzOrm) (*model.ZzOrm, error) {
-	result := s.db().Create(&zzOrm)
+func (s *ZzOrmService) Insert(zzOrm model.ZzOrm) (model.ZzOrm, error) {
+	orm := zzOrm
+	result := s.db().Create(&orm)
 	if result.Error != nil {
-		return nil, result.Error
+		return orm, result.Error
 	}
 
-	return &zzOrm, nil
+	return orm, nil
 }
 
 // Update 更新

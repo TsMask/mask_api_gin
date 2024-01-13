@@ -4,7 +4,7 @@ package model
 //
 // https://gorm.io/zh_CN/docs/query.html
 type ZzOrm struct {
-	ID         uint   `gorm:"column:id;primaryKey" json:"id"`       // 测试ID
+	ID         int64  `gorm:"column:id;primaryKey" json:"id"`       // 测试ID
 	Title      string `gorm:"column:title" json:"title"`            // 测试标题
 	OrmType    string `gorm:"column:orm_type" json:"ormType"`       // orm类型
 	Status     string `gorm:"column:status" json:"status"`          // 状态（0关闭 1正常）
