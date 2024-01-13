@@ -113,6 +113,7 @@ func (s *AccountImpl) UpdateLoginDateAndIP(loginUser *vo.LoginUser) bool {
 		LoginIP:   sysUser.LoginIP,
 		LoginDate: sysUser.LoginDate,
 		UpdateBy:  sysUser.UserName,
+		Remark:    sysUser.Remark,
 	}
 	rows := s.sysUserService.UpdateUser(userInfo)
 	return rows > 0

@@ -211,6 +211,7 @@ func (s *SysUserController) Edit(c *gin.Context) {
 		return
 	}
 
+	// 检查是否存在
 	user := s.sysUserService.SelectUserById(body.UserID)
 	if user.UserID != body.UserID {
 		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
@@ -328,23 +329,21 @@ func (s *SysUserController) ResetPwd(c *gin.Context) {
 		return
 	}
 
+	// 检查是否存在
 	user := s.sysUserService.SelectUserById(body.UserID)
 	if user.UserID != body.UserID {
 		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
+
 	if !regular.ValidPassword(body.Password) {
 		c.JSON(200, result.ErrMsg("登录密码至少包含大小写字母、数字、特殊符号，且不少于6位"))
 		return
 	}
 
-	userName := ctx.LoginUserToUserName(c)
-	SysUserController := model.SysUser{
-		UserID:   body.UserID,
-		Password: body.Password,
-		UpdateBy: userName,
-	}
-	rows := s.sysUserService.UpdateUser(SysUserController)
+	user.Password = body.Password
+	user.UpdateBy = ctx.LoginUserToUserName(c)
+	rows := s.sysUserService.UpdateUser(user)
 	if rows > 0 {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -365,6 +364,12 @@ func (s *SysUserController) Status(c *gin.Context) {
 		return
 	}
 
+	// 检查是否管理员用户
+	if config.IsAdmin(body.UserID) {
+		c.JSON(200, result.ErrMsg("不允许操作管理员用户"))
+		return
+	}
+
 	// 检查是否存在
 	user := s.sysUserService.SelectUserById(body.UserID)
 	if user.UserID != body.UserID {
@@ -378,13 +383,9 @@ func (s *SysUserController) Status(c *gin.Context) {
 		return
 	}
 
-	userName := ctx.LoginUserToUserName(c)
-	SysUserController := model.SysUser{
-		UserID:   body.UserID,
-		Status:   body.Status,
-		UpdateBy: userName,
-	}
-	rows := s.sysUserService.UpdateUser(SysUserController)
+	user.Status = body.Status
+	user.UpdateBy = ctx.LoginUserToUserName(c)
+	rows := s.sysUserService.UpdateUser(user)
 	if rows > 0 {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -505,7 +506,7 @@ func (s *SysUserController) ImportData(c *gin.Context) {
 	}
 
 	// 获取操作人名称
-	operaName := ctx.LoginUserToUserName(c)
+	operName := ctx.LoginUserToUserName(c)
 	isUpdateSupport := parse.Boolean(updateSupport)
 
 	// 读取默认初始密码
@@ -531,7 +532,6 @@ func (s *SysUserController) ImportData(c *gin.Context) {
 		if !ownItem {
 			mustItemArrStr := strings.Join(mustItemArr, "、")
 			failureNum++
-			// 表格中必填列表项，
 			msg := fmt.Sprintf("表格中必填列表项，%s", mustItemArrStr)
 			failureMsgArr = append(failureMsgArr, msg)
 			continue
@@ -550,18 +550,17 @@ func (s *SysUserController) ImportData(c *gin.Context) {
 			sysUserStatus = common.STATUS_YES
 		}
 
-		// 构建用户实体信息
-		newSysUser := model.SysUser{
-			UserType:    "sys",
-			Password:    initPassword,
-			DeptID:      row["H"],
-			UserName:    row["B"],
-			NickName:    row["C"],
-			PhoneNumber: row["E"],
-			Email:       row["D"],
-			Status:      sysUserStatus,
-			Sex:         sysUserSex,
-		}
+		// 验证是否存在这个用户
+		newSysUser := s.sysUserService.SelectUserByUserName(row["B"])
+		newSysUser.UserType = "sys"
+		newSysUser.Password = initPassword
+		newSysUser.DeptID = row["H"]
+		newSysUser.UserName = row["B"]
+		newSysUser.NickName = row["C"]
+		newSysUser.PhoneNumber = row["E"]
+		newSysUser.Email = row["D"]
+		newSysUser.Status = sysUserStatus
+		newSysUser.Sex = sysUserSex
 
 		// 行用户编号
 		rowNo := row["A"]
@@ -571,14 +570,12 @@ func (s *SysUserController) ImportData(c *gin.Context) {
 			if regular.ValidMobile(newSysUser.PhoneNumber) {
 				uniquePhone := s.sysUserService.CheckUniquePhone(newSysUser.PhoneNumber, "")
 				if !uniquePhone {
-					// 用户编号：%s 手机号码 %s 已存在
 					msg := fmt.Sprintf("用户编号：%s 手机号码：%s 已存在", rowNo, newSysUser.PhoneNumber)
 					failureNum++
 					failureMsgArr = append(failureMsgArr, msg)
 					continue
 				}
 			} else {
-				// 用户编号：%s 手机号码 %s 格式错误
 				msg := fmt.Sprintf("用户编号：%s 手机号码：%s 格式错误", rowNo, newSysUser.PhoneNumber)
 				failureNum++
 				failureMsgArr = append(failureMsgArr, msg)
@@ -591,14 +588,12 @@ func (s *SysUserController) ImportData(c *gin.Context) {
 			if regular.ValidEmail(newSysUser.Email) {
 				uniqueEmail := s.sysUserService.CheckUniqueEmail(newSysUser.Email, "")
 				if !uniqueEmail {
-					// 用户编号：%s 用户邮箱 %s 已存在
 					msg := fmt.Sprintf("用户编号：%s 用户邮箱：%s 已存在", rowNo, newSysUser.Email)
 					failureNum++
 					failureMsgArr = append(failureMsgArr, msg)
 					continue
 				}
 			} else {
-				// 用户编号：%s 用户邮箱 %s 格式错误
 				msg := fmt.Sprintf("用户编号：%s 用户邮箱：%s 格式错误", rowNo, newSysUser.Email)
 				failureNum++
 				failureMsgArr = append(failureMsgArr, msg)
@@ -606,18 +601,14 @@ func (s *SysUserController) ImportData(c *gin.Context) {
 			}
 		}
 
-		// 验证是否存在这个用户
-		userInfo := s.sysUserService.SelectUserByUserName(newSysUser.UserName)
-		if userInfo.UserName != newSysUser.UserName {
-			newSysUser.CreateBy = operaName
+		if newSysUser.UserID == "" {
+			newSysUser.CreateBy = operName
 			insertId := s.sysUserService.InsertUser(newSysUser)
 			if insertId != "" {
-				// 用户编号：%s 登录名称 %s 导入成功
 				msg := fmt.Sprintf("用户编号：%s 登录名称：%s 导入成功", rowNo, newSysUser.UserName)
 				successNum++
 				successMsgArr = append(successMsgArr, msg)
 			} else {
-				// 用户编号：%s 登录名称 %s 导入失败
 				msg := fmt.Sprintf("用户编号：%s 登录名称：%s 导入失败", rowNo, newSysUser.UserName)
 				failureNum++
 				failureMsgArr = append(failureMsgArr, msg)
@@ -626,17 +617,14 @@ func (s *SysUserController) ImportData(c *gin.Context) {
 		}
 
 		// 如果用户已存在 同时 是否更新支持
-		if userInfo.UserName == newSysUser.UserName && isUpdateSupport {
-			newSysUser.UserID = userInfo.UserID
-			newSysUser.UpdateBy = operaName
+		if newSysUser.UserID != "" && isUpdateSupport {
+			newSysUser.UpdateBy = operName
 			rows := s.sysUserService.UpdateUser(newSysUser)
 			if rows > 0 {
-				// 用户编号：%s 登录名称 %s 更新成功
 				msg := fmt.Sprintf("用户编号：%s 登录名称：%s 更新成功", rowNo, newSysUser.UserName)
 				successNum++
 				successMsgArr = append(successMsgArr, msg)
 			} else {
-				// 用户编号：%s 登录名称 %s 更新失败
 				msg := fmt.Sprintf("用户编号：%s 登录名称：%s 更新失败", rowNo, newSysUser.UserName)
 				failureNum++
 				failureMsgArr = append(failureMsgArr, msg)
@@ -647,11 +635,9 @@ func (s *SysUserController) ImportData(c *gin.Context) {
 
 	message := ""
 	if failureNum > 0 {
-		// 很抱歉，导入失败！共 %d 条数据格式不正确，错误如下：
 		msg := fmt.Sprintf("很抱歉，导入失败！共 %d 条数据格式不正确，错误如下：", failureNum)
 		message = strings.Join(append([]string{msg}, failureMsgArr...), "<br/>")
 	} else {
-		// 恭喜您，数据已全部导入成功！共 %d 条，数据如下：
 		msg := fmt.Sprintf("恭喜您，数据已全部导入成功！共 %d 条，数据如下：", successNum)
 		message = strings.Join(append([]string{msg}, successMsgArr...), "<br/>")
 	}

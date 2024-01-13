@@ -420,9 +420,7 @@ func (r *SysUserImpl) InsertUser(sysUser model.SysUser) string {
 	if sysUser.Status != "" {
 		params["status"] = sysUser.Status
 	}
-	if sysUser.Remark != "" {
-		params["remark"] = sysUser.Remark
-	}
+	params["remark"] = sysUser.Remark
 	if sysUser.CreateBy != "" {
 		params["create_by"] = sysUser.CreateBy
 		params["create_time"] = time.Now().UnixMilli()
