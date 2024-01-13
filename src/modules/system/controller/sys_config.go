@@ -94,18 +94,18 @@ func (s *SysConfigController) Edit(c *gin.Context) {
 		return
 	}
 
+	// 检查是否存在
+	config := s.sysConfigService.SelectConfigById(body.ConfigID)
+	if config.ConfigID != body.ConfigID {
+		c.JSON(200, result.ErrMsg("没有权限访问参数配置数据！"))
+		return
+	}
+
 	// 检查属性值唯一
 	uniqueConfigKey := s.sysConfigService.CheckUniqueConfigKey(body.ConfigKey, body.ConfigID)
 	if !uniqueConfigKey {
 		msg := fmt.Sprintf("参数配置修改【%s】失败，参数键名已存在", body.ConfigKey)
 		c.JSON(200, result.ErrMsg(msg))
-		return
-	}
-
-	// 检查是否存在
-	config := s.sysConfigService.SelectConfigById(body.ConfigID)
-	if config.ConfigID != body.ConfigID {
-		c.JSON(200, result.ErrMsg("没有权限访问参数配置数据！"))
 		return
 	}
 

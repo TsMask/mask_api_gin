@@ -309,9 +309,7 @@ func (r *SysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int64 {
 	if sysConfig.ConfigType != "" {
 		params["config_type"] = sysConfig.ConfigType
 	}
-	if sysConfig.Remark != "" {
-		params["remark"] = sysConfig.Remark
-	}
+	params["remark"] = sysConfig.Remark
 	if sysConfig.UpdateBy != "" {
 		params["update_by"] = sysConfig.UpdateBy
 		params["update_time"] = time.Now().UnixMilli()
