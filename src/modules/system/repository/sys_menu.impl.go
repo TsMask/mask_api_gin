@@ -259,7 +259,7 @@ func (r *SysMenuImpl) InsertMenu(sysMenu model.SysMenu) string {
 	if sysMenu.MenuName != "" {
 		params["menu_name"] = sysMenu.MenuName
 	}
-	if sysMenu.MenuSort > 0 {
+	if sysMenu.MenuSort >= 0 {
 		params["menu_sort"] = sysMenu.MenuSort
 	}
 	if sysMenu.Path != "" {
@@ -269,19 +269,19 @@ func (r *SysMenuImpl) InsertMenu(sysMenu model.SysMenu) string {
 		params["component"] = sysMenu.Component
 	}
 	if sysMenu.IsFrame != "" {
-		params["is_frame"] = sysMenu.IsFrame
+		params["is_frame"] = parse.Number(sysMenu.IsFrame)
 	}
 	if sysMenu.IsCache != "" {
-		params["is_cache"] = sysMenu.IsCache
+		params["is_cache"] = parse.Number(sysMenu.IsCache)
 	}
 	if sysMenu.MenuType != "" {
 		params["menu_type"] = sysMenu.MenuType
 	}
 	if sysMenu.Visible != "" {
-		params["visible"] = sysMenu.Visible
+		params["visible"] = parse.Number(sysMenu.Visible)
 	}
 	if sysMenu.Status != "" {
-		params["status"] = sysMenu.Status
+		params["status"] = parse.Number(sysMenu.Status)
 	}
 	if sysMenu.Perms != "" {
 		params["perms"] = sysMenu.Perms
@@ -308,8 +308,7 @@ func (r *SysMenuImpl) InsertMenu(sysMenu model.SysMenu) string {
 		params["is_frame"] = "1"
 		params["visible"] = "1"
 		params["status"] = "1"
-	}
-	if sysMenu.MenuType == menu.TYPE_DIR {
+	} else if sysMenu.MenuType == menu.TYPE_DIR {
 		params["component"] = ""
 		params["perms"] = ""
 	}
@@ -354,7 +353,7 @@ func (r *SysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int64 {
 	if sysMenu.MenuName != "" {
 		params["menu_name"] = sysMenu.MenuName
 	}
-	if sysMenu.MenuSort > 0 {
+	if sysMenu.MenuSort >= 0 {
 		params["menu_sort"] = sysMenu.MenuSort
 	}
 	if sysMenu.Path != "" {
@@ -364,19 +363,19 @@ func (r *SysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int64 {
 		params["component"] = sysMenu.Component
 	}
 	if sysMenu.IsFrame != "" {
-		params["is_frame"] = sysMenu.IsFrame
+		params["is_frame"] = parse.Number(sysMenu.IsFrame)
 	}
 	if sysMenu.IsCache != "" {
-		params["is_cache"] = sysMenu.IsCache
+		params["is_cache"] = parse.Number(sysMenu.IsCache)
 	}
 	if sysMenu.MenuType != "" {
 		params["menu_type"] = sysMenu.MenuType
 	}
 	if sysMenu.Visible != "" {
-		params["visible"] = sysMenu.Visible
+		params["visible"] = parse.Number(sysMenu.Visible)
 	}
 	if sysMenu.Status != "" {
-		params["status"] = sysMenu.Status
+		params["status"] = parse.Number(sysMenu.Status)
 	}
 	if sysMenu.Perms != "" {
 		params["perms"] = sysMenu.Perms
@@ -386,9 +385,7 @@ func (r *SysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int64 {
 	} else {
 		params["icon"] = "#"
 	}
-	if sysMenu.Remark != "" {
-		params["remark"] = sysMenu.Remark
-	}
+	params["remark"] = sysMenu.Remark
 	if sysMenu.UpdateBy != "" {
 		params["update_by"] = sysMenu.UpdateBy
 		params["update_time"] = time.Now().UnixMilli()
@@ -403,8 +400,7 @@ func (r *SysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int64 {
 		params["is_frame"] = "1"
 		params["visible"] = "1"
 		params["status"] = "1"
-	}
-	if sysMenu.MenuType == menu.TYPE_DIR {
+	} else if sysMenu.MenuType == menu.TYPE_DIR {
 		params["component"] = ""
 		params["perms"] = ""
 	}
