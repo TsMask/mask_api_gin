@@ -5,7 +5,6 @@ import (
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 )
@@ -32,9 +31,9 @@ func (r *SysRoleMenuImpl) CheckMenuExistRole(menuId string) int64 {
 
 // DeleteRoleMenu 批量删除角色和菜单关联
 func (r *SysRoleMenuImpl) DeleteRoleMenu(roleIds []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(roleIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(roleIds))
 	sql := "delete from sys_role_menu where role_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(roleIds)
+	parameters := datasource.ConvertIdsSlice(roleIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
@@ -45,9 +44,9 @@ func (r *SysRoleMenuImpl) DeleteRoleMenu(roleIds []string) int64 {
 
 // DeleteMenuRole 批量删除菜单和角色关联
 func (r *SysRoleMenuImpl) DeleteMenuRole(menuIds []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(menuIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(menuIds))
 	sql := "delete from sys_role_menu where menu_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(menuIds)
+	parameters := datasource.ConvertIdsSlice(menuIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)

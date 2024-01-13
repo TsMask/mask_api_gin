@@ -4,7 +4,6 @@ import (
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/monitor/model"
 	"strings"
 	"time"
@@ -49,7 +48,7 @@ func (r *SysJobImpl) convertResultRows(rows []map[string]any) []model.SysJob {
 		sysJob := model.SysJob{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				repo.SetFieldValue(&sysJob, keyMapper, value)
+				datasource.SetFieldValue(&sysJob, keyMapper, value)
 			}
 		}
 		arr = append(arr, sysJob)
@@ -106,7 +105,7 @@ func (r *SysJobImpl) SelectJobPage(query map[string]any) map[string]any {
 	}
 
 	// 分页
-	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := datasource.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -166,9 +165,9 @@ func (r *SysJobImpl) SelectJobList(sysJob model.SysJob) []model.SysJob {
 
 // SelectJobByIds 通过调度ID查询调度任务信息
 func (r *SysJobImpl) SelectJobByIds(jobIds []string) []model.SysJob {
-	placeholder := repo.KeyPlaceholderByQuery(len(jobIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(jobIds))
 	querySql := r.selectSql + " where job_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(jobIds)
+	parameters := datasource.ConvertIdsSlice(jobIds)
 	results, err := datasource.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -260,8 +259,8 @@ func (r *SysJobImpl) InsertJob(sysJob model.SysJob) string {
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
-	sql := "insert into sys_job (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
+	sql := "insert into sys_job (" + keys + ")values(" + placeholder + ")"
 
 	db := datasource.DefaultDB()
 	// 开启事务
@@ -326,8 +325,8 @@ func (r *SysJobImpl) UpdateJob(sysJob model.SysJob) int64 {
 	}
 
 	// 构建执行语句
-	keys, values := repo.KeyValueByUpdate(params)
-	sql := "update sys_job set " + strings.Join(keys, ",") + " where job_id = ?"
+	keys, values := datasource.KeyValueByUpdate(params)
+	sql := "update sys_job set " + keys + " where job_id = ?"
 
 	// 执行更新
 	values = append(values, sysJob.JobID)
@@ -341,9 +340,9 @@ func (r *SysJobImpl) UpdateJob(sysJob model.SysJob) int64 {
 
 // DeleteJobByIds 批量删除调度任务信息
 func (r *SysJobImpl) DeleteJobByIds(jobIds []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(jobIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(jobIds))
 	sql := "delete from sys_job where job_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(jobIds)
+	parameters := datasource.ConvertIdsSlice(jobIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)

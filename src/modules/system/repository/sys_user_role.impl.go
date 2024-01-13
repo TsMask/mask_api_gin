@@ -5,7 +5,6 @@ import (
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 )
@@ -47,9 +46,9 @@ func (r *SysUserRoleImpl) BatchUserRole(sysUserRoles []model.SysUserRole) int64 
 
 // DeleteUserRole 批量删除用户和角色关联
 func (r *SysUserRoleImpl) DeleteUserRole(userIds []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(userIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(userIds))
 	sql := "delete from sys_user_role where user_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(userIds)
+	parameters := datasource.ConvertIdsSlice(userIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
@@ -60,9 +59,9 @@ func (r *SysUserRoleImpl) DeleteUserRole(userIds []string) int64 {
 
 // DeleteUserRoleByRoleId 批量取消授权用户角色
 func (r *SysUserRoleImpl) DeleteUserRoleByRoleId(roleId string, userIds []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(userIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(userIds))
 	sql := "delete from sys_user_role where role_id= ? and user_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(userIds)
+	parameters := datasource.ConvertIdsSlice(userIds)
 	parameters = append([]any{roleId}, parameters...)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {

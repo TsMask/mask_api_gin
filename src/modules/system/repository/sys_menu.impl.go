@@ -6,7 +6,7 @@ import (
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/repo"
+
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 	"time"
@@ -65,7 +65,7 @@ func (r *SysMenuImpl) convertResultRows(rows []map[string]any) []model.SysMenu {
 		sysMenu := model.SysMenu{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				repo.SetFieldValue(&sysMenu, keyMapper, value)
+				datasource.SetFieldValue(&sysMenu, keyMapper, value)
 			}
 		}
 		arr = append(arr, sysMenu)
@@ -210,9 +210,9 @@ func (r *SysMenuImpl) SelectMenuListByRoleId(roleId string, menuCheckStrictly bo
 
 // SelectMenuByIds 根据菜单ID查询信息
 func (r *SysMenuImpl) SelectMenuByIds(menuIds []string) []model.SysMenu {
-	placeholder := repo.KeyPlaceholderByQuery(len(menuIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(menuIds))
 	querySql := r.selectSql + " where m.menu_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(menuIds)
+	parameters := datasource.ConvertIdsSlice(menuIds)
 	results, err := datasource.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -315,8 +315,8 @@ func (r *SysMenuImpl) InsertMenu(sysMenu model.SysMenu) string {
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
-	sql := "insert into sys_menu (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
+	sql := "insert into sys_menu (" + keys + ")values(" + placeholder + ")"
 
 	db := datasource.DefaultDB()
 	// 开启事务
@@ -410,8 +410,8 @@ func (r *SysMenuImpl) UpdateMenu(sysMenu model.SysMenu) int64 {
 	}
 
 	// 构建执行语句
-	keys, values := repo.KeyValueByUpdate(params)
-	sql := "update sys_menu set " + strings.Join(keys, ",") + " where menu_id = ?"
+	keys, values := datasource.KeyValueByUpdate(params)
+	sql := "update sys_menu set " + keys + " where menu_id = ?"
 
 	// 执行更新
 	values = append(values, sysMenu.MenuID)

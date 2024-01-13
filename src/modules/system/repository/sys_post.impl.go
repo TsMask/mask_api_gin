@@ -4,7 +4,7 @@ import (
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/repo"
+
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 	"time"
@@ -45,7 +45,7 @@ func (r *SysPostImpl) convertResultRows(rows []map[string]any) []model.SysPost {
 		sysPost := model.SysPost{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				repo.SetFieldValue(&sysPost, keyMapper, value)
+				datasource.SetFieldValue(&sysPost, keyMapper, value)
 			}
 		}
 		arr = append(arr, sysPost)
@@ -98,7 +98,7 @@ func (r *SysPostImpl) SelectPostPage(query map[string]any) map[string]any {
 	}
 
 	// 分页
-	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := datasource.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " order by post_sort limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -152,9 +152,9 @@ func (r *SysPostImpl) SelectPostList(sysPost model.SysPost) []model.SysPost {
 
 // SelectPostByIds 通过岗位ID查询岗位信息
 func (r *SysPostImpl) SelectPostByIds(postIds []string) []model.SysPost {
-	placeholder := repo.KeyPlaceholderByQuery(len(postIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(postIds))
 	querySql := r.selectSql + " where post_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(postIds)
+	parameters := datasource.ConvertIdsSlice(postIds)
 	results, err := datasource.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -183,9 +183,9 @@ func (r *SysPostImpl) SelectPostListByUserId(userId string) []model.SysPost {
 
 // DeletePostByIds 批量删除岗位信息
 func (r *SysPostImpl) DeletePostByIds(postIds []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(postIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(postIds))
 	sql := "delete from sys_post where post_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(postIds)
+	parameters := datasource.ConvertIdsSlice(postIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
@@ -219,8 +219,8 @@ func (r *SysPostImpl) UpdatePost(sysPost model.SysPost) int64 {
 	}
 
 	// 构建执行语句
-	keys, values := repo.KeyValueByUpdate(params)
-	sql := "update sys_post set " + strings.Join(keys, ",") + " where post_id = ?"
+	keys, values := datasource.KeyValueByUpdate(params)
+	sql := "update sys_post set " + keys + " where post_id = ?"
 
 	// 执行更新
 	values = append(values, sysPost.PostID)
@@ -260,8 +260,8 @@ func (r *SysPostImpl) InsertPost(sysPost model.SysPost) string {
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
-	sql := "insert into sys_post (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
+	sql := "insert into sys_post (" + keys + ")values(" + placeholder + ")"
 
 	db := datasource.DefaultDB()
 	// 开启事务

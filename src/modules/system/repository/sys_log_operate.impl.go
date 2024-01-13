@@ -5,7 +5,7 @@ import (
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/repo"
+
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 	"time"
@@ -53,7 +53,7 @@ func (r *SysLogOperateImpl) convertResultRows(rows []map[string]any) []model.Sys
 		SysLogOperate := model.SysLogOperate{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				repo.SetFieldValue(&SysLogOperate, keyMapper, value)
+				datasource.SetFieldValue(&SysLogOperate, keyMapper, value)
 			}
 		}
 		arr = append(arr, SysLogOperate)
@@ -128,7 +128,7 @@ func (r *SysLogOperateImpl) SelectSysLogOperatePage(query map[string]any) map[st
 	}
 
 	// 分页
-	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := datasource.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " order by oper_id desc limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -251,8 +251,8 @@ func (r *SysLogOperateImpl) InsertSysLogOperate(SysLogOperate model.SysLogOperat
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
-	sql := "insert into sys_log_operate (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
+	sql := "insert into sys_log_operate (" + keys + ")values(" + placeholder + ")"
 
 	db := datasource.DefaultDB()
 	// 开启事务
@@ -279,9 +279,9 @@ func (r *SysLogOperateImpl) InsertSysLogOperate(SysLogOperate model.SysLogOperat
 
 // DeleteSysLogOperateByIds 批量删除系统操作日志
 func (r *SysLogOperateImpl) DeleteSysLogOperateByIds(operIds []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(operIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(operIds))
 	sql := "delete from sys_log_operate where oper_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(operIds)
+	parameters := datasource.ConvertIdsSlice(operIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)

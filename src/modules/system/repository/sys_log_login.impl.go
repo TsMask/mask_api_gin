@@ -5,7 +5,7 @@ import (
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/repo"
+
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 	"time"
@@ -44,7 +44,7 @@ func (r *SysLogLoginImpl) convertResultRows(rows []map[string]any) []model.SysLo
 		SysLogLogin := model.SysLogLogin{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				repo.SetFieldValue(&SysLogLogin, keyMapper, value)
+				datasource.SetFieldValue(&SysLogLogin, keyMapper, value)
 			}
 		}
 		arr = append(arr, SysLogLogin)
@@ -115,7 +115,7 @@ func (r *SysLogLoginImpl) SelectSysLogLoginPage(query map[string]any) map[string
 	}
 
 	// 分页
-	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := datasource.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " order by login_id desc limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -197,8 +197,8 @@ func (r *SysLogLoginImpl) InsertSysLogLogin(SysLogLogin model.SysLogLogin) strin
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
-	sql := "insert into sys_log_login (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
+	sql := "insert into sys_log_login (" + keys + ")values(" + placeholder + ")"
 
 	db := datasource.DefaultDB()
 	// 开启事务
@@ -225,9 +225,9 @@ func (r *SysLogLoginImpl) InsertSysLogLogin(SysLogLogin model.SysLogLogin) strin
 
 // DeleteSysLogLoginByIds 批量删除系统登录日志
 func (r *SysLogLoginImpl) DeleteSysLogLoginByIds(loginIds []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(loginIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(loginIds))
 	sql := "delete from sys_log_login where login_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(loginIds)
+	parameters := datasource.ConvertIdsSlice(loginIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)

@@ -5,7 +5,7 @@ import (
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/repo"
+
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 	"time"
@@ -51,7 +51,7 @@ func (r *SysDeptImpl) convertResultRows(rows []map[string]any) []model.SysDept {
 		sysDept := model.SysDept{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				repo.SetFieldValue(&sysDept, keyMapper, value)
+				datasource.SetFieldValue(&sysDept, keyMapper, value)
 			}
 		}
 		arr = append(arr, sysDept)
@@ -271,8 +271,8 @@ func (r *SysDeptImpl) InsertDept(sysDept model.SysDept) string {
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
-	sql := "insert into sys_dept (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
+	sql := "insert into sys_dept (" + keys + ")values(" + placeholder + ")"
 
 	db := datasource.DefaultDB()
 	// 开启事务
@@ -331,8 +331,8 @@ func (r *SysDeptImpl) UpdateDept(sysDept model.SysDept) int64 {
 	}
 
 	// 构建执行语句
-	keys, values := repo.KeyValueByUpdate(params)
-	sql := "update sys_dept set " + strings.Join(keys, ",") + " where dept_id = ?"
+	keys, values := datasource.KeyValueByUpdate(params)
+	sql := "update sys_dept set " + keys + " where dept_id = ?"
 
 	// 执行更新
 	values = append(values, sysDept.DeptID)
@@ -346,9 +346,9 @@ func (r *SysDeptImpl) UpdateDept(sysDept model.SysDept) int64 {
 
 // UpdateDeptStatusNormal 修改所在部门正常状态
 func (r *SysDeptImpl) UpdateDeptStatusNormal(deptIds []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(deptIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(deptIds))
 	sql := "update sys_dept set status = '1' where dept_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(deptIds)
+	parameters := datasource.ConvertIdsSlice(deptIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("update err => %v", err)
@@ -374,7 +374,7 @@ func (r *SysDeptImpl) UpdateDeptChildren(sysDepts []model.SysDept) int64 {
 	}
 
 	cases := strings.Join(conditions, " ")
-	placeholders := repo.KeyPlaceholderByQuery(len(params))
+	placeholders := datasource.KeyPlaceholderByQuery(len(params))
 	sql := "update sys_dept set ancestors = CASE " + cases + " END where dept_id in (" + placeholders + ")"
 	results, err := datasource.ExecDB("", sql, params)
 	if err != nil {

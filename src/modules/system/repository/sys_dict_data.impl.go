@@ -4,7 +4,6 @@ import (
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 	"time"
@@ -48,7 +47,7 @@ func (r *SysDictDataImpl) convertResultRows(rows []map[string]any) []model.SysDi
 		sysDictData := model.SysDictData{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				repo.SetFieldValue(&sysDictData, keyMapper, value)
+				datasource.SetFieldValue(&sysDictData, keyMapper, value)
 			}
 		}
 		arr = append(arr, sysDictData)
@@ -101,7 +100,7 @@ func (r *SysDictDataImpl) SelectDictDataPage(query map[string]any) map[string]an
 	}
 
 	// 分页
-	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := datasource.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " order by dict_sort asc limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -158,9 +157,9 @@ func (r *SysDictDataImpl) SelectDictDataList(sysDictData model.SysDictData) []mo
 
 // SelectDictDataByCodes 根据字典数据编码查询信息
 func (r *SysDictDataImpl) SelectDictDataByCodes(dictCodes []string) []model.SysDictData {
-	placeholder := repo.KeyPlaceholderByQuery(len(dictCodes))
+	placeholder := datasource.KeyPlaceholderByQuery(len(dictCodes))
 	querySql := r.selectSql + " where dict_code in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(dictCodes)
+	parameters := datasource.ConvertIdsSlice(dictCodes)
 	results, err := datasource.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -229,9 +228,9 @@ func (r *SysDictDataImpl) CheckUniqueDictData(sysDictData model.SysDictData) str
 
 // DeleteDictDataByCodes 批量删除字典数据信息
 func (r *SysDictDataImpl) DeleteDictDataByCodes(dictCodes []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(dictCodes))
+	placeholder := datasource.KeyPlaceholderByQuery(len(dictCodes))
 	sql := "delete from sys_dict_data where dict_code in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(dictCodes)
+	parameters := datasource.ConvertIdsSlice(dictCodes)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
@@ -274,8 +273,8 @@ func (r *SysDictDataImpl) InsertDictData(sysDictData model.SysDictData) string {
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
-	sql := "insert into sys_dict_data (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
+	sql := "insert into sys_dict_data (" + keys + ")values(" + placeholder + ")"
 
 	db := datasource.DefaultDB()
 	// 开启事务
@@ -334,8 +333,8 @@ func (r *SysDictDataImpl) UpdateDictData(sysDictData model.SysDictData) int64 {
 	}
 
 	// 构建执行语句
-	keys, values := repo.KeyValueByUpdate(params)
-	sql := "update sys_dict_data set " + strings.Join(keys, ",") + " where dict_code = ?"
+	keys, values := datasource.KeyValueByUpdate(params)
+	sql := "update sys_dict_data set " + keys + " where dict_code = ?"
 
 	// 执行更新
 	values = append(values, sysDictData.DictCode)

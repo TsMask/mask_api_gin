@@ -6,7 +6,7 @@ import (
 	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/repo"
+
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 	"time"
@@ -89,13 +89,13 @@ func (r *SysUserImpl) convertResultRows(rows []map[string]any) []model.SysUser {
 
 		for key, value := range row {
 			if keyMapper, ok := r.sysUserMap[key]; ok {
-				repo.SetFieldValue(&sysUser, keyMapper, value)
+				datasource.SetFieldValue(&sysUser, keyMapper, value)
 			}
 			if keyMapper, ok := r.sysDeptMap[key]; ok {
-				repo.SetFieldValue(&sysDept, keyMapper, value)
+				datasource.SetFieldValue(&sysDept, keyMapper, value)
 			}
 			if keyMapper, ok := r.sysRoleMap[key]; ok {
-				repo.SetFieldValue(&sysRole, keyMapper, value)
+				datasource.SetFieldValue(&sysRole, keyMapper, value)
 			}
 		}
 
@@ -200,7 +200,7 @@ func (r *SysUserImpl) SelectUserPage(queryMap map[string]any, dataScopeSQL strin
 	}
 
 	// 分页
-	pageNum, pageSize := repo.PageNumSize(queryMap["pageNum"], queryMap["pageSize"])
+	pageNum, pageSize := datasource.PageNumSize(queryMap["pageNum"], queryMap["pageSize"])
 	pageSql := " limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -285,7 +285,7 @@ func (r *SysUserImpl) SelectAllocatedPage(query map[string]any, dataScopeSQL str
 	}
 
 	// 分页
-	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := datasource.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -354,9 +354,9 @@ func (r *SysUserImpl) SelectUserList(sysUser model.SysUser, dataScopeSQL string)
 
 // SelectUserByIds 通过用户ID查询用户
 func (r *SysUserImpl) SelectUserByIds(userIds []string) []model.SysUser {
-	placeholder := repo.KeyPlaceholderByQuery(len(userIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(userIds))
 	querySql := r.selectSql + " where u.del_flag = '0' and u.user_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(userIds)
+	parameters := datasource.ConvertIdsSlice(userIds)
 	results, err := datasource.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -429,8 +429,8 @@ func (r *SysUserImpl) InsertUser(sysUser model.SysUser) string {
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
-	sql := "insert into sys_user (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
+	sql := "insert into sys_user (" + keys + ")values(" + placeholder + ")"
 
 	db := datasource.DefaultDB()
 	// 开启事务
@@ -513,8 +513,8 @@ func (r *SysUserImpl) UpdateUser(sysUser model.SysUser) int64 {
 	}
 
 	// 构建执行语句
-	keys, values := repo.KeyValueByUpdate(params)
-	sql := "update sys_user set " + strings.Join(keys, ",") + " where user_id = ?"
+	keys, values := datasource.KeyValueByUpdate(params)
+	sql := "update sys_user set " + keys + " where user_id = ?"
 
 	// 执行更新
 	values = append(values, sysUser.UserID)
@@ -528,9 +528,9 @@ func (r *SysUserImpl) UpdateUser(sysUser model.SysUser) int64 {
 
 // DeleteUserByIds 批量删除用户信息
 func (r *SysUserImpl) DeleteUserByIds(userIds []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(userIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(userIds))
 	sql := "update sys_user set del_flag = '1' where user_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(userIds)
+	parameters := datasource.ConvertIdsSlice(userIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("update err => %v", err)

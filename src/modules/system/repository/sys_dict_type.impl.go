@@ -5,7 +5,7 @@ import (
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/repo"
+
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 	"time"
@@ -45,7 +45,7 @@ func (r *SysDictTypeImpl) convertResultRows(rows []map[string]any) []model.SysDi
 		sysDictType := model.SysDictType{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				repo.SetFieldValue(&sysDictType, keyMapper, value)
+				datasource.SetFieldValue(&sysDictType, keyMapper, value)
 			}
 		}
 		arr = append(arr, sysDictType)
@@ -116,7 +116,7 @@ func (r *SysDictTypeImpl) SelectDictTypePage(query map[string]any) map[string]an
 	}
 
 	// 分页
-	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := datasource.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -172,9 +172,9 @@ func (r *SysDictTypeImpl) SelectDictTypeList(sysDictType model.SysDictType) []mo
 
 // SelectDictTypeByIDs 根据字典类型ID查询信息
 func (r *SysDictTypeImpl) SelectDictTypeByIDs(dictIDs []string) []model.SysDictType {
-	placeholder := repo.KeyPlaceholderByQuery(len(dictIDs))
+	placeholder := datasource.KeyPlaceholderByQuery(len(dictIDs))
 	querySql := r.selectSql + " where dict_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(dictIDs)
+	parameters := datasource.ConvertIdsSlice(dictIDs)
 	results, err := datasource.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -261,8 +261,8 @@ func (r *SysDictTypeImpl) InsertDictType(sysDictType model.SysDictType) string {
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
-	sql := "insert into sys_dict_type (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
+	sql := "insert into sys_dict_type (" + keys + ")values(" + placeholder + ")"
 
 	db := datasource.DefaultDB()
 	// 开启事务
@@ -309,8 +309,8 @@ func (r *SysDictTypeImpl) UpdateDictType(sysDictType model.SysDictType) int64 {
 	}
 
 	// 构建执行语句
-	keys, values := repo.KeyValueByUpdate(params)
-	sql := "update sys_dict_type set " + strings.Join(keys, ",") + " where dict_id = ?"
+	keys, values := datasource.KeyValueByUpdate(params)
+	sql := "update sys_dict_type set " + keys + " where dict_id = ?"
 
 	// 执行更新
 	values = append(values, sysDictType.DictID)
@@ -324,9 +324,9 @@ func (r *SysDictTypeImpl) UpdateDictType(sysDictType model.SysDictType) int64 {
 
 // DeleteDictTypeByIDs 批量删除字典类型信息
 func (r *SysDictTypeImpl) DeleteDictTypeByIDs(dictIDs []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(dictIDs))
+	placeholder := datasource.KeyPlaceholderByQuery(len(dictIDs))
 	sql := "delete from sys_dict_type where dict_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(dictIDs)
+	parameters := datasource.ConvertIdsSlice(dictIDs)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)

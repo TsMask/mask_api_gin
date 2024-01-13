@@ -5,7 +5,7 @@ import (
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/repo"
+
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 	"time"
@@ -46,7 +46,7 @@ func (r *SysConfigImpl) convertResultRows(rows []map[string]any) []model.SysConf
 		sysConfig := model.SysConfig{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				repo.SetFieldValue(&sysConfig, keyMapper, value)
+				datasource.SetFieldValue(&sysConfig, keyMapper, value)
 			}
 		}
 		arr = append(arr, sysConfig)
@@ -117,7 +117,7 @@ func (r *SysConfigImpl) SelectConfigPage(query map[string]any) map[string]any {
 	}
 
 	// 分页
-	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := datasource.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -195,9 +195,9 @@ func (r *SysConfigImpl) SelectConfigValueByKey(configKey string) string {
 
 // SelectConfigByIds 通过配置ID查询参数配置信息
 func (r *SysConfigImpl) SelectConfigByIds(configIds []string) []model.SysConfig {
-	placeholder := repo.KeyPlaceholderByQuery(len(configIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(configIds))
 	querySql := r.selectSql + " where config_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(configIds)
+	parameters := datasource.ConvertIdsSlice(configIds)
 	results, err := datasource.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -267,8 +267,8 @@ func (r *SysConfigImpl) InsertConfig(sysConfig model.SysConfig) string {
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
-	sql := "insert into sys_config (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
+	sql := "insert into sys_config (" + keys + ")values(" + placeholder + ")"
 
 	db := datasource.DefaultDB()
 	// 开启事务
@@ -318,8 +318,8 @@ func (r *SysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int64 {
 	}
 
 	// 构建执行语句
-	keys, values := repo.KeyValueByUpdate(params)
-	sql := "update sys_config set " + strings.Join(keys, ",") + " where config_id = ?"
+	keys, values := datasource.KeyValueByUpdate(params)
+	sql := "update sys_config set " + keys + " where config_id = ?"
 
 	// 执行更新
 	values = append(values, sysConfig.ConfigID)
@@ -333,9 +333,9 @@ func (r *SysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int64 {
 
 // DeleteConfigByIds 批量删除参数配置信息
 func (r *SysConfigImpl) DeleteConfigByIds(configIds []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(configIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(configIds))
 	sql := "delete from sys_config where config_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(configIds)
+	parameters := datasource.ConvertIdsSlice(configIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)

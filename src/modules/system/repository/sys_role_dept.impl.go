@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"mask_api_gin/src/framework/datasource"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/repo"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 )
@@ -17,9 +16,9 @@ type SysRoleDeptImpl struct{}
 
 // DeleteRoleDept 批量删除角色部门关联信息
 func (r *SysRoleDeptImpl) DeleteRoleDept(roleIds []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(roleIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(roleIds))
 	sql := "delete from sys_role_dept where role_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(roleIds)
+	parameters := datasource.ConvertIdsSlice(roleIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
@@ -30,9 +29,9 @@ func (r *SysRoleDeptImpl) DeleteRoleDept(roleIds []string) int64 {
 
 // DeleteDeptRole 批量删除部门角色关联信息
 func (r *SysRoleDeptImpl) DeleteDeptRole(deptIds []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(deptIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(deptIds))
 	sql := "delete from sys_role_dept where dept_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(deptIds)
+	parameters := datasource.ConvertIdsSlice(deptIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)

@@ -5,7 +5,7 @@ import (
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/repo"
+
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 	"time"
@@ -54,7 +54,7 @@ func (r *SysRoleImpl) convertResultRows(rows []map[string]any) []model.SysRole {
 		sysRole := model.SysRole{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				repo.SetFieldValue(&sysRole, keyMapper, value)
+				datasource.SetFieldValue(&sysRole, keyMapper, value)
 			}
 		}
 		arr = append(arr, sysRole)
@@ -139,7 +139,7 @@ func (r *SysRoleImpl) SelectRolePage(query map[string]any, dataScopeSQL string) 
 	}
 
 	// 分页
-	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := datasource.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " order by r.role_sort asc limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -209,9 +209,9 @@ func (r *SysRoleImpl) SelectRoleListByUserId(userId string) []model.SysRole {
 
 // SelectRoleByIds 通过角色ID查询角色
 func (r *SysRoleImpl) SelectRoleByIds(roleIds []string) []model.SysRole {
-	placeholder := repo.KeyPlaceholderByQuery(len(roleIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(roleIds))
 	querySql := r.selectSql + " where r.role_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(roleIds)
+	parameters := datasource.ConvertIdsSlice(roleIds)
 	results, err := datasource.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -255,8 +255,8 @@ func (r *SysRoleImpl) UpdateRole(sysRole model.SysRole) int64 {
 	}
 
 	// 构建执行语句
-	keys, values := repo.KeyValueByUpdate(params)
-	sql := "update sys_role set " + strings.Join(keys, ",") + " where role_id = ?"
+	keys, values := datasource.KeyValueByUpdate(params)
+	sql := "update sys_role set " + keys + " where role_id = ?"
 
 	// 执行更新
 	values = append(values, sysRole.RoleID)
@@ -305,8 +305,8 @@ func (r *SysRoleImpl) InsertRole(sysRole model.SysRole) string {
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
-	sql := "insert into sys_role (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
+	sql := "insert into sys_role (" + keys + ")values(" + placeholder + ")"
 
 	db := datasource.DefaultDB()
 	// 开启事务
@@ -333,9 +333,9 @@ func (r *SysRoleImpl) InsertRole(sysRole model.SysRole) string {
 
 // DeleteRoleByIds 批量删除角色信息
 func (r *SysRoleImpl) DeleteRoleByIds(roleIds []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(roleIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(roleIds))
 	sql := "update sys_role set del_flag = '1' where role_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(roleIds)
+	parameters := datasource.ConvertIdsSlice(roleIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)

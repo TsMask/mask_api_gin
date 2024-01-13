@@ -5,7 +5,7 @@ import (
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/repo"
+
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 	"time"
@@ -47,7 +47,7 @@ func (r *SysNoticeImpl) convertResultRows(rows []map[string]any) []model.SysNoti
 		sysNotice := model.SysNotice{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				repo.SetFieldValue(&sysNotice, keyMapper, value)
+				datasource.SetFieldValue(&sysNotice, keyMapper, value)
 			}
 		}
 		arr = append(arr, sysNotice)
@@ -122,7 +122,7 @@ func (r *SysNoticeImpl) SelectNoticePage(query map[string]any) map[string]any {
 	}
 
 	// 分页
-	pageNum, pageSize := repo.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := datasource.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
@@ -181,9 +181,9 @@ func (r *SysNoticeImpl) SelectNoticeList(sysNotice model.SysNotice) []model.SysN
 
 // SelectNoticeByIds 查询公告信息
 func (r *SysNoticeImpl) SelectNoticeByIds(noticeIds []string) []model.SysNotice {
-	placeholder := repo.KeyPlaceholderByQuery(len(noticeIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(noticeIds))
 	querySql := r.selectSql + " where notice_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(noticeIds)
+	parameters := datasource.ConvertIdsSlice(noticeIds)
 	results, err := datasource.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -218,8 +218,8 @@ func (r *SysNoticeImpl) InsertNotice(sysNotice model.SysNotice) string {
 	}
 
 	// 构建执行语句
-	keys, placeholder, values := repo.KeyPlaceholderValueByInsert(params)
-	sql := "insert into sys_notice (" + strings.Join(keys, ",") + ")values(" + placeholder + ")"
+	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
+	sql := "insert into sys_notice (" + keys + ")values(" + placeholder + ")"
 
 	db := datasource.DefaultDB()
 	// 开启事务
@@ -269,8 +269,8 @@ func (r *SysNoticeImpl) UpdateNotice(sysNotice model.SysNotice) int64 {
 	}
 
 	// 构建执行语句
-	keys, values := repo.KeyValueByUpdate(params)
-	sql := "update sys_notice set " + strings.Join(keys, ",") + " where notice_id = ?"
+	keys, values := datasource.KeyValueByUpdate(params)
+	sql := "update sys_notice set " + keys + " where notice_id = ?"
 
 	// 执行更新
 	values = append(values, sysNotice.NoticeID)
@@ -284,9 +284,9 @@ func (r *SysNoticeImpl) UpdateNotice(sysNotice model.SysNotice) int64 {
 
 // DeleteNoticeByIds 批量删除公告信息
 func (r *SysNoticeImpl) DeleteNoticeByIds(noticeIds []string) int64 {
-	placeholder := repo.KeyPlaceholderByQuery(len(noticeIds))
+	placeholder := datasource.KeyPlaceholderByQuery(len(noticeIds))
 	sql := "update sys_notice set del_flag = '1' where notice_id in (" + placeholder + ")"
-	parameters := repo.ConvertIdsSlice(noticeIds)
+	parameters := datasource.ConvertIdsSlice(noticeIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("update err => %v", err)
