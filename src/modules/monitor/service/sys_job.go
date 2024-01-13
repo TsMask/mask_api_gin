@@ -27,9 +27,6 @@ type ISysJob interface {
 	// DeleteJobByIds 批量删除调度任务信息
 	DeleteJobByIds(jobIds []string) (int64, error)
 
-	// ChangeStatus 任务调度状态修改
-	ChangeStatus(sysJob model.SysJob) bool
-
 	// RunQueueJob 立即运行一次调度任务
 	RunQueueJob(sysJob model.SysJob) bool
 

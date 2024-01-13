@@ -298,9 +298,7 @@ func (r *SysJobImpl) UpdateJob(sysJob model.SysJob) int64 {
 	if sysJob.InvokeTarget != "" {
 		params["invoke_target"] = sysJob.InvokeTarget
 	}
-	if sysJob.TargetParams != "" {
-		params["target_params"] = sysJob.TargetParams
-	}
+	params["target_params"] = sysJob.TargetParams
 	if sysJob.CronExpression != "" {
 		params["cron_expression"] = sysJob.CronExpression
 	}
@@ -316,9 +314,7 @@ func (r *SysJobImpl) UpdateJob(sysJob model.SysJob) int64 {
 	if sysJob.SaveLog != "" {
 		params["save_log"] = sysJob.SaveLog
 	}
-	if sysJob.Remark != "" {
-		params["remark"] = sysJob.Remark
-	}
+	params["remark"] = sysJob.Remark
 	if sysJob.UpdateBy != "" {
 		params["update_by"] = sysJob.UpdateBy
 		params["update_time"] = time.Now().UnixMilli()

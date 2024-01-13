@@ -97,29 +97,6 @@ func (r *SysJobImpl) DeleteJobByIds(jobIds []string) (int64, error) {
 	return 0, errors.New("删除调度任务信息失败！")
 }
 
-// ChangeStatus 任务调度状态修改
-func (r *SysJobImpl) ChangeStatus(sysJob model.SysJob) bool {
-	// 更新状态
-	newSysJob := model.SysJob{
-		JobID:    sysJob.JobID,
-		Status:   sysJob.Status,
-		UpdateBy: sysJob.UpdateBy,
-	}
-	rows := r.sysJobRepository.UpdateJob(newSysJob)
-	if rows > 0 {
-		//状态正常添加队列任务
-		if sysJob.Status == common.STATUS_YES {
-			r.insertQueueJob(sysJob, true)
-		}
-		// 状态禁用删除队列任务
-		if sysJob.Status == common.STATUS_NO {
-			r.deleteQueueJob(sysJob)
-		}
-		return true
-	}
-	return false
-}
-
 // ResetQueueJob 重置初始调度任务
 func (r *SysJobImpl) ResetQueueJob() {
 	// 获取注册的队列名称

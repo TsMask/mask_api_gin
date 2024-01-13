@@ -187,9 +187,7 @@ func (s *SysJobController) Remove(c *gin.Context) {
 // PUT /changeStatus
 func (s *SysJobController) Status(c *gin.Context) {
 	var body struct {
-		// 任务ID
-		JobId string `json:"jobId" binding:"required"`
-		// 状态
+		JobId  string `json:"jobId" binding:"required"`
 		Status string `json:"status" binding:"required"`
 	}
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
@@ -214,8 +212,8 @@ func (s *SysJobController) Status(c *gin.Context) {
 	// 更新状态
 	job.Status = body.Status
 	job.UpdateBy = ctx.LoginUserToUserName(c)
-	ok := s.sysJobService.ChangeStatus(job)
-	if ok {
+	rows := s.sysJobService.UpdateJob(job)
+	if rows > 0 {
 		c.JSON(200, result.Ok(nil))
 		return
 	}
