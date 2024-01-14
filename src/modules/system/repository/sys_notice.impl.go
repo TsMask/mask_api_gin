@@ -260,9 +260,7 @@ func (r *SysNoticeImpl) UpdateNotice(sysNotice model.SysNotice) int64 {
 	if sysNotice.Status != "" {
 		params["status"] = sysNotice.Status
 	}
-	if sysNotice.Remark != "" {
-		params["remark"] = sysNotice.Remark
-	}
+	params["remark"] = sysNotice.Remark
 	if sysNotice.UpdateBy != "" {
 		params["update_by"] = sysNotice.UpdateBy
 		params["update_time"] = time.Now().UnixMilli()
