@@ -231,7 +231,7 @@ func (r *SysRoleImpl) UpdateRole(sysRole model.SysRole) int64 {
 	if sysRole.RoleKey != "" {
 		params["role_key"] = sysRole.RoleKey
 	}
-	if sysRole.RoleSort > 0 {
+	if sysRole.RoleSort >= 0 {
 		params["role_sort"] = sysRole.RoleSort
 	}
 	if sysRole.DataScope != "" {
@@ -246,9 +246,7 @@ func (r *SysRoleImpl) UpdateRole(sysRole model.SysRole) int64 {
 	if sysRole.Status != "" {
 		params["status"] = sysRole.Status
 	}
-	if sysRole.Remark != "" {
-		params["remark"] = sysRole.Remark
-	}
+	params["remark"] = sysRole.Remark
 	if sysRole.UpdateBy != "" {
 		params["update_by"] = sysRole.UpdateBy
 		params["update_time"] = time.Now().UnixMilli()
