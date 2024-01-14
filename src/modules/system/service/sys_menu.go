@@ -13,7 +13,7 @@ type ISysMenu interface {
 	// SelectMenuPermsByUserId 根据用户ID查询权限
 	SelectMenuPermsByUserId(userId string) []string
 
-	// SelectMenuPermsByUserId 根据用户ID查询权限
+	// SelectMenuTreeByUserId 根据用户ID查询权限
 	SelectMenuTreeByUserId(userId string) []model.SysMenu
 
 	// SelectMenuTreeSelectByUserId 查询菜单树结构信息
