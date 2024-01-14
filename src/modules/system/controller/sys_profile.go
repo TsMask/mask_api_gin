@@ -12,7 +12,6 @@ import (
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/framework/utils/token"
 	"mask_api_gin/src/framework/vo/result"
-	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 
 	"github.com/gin-gonic/gin"
@@ -141,25 +140,29 @@ func (s *SysProfileController) UpdateProfile(c *gin.Context) {
 		body.Email = "nil"
 	}
 
-	// 用户基本资料
-	sysUser := model.SysUser{
-		UserID:      userId,
-		UpdateBy:    userName,
-		NickName:    body.NickName,
-		PhoneNumber: body.PhoneNumber,
-		Email:       body.Email,
-		Sex:         body.Sex,
+	// 查询当前登录用户信息
+	user := s.sysUserService.SelectUserById(userId)
+	if user.UserID != userId {
+		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
+		return
 	}
-	rows := s.sysUserService.UpdateUser(sysUser)
+
+	// 用户基本资料
+	user.UpdateBy = userName
+	user.NickName = body.NickName
+	user.PhoneNumber = body.PhoneNumber
+	user.Email = body.Email
+	user.Sex = body.Sex
+	rows := s.sysUserService.UpdateUser(user)
 	if rows > 0 {
 		// 更新缓存用户信息
 		loginUser.User = s.sysUserService.SelectUserByUserName(userName)
 		// 用户权限组标识
-		isAdmin := config.IsAdmin(sysUser.UserID)
+		isAdmin := config.IsAdmin(userId)
 		if isAdmin {
 			loginUser.Permissions = []string{admin.PERMISSION}
 		} else {
-			perms := s.sysMenuService.SelectMenuPermsByUserId(sysUser.UserID)
+			perms := s.sysMenuService.SelectMenuPermsByUserId(userId)
 			loginUser.Permissions = parse.RemoveDuplicates(perms)
 		}
 		// 刷新令牌信息
@@ -216,12 +219,9 @@ func (s *SysProfileController) UpdatePwd(c *gin.Context) {
 	}
 
 	// 修改新密码
-	sysUser := model.SysUser{
-		UserID:   userId,
-		UpdateBy: userName,
-		Password: body.NewPassword,
-	}
-	rows := s.sysUserService.UpdateUser(sysUser)
+	user.UpdateBy = userName
+	user.Password = body.NewPassword
+	rows := s.sysUserService.UpdateUser(user)
 	if rows > 0 {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -252,23 +252,29 @@ func (s *SysProfileController) Avatar(c *gin.Context) {
 		c.JSON(401, result.CodeMsg(401, err.Error()))
 		return
 	}
+	userId := loginUser.UserID
+	userName := loginUser.User.UserName
+
+	// 查询当前登录用户信息
+	user := s.sysUserService.SelectUserById(userId)
+	if user.UserID != userId {
+		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
+		return
+	}
 
 	// 更新头像地址
-	sysUser := model.SysUser{
-		UserID:   loginUser.UserID,
-		UpdateBy: loginUser.User.UserName,
-		Avatar:   filePath,
-	}
-	rows := s.sysUserService.UpdateUser(sysUser)
+	user.Avatar = filePath
+	user.UpdateBy = userName
+	rows := s.sysUserService.UpdateUser(user)
 	if rows > 0 {
 		// 更新缓存用户信息
-		loginUser.User = s.sysUserService.SelectUserByUserName(loginUser.User.UserName)
+		loginUser.User = s.sysUserService.SelectUserByUserName(userName)
 		// 用户权限组标识
-		isAdmin := config.IsAdmin(sysUser.UserID)
+		isAdmin := config.IsAdmin(userId)
 		if isAdmin {
 			loginUser.Permissions = []string{admin.PERMISSION}
 		} else {
-			perms := s.sysMenuService.SelectMenuPermsByUserId(sysUser.UserID)
+			perms := s.sysMenuService.SelectMenuPermsByUserId(userId)
 			loginUser.Permissions = parse.RemoveDuplicates(perms)
 		}
 		// 刷新令牌信息
