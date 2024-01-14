@@ -43,12 +43,12 @@ func Create(loginUser *vo.LoginUser, ilobArgs ...string) string {
 	loginUser.OS = ilobArgs[2]
 	loginUser.Browser = ilobArgs[3]
 
-	// 设置用户令牌有效期并存入缓存
-	Cache(loginUser)
-
 	// 设置新登录IP和登录时间
 	loginUser.User.LoginIP = loginUser.IPAddr
 	loginUser.User.LoginDate = loginUser.LoginTime
+
+	// 设置用户令牌有效期并存入缓存
+	Cache(loginUser)
 
 	// 令牌算法 HS256 HS384 HS512
 	algorithm := config.Get("jwt.algorithm").(string)
@@ -89,6 +89,7 @@ func Cache(loginUser *vo.LoginUser) {
 	iatTimestamp := time.Now().UnixMilli()
 	loginUser.LoginTime = iatTimestamp
 	loginUser.ExpireTime = iatTimestamp + expTimestamp.Milliseconds()
+	loginUser.User.Password = ""
 	// 根据登录标识将loginUser缓存
 	tokenKey := cachekeyConstants.LOGIN_TOKEN_KEY + loginUser.UUID
 	jsonBytes, err := json.Marshal(loginUser)
