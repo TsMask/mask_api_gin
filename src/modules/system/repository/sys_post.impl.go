@@ -204,15 +204,13 @@ func (r *SysPostImpl) UpdatePost(sysPost model.SysPost) int64 {
 	if sysPost.PostName != "" {
 		params["post_name"] = sysPost.PostName
 	}
-	if sysPost.PostSort > 0 {
+	if sysPost.PostSort >= 0 {
 		params["post_sort"] = sysPost.PostSort
 	}
 	if sysPost.Status != "" {
 		params["status"] = sysPost.Status
 	}
-	if sysPost.Remark != "" {
-		params["remark"] = sysPost.Remark
-	}
+	params["remark"] = sysPost.Remark
 	if sysPost.UpdateBy != "" {
 		params["update_by"] = sysPost.UpdateBy
 		params["update_time"] = time.Now().UnixMilli()
