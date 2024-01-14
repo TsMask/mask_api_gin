@@ -527,7 +527,7 @@ func (r *SysUserImpl) UpdateUser(sysUser model.SysUser) int64 {
 // DeleteUserByIds 批量删除用户信息
 func (r *SysUserImpl) DeleteUserByIds(userIds []string) int64 {
 	placeholder := datasource.KeyPlaceholderByQuery(len(userIds))
-	sql := "update sys_user set del_flag = '1' where user_id in (" + placeholder + ")"
+	sql := "update sys_user user_name = concat(user_name, '_del'), set del_flag = '1' where user_id in (" + placeholder + ")"
 	parameters := datasource.ConvertIdsSlice(userIds)
 	results, err := datasource.ExecDB("", sql, parameters)
 	if err != nil {
