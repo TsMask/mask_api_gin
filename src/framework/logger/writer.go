@@ -84,13 +84,13 @@ func (l *Logger) checkFile() {
 	currTime := time.Now()
 	if l.logDay != currTime.Day() {
 		l.logDay = currTime.Day()
-		l.rotateFile(currTime.AddDate(0, 0, -1).Format("2006_01_02"))
+		l.rotateFile(currTime.AddDate(0, 0, -1).Format("2006-01-02"))
 		// 移除超过保存最长天数的文件
 		l.removeOldFile(currTime.AddDate(0, 0, -l.maxDay))
 	} else if fileInfo.Size() >= l.maxSize {
-		l.rotateFile(currTime.Format("2006_01_02_150405"))
+		l.rotateFile(currTime.Format("2006-01-02_150405"))
 	} else if time.Since(fileInfo.ModTime()).Hours() > 24 {
-		l.rotateFile(fileInfo.ModTime().Format("2006_01_02"))
+		l.rotateFile(fileInfo.ModTime().Format("2006-01-02"))
 	}
 
 	time.AfterFunc(1*time.Minute, l.checkFile)
@@ -134,14 +134,18 @@ func (l *Logger) removeOldFile(oldFileDate time.Time) {
 	}
 
 	for _, file := range files {
-		idx := strings.LastIndex(file.Name(), ".log.")
+		// 跳过非指定日志文件名
+		if !strings.HasPrefix(file.Name(), l.fileName+".") {
+			continue
+		}
+		idx := strings.LastIndex(file.Name(), ".")
 		if idx == -1 {
 			continue
 		}
-		dateStr := file.Name()[idx+5 : idx+15]
+		dateStr := file.Name()[idx+1 : idx+11]
 
 		// 解析日期字符串
-		fileDate, err := time.Parse("2006_01_02", dateStr)
+		fileDate, err := time.Parse("2006-01-02", dateStr)
 		if err != nil {
 			l.Errorf("logger RemoveOldFile Parse err: %v", err.Error())
 			continue
