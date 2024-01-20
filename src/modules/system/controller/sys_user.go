@@ -66,7 +66,7 @@ func (s *SysUserController) Info(c *gin.Context) {
 		return
 	}
 	// 查询系统角色列表
-	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")
+	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
 	roles := s.sysRoleService.SelectRoleList(model.SysRole{}, dataScopeSQL)
 
 	// 不是系统指定管理员需要排除其角色
