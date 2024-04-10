@@ -17,7 +17,7 @@ var NewFile = &FileController{}
 
 // 文件操作处理
 //
-// PATH /
+// PATH /file
 type FileController struct{}
 
 // 下载文件
@@ -73,11 +73,14 @@ func (s *FileController) Upload(c *gin.Context) {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
-	// 子路径
+	// 子路径需要在指定范围内
 	subPath := c.PostForm("subPath")
-	if _, ok := uploadsubpath.UploadSubpath[subPath]; !ok {
+	if _, ok := uploadsubpath.UploadSubpath[subPath]; subPath != "" && !ok {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
+	}
+	if subPath == "" {
+		subPath = uploadsubpath.COMMON
 	}
 
 	// 上传文件转存
@@ -131,16 +134,20 @@ func (s *FileController) ChunkMerge(c *gin.Context) {
 		// 文件名
 		FileName string `json:"fileName" binding:"required"`
 		// 子路径类型
-		SubPath string `json:"subPath" binding:"required"`
+		SubPath string `json:"subPath"`
 	}
 	err := c.ShouldBindJSON(&body)
 	if err != nil {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
-	if _, ok := uploadsubpath.UploadSubpath[body.SubPath]; !ok {
+	// 子路径需要在指定范围内
+	if _, ok := uploadsubpath.UploadSubpath[body.SubPath]; body.SubPath != "" && !ok {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
+	}
+	if body.SubPath == "" {
+		body.SubPath = uploadsubpath.COMMON
 	}
 
 	// 切片文件合并
