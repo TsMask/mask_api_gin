@@ -202,6 +202,18 @@ func SetFieldValue(obj any, fieldName string, value any) {
 				floatValue = 0
 			}
 			fieldValue.SetFloat(floatValue)
+		case reflect.Struct:
+			fmt.Printf("%s 时间解析 %s %v \n", fieldName, fieldValue.Type(), value)
+			if fieldValue.Type() == reflect.TypeOf(time.Time{}) && value != nil {
+				// 解析 value 并转换为 time.Time 类型
+				parsedTime, err := time.Parse("2006-01-02 15:04:05 +0800 CST", fmt.Sprintf("%v", value))
+				if err != nil {
+					fmt.Println("时间解析出错:", err)
+				} else {
+					// 设置字段的值
+					fieldValue.Set(reflect.ValueOf(parsedTime))
+				}
+			}
 		default:
 			// 设置字段的值
 			fieldValue.Set(reflect.ValueOf(value).Convert(fieldValue.Type()))
