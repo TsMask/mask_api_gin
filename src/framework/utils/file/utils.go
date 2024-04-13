@@ -106,7 +106,7 @@ func getFileSize(filePath string) int64 {
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
 		logger.Errorf("Failed stat %s: %v", filePath, err)
-		return 0
+		return -1
 	}
 	// 获取文件大小（字节数）
 	return fileInfo.Size()

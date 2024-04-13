@@ -7,6 +7,7 @@ import (
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/vo/result"
 	"net/url"
+	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -36,13 +37,6 @@ func (s *FileController) Download(c *gin.Context) {
 		return
 	}
 	routerPath := string(decodedBytes)
-	// 地址文件名截取
-	fileName := routerPath[strings.LastIndex(routerPath, "/")+1:]
-
-	// 响应头
-	c.Writer.Header().Set("Content-Disposition", `attachment; filename="`+url.QueryEscape(fileName)+`"`)
-	c.Writer.Header().Set("Accept-Ranges", "bytes")
-	c.Writer.Header().Set("Content-Type", "application/octet-stream")
 
 	// 断点续传
 	headerRange := c.GetHeader("Range")
@@ -51,6 +45,12 @@ func (s *FileController) Download(c *gin.Context) {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
 	}
+
+	// 响应头
+	c.Writer.Header().Set("Content-Disposition", `attachment; filename="`+url.QueryEscape(filepath.Base(routerPath))+`"`)
+	c.Writer.Header().Set("Accept-Ranges", "bytes")
+	c.Writer.Header().Set("Content-Type", "application/octet-stream")
+
 	if headerRange != "" {
 		c.Writer.Header().Set("Content-Range", fmt.Sprint(resultMap["range"]))
 		c.Writer.Header().Set("Content-Length", fmt.Sprint(resultMap["chunkSize"]))

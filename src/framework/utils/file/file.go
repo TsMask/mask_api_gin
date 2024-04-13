@@ -172,13 +172,13 @@ func ReadUploadFileStream(filePath, headerRange string) (map[string]any, error) 
 		"range":     "",
 		"chunkSize": 0,
 		"fileSize":  0,
-		"data":      nil,
+		"data":      []byte{},
 	}
 
 	// 文件大小
 	fileSize := getFileSize(fileAsbPath)
 	if fileSize <= 0 {
-		return result, nil
+		return result, fmt.Errorf("文件不存在")
 	}
 	result["fileSize"] = fileSize
 
