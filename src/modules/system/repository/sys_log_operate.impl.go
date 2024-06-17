@@ -78,6 +78,10 @@ func (r *SysLogOperateImpl) SelectSysLogOperatePage(query map[string]any) map[st
 		conditions = append(conditions, "oper_name like concat(?, '%')")
 		params = append(params, v)
 	}
+	if v, ok := query["operIp"]; ok && v != "" {
+		conditions = append(conditions, "oper_ip like concat(?, '%')")
+		params = append(params, v)
+	}
 	if v, ok := query["status"]; ok && v != "" {
 		conditions = append(conditions, "status = ?")
 		params = append(params, v)

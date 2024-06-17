@@ -20,7 +20,7 @@ type SysLogOperate struct {
 	DeptName string `json:"deptName"`
 	// 请求URL
 	OperURL string `json:"operUrl"`
-	// 主机地址
+	// 操作地址
 	OperIP string `json:"operIp"`
 	// 操作地点
 	OperLocation string `json:"operLocation"`
