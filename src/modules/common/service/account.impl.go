@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"mask_api_gin/src/framework/config"
 	adminConstants "mask_api_gin/src/framework/constants/admin"
@@ -11,7 +10,6 @@ import (
 	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo"
-	"mask_api_gin/src/modules/system/model"
 	systemService "mask_api_gin/src/modules/system/service"
 	"time"
 )
@@ -44,23 +42,23 @@ func (s *AccountImpl) ValidateCaptcha(code, uuid string) error {
 		return nil
 	}
 	if code == "" || uuid == "" {
-		return errors.New("验证码信息错误")
+		return fmt.Errorf("验证码信息错误")
 	}
 	verifyKey := cachekey.CAPTCHA_CODE_KEY + uuid
 	captcha, _ := redis.Get("", verifyKey)
 	if captcha == "" {
-		return errors.New("验证码已失效")
+		return fmt.Errorf("验证码已失效")
 	}
 	redis.Del("", verifyKey)
 	if captcha != code {
-		return errors.New("验证码错误")
+		return fmt.Errorf("验证码错误")
 	}
 	return nil
 }
 
 // LoginByUsername 登录创建用户信息
 func (s *AccountImpl) LoginByUsername(username, password string) (vo.LoginUser, error) {
-	loginUser := vo.LoginUser{}
+	var loginUser vo.LoginUser
 
 	// 检查密码重试次数
 	retrykey, retryCount, lockTime, err := s.passwordRetryCount(username)
@@ -71,26 +69,26 @@ func (s *AccountImpl) LoginByUsername(username, password string) (vo.LoginUser, 
 	// 查询用户登录账号
 	sysUser := s.sysUserService.SelectUserByUserName(username)
 	if sysUser.UserName != username {
-		return loginUser, errors.New("用户不存在或密码错误")
+		return loginUser, fmt.Errorf("用户不存在或密码错误")
 	}
 	if sysUser.DelFlag == common.STATUS_YES {
-		return loginUser, errors.New("对不起，您的账号已被删除")
+		return loginUser, fmt.Errorf("对不起，您的账号已被删除")
 	}
 	if sysUser.Status == common.STATUS_NO {
-		return loginUser, errors.New("对不起，您的账号已禁用")
+		return loginUser, fmt.Errorf("对不起，您的账号已禁用")
 	}
 
 	// 检验用户密码
 	compareBool := crypto.BcryptCompare(password, sysUser.Password)
-	if !compareBool {
-		redis.SetByExpire("", retrykey, retryCount+1, lockTime)
-		return loginUser, errors.New("用户不存在或密码错误")
+	if compareBool {
+		s.ClearLoginRecordCache(username) // 清除错误记录次数
 	} else {
-		// 清除错误记录次数
-		s.ClearLoginRecordCache(username)
+		redis.SetByExpire("", retrykey, retryCount+1, lockTime)
+		return loginUser, fmt.Errorf("用户不存在或密码错误")
 	}
 
 	// 登录用户信息
+	loginUser = vo.LoginUser{}
 	loginUser.UserID = sysUser.UserID
 	loginUser.DeptID = sysUser.DeptID
 	loginUser.User = sysUser
@@ -108,15 +106,10 @@ func (s *AccountImpl) LoginByUsername(username, password string) (vo.LoginUser, 
 // UpdateLoginDateAndIP 更新登录时间和IP
 func (s *AccountImpl) UpdateLoginDateAndIP(loginUser *vo.LoginUser) bool {
 	sysUser := loginUser.User
-	userInfo := model.SysUser{
-		UserID:    sysUser.UserID,
-		LoginIP:   sysUser.LoginIP,
-		LoginDate: sysUser.LoginDate,
-		UpdateBy:  sysUser.UserName,
-		Remark:    sysUser.Remark,
-	}
-	rows := s.sysUserService.UpdateUser(userInfo)
-	return rows > 0
+	user := s.sysUserService.SelectUserById(sysUser.UserID)
+	user.LoginIP = sysUser.LoginIP
+	user.LoginDate = sysUser.LoginDate
+	return s.sysUserService.UpdateUser(user) > 0
 }
 
 // ClearLoginRecordCache 清除错误记录次数
@@ -145,7 +138,7 @@ func (s *AccountImpl) passwordRetryCount(username string) (string, int64, time.D
 	retryCountInt64 := parse.Number(retryCount)
 	if retryCountInt64 >= int64(maxRetryCount) {
 		msg := fmt.Sprintf("密码输入错误 %d 次，帐户锁定 %d 分钟", maxRetryCount, lockTime)
-		return retrykey, retryCountInt64, time.Duration(lockTime) * time.Minute, errors.New(msg)
+		return retrykey, retryCountInt64, time.Duration(lockTime) * time.Minute, fmt.Errorf(msg)
 	}
 	return retrykey, retryCountInt64, time.Duration(lockTime) * time.Minute, nil
 }
@@ -154,17 +147,16 @@ func (s *AccountImpl) passwordRetryCount(username string) (string, int64, time.D
 func (s *AccountImpl) RoleAndMenuPerms(userId string, isAdmin bool) ([]string, []string) {
 	if isAdmin {
 		return []string{adminConstants.ROLE_KEY}, []string{adminConstants.PERMISSION}
-	} else {
-		// 角色key
-		roleGroup := []string{}
-		roles := s.sysRoleService.SelectRoleListByUserId(userId)
-		for _, role := range roles {
-			roleGroup = append(roleGroup, role.RoleKey)
-		}
-		// 菜单权限key
-		perms := s.sysMenuService.SelectMenuPermsByUserId(userId)
-		return parse.RemoveDuplicates(roleGroup), parse.RemoveDuplicates(perms)
 	}
+	// 角色key
+	roleGroup := []string{}
+	roles := s.sysRoleService.SelectRoleListByUserId(userId)
+	for _, role := range roles {
+		roleGroup = append(roleGroup, role.RoleKey)
+	}
+	// 菜单权限key
+	perms := s.sysMenuService.SelectMenuPermsByUserId(userId)
+	return parse.RemoveDuplicates(roleGroup), parse.RemoveDuplicates(perms)
 }
 
 // RouteMenus 前端路由所需要的菜单

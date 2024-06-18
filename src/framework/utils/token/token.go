@@ -2,7 +2,7 @@ package token
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"mask_api_gin/src/framework/config"
 	cachekeyConstants "mask_api_gin/src/framework/constants/cachekey"
 	tokenConstants "mask_api_gin/src/framework/constants/token"
@@ -16,8 +16,8 @@ import (
 )
 
 // Remove 清除登录用户信息UUID
-func Remove(tokenStr string) string {
-	claims, err := Verify(tokenStr)
+func Remove(token string) string {
+	claims, err := Verify(token)
 	if err != nil {
 		logger.Errorf("token verify err %v", err)
 		return ""
@@ -113,24 +113,24 @@ func RefreshIn(loginUser *vo.LoginUser) {
 }
 
 // Verify 校验令牌是否有效
-func Verify(tokenString string) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+func Verify(token string) (jwt.MapClaims, error) {
+	jwtToken, err := jwt.Parse(token, func(jToken *jwt.Token) (any, error) {
 		// 判断加密算法是预期的加密算法
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); ok {
+		if _, ok := jToken.Method.(*jwt.SigningMethodHMAC); ok {
 			secret := config.Get("jwt.secret").(string)
 			return []byte(secret), nil
 		}
 		return nil, jwt.ErrSignatureInvalid
 	})
 	if err != nil {
-		logger.Errorf("token String Verify : %v", err)
-		return nil, errors.New("无效身份授权")
+		logger.Errorf("Token Verify Err: %v", err)
+		return nil, fmt.Errorf("token invalid")
 	}
 	// 如果解析负荷成功并通过签名校验
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+	if claims, ok := jwtToken.Claims.(jwt.MapClaims); ok && jwtToken.Valid {
 		return claims, nil
 	}
-	return nil, errors.New("token valid error")
+	return nil, fmt.Errorf("token valid error")
 }
 
 // LoginUser 缓存的登录用户信息
