@@ -3,7 +3,6 @@ package controller
 import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/constants/admin"
 	"mask_api_gin/src/framework/constants/uploadsubpath"
 	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/ctx"
@@ -80,17 +79,12 @@ func (s *SysProfileController) Info(c *gin.Context) {
 // PUT /
 func (s *SysProfileController) UpdateProfile(c *gin.Context) {
 	var body struct {
-		// 昵称
-		NickName string `json:"nickName" binding:"required"`
-		// 性别
-		Sex string `json:"sex" binding:"required"`
-		// 手机号
-		PhoneNumber string `json:"phonenumber"`
-		// 邮箱
-		Email string `json:"email"`
+		NickName    string `json:"nickName" binding:"required"`        // 昵称
+		Sex         string `json:"sex" binding:"required,oneof=0 1 2"` // 性别
+		PhoneNumber string `json:"phonenumber"`                        // 手机号
+		Email       string `json:"email"`                              // 邮箱
 	}
-	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.Sex == "" {
+	if err := c.ShouldBindBodyWith(&body, binding.JSON); err != nil {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
@@ -118,8 +112,6 @@ func (s *SysProfileController) UpdateProfile(c *gin.Context) {
 			c.JSON(200, result.ErrMsg(msg))
 			return
 		}
-	} else {
-		body.PhoneNumber = "nil"
 	}
 
 	// 检查邮箱格式并判断是否唯一
@@ -136,8 +128,6 @@ func (s *SysProfileController) UpdateProfile(c *gin.Context) {
 			c.JSON(200, result.ErrMsg(msg))
 			return
 		}
-	} else {
-		body.Email = "nil"
 	}
 
 	// 查询当前登录用户信息
@@ -156,15 +146,7 @@ func (s *SysProfileController) UpdateProfile(c *gin.Context) {
 	rows := s.sysUserService.UpdateUser(user)
 	if rows > 0 {
 		// 更新缓存用户信息
-		loginUser.User = s.sysUserService.SelectUserByUserName(userName)
-		// 用户权限组标识
-		isAdmin := config.IsAdmin(userId)
-		if isAdmin {
-			loginUser.Permissions = []string{admin.PERMISSION}
-		} else {
-			perms := s.sysMenuService.SelectMenuPermsByUserId(userId)
-			loginUser.Permissions = parse.RemoveDuplicates(perms)
-		}
+		loginUser.User = user
 		// 刷新令牌信息
 		token.Cache(&loginUser)
 
@@ -268,15 +250,7 @@ func (s *SysProfileController) Avatar(c *gin.Context) {
 	rows := s.sysUserService.UpdateUser(user)
 	if rows > 0 {
 		// 更新缓存用户信息
-		loginUser.User = s.sysUserService.SelectUserByUserName(userName)
-		// 用户权限组标识
-		isAdmin := config.IsAdmin(userId)
-		if isAdmin {
-			loginUser.Permissions = []string{admin.PERMISSION}
-		} else {
-			perms := s.sysMenuService.SelectMenuPermsByUserId(userId)
-			loginUser.Permissions = parse.RemoveDuplicates(perms)
-		}
+		loginUser.User = user
 		// 刷新令牌信息
 		token.Cache(&loginUser)
 

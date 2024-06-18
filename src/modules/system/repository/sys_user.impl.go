@@ -472,20 +472,8 @@ func (r *SysUserImpl) UpdateUser(sysUser model.SysUser) int64 {
 	if sysUser.Avatar != "" {
 		params["avatar"] = sysUser.Avatar
 	}
-	if sysUser.Email != "" {
-		if sysUser.Email == "nil" {
-			params["email"] = ""
-		} else {
-			params["email"] = sysUser.Email
-		}
-	}
-	if sysUser.PhoneNumber != "" {
-		if sysUser.PhoneNumber == "nil" {
-			params["phonenumber"] = ""
-		} else {
-			params["phonenumber"] = sysUser.PhoneNumber
-		}
-	}
+	params["email"] = sysUser.Email
+	params["phonenumber"] = sysUser.PhoneNumber
 	if sysUser.Sex != "" {
 		params["sex"] = sysUser.Sex
 	}
