@@ -170,6 +170,11 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 			conditions = append(conditions, sql)
 		}
 
+		if roledatascope.DEPT == dataScope {
+			sql := fmt.Sprintf("%s.dept_id = %s", deptAlias, userInfo.DeptID)
+			conditions = append(conditions, sql)
+		}
+
 		if roledatascope.DEPT_AND_CHILD == dataScope {
 			sql := fmt.Sprintf(`%s.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = '%s' or find_in_set('%s' , ancestors ) )`, deptAlias, userInfo.DeptID, userInfo.DeptID)
 			conditions = append(conditions, sql)
