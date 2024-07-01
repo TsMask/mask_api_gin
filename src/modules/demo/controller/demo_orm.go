@@ -12,22 +12,25 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 演示-GORM基本使用
-var ZzOrm = &zzorm{
-	zzOrmService: *service.NewZzOrmService,
+// NewDemoORM 实例化控制层 DemoORMController
+var NewDemoORM = &DemoORMController{
+	demoORMService: service.NewDemoORMService,
 }
 
-type zzorm struct {
+// DemoORMController 测试ORM
+//
+// PATH /demo
+type DemoORMController struct {
 	// 测试ORM信息服务
-	zzOrmService service.ZzOrmService
+	demoORMService service.DemoORMService
 }
 
-// 列表分页
+// List 列表分页
 //
 // GET /list
-func (s *zzorm) List(c *gin.Context) {
-	querys := ctx.QueryMap(c)
-	data, err := s.zzOrmService.SelectPage(querys)
+func (s *DemoORMController) List(c *gin.Context) {
+	query := ctx.QueryMap(c)
+	data, err := s.demoORMService.SelectPage(query)
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
@@ -35,18 +38,18 @@ func (s *zzorm) List(c *gin.Context) {
 	c.JSON(200, result.Ok(data))
 }
 
-// 列表无分页
+// All 列表无分页
 //
 // GET /all
-func (s *zzorm) All(c *gin.Context) {
-	zzOrm := model.ZzOrm{}
+func (s *DemoORMController) All(c *gin.Context) {
+	demoORM := model.DemoORM{}
 
 	title := c.Query("title")
 	if title != "" {
-		zzOrm.Title = title
+		demoORM.Title = title
 	}
 
-	data, err := s.zzOrmService.SelectList(zzOrm)
+	data, err := s.demoORMService.SelectList(demoORM)
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
@@ -54,17 +57,17 @@ func (s *zzorm) All(c *gin.Context) {
 	c.JSON(200, result.OkData(data))
 }
 
-// 信息
+// Info 信息
 //
 // GET /:id
-func (s *zzorm) Info(c *gin.Context) {
+func (s *DemoORMController) Info(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
-	data, err := s.zzOrmService.SelectById(id)
+	data, err := s.demoORMService.SelectById(id)
 	if err == nil {
 		c.JSON(200, result.OkData(data))
 		return
@@ -72,48 +75,48 @@ func (s *zzorm) Info(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 新增
+// Add 新增
 //
 // POST /
-func (s *zzorm) Add(c *gin.Context) {
-	var body model.ZzOrm
+func (s *DemoORMController) Add(c *gin.Context) {
+	var body model.DemoORM
 	err := c.ShouldBindJSON(&body)
 	if err != nil || body.ID != 0 {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
-	zzOrm, err := s.zzOrmService.Insert(body)
+	demoORM, err := s.demoORMService.Insert(body)
 	if err == nil {
-		c.JSON(200, result.OkData(zzOrm.ID))
+		c.JSON(200, result.OkData(demoORM.ID))
 		return
 	}
 	c.JSON(200, result.Err(nil))
 }
 
-// 更新
+// Edit 更新
 //
 // PUT /
-func (s *zzorm) Edit(c *gin.Context) {
-	var body model.ZzOrm
+func (s *DemoORMController) Edit(c *gin.Context) {
+	var body model.DemoORM
 	err := c.ShouldBindJSON(&body)
 	if err != nil || body.ID == 0 {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
-	zzOrm, err := s.zzOrmService.Update(body)
+	demoORM, err := s.demoORMService.Update(body)
 	if err == nil {
-		c.JSON(200, result.OkData(zzOrm.ID))
+		c.JSON(200, result.OkData(demoORM.ID))
 		return
 	}
 	c.JSON(200, result.Err(nil))
 }
 
-// 删除
+// Remove 删除
 //
 // DELETE /:ids
-func (s *zzorm) Remove(c *gin.Context) {
+func (s *DemoORMController) Remove(c *gin.Context) {
 	ids := c.Param("ids")
 	if ids == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -127,7 +130,7 @@ func (s *zzorm) Remove(c *gin.Context) {
 		c.JSON(200, result.Err(nil))
 		return
 	}
-	rows := s.zzOrmService.DeleteByIds(uniqueIDs)
+	rows := s.demoORMService.DeleteByIds(uniqueIDs)
 	if rows > 0 {
 		msg := fmt.Sprintf("删除成功：%d", rows)
 		c.JSON(200, result.OkMsg(msg))
@@ -136,11 +139,11 @@ func (s *zzorm) Remove(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 清空
+// Clean 清空
 //
 // DELETE /clean
-func (s *zzorm) Clean(c *gin.Context) {
-	_, err := s.zzOrmService.Clean()
+func (s *DemoORMController) Clean(c *gin.Context) {
+	_, err := s.demoORMService.Clean()
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return

@@ -7,19 +7,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 模块路由注册
+// Setup 模块路由注册
 func Setup(router *gin.Engine) {
 	logger.Infof("开始加载 ====> demo 模块路由")
 
+	demoGroup := router.Group("/demo")
+
 	// 演示-GORM基本使用
-	zzormGroup := router.Group("/zzorm")
+	ormGroup := demoGroup.Group("/orm")
 	{
-		zzormGroup.GET("/list", controller.ZzOrm.List)
-		zzormGroup.GET("/all", controller.ZzOrm.All)
-		zzormGroup.GET("/:id", controller.ZzOrm.Info)
-		zzormGroup.POST("", controller.ZzOrm.Add)
-		zzormGroup.PUT("", controller.ZzOrm.Edit)
-		zzormGroup.DELETE("/:ids", controller.ZzOrm.Remove)
-		zzormGroup.DELETE("/clean", controller.ZzOrm.Clean)
+		ormGroup.GET("/list", controller.NewDemoORM.List)
+		ormGroup.GET("/all", controller.NewDemoORM.All)
+		ormGroup.GET("/:id", controller.NewDemoORM.Info)
+		ormGroup.POST("", controller.NewDemoORM.Add)
+		ormGroup.PUT("", controller.NewDemoORM.Edit)
+		ormGroup.DELETE("/:ids", controller.NewDemoORM.Remove)
+		ormGroup.DELETE("/clean", controller.NewDemoORM.Clean)
 	}
 }
