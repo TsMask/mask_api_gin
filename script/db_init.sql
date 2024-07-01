@@ -2,8 +2,8 @@
 -- ----------------------------
 -- 0、测试ORM表
 -- ----------------------------
-drop table if exists zz_orm;
-create table zz_orm (
+drop table if exists demo_orm;
+create table demo_orm (
   id                int             not null auto_increment    comment '测试ID',
   title             varchar(50)     not null                   comment '测试标题',
   orm_type          varchar(50)     not null                   comment 'orm类型',
@@ -19,13 +19,13 @@ create table zz_orm (
 -- ----------------------------
 -- 初始化-测试ORM表数据
 -- ----------------------------
-insert into zz_orm values('1', 'MySQL', 'mysql', '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '测试ORM');
-insert into zz_orm values('2', 'PgSQL', 'pg',    '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '测试ORM');
+insert into demo_orm values('1', 'MySQL', 'mysql', '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '测试ORM');
+insert into demo_orm values('2', 'PgSQL', 'pg',    '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '测试ORM');
 
 
 
 -- ----------------------------
--- 测试zz_表，根据模块dome内删除其引用
+-- 测试demo_表，根据模块demo内删除其引用
 -- 系统初始17张数据表，前缀sys_开头
 -- ----------------------------
 
@@ -41,11 +41,11 @@ create table sys_dept (
   ancestors         varchar(50)     default ''                 comment '祖级列表',
   dept_name         varchar(50)     default ''                 comment '部门名称',
   order_num         int             default 0                  comment '显示顺序',
-  leader            varchar(50)     default null               comment '负责人',
-  phone             varchar(11)     default null               comment '联系电话',
-  email             varchar(50)     default null               comment '邮箱',
+  leader            varchar(50)     default ''                 comment '负责人',
+  phone             varchar(20)     default ''                 comment '联系电话',
+  email             varchar(50)     default ''                 comment '邮箱',
   status            char(1)         default '0'                comment '部门状态（0停用 1正常）',
-  del_flag          char(1)         default '0'                comment '删除标志（0代表存在 1代表删除）',
+  del_flag          char(1)         default '0'                comment '删除标志（0存在 1删除）',
   create_by         varchar(50)     default ''                 comment '创建者',
   create_time       bigint          default 0                  comment '创建时间',
   update_by         varchar(50)     default ''                 comment '更新者',
@@ -56,7 +56,7 @@ create table sys_dept (
 -- ----------------------------
 -- 初始化-部门表数据
 -- ----------------------------
-insert into sys_dept values(100,  0,   '0',          'MASK科技',   0, 'MASK', '15888888888', 'mask@qq.com', '1', '0', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', null);
+insert into sys_dept values(100,  0,   '0',          'MASK科技',  0, 'MASK', '15888888888', 'mask@qq.com', '1', '0', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', null);
 insert into sys_dept values(101,  100, '0,100',      '广西总公司', 1, 'MASK', '15888888888', 'mask@qq.com', '1', '0', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', null);
 insert into sys_dept values(102,  100, '0,100',      '广东分公司', 2, 'MASK', '15888888888', 'mask@qq.com', '1', '0', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', null);
 insert into sys_dept values(103,  101, '0,100,101',  '研发部门',   1, 'MASK', '15888888888', 'mask@qq.com', '1', '0', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', null);
@@ -78,12 +78,12 @@ create table sys_user (
   nick_name         varchar(30)     not null                   comment '用户昵称',
   user_type         varchar(20)     default 'sys'              comment '用户类型（sys系统用户）',
   email             varchar(50)     default ''                 comment '用户邮箱',
-  phonenumber       varchar(11)     default ''                 comment '手机号码',
+  phone             varchar(20)     default ''                 comment '手机号码',
   sex               char(1)         default '0'                comment '用户性别（0未知 1男 2女）',
   avatar            varchar(255)    default ''                 comment '头像地址',
   password          varchar(100)    default ''                 comment '密码',
-  status            char(1)         default '0'                comment '帐号状态（0停用 1正常）',
-  del_flag          char(1)         default '0'                comment '删除标志（0代表存在 1代表删除）',
+  status            char(1)         default '0'                comment '账号状态（0停用 1正常）',
+  del_flag          char(1)         default '0'                comment '删除标志（0存在 1删除）',
   login_ip          varchar(128)    default ''                 comment '最后登录IP',
   login_date        bigint          default 0                  comment '最后登录时间',
   create_by         varchar(50)     default ''                 comment '创建者',
@@ -116,7 +116,7 @@ create table sys_post
   create_time   bigint          default 0                  comment '创建时间',
   update_by     varchar(50)     default ''                 comment '更新者',
   update_time   bigint          default 0                  comment '更新时间',
-  remark        varchar(500)    default null               comment '备注',
+  remark        varchar(500)    default ''                 comment '备注',
   primary key (post_id)
 ) engine=innodb comment = '岗位信息表';
 
@@ -142,12 +142,12 @@ create table sys_role (
   menu_check_strictly  char(1)         default '1'                comment '菜单树选择项是否关联显示（0：父子不互相关联显示 1：父子互相关联显示）',
   dept_check_strictly  char(1)         default '1'                comment '部门树选择项是否关联显示（0：父子不互相关联显示 1：父子互相关联显示 ）',
   status               char(1)         default '0'                comment '角色状态（0停用 1正常）',
-  del_flag             char(1)         default '0'                comment '删除标志（0代表存在 1代表删除）',
+  del_flag             char(1)         default '0'                comment '删除标志（0存在 1删除）',
   create_by            varchar(50)     default ''                 comment '创建者',
   create_time          bigint          default 0                  comment '创建时间',
   update_by            varchar(50)     default ''                 comment '更新者',
   update_time          bigint          default 0                  comment '更新时间',
-  remark               varchar(500)    default null               comment '备注',
+  remark               varchar(500)    default ''                 comment '备注',
   primary key (role_id)
 ) engine=innodb auto_increment=100 comment = '角色信息表';
 
@@ -393,7 +393,7 @@ insert into sys_dict_type values(5,  '任务分组',     'sys_job_group',       
 insert into sys_dict_type values(6,  '系统是否',     'sys_yes_no',          '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '系统是否列表');
 insert into sys_dict_type values(7,  '通知类型',     'sys_notice_type',     '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '通知类型列表');
 insert into sys_dict_type values(8,  '通知状态',     'sys_notice_status',   '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '通知状态列表');
-insert into sys_dict_type values(9,  '操作类型',     'sys_oper_type',       '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '操作类型列表');
+insert into sys_dict_type values(9,  '操作类型',     'sys_opera_type',       '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '操作类型列表');
 insert into sys_dict_type values(10, '系统状态',     'sys_common_status',   '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '登录状态列表');
 insert into sys_dict_type values(11, '任务日志记录', 'sys_job_save_log',    '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '任务日志记录列表');
 
@@ -437,15 +437,15 @@ insert into sys_dict_data values(14, 1,  '通知',         '1',         'sys_not
 insert into sys_dict_data values(15, 2,  '公告',         '2',         'sys_notice_type',     '',   'processing',    '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '公告');
 insert into sys_dict_data values(16, 1,  '正常',         '1',         'sys_notice_status',   '',   'success',       '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '正常状态');
 insert into sys_dict_data values(17, 2,  '关闭',         '0',         'sys_notice_status',   '',   'error',         '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '关闭状态');
-insert into sys_dict_data values(18, 99, '其他',         '0',         'sys_oper_type',       '',   'processing',    '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '其他操作');
-insert into sys_dict_data values(19, 1,  '新增',         '1',         'sys_oper_type',       '',   'processing',    '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '新增操作');
-insert into sys_dict_data values(20, 2,  '修改',         '2',         'sys_oper_type',       '',   'processing',    '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '修改操作');
-insert into sys_dict_data values(21, 3,  '删除',         '3',         'sys_oper_type',       '',   'error',         '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '删除操作');
-insert into sys_dict_data values(22, 4,  '授权',         '4',         'sys_oper_type',       '',   'success',       '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '授权操作');
-insert into sys_dict_data values(23, 5,  '导出',         '5',         'sys_oper_type',       '',   'warning',       '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '导出操作');
-insert into sys_dict_data values(24, 6,  '导入',         '6',         'sys_oper_type',       '',   'warning',       '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '导入操作');
-insert into sys_dict_data values(25, 7,  '强退',         '7',         'sys_oper_type',       '',   'error',         '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '强退操作');
-insert into sys_dict_data values(26, 8,  '清空',         '8',         'sys_oper_type',       '',   'error',         '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '清空操作');
+insert into sys_dict_data values(18, 99, '其他',         '0',         'sys_opera_type',       '',   'processing',    '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '其他操作');
+insert into sys_dict_data values(19, 1,  '新增',         '1',         'sys_opera_type',       '',   'processing',    '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '新增操作');
+insert into sys_dict_data values(20, 2,  '修改',         '2',         'sys_opera_type',       '',   'processing',    '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '修改操作');
+insert into sys_dict_data values(21, 3,  '删除',         '3',         'sys_opera_type',       '',   'error',         '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '删除操作');
+insert into sys_dict_data values(22, 4,  '授权',         '4',         'sys_opera_type',       '',   'success',       '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '授权操作');
+insert into sys_dict_data values(23, 5,  '导出',         '5',         'sys_opera_type',       '',   'warning',       '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '导出操作');
+insert into sys_dict_data values(24, 6,  '导入',         '6',         'sys_opera_type',       '',   'warning',       '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '导入操作');
+insert into sys_dict_data values(25, 7,  '强退',         '7',         'sys_opera_type',       '',   'error',         '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '强退操作');
+insert into sys_dict_data values(26, 8,  '清空',         '8',         'sys_opera_type',       '',   'error',         '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '清空操作');
 insert into sys_dict_data values(27, 1,  '成功',         '1',         'sys_common_status',   '',   'success',       '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '正常状态');
 insert into sys_dict_data values(28, 2,  '失败',         '0',         'sys_common_status',   '',   'error',         '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '停用状态');
 insert into sys_dict_data values(29, 1,  '不记录',        '0',         'sys_job_save_log',   '',   'warning',               '1', 'maskAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '不记录日志');
@@ -484,23 +484,23 @@ insert into sys_config values(4, '账号自助-是否开启用户注册功能', 
 -- ----------------------------
 drop table if exists sys_log_operate;
 create table sys_log_operate (
-  oper_id           bigint          not null auto_increment    comment '日志主键',
+  opera_id          bigint          not null auto_increment    comment '日志主键',
   title             varchar(50)     default ''                 comment '模块标题',
   business_type     char(1)         default '0'                comment '业务类型（0其它 1新增 2修改 3删除 4授权 5导出 6导入 7强退 8清空数据）',
   method            varchar(100)    default ''                 comment '方法名称',
   request_method    varchar(10)     default ''                 comment '请求方式',
   operator_type     char(1)         default '0'                comment '操作人员类别（0其它 1后台用户 2手机端用户）',
-  oper_name         varchar(50)     default ''                 comment '操作人员',
+  opera_name        varchar(50)     default ''                 comment '操作人员',
   dept_name         varchar(50)     default ''                 comment '部门名称',
-  oper_url          varchar(255)    default ''                 comment '请求URL',
-  oper_ip           varchar(128)    default ''                 comment '主机地址',
-  oper_location     varchar(255)    default ''                 comment '操作地点',
-  oper_param        varchar(2000)   default ''                 comment '请求参数',
-  oper_msg          varchar(2000)   default ''                 comment '操作消息',
+  opera_url         varchar(255)    default ''                 comment '请求URL',
+  opera_ip          varchar(128)    default ''                 comment '主机地址',
+  opera_location    varchar(255)    default ''                 comment '操作地点',
+  opera_param       varchar(2000)   default ''                 comment '请求参数',
+  opera_msg         varchar(2000)   default ''                 comment '操作消息',
   status            char(1)         default '0'                comment '操作状态（0异常 1正常）',
-  oper_time         bigint          default 0                  comment '操作时间',
+  opera_time        bigint          default 0                  comment '操作时间',
   cost_time         bigint          default 0                  comment '消耗时间（毫秒）',
-  primary key (oper_id)
+  primary key (opera_id)
 ) engine=innodb auto_increment=100 comment = '系统操作日志表';
 
 
@@ -583,7 +583,7 @@ create table sys_notice (
   notice_type       char(1)         not null                   comment '公告类型（1通知 2公告）',
   notice_content    text            default null               comment '公告内容',
   status            char(1)         default '0'                comment '公告状态（0关闭 1正常）',
-  del_flag          char(1)         default '0'                comment '删除标志（0代表存在 1代表删除）',
+  del_flag          char(1)         default '0'                comment '删除标志（0存在 1删除）',
   create_by         varchar(50)     default ''                 comment '创建者',
   create_time       bigint          default 0                  comment '创建时间',
   update_by         varchar(50)     default ''                 comment '更新者',
