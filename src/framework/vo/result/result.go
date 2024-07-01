@@ -1,7 +1,7 @@
 package result
 
 import (
-	"mask_api_gin/src/framework/constants/result"
+	constResult "mask_api_gin/src/framework/constants/result"
 )
 
 // CodeMsg 响应结果
@@ -12,11 +12,11 @@ func CodeMsg(code int, msg string) map[string]any {
 	return args
 }
 
-// 响应成功结果 map[string]any{}
+// Ok 响应成功结果
 func Ok(v map[string]any) map[string]any {
 	args := make(map[string]any)
-	args["code"] = result.CODE_SUCCESS
-	args["msg"] = result.MSG_SUCCESS
+	args["code"] = constResult.CodeSuccess
+	args["msg"] = constResult.MsgSuccess
 	// v合并到args
 	for key, value := range v {
 		args[key] = value
@@ -24,28 +24,28 @@ func Ok(v map[string]any) map[string]any {
 	return args
 }
 
-// 响应成功结果信息
+// OkMsg 响应成功结果信息
 func OkMsg(msg string) map[string]any {
 	args := make(map[string]any)
-	args["code"] = result.CODE_SUCCESS
+	args["code"] = constResult.CodeSuccess
 	args["msg"] = msg
 	return args
 }
 
-// 响应成功结果数据
+// OkData 响应成功结果数据
 func OkData(data any) map[string]any {
 	args := make(map[string]any)
-	args["code"] = result.CODE_SUCCESS
-	args["msg"] = result.MSG_SUCCESS
+	args["code"] = constResult.CodeSuccess
+	args["msg"] = constResult.MsgSuccess
 	args["data"] = data
 	return args
 }
 
-// 响应失败结果 map[string]any{}
+// Err 响应失败结果 map[string]any{}
 func Err(v map[string]any) map[string]any {
 	args := make(map[string]any)
-	args["code"] = result.CODE_ERROR
-	args["msg"] = result.MSG_ERROR
+	args["code"] = constResult.CodeError
+	args["msg"] = constResult.MsgError
 	// v合并到args
 	for key, value := range v {
 		args[key] = value
@@ -53,19 +53,19 @@ func Err(v map[string]any) map[string]any {
 	return args
 }
 
-// 响应失败结果信息
+// ErrMsg 响应失败结果信息
 func ErrMsg(msg string) map[string]any {
 	args := make(map[string]any)
-	args["code"] = result.CODE_ERROR
+	args["code"] = constResult.CodeError
 	args["msg"] = msg
 	return args
 }
 
-// 响应失败结果数据
+// ErrData 响应失败结果数据
 func ErrData(data any) map[string]any {
 	args := make(map[string]any)
-	args["code"] = result.CODE_ERROR
-	args["msg"] = result.MSG_ERROR
+	args["code"] = constResult.CodeError
+	args["msg"] = constResult.MsgError
 	args["data"] = data
 	return args
 }

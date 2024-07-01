@@ -1,4 +1,4 @@
-package errorcatch
+package error_catch
 
 import (
 	"fmt"

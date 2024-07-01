@@ -30,7 +30,7 @@ func CreateQueue(name string, processor QueueProcessor) Queue {
 	queue := Queue{
 		Name:      name,
 		Processor: processor,
-		Job:       &[]*QueueJob{},
+		Job:       []*QueueJob{},
 	}
 	queueMap[name] = queue
 	return queue
@@ -57,7 +57,7 @@ func QueueNames() []string {
 type Queue struct {
 	Name      string // 队列名
 	Processor QueueProcessor
-	Job       *[]*QueueJob
+	Job       []*QueueJob
 }
 
 // QueueProcessor 队列处理函数接口
@@ -86,11 +86,11 @@ func (q *Queue) RunJob(data any, opts JobOptions) int {
 			return Active
 		}
 		// 从切片 jobs 中删除指定索引位置的元素
-		for i, v := range *q.Job {
+		for i, v := range q.Job {
 			if v.cid == 0 {
-				jobs := *q.Job
+				jobs := q.Job
 				jobs = append(jobs[:i], jobs[i+1:]...)
-				*q.Job = jobs
+				q.Job = jobs
 				break
 			}
 		}
@@ -101,27 +101,27 @@ func (q *Queue) RunJob(data any, opts JobOptions) int {
 		// 添加新任务
 		cid, err := c.AddJob(opts.Cron, job)
 		if err != nil {
-			newLog.Error(err, "err")
+			cronLog.Error(err, "err")
 			job.Status = Failed
 		}
 		job.cid = cid
 	}
 
-	*q.Job = append(*q.Job, job)
-	newLog.Info("RunJob", job.cid, opts.JobId, job.Status)
+	q.Job = append(q.Job, job)
+	cronLog.Info("RunJob", job.cid, opts.JobId, job.Status)
 	return job.Status
 }
 
 // RemoveJob 移除任务
 func (q *Queue) RemoveJob(jobId string) bool {
-	for i, v := range *q.Job {
+	for i, v := range q.Job {
 		if jobId == v.Opts.JobId {
-			newLog.Info("RemoveJob", v.cid, jobId, v.Status)
+			cronLog.Info("RemoveJob", v.cid, jobId, v.Status)
 			c.Remove(v.cid)
 			// 从切片 jobs 中删除指定索引位置的元素
-			jobs := *q.Job
+			jobs := q.Job
 			jobs = append(jobs[:i], jobs[i+1:]...)
-			*q.Job = jobs
+			q.Job = jobs
 			return true
 		}
 	}
@@ -156,23 +156,23 @@ type QueueJob struct {
 }
 
 // GetJob 获取当前执行任务
-func (job *QueueJob) GetJob(repeat bool) *QueueJob {
-	q := GetQueue(job.queueName)
-	for _, v := range *q.Job {
-		if repeat && v.Opts.JobId == job.Opts.JobId {
-			return v
+func (qj QueueJob) GetJob(repeat bool) QueueJob {
+	q := GetQueue(qj.queueName)
+	for _, v := range q.Job {
+		if repeat && v.Opts.JobId == qj.Opts.JobId {
+			return *v
 		}
 		if !repeat && v.cid == 0 {
-			return v
+			return *v
 		}
 	}
-	return job
+	return qj
 }
 
 // Run 实现的接口函数
-func (s QueueJob) Run() {
+func (qj QueueJob) Run() {
 	// 检查当前任务
-	job := s.GetJob(s.cid != 0)
+	job := qj.GetJob(qj.cid != 0)
 
 	// Active 状态不执行
 	if job.Status == Active {
@@ -187,23 +187,23 @@ func (s QueueJob) Run() {
 				err = fmt.Errorf("%v", r)
 			}
 			job.Status = Failed
-			newLog.Error(err, "failed", job)
+			cronLog.Error(err, "failed", job)
 		}
 	}()
 
 	// 开始执行
 	job.Status = Active
 	job.Timestamp = time.Now().UnixMilli()
-	newLog.Info("run", job.cid, job.Opts.JobId)
+	cronLog.Info("run", job.cid, job.Opts.JobId)
 
 	// 获取队列处理器接口实现
 	processor := *job.queueProcessor
 	result, err := processor.Execute(job.Data)
 	if err != nil {
 		job.Status = Failed
-		newLog.Error(err, "failed", job)
+		cronLog.Error(err, "failed", job)
 	} else {
 		job.Status = Completed
-		newLog.Completed(result, "completed", job)
+		cronLog.Completed(result, "completed", job)
 	}
 }

@@ -2,33 +2,32 @@ package cron
 
 import (
 	"encoding/json"
-	"mask_api_gin/src/framework/constants/common"
+	constCommon "mask_api_gin/src/framework/constants/common"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/repository"
 	"time"
 )
 
-// 实例任务执行日志收集
-var newLog = cronlog{}
+// cronLog 实例任务执行日志收集
+var cronLog = clog{}
 
-// cronlog 任务执行日志收集
-type cronlog struct{}
+// clog 任务执行日志收集
+type clog struct{}
 
 // Info 任务普通信息收集
-func (s cronlog) Info(msg string, keysAndValues ...any) {
-	// logger.Infof("Info msg: %v ====> kv: %v", msg, keysAndValues)
-
+func (clog) Info(msg string, keysAndValues ...any) {
+	//log.Printf("Info msg: %v ====> kv: %v", msg, keysAndValues)
 }
 
 // Error 任务异常错误收集
-func (s cronlog) Error(err error, msg string, keysAndValues ...any) {
-	// logger.Errorf("Error: %v -> msg: %v ====> kv: %v", err, msg, keysAndValues)
-	// logger.Errorf("k0: %v", keysAndValues[0].(*QueueJob))
+func (clog) Error(err error, msg string, keysAndValues ...any) {
+	//log.Printf("Error: %v -> msg: %v ====> kv: %v", err, msg, keysAndValues)
+	//log.Printf("k0: %v", keysAndValues[0].(QueueJob))
 
 	// 指定的错误收集
 	if msg == "failed" {
 		// 任务对象
-		job := keysAndValues[0].(*QueueJob)
+		job := keysAndValues[0].(QueueJob)
 
 		// 读取任务信息进行保存日志
 		if data, ok := job.Data.(JobData); ok {
@@ -38,20 +37,20 @@ func (s cronlog) Error(err error, msg string, keysAndValues ...any) {
 				Data:      data,
 				Result:    err.Error(),
 			}
-			jobLog.SaveLog(common.STATUS_NO)
+			jobLog.SaveLog(constCommon.StatusNo)
 		}
 	}
 }
 
 // Completed 任务完成return的结果收集
-func (s cronlog) Completed(result any, msg string, keysAndValues ...any) {
-	// logger.Infof("Completed: %v -> msg: %v ====> kv: %v", result, msg, keysAndValues)
-	// logger.Infof("k0: %v", keysAndValues[0].(*QueueJob))
+func (clog) Completed(result any, msg string, keysAndValues ...any) {
+	//log.Printf("Completed: %v -> msg: %v ====> kv: %v", result, msg, keysAndValues)
+	//log.Printf("k0: %v", keysAndValues[0].(QueueJob))
 
 	// 指定的完成收集
 	if msg == "completed" {
 		// 任务对象
-		job := keysAndValues[0].(*QueueJob)
+		job := keysAndValues[0].(QueueJob)
 
 		// 读取任务信息进行保存日志
 		if data, ok := job.Data.(JobData); ok {
@@ -61,7 +60,7 @@ func (s cronlog) Completed(result any, msg string, keysAndValues ...any) {
 				Data:      data,
 				Result:    result,
 			}
-			jobLog.SaveLog(common.STATUS_YES)
+			jobLog.SaveLog(constCommon.StatusYes)
 		}
 	}
 }
@@ -79,20 +78,20 @@ func (jl *jobLogData) SaveLog(status string) {
 	sysJob := jl.Data.SysJob
 
 	// 任务日志不需要记录
-	if sysJob.SaveLog == "" || sysJob.SaveLog == common.STATUS_NO {
+	if sysJob.SaveLog == "" || sysJob.SaveLog == constCommon.StatusNo {
 		return
 	}
 
 	// 结果信息key的Name
-	resultNmae := "failed"
-	if status == common.STATUS_YES {
-		resultNmae = "completed"
+	resultName := "failed"
+	if status == constCommon.StatusYes {
+		resultName = "completed"
 	}
 
 	// 结果信息序列化字符串
 	jsonByte, _ := json.Marshal(map[string]any{
 		"cron":    jl.Data.Repeat,
-		"name":    resultNmae,
+		"name":    resultName,
 		"message": jl.Result,
 	})
 	jobMsg := string(jsonByte)

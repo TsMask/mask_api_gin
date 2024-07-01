@@ -3,9 +3,9 @@ package ctx
 import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/constants/common"
-	"mask_api_gin/src/framework/constants/roledatascope"
-	"mask_api_gin/src/framework/constants/token"
+	constCommon "mask_api_gin/src/framework/constants/common"
+	constRoleDataScope "mask_api_gin/src/framework/constants/role_data_scope"
+	constToken "mask_api_gin/src/framework/constants/token"
 	"mask_api_gin/src/framework/utils/ip2region"
 	"mask_api_gin/src/framework/utils/ua"
 	"mask_api_gin/src/framework/vo"
@@ -18,9 +18,9 @@ import (
 // QueryMap 查询参数转换Map
 func QueryMap(c *gin.Context) map[string]any {
 	queryValues := c.Request.URL.Query()
-	queryParams := make(map[string]any)
+	queryParams := make(map[string]any, len(queryValues))
 	for key, values := range queryValues {
-		queryParams[key] = values[0]
+		queryParams[key] = values
 	}
 	return queryParams
 }
@@ -41,15 +41,19 @@ func RequestParamsMap(c *gin.Context) map[string]any {
 	}
 
 	// 表单
-	bodyParams := c.Request.PostForm
-	for key, value := range bodyParams {
-		params[key] = value[0]
+	formParams := c.Request.PostForm
+	for key, value := range formParams {
+		if _, ok := params[key]; !ok {
+			params[key] = value[0]
+		}
 	}
 
 	// 查询
 	queryParams := c.Request.URL.Query()
 	for key, value := range queryParams {
-		params[key] = value[0]
+		if _, ok := params[key]; !ok {
+			params[key] = value[0]
+		}
 	}
 	return params
 }
@@ -63,16 +67,16 @@ func IPAddrLocation(c *gin.Context) (string, string) {
 
 // Authorization 解析请求头
 func Authorization(c *gin.Context) string {
-	authHeader := c.GetHeader(token.HEADER_KEY)
+	authHeader := c.GetHeader(constToken.HeaderKey)
 	if authHeader == "" {
 		return ""
 	}
 	// 拆分 Authorization 请求头，提取 JWT 令牌部分
-	arr := strings.Split(authHeader, token.HEADER_PREFIX)
-	if len(arr) == 2 && arr[1] == "" {
-		return ""
+	arr := strings.SplitN(authHeader, constToken.HeaderPrefix, 2)
+	if len(arr) == 2 {
+		return strings.TrimSpace(arr[1]) // 去除可能存在的空格
 	}
-	return arr[1]
+	return ""
 }
 
 // UaOsBrowser 解析请求用户代理信息
@@ -96,7 +100,7 @@ func UaOsBrowser(c *gin.Context) (string, string) {
 
 // LoginUser 登录用户信息
 func LoginUser(c *gin.Context) (vo.LoginUser, error) {
-	value, exists := c.Get(common.CTX_LOGIN_USER)
+	value, exists := c.Get(constCommon.CtxLoginUser)
 	if exists {
 		return value.(vo.LoginUser), nil
 	}
@@ -105,7 +109,7 @@ func LoginUser(c *gin.Context) (vo.LoginUser, error) {
 
 // LoginUserToUserID 登录用户信息-用户ID
 func LoginUserToUserID(c *gin.Context) string {
-	value, exists := c.Get(common.CTX_LOGIN_USER)
+	value, exists := c.Get(constCommon.CtxLoginUser)
 	if exists {
 		loginUser := value.(vo.LoginUser)
 		return loginUser.UserID
@@ -115,7 +119,7 @@ func LoginUserToUserID(c *gin.Context) string {
 
 // LoginUserToUserName 登录用户信息-用户名称
 func LoginUserToUserName(c *gin.Context) string {
-	value, exists := c.Get(common.CTX_LOGIN_USER)
+	value, exists := c.Get(constCommon.CtxLoginUser)
 	if exists {
 		loginUser := value.(vo.LoginUser)
 		return loginUser.User.UserName
@@ -148,11 +152,11 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 	for _, role := range userInfo.Roles {
 		dataScope := role.DataScope
 
-		if roledatascope.ALL == dataScope {
+		if constRoleDataScope.All == dataScope {
 			break
 		}
 
-		if roledatascope.CUSTOM != dataScope {
+		if constRoleDataScope.Custom != dataScope {
 			hasKey := false
 			for _, key := range scopeKeys {
 				if key == dataScope {
@@ -165,22 +169,22 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 			}
 		}
 
-		if roledatascope.CUSTOM == dataScope {
+		if constRoleDataScope.Custom == dataScope {
 			sql := fmt.Sprintf(`%s.dept_id IN ( SELECT dept_id FROM sys_role_dept WHERE role_id = '%s' )`, deptAlias, role.RoleID)
 			conditions = append(conditions, sql)
 		}
 
-		if roledatascope.DEPT == dataScope {
+		if constRoleDataScope.Dept == dataScope {
 			sql := fmt.Sprintf("%s.dept_id = %s", deptAlias, userInfo.DeptID)
 			conditions = append(conditions, sql)
 		}
 
-		if roledatascope.DEPT_AND_CHILD == dataScope {
+		if constRoleDataScope.DeptChild == dataScope {
 			sql := fmt.Sprintf(`%s.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = '%s' or find_in_set('%s' , ancestors ) )`, deptAlias, userInfo.DeptID, userInfo.DeptID)
 			conditions = append(conditions, sql)
 		}
 
-		if roledatascope.SELF == dataScope {
+		if constRoleDataScope.Self == dataScope {
 			// 数据权限为仅本人且没有userAlias别名不查询任何数据
 			if userAlias == "" {
 				sql := fmt.Sprintf(`%s.dept_id = '0'`, deptAlias)

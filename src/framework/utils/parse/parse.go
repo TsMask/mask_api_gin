@@ -13,44 +13,46 @@ import (
 )
 
 // Number 解析数值型
-func Number(str any) int64 {
-	switch str := str.(type) {
+func Number(data any) int64 {
+	switch v := data.(type) {
 	case string:
-		if str == "" {
+		if v == "" {
 			return 0
 		}
-		num, err := strconv.ParseInt(str, 10, 64)
+		num, err := strconv.ParseInt(v, 10, 64)
 		if err != nil {
 			return 0
 		}
 		return num
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-		return reflect.ValueOf(str).Int()
+		return reflect.ValueOf(v).Int()
 	case float32, float64:
-		return int64(reflect.ValueOf(str).Float())
+		return int64(reflect.ValueOf(v).Float())
 	default:
 		return 0
 	}
 }
 
 // Boolean 解析布尔型
-func Boolean(str any) bool {
-	switch str := str.(type) {
+func Boolean(data any) bool {
+	switch v := data.(type) {
 	case string:
-		if str == "" || str == "false" || str == "0" {
+		if v == "" || v == "false" || v == "0" {
 			return false
 		}
 		// 尝试将字符串解析为数字
-		if num, err := strconv.ParseFloat(str, 64); err == nil {
+		if num, err := strconv.ParseFloat(v, 64); err == nil {
 			return num != 0
 		}
 		return true
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-		num := reflect.ValueOf(str).Int()
+		num := reflect.ValueOf(v).Int()
 		return num != 0
 	case float32, float64:
-		num := reflect.ValueOf(str).Float()
+		num := reflect.ValueOf(v).Float()
 		return num != 0
+	case bool:
+		return v
 	default:
 		return false
 	}

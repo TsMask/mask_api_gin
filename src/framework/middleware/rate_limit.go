@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"fmt"
-	"mask_api_gin/src/framework/constants/cachekey"
+	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
 	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/ip2region"
@@ -14,14 +14,14 @@ import (
 )
 
 const (
-	// 默认策略全局限流
-	LIMIT_GLOBAL = 1
+	// LimitGlobal 默认策略全局限流
+	LimitGlobal = 1
 
-	// 根据请求者IP进行限流
-	LIMIT_IP = 2
+	// LimitIP 根据请求者IP进行限流
+	LimitIP = 2
 
-	// 根据用户ID进行限流
-	LIMIT_USER = 3
+	// LimitUser 根据用户ID进行限流
+	LimitUser = 3
 )
 
 // LimitOption 请求限流参数
@@ -33,7 +33,7 @@ type LimitOption struct {
 
 // RateLimit 请求限流
 //
-// 示例参数：middleware.LimitOption{ Time:  5, Count: 10, Type:  middleware.LIMIT_IP }
+// 示例参数：middleware.LimitOption{ Time:  5, Count: 10, Type:  middleware.LimitIP }
 //
 // 参数表示：5秒内，最多请求10次，限制类型为 IP
 //
@@ -49,7 +49,7 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 			option.Count = 10
 		}
 		if option.Type == 0 {
-			option.Type = LIMIT_GLOBAL
+			option.Type = LimitGlobal
 		}
 
 		// 获取执行函数名称
@@ -57,10 +57,10 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 		lastDotIndex := strings.LastIndex(funcName, "/")
 		funcName = funcName[lastDotIndex+1:]
 		// 生成限流key
-		var limitKey string = cachekey.RATE_LIMIT_KEY + funcName
+		var limitKey string = constCacheKey.RateLimitKey + funcName
 
 		// 用户
-		if option.Type == LIMIT_USER {
+		if option.Type == LimitUser {
 			loginUser, err := ctx.LoginUser(c)
 			if err != nil {
 				c.JSON(401, result.Err(map[string]any{
@@ -70,23 +70,33 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 				c.Abort() // 停止执行后续的处理函数
 				return
 			}
-			limitKey = cachekey.RATE_LIMIT_KEY + loginUser.UserID + ":" + funcName
+			limitKey = constCacheKey.RateLimitKey + loginUser.UserID + ":" + funcName
 		}
 
 		// IP
-		if option.Type == LIMIT_IP {
+		if option.Type == LimitIP {
 			clientIP := ip2region.ClientIP(c.ClientIP())
-			limitKey = cachekey.RATE_LIMIT_KEY + clientIP + ":" + funcName
+			limitKey = constCacheKey.RateLimitKey + clientIP + ":" + funcName
 		}
 
 		// 在Redis查询并记录请求次数
-		rateCount, _ := redis.RateLimit("", limitKey, option.Time, option.Count)
-		rateTime, _ := redis.GetExpire("", limitKey)
+		rateCount, err := redis.RateLimit("", limitKey, option.Time, option.Count)
+		if err != nil {
+			c.JSON(200, result.ErrMsg("访问过于频繁，请稍候再试"))
+			c.Abort() // 停止执行后续的处理函数
+			return
+		}
+		rateTime, err := redis.GetExpire("", limitKey)
+		if err != nil {
+			c.JSON(200, result.ErrMsg("访问过于频繁，请稍候再试"))
+			c.Abort() // 停止执行后续的处理函数
+			return
+		}
 
 		// 设置响应头中的限流声明字段
-		c.Header("X-RateLimit-Limit", fmt.Sprintf("%d", option.Count))                      // 总请求数限制
-		c.Header("X-RateLimit-Remaining", fmt.Sprintf("%d", option.Count-rateCount))        // 剩余可用请求数
-		c.Header("X-RateLimit-Reset", fmt.Sprintf("%d", time.Now().Unix()+int64(rateTime))) // 重置时间戳
+		c.Header("X-RateLimit-Limit", fmt.Sprintf("%d", option.Count))               // 总请求数限制
+		c.Header("X-RateLimit-Remaining", fmt.Sprintf("%d", option.Count-rateCount)) // 剩余可用请求数
+		c.Header("X-RateLimit-Reset", fmt.Sprintf("%d", time.Now().Unix()+rateTime)) // 重置时间戳
 
 		if rateCount >= option.Count {
 			c.JSON(200, result.ErrMsg("访问过于频繁，请稍候再试"))

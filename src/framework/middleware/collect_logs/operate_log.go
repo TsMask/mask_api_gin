@@ -1,9 +1,9 @@
-package collectlogs
+package collect_logs
 
 import (
 	"encoding/json"
 	"fmt"
-	"mask_api_gin/src/framework/constants/common"
+	constCommon "mask_api_gin/src/framework/constants/common"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo/result"
@@ -16,46 +16,46 @@ import (
 )
 
 const (
-	// 业务操作类型-其它
-	BUSINESS_TYPE_OTHER = "0"
+	// BusinessTypeOther 业务操作类型-其它
+	BusinessTypeOther = "0"
 
-	// 业务操作类型-新增
-	BUSINESS_TYPE_INSERT = "1"
+	// BusinessTypeInsert 业务操作类型-新增
+	BusinessTypeInsert = "1"
 
-	// 业务操作类型-修改
-	BUSINESS_TYPE_UPDATE = "2"
+	// BusinessTypeUpdate 业务操作类型-修改
+	BusinessTypeUpdate = "2"
 
-	// 业务操作类型-删除
-	BUSINESS_TYPE_DELETE = "3"
+	// BusinessTypeDelete 业务操作类型-删除
+	BusinessTypeDelete = "3"
 
-	// 业务操作类型-授权
-	BUSINESS_TYPE_GRANT = "4"
+	// BusinessTypeGrant 业务操作类型-授权
+	BusinessTypeGrant = "4"
 
-	// 业务操作类型-导出
-	BUSINESS_TYPE_EXPORT = "5"
+	// BusinessTypeExport 业务操作类型-导出
+	BusinessTypeExport = "5"
 
-	// 业务操作类型-导入
-	BUSINESS_TYPE_IMPORT = "6"
+	// BusinessTypeImport 业务操作类型-导入
+	BusinessTypeImport = "6"
 
-	// 业务操作类型-强退
-	BUSINESS_TYPE_FORCE = "7"
+	// BusinessTypeForce 业务操作类型-强退
+	BusinessTypeForce = "7"
 
-	// 业务操作类型-清空数据
-	BUSINESS_TYPE_CLEAN = "8"
+	// BusinessTypeClean 业务操作类型-清空数据
+	BusinessTypeClean = "8"
 )
 
 const (
-	// 操作人类别-其它
-	OPERATOR_TYPE_OTHER = "0"
+	// OperatorTypeOther 操作人类别-其它
+	OperatorTypeOther = "0"
 
-	// 操作人类别-后台用户
-	OPERATOR_TYPE_MANAGE = "1"
+	// OperatorTypeManage 操作人类别-后台用户
+	OperatorTypeManage = "1"
 
-	// 操作人类别-手机端用户
-	OPERATOR_TYPE_MOBILE = "2"
+	// OperatorTypeMobile 操作人类别-手机端用户
+	OperatorTypeMobile = "2"
 )
 
-// Option 操作日志参数
+// Options Option 操作日志参数
 type Options struct {
 	Title              string `json:"title"`              // 标题
 	BusinessType       string `json:"businessType"`       // 类型，默认常量 BUSINESS_TYPE_OTHER
@@ -75,7 +75,7 @@ func OptionNew(title, businessType string) Options {
 	return Options{
 		Title:              title,
 		BusinessType:       businessType,
-		OperatorType:       OPERATOR_TYPE_OTHER,
+		OperatorType:       OperatorTypeOther,
 		IsSaveRequestData:  true,
 		IsSaveResponseData: true,
 	}
@@ -127,7 +127,7 @@ func OperateLog(options Options) gin.HandlerFunc {
 		}
 
 		if loginUser.User.UserType == "sys" {
-			operLog.OperatorType = OPERATOR_TYPE_MANAGE
+			operLog.OperatorType = OperatorTypeManage
 		}
 
 		// 是否需要保存request，参数和值
@@ -156,9 +156,9 @@ func OperateLog(options Options) gin.HandlerFunc {
 		// 响应状态
 		status := c.Writer.Status()
 		if status == 200 {
-			operLog.Status = common.STATUS_YES
+			operLog.Status = constCommon.StatusYes
 		} else {
-			operLog.Status = common.STATUS_NO
+			operLog.Status = constCommon.StatusNo
 		}
 
 		// 是否需要保存response，参数和值

@@ -3,13 +3,13 @@ package result
 // 响应结果常量信息
 
 const (
-	// 响应-code错误失败
-	CODE_ERROR = 500
-	// 响应-msg错误失败
-	MSG_ERROR = "失败"
+	// CodeError 响应-code错误失败
+	CodeError = 500
+	// MsgError 响应-msg错误失败
+	MsgError = "失败"
 
-	// 响应-msg正常成功
-	CODE_SUCCESS = 200
-	// 响应-code正常成功
-	MSG_SUCCESS = "成功"
+	// CodeSuccess 响应-msg正常成功
+	CodeSuccess = 200
+	// MsgSuccess 响应-code正常成功
+	MsgSuccess = "成功"
 )

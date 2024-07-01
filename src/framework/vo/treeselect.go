@@ -4,14 +4,9 @@ import systemModel "mask_api_gin/src/modules/system/model"
 
 // TreeSelect 树结构实体类
 type TreeSelect struct {
-	// ID 节点ID
-	ID string `json:"id"`
-
-	// Label 节点名称
-	Label string `json:"label"`
-
-	// Children 子节点
-	Children []TreeSelect `json:"children"`
+	ID       string       `json:"id"`       // 节点ID
+	Label    string       `json:"label"`    // 节点名称
+	Children []TreeSelect `json:"children"` // 子节点
 }
 
 // SysMenuTreeSelect 使用给定的 SysMenu 对象解析为 TreeSelect 对象

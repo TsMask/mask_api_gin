@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-// 网络地址(内网)
-const LOCAT_HOST = "127.0.0.1"
+// LocalHost 网络地址(内网)
+const LocalHost = "127.0.0.1"
 
 // 全局查询对象
 var searcher *Searcher
@@ -38,7 +38,7 @@ func init() {
 // 国家|区域|省份|城市|ISP
 func RegionSearchByIp(ip string) (string, int, int64) {
 	ip = ClientIP(ip)
-	if ip == LOCAT_HOST {
+	if ip == LocalHost {
 		return "0|0|0|内网IP|内网IP", 0, 0
 	}
 	tStart := time.Now()
@@ -55,7 +55,7 @@ func RegionSearchByIp(ip string) (string, int, int64) {
 // 218.4.167.70 江苏省 苏州市
 func RealAddressByIp(ip string) string {
 	ip = ClientIP(ip)
-	if ip == LOCAT_HOST {
+	if ip == LocalHost {
 		return "内网IP"
 	}
 	region, err := searcher.SearchByStr(ip)
@@ -79,8 +79,8 @@ func ClientIP(ip string) string {
 	if strings.HasPrefix(ip, "::ffff:") {
 		ip = strings.Replace(ip, "::ffff:", "", 1)
 	}
-	if ip == LOCAT_HOST || ip == "::1" {
-		return LOCAT_HOST
+	if ip == LocalHost || ip == "::1" {
+		return LocalHost
 	}
 	return ip
 }

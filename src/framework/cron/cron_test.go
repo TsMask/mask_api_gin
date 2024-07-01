@@ -1,7 +1,7 @@
 package cron
 
 import (
-	"mask_api_gin/src/framework/logger"
+	"log"
 	"testing"
 	"time"
 )
@@ -13,13 +13,13 @@ func init() {
 	StartCron()
 }
 
-// 简单示例 队列任务处理
+// NewSimple 简单示例 队列任务处理
 var NewSimple = &Simple{}
 
 type Simple struct{}
 
 func (s *Simple) Execute(data any) (any, error) {
-	logger.Infof("执行=> %+v ", data)
+	log.Printf("执行=> %+v ", data)
 	// 实现任务处理逻辑
 	return data, nil
 }
@@ -56,7 +56,7 @@ func TestSimple(t *testing.T) {
 	select {}
 }
 
-// Foo 队列任务处理
+// NewFooProcessor 等待执行示例 队列任务处理
 var NewFooProcessor = &FooProcessor{
 	progress: 0,
 	count:    0,
@@ -68,7 +68,7 @@ type FooProcessor struct {
 }
 
 func (s *FooProcessor) Execute(data any) (any, error) {
-	logger.Infof("执行 %d %d => %+v ", s.count, s.progress, data)
+	log.Printf("执行 %d %d => %+v ", s.count, s.progress, data)
 	s.count++
 
 	// 实现任务处理逻辑
@@ -77,7 +77,7 @@ func (s *FooProcessor) Execute(data any) (any, error) {
 	for i < 10 {
 		// 获取任务进度
 		progress := s.progress
-		logger.Infof("data: %v => 任务进度：%d", data, progress)
+		log.Printf("data: %v => 任务进度：%d", data, progress)
 		// 延迟响应
 		time.Sleep(time.Second * 2)
 		i++
@@ -107,7 +107,7 @@ func TestFoo(t *testing.T) {
 	select {}
 }
 
-// Bar 队列任务处理
+// NewBarProcessor 错误中断示例 队列任务处理
 var NewBarProcessor = &BarProcessor{
 	progress: 0,
 	count:    0,
@@ -119,7 +119,7 @@ type BarProcessor struct {
 }
 
 func (s *BarProcessor) Execute(data any) (any, error) {
-	logger.Infof("执行 %d %d => %+v ", s.count, s.progress, data)
+	log.Printf("执行 %d %d => %+v ", s.count, s.progress, data)
 	s.count++
 
 	// 实现任务处理逻辑
@@ -128,7 +128,7 @@ func (s *BarProcessor) Execute(data any) (any, error) {
 	for i < 5 {
 		// 获取任务进度
 		progress := s.progress
-		logger.Infof("data: %v => 任务进度：%d", data, progress)
+		log.Printf("data: %v => 任务进度：%d", data, progress)
 		// 延迟响应
 		time.Sleep(time.Second * 2)
 		// 程序中途执行错误

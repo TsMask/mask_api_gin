@@ -1,10 +1,9 @@
 package file
 
 import (
-	"errors"
 	"fmt"
 	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/constants/uploadsubpath"
+	constUploadSubPath "mask_api_gin/src/framework/constants/upload_sub_path"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/generate"
@@ -18,8 +17,8 @@ import (
 	"time"
 )
 
-/**最大文件名长度 */
-const DEFAULT_FILE_NAME_LENGTH = 100
+// DefaultFileNameLength 最大文件名长度
+const DefaultFileNameLength = 100
 
 // 文件上传路径 prefix, dir
 func resourceUpload() (string, string) {
@@ -44,13 +43,13 @@ func uploadFileSize() int64 {
 // 文件上传扩展名白名单
 func uploadWhiteList() []string {
 	arr := config.Get("upload.whitelist").([]any)
-	strings := make([]string, len(arr))
+	whiteList := make([]string, len(arr))
 	for i, val := range arr {
 		if str, ok := val.(string); ok {
-			strings[i] = str
+			whiteList[i] = str
 		}
 	}
-	return strings
+	return whiteList
 }
 
 // 生成文件名称 fileName_随机值.extName
@@ -65,15 +64,15 @@ func generateFileName(fileName string) string {
 	return fmt.Sprintf("%s_%s%s", newFileName, generate.Code(6), fileExt)
 }
 
-// 检查文件允许写入本地
+// isAllowWrite 检查文件允许写入本地
 //
-// fileName 原始文件名称含后缀，如：midway1_logo_iipc68.png
+// fileName 原始文件名称含后缀，如：file_logo_xxw68.png
 //
-// allowExts 允许上传拓展类型，['.png']
-func isAllowWrite(fileName string, allowExts []string, fileSize int64) error {
+// allowExt 允许上传拓展类型，['.png']
+func isAllowWrite(fileName string, allowExt []string, fileSize int64) error {
 	// 判断上传文件名称长度
-	if len(fileName) > DEFAULT_FILE_NAME_LENGTH {
-		return fmt.Errorf("上传文件名称长度限制最长为 %d", DEFAULT_FILE_NAME_LENGTH)
+	if len(fileName) > DefaultFileNameLength {
+		return fmt.Errorf("上传文件名称长度限制最长为 %d", DefaultFileNameLength)
 	}
 
 	// 最大上传文件大小
@@ -85,17 +84,17 @@ func isAllowWrite(fileName string, allowExts []string, fileSize int64) error {
 	// 判断文件拓展是否为允许的拓展类型
 	fileExt := filepath.Ext(fileName)
 	hasExt := false
-	if len(allowExts) == 0 {
-		allowExts = uploadWhiteList()
+	if len(allowExt) == 0 {
+		allowExt = uploadWhiteList()
 	}
-	for _, ext := range allowExts {
+	for _, ext := range allowExt {
 		if ext == fileExt {
 			hasExt = true
 			break
 		}
 	}
 	if !hasExt {
-		return fmt.Errorf("上传文件类型不支持，仅支持以下类型：%s", strings.Join(allowExts, "、"))
+		return fmt.Errorf("上传文件类型不支持，仅支持以下类型：%s", strings.Join(allowExt, "、"))
 	}
 
 	return nil
@@ -130,10 +129,10 @@ func isAllowRead(filePath string) error {
 //
 // subPath 子路径，默认 UploadSubPath.DEFAULT
 //
-// allowExts 允许上传拓展类型（含“.”)，如 ['.png','.jpg']
-func TransferUploadFile(file *multipart.FileHeader, subPath string, allowExts []string) (string, error) {
+// allowExt 允许上传拓展类型（含“.”)，如 ['.png','.jpg']
+func TransferUploadFile(file *multipart.FileHeader, subPath string, allowExt []string) (string, error) {
 	// 上传文件检查
-	err := isAllowWrite(file.Filename, allowExts, file.Size)
+	err := isAllowWrite(file.Filename, allowExt, file.Size)
 	if err != nil {
 		return "", err
 	}
@@ -202,7 +201,7 @@ func ReadUploadFileStream(filePath, headerRange string) (map[string]any, error) 
 		result["chunkSize"] = end - start + 1
 		byteArr, err := getFileStream(fileAsbPath, start, end)
 		if err != nil {
-			return map[string]any{}, errors.New("读取文件失败")
+			return map[string]any{}, fmt.Errorf("读取文件失败")
 		}
 		result["data"] = byteArr
 		return result, nil
@@ -210,7 +209,7 @@ func ReadUploadFileStream(filePath, headerRange string) (map[string]any, error) 
 
 	byteArr, err := getFileStream(fileAsbPath, 0, fileSize)
 	if err != nil {
-		return map[string]any{}, errors.New("读取文件失败")
+		return map[string]any{}, fmt.Errorf("读取文件失败")
 	}
 	result["data"] = byteArr
 	return result, nil
@@ -232,7 +231,7 @@ func TransferChunkUploadFile(file *multipart.FileHeader, index, identifier strin
 	// 上传资源路径
 	prefix, dir := resourceUpload()
 	// 新文件名称并组装文件地址
-	filePath := filepath.Join(uploadsubpath.CHUNK, date.ParseDatePath(time.Now()), identifier)
+	filePath := filepath.Join(constUploadSubPath.Chunk, date.ParseDatePath(time.Now()), identifier)
 	writePathFile := filepath.Join(dir, filePath, index)
 	// 存入新文件路径
 	err = transferToNewFile(file, writePathFile)
@@ -243,7 +242,7 @@ func TransferChunkUploadFile(file *multipart.FileHeader, index, identifier strin
 	return filepath.ToSlash(urlPath), nil
 }
 
-// 上传资源切片文件检查
+// ChunkCheckFile 上传资源切片文件检查
 //
 // identifier 切片文件目录标识符
 //
@@ -256,16 +255,16 @@ func ChunkCheckFile(identifier, originalFileName string) ([]string, error) {
 	}
 	// 上传资源路径
 	_, dir := resourceUpload()
-	dirPath := path.Join(uploadsubpath.CHUNK, date.ParseDatePath(time.Now()), identifier)
+	dirPath := path.Join(constUploadSubPath.Chunk, date.ParseDatePath(time.Now()), identifier)
 	readPath := path.Join(dir, dirPath)
 	fileList, err := getDirFileNameList(readPath)
 	if err != nil {
-		return []string{}, errors.New("读取文件失败")
+		return []string{}, fmt.Errorf("读取文件失败")
 	}
 	return fileList, nil
 }
 
-// 上传资源切片文件检查
+// ChunkMergeFile 上传资源切片文件检查
 //
 // identifier 切片文件目录标识符
 //
@@ -281,7 +280,7 @@ func ChunkMergeFile(identifier, originalFileName, subPath string) (string, error
 	// 上传资源路径
 	prefix, dir := resourceUpload()
 	// 切片存放目录
-	dirPath := path.Join(uploadsubpath.CHUNK, date.ParseDatePath(time.Now()), identifier)
+	dirPath := path.Join(constUploadSubPath.Chunk, date.ParseDatePath(time.Now()), identifier)
 	readPath := path.Join(dir, dirPath)
 	// 组合存放文件路径
 	fileName := generateFileName(originalFileName)

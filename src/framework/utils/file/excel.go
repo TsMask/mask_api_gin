@@ -2,7 +2,7 @@ package file
 
 import (
 	"fmt"
-	"mask_api_gin/src/framework/constants/uploadsubpath"
+	constUploadSubPath "mask_api_gin/src/framework/constants/upload_sub_path"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mime/multipart"
@@ -13,10 +13,10 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-// TransferExeclUploadFile 表格文件上传保存
+// TransferExcelUploadFile 表格文件上传保存
 //
 // file 上传文件对象
-func TransferExeclUploadFile(file *multipart.FileHeader) (string, error) {
+func TransferExcelUploadFile(file *multipart.FileHeader) (string, error) {
 	// 上传文件检查
 	err := isAllowWrite(file.Filename, []string{".xls", ".xlsx"}, file.Size)
 	if err != nil {
@@ -25,7 +25,7 @@ func TransferExeclUploadFile(file *multipart.FileHeader) (string, error) {
 	// 上传资源路径
 	_, dir := resourceUpload()
 	// 新文件名称并组装文件地址
-	filePath := filepath.Join(uploadsubpath.IMPORT, date.ParseDatePath(time.Now()))
+	filePath := filepath.Join(constUploadSubPath.Import, date.ParseDatePath(time.Now()))
 	fileName := generateFileName(file.Filename)
 	writePathFile := filepath.Join(dir, filePath, fileName)
 	// 存入新文件路径
@@ -36,7 +36,7 @@ func TransferExeclUploadFile(file *multipart.FileHeader) (string, error) {
 	return filepath.ToSlash(writePathFile), nil
 }
 
-// 表格读取数据
+// ReadSheet 表格读取数据
 //
 // filePath 文件路径地址
 //
@@ -85,7 +85,7 @@ func ReadSheet(filePath, sheetName string) ([]map[string]string, error) {
 	return data, nil
 }
 
-// 表格写入数据
+// WriteSheet 表格写入数据
 //
 // headerCells 第一行表头标题 "A1":"?"
 //
@@ -119,29 +119,29 @@ func WriteSheet(headerCells map[string]string, dataCells []map[string]any, fileN
 
 	// 第一行表头标题
 	for key, title := range headerCells {
-		f.SetCellValue(sheetName, key, title)
+		_ = f.SetCellValue(sheetName, key, title)
 		if key[:1] > lastKey {
 			lastKey = key[:1]
 		}
 	}
 
 	// 设置工作表上宽度为 20
-	f.SetColWidth(sheetName, firstKey, lastKey, 20)
+	_ = f.SetColWidth(sheetName, firstKey, lastKey, 20)
 
 	// 从第二行开始的数据
 	for _, cell := range dataCells {
 		for key, value := range cell {
-			f.SetCellValue(sheetName, key, value)
+			_ = f.SetCellValue(sheetName, key, value)
 		}
 	}
 
 	// 上传资源路径
 	_, dir := resourceUpload()
-	filePath := filepath.Join(uploadsubpath.EXPORT, date.ParseDatePath(time.Now()))
+	filePath := filepath.Join(constUploadSubPath.Export, date.ParseDatePath(time.Now()))
 	saveFilePath := filepath.Join(dir, filePath, fileName)
 
 	// 创建文件目录
-	if err := os.MkdirAll(filepath.Dir(saveFilePath), 0750); err != nil {
+	if err := os.MkdirAll(filepath.Dir(saveFilePath), 0755); err != nil {
 		return "", fmt.Errorf("创建保存文件失败 %v", err)
 	}
 

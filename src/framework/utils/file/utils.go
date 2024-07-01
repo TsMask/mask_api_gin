@@ -23,9 +23,11 @@ func transferToNewFile(file *multipart.FileHeader, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer src.Close()
+	defer func() {
+		_ = src.Close()
+	}()
 
-	if err = os.MkdirAll(filepath.Dir(dst), 0750); err != nil {
+	if err = os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
 		return err
 	}
 
@@ -33,7 +35,9 @@ func transferToNewFile(file *multipart.FileHeader, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() {
+		_ = out.Close()
+	}()
 
 	_, err = io.Copy(out, src)
 	return err
@@ -65,36 +69,36 @@ func mergeToNewFile(dirPath string, writePath string, fileName string) error {
 
 	// 写入到新路径文件
 	newFilePath := filepath.Join(writePath, fileName)
-	if err = os.MkdirAll(filepath.Dir(newFilePath), 0750); err != nil {
+	if err = os.MkdirAll(filepath.Dir(newFilePath), 0755); err != nil {
 		return err
 	}
-
-	// 转移完成后删除切片目录
-	defer os.Remove(dirPath)
 
 	// 打开新路径文件
 	outputFile, err := os.Create(newFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %v", err)
 	}
-	defer outputFile.Close()
+	defer func() {
+		_ = outputFile.Close()
+		// 转移完成后删除切片目录
+		_ = os.Remove(dirPath)
+	}()
 
 	// 逐个读取文件后进行流拷贝数据块
 	for _, fileName := range fileNameList {
 		chunkPath := filepath.Join(dirPath, fileName)
-		// 拷贝结束后删除切片
-		defer os.Remove(chunkPath)
 		// 打开切片文件
 		inputFile, err := os.Open(chunkPath)
 		if err != nil {
 			return fmt.Errorf("failed to open file: %v", err)
 		}
-		defer inputFile.Close()
 		// 拷贝文件流
-		_, err = io.Copy(outputFile, inputFile)
-		if err != nil {
+		if _, err = io.Copy(outputFile, inputFile); err != nil {
 			return fmt.Errorf("failed to copy file data: %w", err)
 		}
+		_ = inputFile.Close()
+		// 拷贝结束后删除切片
+		_ = os.Remove(chunkPath)
 	}
 
 	return nil
@@ -122,7 +126,9 @@ func getFileStream(filePath string, startOffset, endOffset int64) ([]byte, error
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	// 获取文件的大小
 	fileInfo, err := file.Stat()
@@ -161,22 +167,24 @@ func getFileStream(filePath string, startOffset, endOffset int64) ([]byte, error
 //
 // filePath 文件路径
 func getDirFileNameList(dirPath string) ([]string, error) {
-	fileNames := []string{}
+	fileNames := make([]string, 0)
 
 	dir, err := os.Open(dirPath)
 	if err != nil {
-		return fileNames, nil
+		return fileNames, err
 	}
-	defer dir.Close()
+	defer func() {
+		_ = dir.Close()
+	}()
 
 	fileInfos, err := dir.Readdir(-1)
 	if err != nil {
 		return fileNames, err
 	}
 
-	for _, fileInfo := range fileInfos {
-		if fileInfo.Mode().IsRegular() {
-			fileNames = append(fileNames, fileInfo.Name())
+	for _, v := range fileInfos {
+		if v.Mode().IsRegular() {
+			fileNames = append(fileNames, v.Name())
 		}
 	}
 

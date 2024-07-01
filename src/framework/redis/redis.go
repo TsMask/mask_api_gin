@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/logger"
@@ -29,7 +30,7 @@ if tonumber(current) == 1 then
 end
 return tonumber(current);`)
 
-// 连接Redis实例
+// Connect 连接Redis实例
 func Connect() {
 	ctx := context.Background()
 	// 读取数据源配置
@@ -53,7 +54,7 @@ func Connect() {
 	}
 }
 
-// 关闭Redis实例
+// Close 关闭Redis实例
 func Close() {
 	for _, rdb := range rdbMap {
 		if err := rdb.Close(); err != nil {
@@ -62,31 +63,30 @@ func Close() {
 	}
 }
 
-// 获取默认实例
-func DefaultRDB() *redis.Client {
-	source := config.Get("redis.defaultDataSourceName").(string)
-	return rdbMap[source]
-}
-
-// 获取实例
+// RDB 获取实例
 func RDB(source string) *redis.Client {
+	// 不指定时获取默认实例
+	if source == "" {
+		source = config.Get("redis.defaultDataSourceName").(string)
+	}
 	return rdbMap[source]
 }
 
 // Info 获取redis服务信息
 func Info(source string) map[string]map[string]string {
+	infoObj := make(map[string]map[string]string)
 	// 数据源
-	rdb := DefaultRDB()
-	if source != "" {
-		rdb = RDB(source)
+	rdb := RDB(source)
+	if rdb == nil {
+		return infoObj
 	}
 
 	ctx := context.Background()
 	info, err := rdb.Info(ctx).Result()
 	if err != nil {
-		return map[string]map[string]string{}
+		return infoObj
 	}
-	infoObj := make(map[string]map[string]string)
+
 	lines := strings.Split(info, "\r\n")
 	label := ""
 	for _, line := range lines {
@@ -109,9 +109,9 @@ func Info(source string) map[string]map[string]string {
 // KeySize 获取redis当前连接可用键Key总数信息
 func KeySize(source string) int64 {
 	// 数据源
-	rdb := DefaultRDB()
-	if source != "" {
-		rdb = RDB(source)
+	rdb := RDB(source)
+	if rdb == nil {
+		return 0
 	}
 
 	ctx := context.Background()
@@ -124,18 +124,19 @@ func KeySize(source string) int64 {
 
 // CommandStats 获取redis命令状态信息
 func CommandStats(source string) []map[string]string {
+	statsObjArr := make([]map[string]string, 0)
 	// 数据源
-	rdb := DefaultRDB()
-	if source != "" {
-		rdb = RDB(source)
+	rdb := RDB(source)
+	if rdb == nil {
+		return statsObjArr
 	}
 
 	ctx := context.Background()
 	commandstats, err := rdb.Info(ctx, "commandstats").Result()
 	if err != nil {
-		return []map[string]string{}
+		return statsObjArr
 	}
-	statsObjArr := make([]map[string]string, 0)
+
 	lines := strings.Split(commandstats, "\r\n")
 	for _, line := range lines {
 		if !strings.HasPrefix(line, "cmdstat_") {
@@ -152,12 +153,12 @@ func CommandStats(source string) []map[string]string {
 	return statsObjArr
 }
 
-// 获取键的剩余有效时间（秒）
-func GetExpire(source string, key string) (float64, error) {
+// GetExpire 获取键的剩余有效时间（秒）
+func GetExpire(source string, key string) (int64, error) {
 	// 数据源
-	rdb := DefaultRDB()
-	if source != "" {
-		rdb = RDB(source)
+	rdb := RDB(source)
+	if rdb == nil {
+		return 0, fmt.Errorf("redis not client")
 	}
 
 	ctx := context.Background()
@@ -165,25 +166,26 @@ func GetExpire(source string, key string) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return ttl.Seconds(), nil
+	return int64(ttl.Seconds()), nil
 }
 
-// 获得缓存数据的key列表
+// GetKeys 获得缓存数据的key列表
 func GetKeys(source string, pattern string) ([]string, error) {
+	keys := make([]string, 0)
 	// 数据源
-	rdb := DefaultRDB()
-	if source != "" {
-		rdb = RDB(source)
+	rdb := RDB(source)
+	if rdb == nil {
+		return keys, fmt.Errorf("redis not client")
 	}
 
-	// 初始化变量
-	var keys []string
+	// 游标
 	var cursor uint64 = 0
+	var count int64 = 100
 	ctx := context.Background()
 	// 循环遍历获取匹配的键
 	for {
 		// 使用 SCAN 命令获取匹配的键
-		batchKeys, nextCursor, err := rdb.Scan(ctx, cursor, pattern, 100).Result()
+		batchKeys, nextCursor, err := rdb.Scan(ctx, cursor, pattern, count).Result()
 		if err != nil {
 			logger.Errorf("Failed to scan keys: %v", err)
 			return keys, err
@@ -198,153 +200,154 @@ func GetKeys(source string, pattern string) ([]string, error) {
 	return keys, nil
 }
 
-// 批量获得缓存数据
+// GetBatch 批量获得缓存数据
 func GetBatch(source string, keys []string) ([]any, error) {
+	result := make([]any, 0)
 	if len(keys) == 0 {
-		return []any{}, fmt.Errorf("not keys")
+		return result, fmt.Errorf("not keys")
 	}
 
 	// 数据源
-	rdb := DefaultRDB()
-	if source != "" {
-		rdb = RDB(source)
+	rdb := RDB(source)
+	if rdb == nil {
+		return result, fmt.Errorf("redis not client")
 	}
 
 	// 获取缓存数据
-	result, err := rdb.MGet(context.Background(), keys...).Result()
-	if err != nil {
+	v, err := rdb.MGet(context.Background(), keys...).Result()
+	if err != nil || errors.Is(err, redis.Nil) {
 		logger.Errorf("Failed to get batch data: %v", err)
-		return []any{}, err
+		return result, err
 	}
-	return result, nil
+	return v, nil
 }
 
-// 获得缓存数据
+// Get 获得缓存数据
 func Get(source, key string) (string, error) {
 	// 数据源
-	rdb := DefaultRDB()
-	if source != "" {
-		rdb = RDB(source)
+	rdb := RDB(source)
+	if rdb == nil {
+		return "", fmt.Errorf("redis not client")
 	}
 
 	ctx := context.Background()
-	value, err := rdb.Get(ctx, key).Result()
-	if err == redis.Nil || err != nil {
+	v, err := rdb.Get(ctx, key).Result()
+	if err != nil || errors.Is(err, redis.Nil) {
 		return "", err
 	}
-	return value, nil
+	return v, nil
 }
 
-// 获得缓存数据Hash
+// GetHash 获得缓存数据Hash
 func GetHash(source, key string) (map[string]string, error) {
 	// 数据源
-	rdb := DefaultRDB()
-	if source != "" {
-		rdb = RDB(source)
+	rdb := RDB(source)
+	if rdb == nil {
+		return map[string]string{}, fmt.Errorf("redis not client")
 	}
 
 	ctx := context.Background()
 	value, err := rdb.HGetAll(ctx, key).Result()
-	if err == redis.Nil || err != nil {
+	if err != nil || errors.Is(err, redis.Nil) {
 		return map[string]string{}, err
 	}
 	return value, nil
 }
 
-// 判断是否存在
-func Has(source string, keys ...string) (bool, error) {
+// Has 判断是否存在
+func Has(source string, keys ...string) (int64, error) {
 	// 数据源
-	rdb := DefaultRDB()
-	if source != "" {
-		rdb = RDB(source)
+	rdb := RDB(source)
+	if rdb == nil {
+		return 0, fmt.Errorf("redis not client")
 	}
 
 	ctx := context.Background()
 	exists, err := rdb.Exists(ctx, keys...).Result()
 	if err != nil {
-		return false, err
+		return 0, err
 	}
-	return exists >= 1, nil
+	return exists, nil
 }
 
-// 设置缓存数据
-func Set(source, key string, value any) (bool, error) {
+// Set 设置缓存数据
+func Set(source, key string, value any) error {
 	// 数据源
-	rdb := DefaultRDB()
-	if source != "" {
-		rdb = RDB(source)
+	rdb := RDB(source)
+	if rdb == nil {
+		return fmt.Errorf("redis not client")
 	}
 
 	ctx := context.Background()
 	err := rdb.Set(ctx, key, value, 0).Err()
 	if err != nil {
 		logger.Errorf("redis Set err %v", err)
-		return false, err
+		return err
 	}
-	return true, nil
+	return nil
 }
 
-// 设置缓存数据与过期时间
-func SetByExpire(source, key string, value any, expiration time.Duration) (bool, error) {
+// SetByExpire 设置缓存数据与过期时间
+func SetByExpire(source, key string, value any, expiration time.Duration) error {
 	// 数据源
-	rdb := DefaultRDB()
-	if source != "" {
-		rdb = RDB(source)
+	rdb := RDB(source)
+	if rdb == nil {
+		return fmt.Errorf("redis not client")
 	}
 
 	ctx := context.Background()
 	err := rdb.Set(ctx, key, value, expiration).Err()
 	if err != nil {
 		logger.Errorf("redis SetByExpire err %v", err)
-		return false, err
+		return err
 	}
-	return true, nil
+	return nil
 }
 
-// 删除单个
-func Del(source string, key string) (bool, error) {
+// Del 删除单个
+func Del(source string, key string) error {
 	// 数据源
-	rdb := DefaultRDB()
-	if source != "" {
-		rdb = RDB(source)
+	rdb := RDB(source)
+	if rdb == nil {
+		return fmt.Errorf("redis not client")
 	}
 
 	ctx := context.Background()
 	err := rdb.Del(ctx, key).Err()
 	if err != nil {
 		logger.Errorf("redis Del err %v", err)
-		return false, err
+		return err
 	}
-	return true, nil
+	return nil
 }
 
-// 删除多个
-func DelKeys(source string, keys []string) (bool, error) {
+// DelKeys 删除多个
+func DelKeys(source string, keys []string) error {
 	if len(keys) == 0 {
-		return false, fmt.Errorf("no keys")
+		return fmt.Errorf("no keys")
 	}
 
 	// 数据源
-	rdb := DefaultRDB()
-	if source != "" {
-		rdb = RDB(source)
+	rdb := RDB(source)
+	if rdb == nil {
+		return fmt.Errorf("redis not client")
 	}
 
 	ctx := context.Background()
 	err := rdb.Del(ctx, keys...).Err()
 	if err != nil {
 		logger.Errorf("redis DelKeys err %v", err)
-		return false, err
+		return err
 	}
-	return true, nil
+	return nil
 }
 
-// 限流查询并记录
+// RateLimit 限流查询并记录
 func RateLimit(source, limitKey string, time, count int64) (int64, error) {
 	// 数据源
-	rdb := DefaultRDB()
-	if source != "" {
-		rdb = RDB(source)
+	rdb := RDB(source)
+	if rdb == nil {
+		return 0, fmt.Errorf("redis not client")
 	}
 
 	ctx := context.Background()

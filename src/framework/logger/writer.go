@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// 日志器对象
+// Logger 日志器对象
 type Logger struct {
 	env         string         // 运行环境
 	filePath    string         // 文件路径
@@ -25,16 +25,16 @@ type Logger struct {
 }
 
 const (
-	LOG_LEVEL_SILENT = iota
-	LOG_LEVEL_INFO
-	LOG_LEVEL_WARN
-	LOG_LEVEL_ERROR
+	LogLevelSilent = iota
+	LogLevelInfo
+	LogLevelWarn
+	LogLevelError
 )
 
 // NewLogger 实例日志器对象
 func NewLogger(env, fileDir, fileName string, level, maxDay, maxSize int) (*Logger, error) {
 	logFilePath := filepath.Join(fileDir, fileName)
-	if err := os.MkdirAll(filepath.Dir(logFilePath), 0750); err != nil {
+	if err := os.MkdirAll(filepath.Dir(logFilePath), 0755); err != nil {
 		return nil, fmt.Errorf("failed to mkdir logger dir: %v", err)
 	}
 	fileHandle, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
@@ -50,9 +50,10 @@ func NewLogger(env, fileDir, fileName string, level, maxDay, maxSize int) (*Logg
 	logger := log.New(writer, "", log.LstdFlags|log.Lshortfile)
 
 	logLevelMap := map[int]string{
-		LOG_LEVEL_INFO:  "INFO",
-		LOG_LEVEL_WARN:  "WARN",
-		LOG_LEVEL_ERROR: "ERROR",
+		LogLevelSilent: "SILENT",
+		LogLevelInfo:   "INFO",
+		LogLevelWarn:   "WARN",
+		LogLevelError:  "ERROR",
 	}
 
 	stdLogger := &Logger{
@@ -98,17 +99,17 @@ func (l *Logger) checkFile() {
 
 // rotateFile 检查文件大小进行分割
 func (l *Logger) rotateFile(timeFormat string) {
-	l.fileHandle.Close()
+	_ = l.fileHandle.Close()
 
 	newFileName := fmt.Sprintf("%s.%s", l.fileName, timeFormat)
 	newFilePath := filepath.Join(l.filePath, newFileName)
-	oldfilePath := filepath.Join(l.filePath, l.fileName)
+	oldFilePath := filepath.Join(l.filePath, l.fileName)
 
 	// 重命名
-	os.Rename(oldfilePath, newFilePath)
+	_ = os.Rename(oldFilePath, newFilePath)
 
 	// 新文件句柄
-	fileHandle, err := os.OpenFile(oldfilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	fileHandle, err := os.OpenFile(oldFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		l.logger.Printf("Failed to open log file: %v\n", err)
 		return
@@ -165,24 +166,25 @@ func (l *Logger) removeOldFile(oldFileDate time.Time) {
 
 // writeLog 写入chan
 func (l *Logger) writeLog(level int, format string, args ...interface{}) {
+	// 日志等级小于指定等级不输出文件
 	if level < l.level {
 		return
 	}
 
 	logMsg := fmt.Sprintf("[%s] %s\n", l.logLevelMap[level], fmt.Sprintf(format, args...))
-	l.logger.Output(4, logMsg)
+	_ = l.logger.Output(4, logMsg)
 }
 
 func (l *Logger) Infof(format string, args ...interface{}) {
-	l.writeLog(LOG_LEVEL_INFO, format, args...)
+	l.writeLog(LogLevelInfo, format, args...)
 }
 
 func (l *Logger) Warnf(format string, args ...interface{}) {
-	l.writeLog(LOG_LEVEL_WARN, format, args...)
+	l.writeLog(LogLevelWarn, format, args...)
 }
 
 func (l *Logger) Errorf(format string, args ...interface{}) {
-	l.writeLog(LOG_LEVEL_ERROR, format, args...)
+	l.writeLog(LogLevelError, format, args...)
 }
 
 // Close 日志关闭

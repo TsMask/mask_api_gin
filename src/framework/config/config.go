@@ -8,8 +8,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-// 初始化程序配置
+// conf 配置上下文
+var conf *viper.Viper
+
+// InitConfig 初始化程序配置
 func InitConfig() {
+	conf = viper.New()
 	initFlag()
 	initViper()
 }
@@ -17,26 +21,26 @@ func InitConfig() {
 // 指定参数绑定
 func initFlag() {
 	// --env prod
-	pflag.String("env", "local", "指定运行环境配置，读取config配置文件 local、prod")
+	pflag.String("env", "local", "指定运行环境配置，读取config配置文件 (local|prod)")
 	pflag.Parse()
-	viper.BindPFlags(pflag.CommandLine)
+	_ = conf.BindPFlags(pflag.CommandLine)
 }
 
 // 配置文件读取
 func initViper() {
 	// 在当前工作目录中寻找配置
-	viper.AddConfigPath("config")
-	viper.AddConfigPath("src/config")
+	conf.AddConfigPath("config")
+	conf.AddConfigPath("src/config")
 	// 如果配置文件名中没有扩展名，则需要设置Type
-	viper.SetConfigType("yaml")
+	conf.SetConfigType("yaml")
 	// 配置文件的名称（无扩展名）
-	viper.SetConfigName("config.default")
+	conf.SetConfigName("config.default")
 	// 读取默认配置文件
-	if err := viper.ReadInConfig(); err != nil {
+	if err := conf.ReadInConfig(); err != nil {
 		log.Fatalf("fatal error config default file: %s", err)
 	}
 
-	env := viper.GetString("env")
+	env := conf.GetString("env")
 	if env != "local" && env != "prod" {
 		log.Fatalf("fatal error config env for local or prod : %s", env)
 	}
@@ -44,34 +48,34 @@ func initViper() {
 
 	// 加载运行配置文件合并相同配置
 	if env == "prod" {
-		viper.SetConfigName("config.prod")
+		conf.SetConfigName("config.prod")
 	} else {
-		viper.SetConfigName("config.local")
+		conf.SetConfigName("config.local")
 	}
-	if err := viper.MergeInConfig(); err != nil {
+	if err := conf.MergeInConfig(); err != nil {
 		log.Fatalf("fatal error config local file: %s", err)
 	}
 
 	// 记录程序开始运行的时间点
-	viper.Set("runTime", time.Now())
+	conf.Set("runTime", time.Now())
 }
 
 // Env 获取运行服务环境
 // local prod
 func Env() string {
-	return viper.GetString("env")
+	return conf.GetString("env")
 }
 
 // RunTime 程序开始运行的时间
 func RunTime() time.Time {
-	return viper.GetTime("runTime")
+	return conf.GetTime("runTime")
 }
 
 // Get 获取配置信息
 //
 // Get("framework.name")
 func Get(key string) any {
-	return viper.Get(key)
+	return conf.Get(key)
 }
 
 // IsAdmin 用户是否为管理员

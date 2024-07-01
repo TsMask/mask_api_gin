@@ -2,10 +2,10 @@ package middleware
 
 import (
 	"fmt"
-	AdminConstants "mask_api_gin/src/framework/constants/admin"
-	commonConstants "mask_api_gin/src/framework/constants/common"
-	ctxUtils "mask_api_gin/src/framework/utils/ctx"
-	tokenUtils "mask_api_gin/src/framework/utils/token"
+	constAdmin "mask_api_gin/src/framework/constants/admin"
+	constCommon "mask_api_gin/src/framework/constants/common"
+	"mask_api_gin/src/framework/utils/ctx"
+	"mask_api_gin/src/framework/utils/token"
 	"mask_api_gin/src/framework/vo/result"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +23,7 @@ import (
 func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 获取请求头标识信息
-		tokenStr := ctxUtils.Authorization(c)
+		tokenStr := ctx.Authorization(c)
 		if tokenStr == "" {
 			c.JSON(401, result.CodeMsg(401, "无效身份授权"))
 			c.Abort() // 停止执行后续的处理函数
@@ -31,7 +31,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 		}
 
 		// 验证令牌
-		claims, err := tokenUtils.Verify(tokenStr)
+		claims, err := token.Verify(tokenStr)
 		if err != nil {
 			c.JSON(401, result.CodeMsg(401, err.Error()))
 			c.Abort() // 停止执行后续的处理函数
@@ -39,7 +39,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 		}
 
 		// 获取缓存的用户信息
-		loginUser := tokenUtils.LoginUser(claims)
+		loginUser := token.LoginUser(claims)
 		if loginUser.UserID == "" {
 			c.JSON(401, result.CodeMsg(401, "无效身份授权"))
 			c.Abort() // 停止执行后续的处理函数
@@ -47,8 +47,8 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 		}
 
 		// 检查刷新有效期后存入上下文
-		tokenUtils.RefreshIn(&loginUser)
-		c.Set(commonConstants.CTX_LOGIN_USER, loginUser)
+		token.RefreshIn(&loginUser)
+		c.Set(constCommon.CtxLoginUser, loginUser)
 
 		// 登录用户角色权限校验
 		if options != nil {
@@ -80,7 +80,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 // options 参数
 func verifyRolePermission(roles, perms []string, options map[string][]string) bool {
 	// 直接放行 管理员角色或任意权限
-	if contains(roles, AdminConstants.ROLE_KEY) || contains(perms, AdminConstants.PERMISSION) {
+	if contains(roles, constAdmin.RoleKey) || contains(perms, constAdmin.Permission) {
 		return true
 	}
 	opts := make([]bool, 4)

@@ -12,7 +12,7 @@ func Replace(originStr, pattern, repStr string) string {
 	return regex.ReplaceAllString(originStr, repStr)
 }
 
-// 判断是否为有效用户名格式
+// ValidUsername 判断是否为有效用户名格式
 //
 // 用户名不能以数字开头，可包含大写小写字母，数字，且不少于5位
 func ValidUsername(username string) bool {
@@ -27,7 +27,7 @@ func ValidUsername(username string) bool {
 	return match
 }
 
-// 判断是否为有效密码格式
+// ValidPassword 判断是否为有效密码格式
 //
 // 密码至少包含大小写字母、数字、特殊符号，且不少于6位
 func ValidPassword(password string) bool {
@@ -43,7 +43,7 @@ func ValidPassword(password string) bool {
 	return match
 }
 
-// 判断是否为有效手机号格式，1开头的11位手机号
+// ValidMobile 判断是否为有效手机号格式，1开头的11位手机号
 func ValidMobile(mobile string) bool {
 	if mobile == "" {
 		return false
@@ -56,7 +56,7 @@ func ValidMobile(mobile string) bool {
 	return match
 }
 
-// 判断是否为有效邮箱格式
+// ValidEmail 判断是否为有效邮箱格式
 func ValidEmail(email string) bool {
 	if email == "" {
 		return false
@@ -70,7 +70,7 @@ func ValidEmail(email string) bool {
 	return match
 }
 
-// 判断是否为http(s)://开头
+// ValidHttp 判断是否为http(s)://开头
 //
 // link 网络链接
 func ValidHttp(link string) bool {

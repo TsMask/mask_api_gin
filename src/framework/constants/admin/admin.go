@@ -2,11 +2,11 @@ package admin
 
 // 管理员常量信息
 
-// 管理员-系统指定角色ID
-const ROLE_ID = "1"
+// RoleId 管理员-系统指定角色ID
+const RoleId = "1"
 
-// 管理员-系统指定角色KEY
-const ROLE_KEY = "admin"
+// RoleKey 管理员-系统指定角色KEY
+const RoleKey = "admin"
 
-// 管理员-系统指定权限
-const PERMISSION = "*:*:*"
+// Permission 管理员-系统指定权限
+const Permission = "*:*:*"

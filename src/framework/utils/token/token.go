@@ -4,15 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"mask_api_gin/src/framework/config"
-	cachekeyConstants "mask_api_gin/src/framework/constants/cachekey"
-	tokenConstants "mask_api_gin/src/framework/constants/token"
+	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
+	constToken "mask_api_gin/src/framework/constants/token"
 	"mask_api_gin/src/framework/logger"
-	redisCahe "mask_api_gin/src/framework/redis"
+	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/framework/utils/generate"
 	"mask_api_gin/src/framework/vo"
 	"time"
 
-	jwt "github.com/golang-jwt/jwt/v5"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // Remove 清除登录用户信息UUID
@@ -23,25 +23,25 @@ func Remove(token string) string {
 		return ""
 	}
 	// 清除缓存KEY
-	uuid := claims[tokenConstants.JWT_UUID].(string)
-	tokenKey := cachekeyConstants.LOGIN_TOKEN_KEY + uuid
-	hasKey, _ := redisCahe.Has("", tokenKey)
-	if hasKey {
-		redisCahe.Del("", tokenKey)
+	uuid := claims[constToken.JwtUuid].(string)
+	tokenKey := constCacheKey.LoginTokenKey + uuid
+	hasKey, err := redis.Has("", tokenKey)
+	if hasKey > 1 && err == nil {
+		_ = redis.Del("", tokenKey)
 	}
-	return claims[tokenConstants.JWT_NAME].(string)
+	return claims[constToken.JwtName].(string)
 }
 
 // Create 令牌生成
-func Create(loginUser *vo.LoginUser, ilobArgs ...string) string {
-	// 生成用户唯一tokne32位
+func Create(loginUser *vo.LoginUser, ilobArr [4]string) string {
+	// 生成用户唯一token 32位
 	loginUser.UUID = generate.Code(32)
 
 	// 设置请求用户登录客户端
-	loginUser.IPAddr = ilobArgs[0]
-	loginUser.LoginLocation = ilobArgs[1]
-	loginUser.OS = ilobArgs[2]
-	loginUser.Browser = ilobArgs[3]
+	loginUser.IPAddr = ilobArr[0]
+	loginUser.LoginLocation = ilobArr[1]
+	loginUser.OS = ilobArr[2]
+	loginUser.Browser = ilobArr[3]
 
 	// 设置新登录IP和登录时间
 	loginUser.User.LoginIP = loginUser.IPAddr
@@ -64,11 +64,11 @@ func Create(loginUser *vo.LoginUser, ilobArgs ...string) string {
 	}
 	// 生成令牌负荷绑定uuid标识
 	jwtToken := jwt.NewWithClaims(method, jwt.MapClaims{
-		tokenConstants.JWT_UUID: loginUser.UUID,
-		tokenConstants.JWT_KEY:  loginUser.UserID,
-		tokenConstants.JWT_NAME: loginUser.User.UserName,
-		"exp":                   loginUser.ExpireTime,
-		"ait":                   loginUser.LoginTime,
+		constToken.JwtUuid: loginUser.UUID,
+		constToken.JwtKey:  loginUser.UserID,
+		constToken.JwtName: loginUser.User.UserName,
+		"exp":              loginUser.ExpireTime,
+		"ait":              loginUser.LoginTime,
 	})
 
 	// 生成令牌设置密钥
@@ -91,12 +91,12 @@ func Cache(loginUser *vo.LoginUser) {
 	loginUser.ExpireTime = iatTimestamp + expTimestamp.Milliseconds()
 	loginUser.User.Password = ""
 	// 根据登录标识将loginUser缓存
-	tokenKey := cachekeyConstants.LOGIN_TOKEN_KEY + loginUser.UUID
+	tokenKey := constCacheKey.LoginTokenKey + loginUser.UUID
 	jsonBytes, err := json.Marshal(loginUser)
 	if err != nil {
 		return
 	}
-	redisCahe.SetByExpire("", tokenKey, string(jsonBytes), expTimestamp)
+	_ = redis.SetByExpire("", tokenKey, string(jsonBytes), expTimestamp)
 }
 
 // RefreshIn 验证令牌有效期，相差不足xx分钟，自动刷新缓存
@@ -135,21 +135,19 @@ func Verify(token string) (jwt.MapClaims, error) {
 
 // LoginUser 缓存的登录用户信息
 func LoginUser(claims jwt.MapClaims) vo.LoginUser {
-	uuid := claims[tokenConstants.JWT_UUID].(string)
-	tokenKey := cachekeyConstants.LOGIN_TOKEN_KEY + uuid
-	hasKey, _ := redisCahe.Has("", tokenKey)
-	var loginUser vo.LoginUser
-	if hasKey {
-		loginUserStr, _ := redisCahe.Get("", tokenKey)
-		if loginUserStr == "" {
+	loginUser := vo.LoginUser{}
+	uuid := claims[constToken.JwtUuid].(string)
+	tokenKey := constCacheKey.LoginTokenKey + uuid
+	hasKey, err := redis.Has("", tokenKey)
+	if hasKey > 0 && err == nil {
+		loginUserStr, err := redis.Get("", tokenKey)
+		if loginUserStr == "" || err != nil {
 			return loginUser
 		}
-		err := json.Unmarshal([]byte(loginUserStr), &loginUser)
-		if err != nil {
+		if err := json.Unmarshal([]byte(loginUserStr), &loginUser); err != nil {
 			logger.Errorf("loginuser info json err : %v", err)
 			return loginUser
 		}
-		return loginUser
 	}
 	return loginUser
 }

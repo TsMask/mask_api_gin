@@ -8,7 +8,7 @@ import (
 
 var logWriter *Logger
 
-// 初始程序日志
+// InitLogger 初始程序日志
 func InitLogger() {
 	env := viper.GetString("env")
 	conf := viper.GetStringMap("logger")
@@ -26,19 +26,22 @@ func InitLogger() {
 	logWriter = newLog
 }
 
-// 关闭程序日志写入
+// Close 关闭程序日志写入
 func Close() {
 	logWriter.Close()
 }
 
+// Infof 信息级日志
 func Infof(format string, v ...any) {
 	logWriter.Infof(format, v...)
 }
 
+// Warnf 告警级日志
 func Warnf(format string, v ...any) {
 	logWriter.Warnf(format, v...)
 }
 
+// Errorf 错误级日志
 func Errorf(format string, v ...any) {
 	logWriter.Errorf(format, v...)
 }

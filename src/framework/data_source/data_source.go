@@ -1,4 +1,4 @@
-package datasource
+package data_source
 
 import (
 	"fmt"
@@ -22,13 +22,13 @@ import (
 var dbMap = make(map[string]*gorm.DB)
 
 type dialectInfo struct {
-	dialector gorm.Dialector
+	dialectic gorm.Dialector
 	logging   bool
 }
 
 // 载入数据库连接
 func loadDialect() map[string]dialectInfo {
-	dialects := make(map[string]dialectInfo, 0)
+	dialects := make(map[string]dialectInfo)
 
 	// 读取数据源配置
 	datasource := config.Get("gorm.datasource").(map[string]any)
@@ -45,7 +45,7 @@ func loadDialect() map[string]dialectInfo {
 				item["database"],
 			)
 			dialects[key] = dialectInfo{
-				dialector: mysql.Open(dsn),
+				dialectic: mysql.Open(dsn),
 				logging:   item["logging"].(bool),
 			}
 		default:
@@ -70,7 +70,7 @@ func loadLogger() gormLog.Interface {
 	return newLogger
 }
 
-// 连接数据库实例
+// Connect 连接数据库实例
 func Connect() {
 	// 遍历进行连接数据库实例
 	for key, info := range loadDialect() {
@@ -80,7 +80,7 @@ func Connect() {
 			opts.Logger = loadLogger()
 		}
 		// 创建连接
-		db, err := gorm.Open(info.dialector, opts)
+		db, err := gorm.Open(info.dialectic, opts)
 		if err != nil {
 			logger.Fatalf("failed error db connect: %s", err)
 		}
@@ -99,7 +99,7 @@ func Connect() {
 	}
 }
 
-// 关闭数据库实例
+// Close 关闭数据库实例
 func Close() {
 	for _, db := range dbMap {
 		sqlDB, err := db.DB()
@@ -112,33 +112,26 @@ func Close() {
 	}
 }
 
-// 获取默认数据源
-func DefaultDB() *gorm.DB {
-	source := config.Get("gorm.defaultDataSourceName").(string)
-	return dbMap[source]
-}
-
-// 获取数据源
+// DB 获取数据源
 func DB(source string) *gorm.DB {
+	// 不指定时获取默认实例
+	if source == "" {
+		source = config.Get("gorm.defaultDataSourceName").(string)
+	}
 	return dbMap[source]
 }
 
 // RawDB 原生查询语句
 func RawDB(source string, sql string, parameters []any) ([]map[string]any, error) {
+	var rows []map[string]any
 	// 数据源
-	db := DefaultDB()
-	if source != "" {
-		db = DB(source)
+	db := DB(source)
+	if db == nil {
+		return rows, fmt.Errorf("not database source")
 	}
-
 	// 使用正则表达式替换连续的空白字符为单个空格
 	fmtSql := regexp.MustCompile(`\s+`).ReplaceAllString(sql, " ")
-
-	// logger.Infof("sql=> %v", fmtSql)
-	// logger.Infof("parameters=> %v", parameters)
-
 	// 查询结果
-	var rows []map[string]any
 	res := db.Raw(fmtSql, parameters...).Scan(&rows)
 	if res.Error != nil {
 		return nil, res.Error
@@ -149,9 +142,9 @@ func RawDB(source string, sql string, parameters []any) ([]map[string]any, error
 // ExecDB 原生执行语句
 func ExecDB(source string, sql string, parameters []any) (int64, error) {
 	// 数据源
-	db := DefaultDB()
-	if source != "" {
-		db = DB(source)
+	db := DB(source)
+	if db == nil {
+		return 0, fmt.Errorf("not database source")
 	}
 	// 使用正则表达式替换连续的空白字符为单个空格
 	fmtSql := regexp.MustCompile(`\s+`).ReplaceAllString(sql, " ")
@@ -247,7 +240,7 @@ func PageNumSize(pageNum, pageSize any) (int64, int64) {
 	return num - 1, size
 }
 
-// 查询-参数值的占位符
+// KeyPlaceholderByQuery 查询-参数值的占位符
 func KeyPlaceholderByQuery(sum int) string {
 	placeholders := make([]string, sum)
 	for i := 0; i < sum; i++ {
@@ -256,7 +249,7 @@ func KeyPlaceholderByQuery(sum int) string {
 	return strings.Join(placeholders, ",")
 }
 
-// 插入-键值数据与参数映射键值占位符 keys, values, placeholder
+// KeyValuePlaceholderByInsert 插入-键值数据与参数映射键值占位符 keys, values, placeholder
 func KeyValuePlaceholderByInsert(params map[string]any) (string, []any, string) {
 	// 参数映射的键
 	var keys []string
@@ -274,7 +267,7 @@ func KeyValuePlaceholderByInsert(params map[string]any) (string, []any, string) 
 	return strings.Join(keys, ","), values, strings.Join(placeholders, ",")
 }
 
-// 更新-键值数据 keys, values
+// KeyValueByUpdate 更新-键值数据 keys, values
 func KeyValueByUpdate(params map[string]any) (string, []any) {
 	// 参数映射的键
 	var keys []string

@@ -1,8 +1,8 @@
-package repeat
+package repeat_submit
 
 import (
 	"encoding/json"
-	"mask_api_gin/src/framework/constants/cachekey"
+	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/framework/utils/ctx"
@@ -41,7 +41,7 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 
 		// 唯一标识（指定key + 客户端IP + 请求地址）
 		clientIP := ip2region.ClientIP(c.ClientIP())
-		repeatKey := cachekey.REPEAT_SUBMIT_KEY + clientIP + ":" + c.Request.RequestURI
+		repeatKey := constCacheKey.RepeatSubmitKey + clientIP + ":" + c.Request.RequestURI
 
 		// 在Redis查询并记录请求次数
 		repeatStr, _ := redis.Get("", repeatKey)
@@ -75,7 +75,7 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 			logger.Errorf("RepeatSubmit rp json marshal err: %v", err)
 		}
 		// 保存请求时间和参数
-		redis.SetByExpire("", repeatKey, string(rpJSON), time.Duration(interval)*time.Second)
+		_ = redis.SetByExpire("", repeatKey, string(rpJSON), time.Duration(interval)*time.Second)
 
 		// 调用下一个处理程序
 		c.Next()
