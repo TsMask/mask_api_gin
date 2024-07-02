@@ -172,4 +172,3 @@ func LoadContentFromFile(dbFile string) ([]byte, error) {
 
 	return cBuff, nil
 }
-

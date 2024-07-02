@@ -1,14 +1,16 @@
-package collect_logs
+package middleware
 
 import (
 	"encoding/json"
 	"fmt"
 	constCommon "mask_api_gin/src/framework/constants/common"
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
+	"reflect"
 	"strings"
 	"time"
 
@@ -81,14 +83,6 @@ func OptionNew(title, businessType string) Options {
 	}
 }
 
-// 敏感属性字段进行掩码
-var maskProperties []string = []string{
-	"password",
-	"oldPassword",
-	"newPassword",
-	"confirmPassword",
-}
-
 // OperateLog 访问操作日志记录
 //
 // 请在用户身份授权认证校验后使用以便获取登录用户信息
@@ -113,41 +107,34 @@ func OperateLog(options Options) gin.HandlerFunc {
 		}
 
 		// 操作日志记录
-		operLog := model.SysLogOperate{
+		operaLog := model.SysLogOperate{
 			Title:         options.Title,
 			BusinessType:  options.BusinessType,
 			OperatorType:  options.OperatorType,
 			Method:        funcName,
-			OperURL:       c.Request.RequestURI,
+			OperaURL:      c.Request.RequestURI,
 			RequestMethod: c.Request.Method,
-			OperIP:        ipaddr,
-			OperLocation:  location,
-			OperName:      loginUser.User.UserName,
+			OperaIP:       ipaddr,
+			OperaLocation: location,
+			OperaName:     loginUser.User.UserName,
 			DeptName:      loginUser.User.Dept.DeptName,
 		}
 
 		if loginUser.User.UserType == "sys" {
-			operLog.OperatorType = OperatorTypeManage
+			operaLog.OperatorType = OperatorTypeManage
 		}
 
 		// 是否需要保存request，参数和值
 		if options.IsSaveRequestData {
 			params := ctx.RequestParamsMap(c)
-			for k, v := range params {
-				// 敏感属性字段进行掩码
-				for _, s := range maskProperties {
-					if s == k {
-						params[k] = parse.SafeContent(v.(string))
-						break
-					}
-				}
-			}
+			// 敏感属性字段进行掩码
+			processSensitiveFields(params)
 			jsonStr, _ := json.Marshal(params)
 			paramsStr := string(jsonStr)
 			if len(paramsStr) > 2000 {
 				paramsStr = paramsStr[:2000]
 			}
-			operLog.OperParam = paramsStr
+			operaLog.OperaParam = paramsStr
 		}
 
 		// 调用下一个处理程序
@@ -156,9 +143,9 @@ func OperateLog(options Options) gin.HandlerFunc {
 		// 响应状态
 		status := c.Writer.Status()
 		if status == 200 {
-			operLog.Status = constCommon.StatusYes
+			operaLog.Status = constCommon.StatusYes
 		} else {
-			operLog.Status = constCommon.StatusNo
+			operaLog.Status = constCommon.StatusNo
 		}
 
 		// 是否需要保存response，参数和值
@@ -167,15 +154,61 @@ func OperateLog(options Options) gin.HandlerFunc {
 			contentType := c.Writer.Header().Get("Content-Type")
 			content := contentType + contentDisposition
 			msg := fmt.Sprintf(`{"status":"%d","size":"%d","content-type":"%s"}`, status, c.Writer.Size(), content)
-			operLog.OperMsg = msg
+			operaLog.OperaMsg = msg
 		}
 
 		// 日志记录时间
 		duration := time.Since(c.GetTime("startTime"))
-		operLog.CostTime = duration.Milliseconds()
-		operLog.OperTime = time.Now().UnixMilli()
+		operaLog.CostTime = duration.Milliseconds()
+		operaLog.OperaTime = time.Now().UnixMilli()
 
 		// 保存操作记录到数据库
-		service.NewSysLogOperateImpl.InsertSysLogOperate(operLog)
+		service.NewSysLogOperateImpl.InsertSysLogOperate(operaLog)
+	}
+}
+
+// 敏感属性字段进行掩码
+var maskProperties = []string{
+	"password",
+	"oldPassword",
+	"newPassword",
+	"confirmPassword",
+}
+
+// processSensitiveFields 处理敏感属性字段
+func processSensitiveFields(obj interface{}) {
+	val := reflect.ValueOf(obj)
+
+	switch val.Kind() {
+	case reflect.Map:
+		for _, key := range val.MapKeys() {
+			value := val.MapIndex(key)
+			keyStr := key.Interface().(string)
+
+			// 遍历是否敏感属性
+			hasMaskKey := false
+			for _, v := range maskProperties {
+				if v == keyStr {
+					hasMaskKey = true
+					break
+				}
+			}
+
+			if hasMaskKey {
+				valueStr := value.Interface().(string)
+				if len(valueStr) > 100 {
+					valueStr = valueStr[0:100]
+				}
+				val.SetMapIndex(key, reflect.ValueOf(parse.SafeContent(valueStr)))
+			} else {
+				processSensitiveFields(value.Interface())
+			}
+		}
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < val.Len(); i++ {
+			processSensitiveFields(val.Index(i).Interface())
+		}
+	default:
+		logger.Errorf("processSensitiveFields unhandled case %v", val.Kind())
 	}
 }

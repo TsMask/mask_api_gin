@@ -111,7 +111,7 @@ func (jl *jobLogData) SaveLog(status string) {
 		CostTime:     duration.Milliseconds(),
 	}
 	// 插入数据
-	repository.NewSysJobLogImpl.InsertJobLog(sysJobLog)
+	repository.NewSysJobLogRepository.Insert(sysJobLog)
 }
 
 // JobData 调度任务日志收集结构体，执行任务时传入的接收参数

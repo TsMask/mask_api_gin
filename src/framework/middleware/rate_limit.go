@@ -57,7 +57,7 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 		lastDotIndex := strings.LastIndex(funcName, "/")
 		funcName = funcName[lastDotIndex+1:]
 		// 生成限流key
-		var limitKey string = constCacheKey.RateLimitKey + funcName
+		limitKey := constCacheKey.RateLimitKey + funcName
 
 		// 用户
 		if option.Type == LimitUser {
