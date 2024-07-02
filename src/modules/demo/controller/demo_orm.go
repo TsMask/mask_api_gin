@@ -12,12 +12,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// NewDemoORM 实例化控制层 DemoORMController
+// NewDemoORM 实例化控制层
 var NewDemoORM = &DemoORMController{
-	demoORMService: service.NewDemoORMService,
+	demoORMService: service.NewDemoORMService, // 测试ORM信息服务
 }
 
-// DemoORMController 测试ORM
+// DemoORMController 测试ORM 控制层处理
 //
 // PATH /demo
 type DemoORMController struct {
@@ -30,7 +30,7 @@ type DemoORMController struct {
 // GET /list
 func (s *DemoORMController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
-	data, err := s.demoORMService.SelectPage(query)
+	data, err := s.demoORMService.FindByPage(query)
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
@@ -49,7 +49,7 @@ func (s *DemoORMController) All(c *gin.Context) {
 		demoORM.Title = title
 	}
 
-	data, err := s.demoORMService.SelectList(demoORM)
+	data, err := s.demoORMService.Find(demoORM)
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
@@ -67,7 +67,7 @@ func (s *DemoORMController) Info(c *gin.Context) {
 		return
 	}
 
-	data, err := s.demoORMService.SelectById(id)
+	data, err := s.demoORMService.FindById(id)
 	if err == nil {
 		c.JSON(200, result.OkData(data))
 		return
@@ -139,11 +139,11 @@ func (s *DemoORMController) Remove(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// Clean 清空
+// Clear 清空
 //
-// DELETE /clean
-func (s *DemoORMController) Clean(c *gin.Context) {
-	_, err := s.demoORMService.Clean()
+// DELETE /clear
+func (s *DemoORMController) Clear(c *gin.Context) {
+	_, err := s.demoORMService.Clear()
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return

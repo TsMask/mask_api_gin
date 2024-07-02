@@ -6,14 +6,15 @@ import (
 	"mask_api_gin/src/modules/demo/model"
 )
 
-// NewDemoORMService 测试ORM信息
+// NewDemoORMService 实例化服务层
 // https://gorm.io/zh_CN/docs/query.html
 var NewDemoORMService = DemoORMService{}
 
+// DemoORMService 测试ORM信息 服务层处理
 type DemoORMService struct{}
 
-// SelectPage 分页查询
-func (s *DemoORMService) SelectPage(query map[string]any) (map[string]any, error) {
+// FindByPage 分页查询
+func (s *DemoORMService) FindByPage(query map[string]any) (map[string]any, error) {
 	var (
 		pageSize int64
 		pageNum  int64
@@ -69,8 +70,8 @@ func (s *DemoORMService) SelectPage(query map[string]any) (map[string]any, error
 	}, nil
 }
 
-// SelectList 查询集合
-func (s *DemoORMService) SelectList(demoORM model.DemoORM) ([]model.DemoORM, error) {
+// Find 查询集合
+func (s *DemoORMService) Find(demoORM model.DemoORM) ([]model.DemoORM, error) {
 
 	// 条件判断
 	where := &model.DemoORM{}
@@ -87,8 +88,8 @@ func (s *DemoORMService) SelectList(demoORM model.DemoORM) ([]model.DemoORM, err
 	return rows, nil
 }
 
-// SelectById 通过ID查询
-func (s *DemoORMService) SelectById(id string) (model.DemoORM, error) {
+// FindById 通过ID查询
+func (s *DemoORMService) FindById(id string) (model.DemoORM, error) {
 	var result model.DemoORM
 
 	err := db.DB("").First(&result, id).Error
@@ -143,8 +144,8 @@ func (s *DemoORMService) DeleteByIds(ids []string) int64 {
 	return result.RowsAffected
 }
 
-// Clean 清空测试ORM表
-func (s *DemoORMService) Clean() (int64, error) {
+// Clear 清空测试ORM表
+func (s *DemoORMService) Clear() (int64, error) {
 	var rows int64
 	err := db.DB("").Model(&model.DemoORM{}).Count(&rows).Error
 	if err != nil {

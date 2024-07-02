@@ -22,6 +22,6 @@ func Setup(router *gin.Engine) {
 		ormGroup.POST("", controller.NewDemoORM.Add)
 		ormGroup.PUT("", controller.NewDemoORM.Edit)
 		ormGroup.DELETE("/:ids", controller.NewDemoORM.Remove)
-		ormGroup.DELETE("/clean", controller.NewDemoORM.Clean)
+		ormGroup.DELETE("/clear", controller.NewDemoORM.Clear)
 	}
 }
