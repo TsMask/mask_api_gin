@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"mask_api_gin/src/framework/config"
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/parse"
 	"os"
 	"runtime"
@@ -17,14 +18,14 @@ import (
 	"github.com/shirou/gopsutil/v3/net"
 )
 
-// 实例化服务层 SystemInfoImpl 结构体
-var NewSystemInfoImpl = &SystemInfoImpl{}
+// NewSystemInfoService 服务层实例化
+var NewSystemInfoService = &SystemInfoServiceImpl{}
 
-// SystemInfoImpl 服务器系统相关信息 服务层处理
-type SystemInfoImpl struct{}
+// SystemInfoServiceImpl 服务器系统相关信息 服务层处理
+type SystemInfoServiceImpl struct{}
 
 // ProjectInfo 程序项目信息
-func (s *SystemInfoImpl) ProjectInfo() map[string]any {
+func (s *SystemInfoServiceImpl) ProjectInfo() map[string]any {
 	// 获取工作目录
 	appDir, err := os.Getwd()
 	if err != nil {
@@ -42,17 +43,22 @@ func (s *SystemInfoImpl) ProjectInfo() map[string]any {
 }
 
 // dependencies 读取mod内项目包依赖
-func (s *SystemInfoImpl) dependencies() map[string]string {
-	var pkgs = make(map[string]string)
+func (s *SystemInfoServiceImpl) dependencies() map[string]string {
+	var requireModules = make(map[string]string)
 
 	// 打开 go.mod 文件
 	file, err := os.Open("go.mod")
 	if err != nil {
-		return pkgs
+		return requireModules
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			logger.Errorf("Close go.mod file error: %s", err.Error())
+		}
+	}(file)
 
-	// 使用 bufio.Scanner 逐行读取文件内容
+	// 逐行读取文件内容
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -69,18 +75,18 @@ func (s *SystemInfoImpl) dependencies() map[string]string {
 		if len(modInfo) >= 2 {
 			moduleName := strings.TrimSpace(modInfo[0])
 			version := strings.TrimSpace(modInfo[1])
-			pkgs[moduleName] = version
+			requireModules[moduleName] = version
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		pkgs["scanner-err"] = err.Error()
+		requireModules["scanner-err"] = err.Error()
 	}
-	return pkgs
+	return requireModules
 }
 
 // SystemInfo 系统信息
-func (s *SystemInfoImpl) SystemInfo() map[string]any {
+func (s *SystemInfoServiceImpl) SystemInfo() map[string]any {
 	info, err := host.Info()
 	if err != nil {
 		info.Platform = err.Error()
@@ -118,7 +124,7 @@ func (s *SystemInfoImpl) SystemInfo() map[string]any {
 }
 
 // TimeInfo 系统时间信息
-func (s *SystemInfoImpl) TimeInfo() map[string]string {
+func (s *SystemInfoServiceImpl) TimeInfo() map[string]string {
 	now := time.Now()
 	// 获取当前时间
 	current := now.Format("2006-01-02 15:04:05")
@@ -135,7 +141,7 @@ func (s *SystemInfoImpl) TimeInfo() map[string]string {
 }
 
 // MemoryInfo 内存信息
-func (s *SystemInfoImpl) MemoryInfo() map[string]any {
+func (s *SystemInfoServiceImpl) MemoryInfo() map[string]any {
 	memInfo, err := mem.VirtualMemory()
 	if err != nil {
 		memInfo.UsedPercent = 0
@@ -158,10 +164,10 @@ func (s *SystemInfoImpl) MemoryInfo() map[string]any {
 }
 
 // CPUInfo CPU信息
-func (s *SystemInfoImpl) CPUInfo() map[string]any {
-	var core int = 0
-	var speed string = "未知"
-	var model string = "未知"
+func (s *SystemInfoServiceImpl) CPUInfo() map[string]any {
+	var core = 0
+	var speed = "未知"
+	var model = "未知"
 	cpuInfo, err := cpu.Info()
 	if err == nil {
 		core = runtime.NumCPU()
@@ -169,11 +175,11 @@ func (s *SystemInfoImpl) CPUInfo() map[string]any {
 		model = strings.TrimSpace(cpuInfo[0].ModelName)
 	}
 
-	useds := []string{}
+	var used []string
 	cpuPercent, err := cpu.Percent(0, true)
 	if err == nil {
 		for _, v := range cpuPercent {
-			useds = append(useds, fmt.Sprintf("%.2f", v))
+			used = append(used, fmt.Sprintf("%.2f", v))
 		}
 	}
 
@@ -181,17 +187,17 @@ func (s *SystemInfoImpl) CPUInfo() map[string]any {
 		"model":    model,
 		"speed":    speed,
 		"core":     core,
-		"coreUsed": useds,
+		"coreUsed": used,
 	}
 }
 
 // NetworkInfo 网络信息
-func (s *SystemInfoImpl) NetworkInfo() map[string]string {
-	ipAddrs := make(map[string]string)
+func (s *SystemInfoServiceImpl) NetworkInfo() map[string]string {
+	ipAdders := make(map[string]string)
 	interfaces, err := net.Interfaces()
 	if err == nil {
-		for _, iface := range interfaces {
-			name := iface.Name
+		for _, v := range interfaces {
+			name := v.Name
 			if name[len(name)-1] == '0' {
 				name = name[0 : len(name)-1]
 				name = strings.Trim(name, "")
@@ -200,24 +206,24 @@ func (s *SystemInfoImpl) NetworkInfo() map[string]string {
 			if name == "lo" {
 				continue
 			}
-			var addrs []string
-			for _, v := range iface.Addrs {
+			var adders []string
+			for _, v := range v.Addrs {
 				prefix := strings.Split(v.Addr, "/")[0]
 				if strings.Contains(prefix, "::") {
-					addrs = append(addrs, fmt.Sprintf("IPv6 %s", prefix))
+					adders = append(adders, fmt.Sprintf("IPv6 %s", prefix))
 				}
 				if strings.Contains(prefix, ".") {
-					addrs = append(addrs, fmt.Sprintf("IPv4 %s", prefix))
+					adders = append(adders, fmt.Sprintf("IPv4 %s", prefix))
 				}
 			}
-			ipAddrs[name] = strings.Join(addrs, " / ")
+			ipAdders[name] = strings.Join(adders, " / ")
 		}
 	}
-	return ipAddrs
+	return ipAdders
 }
 
 // DiskInfo 磁盘信息
-func (s *SystemInfoImpl) DiskInfo() []map[string]string {
+func (s *SystemInfoServiceImpl) DiskInfo() []map[string]string {
 	disks := make([]map[string]string, 0)
 
 	partitions, err := disk.Partitions(false)
@@ -234,7 +240,7 @@ func (s *SystemInfoImpl) DiskInfo() []map[string]string {
 			"size":   parse.Bit(float64(usage.Total)),
 			"used":   parse.Bit(float64(usage.Used)),
 			"avail":  parse.Bit(float64(usage.Free)),
-			"pcent":  fmt.Sprintf("%.1f%%", usage.UsedPercent),
+			"cent":   fmt.Sprintf("%.1f%%", usage.UsedPercent),
 			"target": partition.Device,
 		})
 	}

@@ -2,7 +2,7 @@ package controller
 
 import (
 	"encoding/json"
-	"mask_api_gin/src/framework/constants/cachekey"
+	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
 	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/framework/vo"
 	"mask_api_gin/src/framework/vo/result"
@@ -14,20 +14,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 实例化控制层 SysUserOnlineController 结构体
+// NewSysUserOnline 实例化控制层 SysUserOnlineController 结构体
 var NewSysUserOnline = &SysUserOnlineController{
-	sysUserOnlineService: service.NewSysUserOnlineImpl,
+	sysUserOnlineService: service.NewSysUserOnlineService,
 }
 
-// 在线用户监控
+// SysUserOnlineController 在线用户监控 控制层处理
 //
 // PATH /monitor/online
 type SysUserOnlineController struct {
 	// 在线用户服务
-	sysUserOnlineService service.ISysUserOnline
+	sysUserOnlineService service.ISysUserOnlineService
 }
 
-// 在线用户列表
+// List 在线用户列表
 //
 // GET /list
 func (s *SysUserOnlineController) List(c *gin.Context) {
@@ -35,7 +35,7 @@ func (s *SysUserOnlineController) List(c *gin.Context) {
 	userName := c.Query("userName")
 
 	// 获取所有在线用户key
-	keys, _ := redis.GetKeys("", cachekey.LOGIN_TOKEN_KEY+"*")
+	keys, _ := redis.GetKeys("", constCacheKey.LoginTokenKey+"*")
 
 	// 分批获取
 	arr := make([]string, 0)
@@ -52,7 +52,7 @@ func (s *SysUserOnlineController) List(c *gin.Context) {
 	}
 
 	// 遍历字符串信息解析组合可用对象
-	userOnlines := make([]model.SysUserOnline, 0)
+	var userOnline []model.SysUserOnline
 	for _, str := range arr {
 		if str == "" {
 			continue
@@ -66,46 +66,46 @@ func (s *SysUserOnlineController) List(c *gin.Context) {
 
 		onlineUser := s.sysUserOnlineService.LoginUserToUserOnline(loginUser)
 		if onlineUser.TokenID != "" {
-			userOnlines = append(userOnlines, onlineUser)
+			userOnline = append(userOnline, onlineUser)
 		}
 	}
 
 	// 根据查询条件过滤
-	filteredUserOnlines := make([]model.SysUserOnline, 0)
+	filteredUserOnline := make([]model.SysUserOnline, 0)
 	if ipaddr != "" && userName != "" {
-		for _, o := range userOnlines {
+		for _, o := range userOnline {
 			if strings.Contains(o.IPAddr, ipaddr) && strings.Contains(o.UserName, userName) {
-				filteredUserOnlines = append(filteredUserOnlines, o)
+				filteredUserOnline = append(filteredUserOnline, o)
 			}
 		}
 	} else if ipaddr != "" {
-		for _, o := range userOnlines {
+		for _, o := range userOnline {
 			if strings.Contains(o.IPAddr, ipaddr) {
-				filteredUserOnlines = append(filteredUserOnlines, o)
+				filteredUserOnline = append(filteredUserOnline, o)
 			}
 		}
 	} else if userName != "" {
-		for _, o := range userOnlines {
+		for _, o := range userOnline {
 			if strings.Contains(o.UserName, userName) {
-				filteredUserOnlines = append(filteredUserOnlines, o)
+				filteredUserOnline = append(filteredUserOnline, o)
 			}
 		}
 	} else {
-		filteredUserOnlines = userOnlines
+		filteredUserOnline = userOnline
 	}
 
 	// 按登录时间排序
-	sort.Slice(filteredUserOnlines, func(i, j int) bool {
-		return filteredUserOnlines[j].LoginTime > filteredUserOnlines[i].LoginTime
+	sort.Slice(filteredUserOnline, func(i, j int) bool {
+		return filteredUserOnline[j].LoginTime > filteredUserOnline[i].LoginTime
 	})
 
 	c.JSON(200, result.Ok(map[string]any{
-		"total": len(filteredUserOnlines),
-		"rows":  filteredUserOnlines,
+		"total": len(filteredUserOnline),
+		"rows":  filteredUserOnline,
 	}))
 }
 
-// 在线用户强制退出
+// ForceLogout 在线用户强制退出
 //
 // DELETE /:tokenId
 func (s *SysUserOnlineController) ForceLogout(c *gin.Context) {
@@ -116,10 +116,10 @@ func (s *SysUserOnlineController) ForceLogout(c *gin.Context) {
 	}
 
 	// 删除token
-	ok, _ := redis.Del("", cachekey.LOGIN_TOKEN_KEY+tokenId)
-	if ok {
-		c.JSON(200, result.Ok(nil))
+	err := redis.Del("", constCacheKey.LoginTokenKey+tokenId)
+	if err != nil {
+		c.JSON(200, result.ErrMsg(err.Error()))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, result.Ok(nil))
 }

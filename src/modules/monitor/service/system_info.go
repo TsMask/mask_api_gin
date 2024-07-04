@@ -1,7 +1,7 @@
 package service
 
-// ISystemInfo 服务器系统相关信息 服务层接口
-type ISystemInfo interface {
+// ISystemInfoService 服务器系统相关信息 服务层接口
+type ISystemInfoService interface {
 	// ProjectInfo 程序项目信息
 	ProjectInfo() map[string]any
 

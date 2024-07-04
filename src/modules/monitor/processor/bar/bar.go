@@ -6,20 +6,18 @@ import (
 	"time"
 )
 
-var NewProcessor = &BarProcessor{
+var NewProcessor = &barProcessor{
 	progress: 0,
 	count:    0,
 }
 
-// bar 队列任务处理
-type BarProcessor struct {
-	// 任务进度
-	progress int
-	// 执行次数
-	count int
+// barProcessor 队列任务处理
+type barProcessor struct {
+	progress int // 任务进度
+	count    int // 执行次数
 }
 
-func (s *BarProcessor) Execute(data any) (any, error) {
+func (s *barProcessor) Execute(data any) (any, error) {
 	logger.Infof("执行 %d 次，上次进度： %d ", s.count, s.progress)
 	s.count++
 

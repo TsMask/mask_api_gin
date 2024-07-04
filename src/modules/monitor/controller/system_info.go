@@ -7,30 +7,30 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 实例化控制层 SystemInfoController 结构体
+// NewSystemInfo 实例化控制层
 var NewSystemInfo = &SystemInfoController{
-	systemInfogService: service.NewSystemInfoImpl,
+	systemInfoService: service.NewSystemInfoService,
 }
 
-// 服务器监控信息
+// SystemInfoController 服务器监控信息 控制层处理
 //
 // PATH /monitor/system-info
 type SystemInfoController struct {
 	// 服务器系统相关信息服务
-	systemInfogService service.ISystemInfo
+	systemInfoService service.ISystemInfoService
 }
 
-// 服务器信息
+// Info 服务器信息
 //
 // GET /
 func (s *SystemInfoController) Info(c *gin.Context) {
 	c.JSON(200, result.OkData(map[string]any{
-		"project": s.systemInfogService.ProjectInfo(),
-		"cpu":     s.systemInfogService.CPUInfo(),
-		"memory":  s.systemInfogService.MemoryInfo(),
-		"network": s.systemInfogService.NetworkInfo(),
-		"time":    s.systemInfogService.TimeInfo(),
-		"system":  s.systemInfogService.SystemInfo(),
-		"disk":    s.systemInfogService.DiskInfo(),
+		"project": s.systemInfoService.ProjectInfo(),
+		"cpu":     s.systemInfoService.CPUInfo(),
+		"memory":  s.systemInfoService.MemoryInfo(),
+		"network": s.systemInfoService.NetworkInfo(),
+		"time":    s.systemInfoService.TimeInfo(),
+		"system":  s.systemInfoService.SystemInfo(),
+		"disk":    s.systemInfoService.DiskInfo(),
 	}))
 }
