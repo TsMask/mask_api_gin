@@ -1,48 +1,90 @@
 package service
 
 import (
-	"errors"
-	"mask_api_gin/src/framework/constants/common"
+	"fmt"
+	constCommon "mask_api_gin/src/framework/constants/common"
 	"mask_api_gin/src/framework/cron"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/repository"
 )
 
-// 实例化服务层 SysJobImpl 结构体
+// NewSysJobImpl 服务层实例化
 var NewSysJobImpl = &SysJobImpl{
-	sysJobRepository: repository.NewSysJobImpl,
+	sysJobRepository: repository.NewSysJobRepository,
 }
 
 // SysJobImpl 调度任务 服务层处理
 type SysJobImpl struct {
 	// 调度任务数据信息
-	sysJobRepository repository.ISysJob
+	sysJobRepository repository.ISysJobRepository
 }
 
-// SelectJobPage 分页查询调度任务集合
-func (r *SysJobImpl) SelectJobPage(query map[string]any) map[string]any {
-	return r.sysJobRepository.SelectJobPage(query)
+// FindByPage 分页查询
+func (r *SysJobImpl) FindByPage(query map[string]any) map[string]any {
+	return r.sysJobRepository.SelectByPage(query)
 }
 
-// SelectJobList 查询调度任务集合
-func (r *SysJobImpl) SelectJobList(sysJob model.SysJob) []model.SysJob {
-	return r.sysJobRepository.SelectJobList(sysJob)
+// Find 查询
+func (r *SysJobImpl) Find(sysJob model.SysJob) []model.SysJob {
+	return r.sysJobRepository.Select(sysJob)
 }
 
-// SelectJobById 通过调度ID查询调度任务信息
-func (r *SysJobImpl) SelectJobById(jobId string) model.SysJob {
+// FindById 通过ID查询
+func (r *SysJobImpl) FindById(jobId string) model.SysJob {
 	if jobId == "" {
 		return model.SysJob{}
 	}
-	jobs := r.sysJobRepository.SelectJobByIds([]string{jobId})
-	if len(jobs) > 0 {
+	if jobs := r.sysJobRepository.SelectByIds([]string{jobId}); len(jobs) > 0 {
 		return jobs[0]
 	}
 	return model.SysJob{}
 }
 
-// CheckUniqueJobName 校验调度任务名称和组是否唯一
-func (r *SysJobImpl) CheckUniqueJobName(jobName, jobGroup, jobId string) bool {
+// Insert 新增调度任务信息
+func (r *SysJobImpl) Insert(sysJob model.SysJob) string {
+	insertId := r.sysJobRepository.Insert(sysJob)
+	if insertId == "" && sysJob.Status == constCommon.StatusYes {
+		sysJob.JobID = insertId
+		r.insertQueueJob(sysJob, true)
+	}
+	return insertId
+}
+
+// Update 修改
+func (r *SysJobImpl) Update(sysJob model.SysJob) int64 {
+	rows := r.sysJobRepository.Update(sysJob)
+	if rows > 0 {
+		//状态正常添加队列任务
+		if sysJob.Status == constCommon.StatusYes {
+			r.insertQueueJob(sysJob, true)
+		}
+		// 状态禁用删除队列任务
+		if sysJob.Status == constCommon.StatusNo {
+			r.deleteQueueJob(sysJob)
+		}
+	}
+	return rows
+}
+
+// DeleteByIds 批量删除
+func (r *SysJobImpl) DeleteByIds(jobIds []string) (int64, error) {
+	// 检查是否存在
+	jobs := r.sysJobRepository.SelectByIds(jobIds)
+	if len(jobs) <= 0 {
+		return 0, fmt.Errorf("没有权限访问调度任务数据！")
+	}
+	if len(jobs) == len(jobIds) {
+		// 清除任务
+		for _, job := range jobs {
+			r.deleteQueueJob(job)
+		}
+		return r.sysJobRepository.DeleteByIds(jobIds), nil
+	}
+	return 0, fmt.Errorf("删除调度任务信息失败！")
+}
+
+// CheckUniqueByJobName 校验调度任务名称和组是否唯一
+func (r *SysJobImpl) CheckUniqueByJobName(jobName, jobGroup, jobId string) bool {
 	uniqueId := r.sysJobRepository.CheckUniqueJob(model.SysJob{
 		JobName:  jobName,
 		JobGroup: jobGroup,
@@ -53,72 +95,8 @@ func (r *SysJobImpl) CheckUniqueJobName(jobName, jobGroup, jobId string) bool {
 	return uniqueId == ""
 }
 
-// InsertJob 新增调度任务信息
-func (r *SysJobImpl) InsertJob(sysJob model.SysJob) string {
-	insertId := r.sysJobRepository.InsertJob(sysJob)
-	if insertId == "" && sysJob.Status == common.STATUS_YES {
-		sysJob.JobID = insertId
-		r.insertQueueJob(sysJob, true)
-	}
-	return insertId
-}
-
-// UpdateJob 修改调度任务信息
-func (r *SysJobImpl) UpdateJob(sysJob model.SysJob) int64 {
-	rows := r.sysJobRepository.UpdateJob(sysJob)
-	if rows > 0 {
-		//状态正常添加队列任务
-		if sysJob.Status == common.STATUS_YES {
-			r.insertQueueJob(sysJob, true)
-		}
-		// 状态禁用删除队列任务
-		if sysJob.Status == common.STATUS_NO {
-			r.deleteQueueJob(sysJob)
-		}
-	}
-	return rows
-}
-
-// DeleteJobByIds 批量删除调度任务信息
-func (r *SysJobImpl) DeleteJobByIds(jobIds []string) (int64, error) {
-	// 检查是否存在
-	jobs := r.sysJobRepository.SelectJobByIds(jobIds)
-	if len(jobs) <= 0 {
-		return 0, errors.New("没有权限访问调度任务数据！")
-	}
-	if len(jobs) == len(jobIds) {
-		// 清除任务
-		for _, job := range jobs {
-			r.deleteQueueJob(job)
-		}
-		rows := r.sysJobRepository.DeleteJobByIds(jobIds)
-		return rows, nil
-	}
-	return 0, errors.New("删除调度任务信息失败！")
-}
-
-// ResetQueueJob 重置初始调度任务
-func (r *SysJobImpl) ResetQueueJob() {
-	// 获取注册的队列名称
-	queueNames := cron.QueueNames()
-	if len(queueNames) == 0 {
-		return
-	}
-	// 查询系统中定义状态为正常启用的任务
-	sysJobs := r.sysJobRepository.SelectJobList(model.SysJob{
-		Status: common.STATUS_YES,
-	})
-	for _, sysJob := range sysJobs {
-		for _, name := range queueNames {
-			if name == sysJob.InvokeTarget {
-				r.insertQueueJob(sysJob, true)
-			}
-		}
-	}
-}
-
-// RunQueueJob 立即运行一次调度任务
-func (r *SysJobImpl) RunQueueJob(sysJob model.SysJob) bool {
+// Run 立即运行一次调度任务
+func (r *SysJobImpl) Run(sysJob model.SysJob) bool {
 	return r.insertQueueJob(sysJob, false)
 }
 
@@ -151,7 +129,6 @@ func (r *SysJobImpl) insertQueueJob(sysJob model.SysJob, repeat bool) bool {
 		JobId: sysJob.JobID,
 		Cron:  sysJob.CronExpression,
 	})
-
 	return true
 }
 
@@ -163,4 +140,24 @@ func (r *SysJobImpl) deleteQueueJob(sysJob model.SysJob) bool {
 		return false
 	}
 	return queue.RemoveJob(sysJob.JobID)
+}
+
+// Reset 重置初始调度任务
+func (r *SysJobImpl) Reset() {
+	// 获取注册的队列名称
+	queueNames := cron.QueueNames()
+	if len(queueNames) == 0 {
+		return
+	}
+	// 查询系统中定义状态为正常启用的任务
+	sysJobs := r.sysJobRepository.Select(model.SysJob{
+		Status: constCommon.StatusYes,
+	})
+	for _, sysJob := range sysJobs {
+		for _, name := range queueNames {
+			if name == sysJob.InvokeTarget {
+				r.insertQueueJob(sysJob, true)
+			}
+		}
+	}
 }

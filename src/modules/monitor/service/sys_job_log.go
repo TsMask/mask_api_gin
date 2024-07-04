@@ -4,20 +4,20 @@ import (
 	"mask_api_gin/src/modules/monitor/model"
 )
 
-// ISysJobLog 调度任务日志 服务层接口
-type ISysJobLog interface {
-	// SelectJobLogPage 分页查询调度任务日志集合
-	SelectJobLogPage(query map[string]any) map[string]any
+// ISysJobLogService 调度任务日志 服务层接口
+type ISysJobLogService interface {
+	// FindByPage 分页查询
+	FindByPage(query map[string]any) map[string]any
 
-	// SelectJobLogList 查询调度任务日志集合
-	SelectJobLogList(sysJobLog model.SysJobLog) []model.SysJobLog
+	// Find 查询
+	Find(sysJobLog model.SysJobLog) []model.SysJobLog
 
-	// SelectJobLogById 通过调度ID查询调度任务日志信息
-	SelectJobLogById(jobLogId string) model.SysJobLog
+	// FindById 通过ID查询
+	FindById(jobLogId string) model.SysJobLog
 
-	// DeleteJobLogByIds 批量删除调度任务日志信息
-	DeleteJobLogByIds(jobLogIds []string) int64
+	// RemoveByIds 批量删除
+	RemoveByIds(jobLogIds []string) int64
 
-	// CleanJobLog 清空调度任务日志
-	CleanJobLog() error
+	// Clean 清空
+	Clean() error
 }

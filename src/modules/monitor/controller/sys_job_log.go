@@ -17,41 +17,38 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 实例化控制层 SysJobLogController 结构体
+// NewSysJobLog 实例化控制层
 var NewSysJobLog = &SysJobLogController{
 	sysJobService:      service.NewSysJobImpl,
-	sysJobLogService:   service.NewSysJobLogImpl,
+	sysJobLogService:   service.NewSysJobLogService,
 	sysDictDataService: systemService.NewSysDictDataImpl,
 }
 
-// 调度任务日志信息
+// SysJobLogController 调度任务日志信息 控制层处理
 //
 // PATH /monitor/jobLog
 type SysJobLogController struct {
-	// 调度任务服务
-	sysJobService service.ISysJob
-	// 调度任务日志服务
-	sysJobLogService service.ISysJobLog
-	// 字典数据服务
-	sysDictDataService systemService.ISysDictData
+	sysJobService      service.ISysJob            // 调度任务服务
+	sysJobLogService   service.ISysJobLogService  // 调度任务日志服务
+	sysDictDataService systemService.ISysDictData // 字典数据服务
 }
 
-// 调度任务日志列表
+// List 调度任务日志列表
 //
 // GET /list
 func (s *SysJobLogController) List(c *gin.Context) {
 	// 查询参数转换map
-	querys := ctx.QueryMap(c)
-	if v, ok := querys["jobId"]; ok && v != "" && v != "0" {
-		job := s.sysJobService.SelectJobById(v.(string))
-		querys["jobName"] = job.JobName
-		querys["jobGroup"] = job.JobGroup
+	query := ctx.QueryMap(c)
+	if v, ok := query["jobId"]; ok && v != "" && v != "0" {
+		job := s.sysJobLogService.FindById(v.(string))
+		query["jobName"] = job.JobName
+		query["jobGroup"] = job.JobGroup
 	}
-	list := s.sysJobLogService.SelectJobLogPage(querys)
+	list := s.sysJobLogService.FindByPage(query)
 	c.JSON(200, result.Ok(list))
 }
 
-// 调度任务日志信息
+// Info 调度任务日志信息
 //
 // GET /:jobLogId
 func (s *SysJobLogController) Info(c *gin.Context) {
@@ -60,7 +57,7 @@ func (s *SysJobLogController) Info(c *gin.Context) {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
-	data := s.sysJobLogService.SelectJobLogById(jobLogId)
+	data := s.sysJobLogService.FindById(jobLogId)
 	if data.JobLogID == jobLogId {
 		c.JSON(200, result.OkData(data))
 		return
@@ -68,7 +65,7 @@ func (s *SysJobLogController) Info(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 调度任务日志删除
+// Remove 调度任务日志删除
 //
 // DELETE /:jobLogIds
 func (s *SysJobLogController) Remove(c *gin.Context) {
@@ -85,7 +82,7 @@ func (s *SysJobLogController) Remove(c *gin.Context) {
 		c.JSON(200, result.Err(nil))
 		return
 	}
-	rows := s.sysJobLogService.DeleteJobLogByIds(uniqueIDs)
+	rows := s.sysJobLogService.RemoveByIds(uniqueIDs)
 	if rows > 0 {
 		msg := fmt.Sprintf("删除成功：%d", rows)
 		c.JSON(200, result.OkMsg(msg))
@@ -94,11 +91,11 @@ func (s *SysJobLogController) Remove(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 调度任务日志清空
+// Clean 调度任务日志清空
 //
 // DELETE /clean
 func (s *SysJobLogController) Clean(c *gin.Context) {
-	err := s.sysJobLogService.CleanJobLog()
+	err := s.sysJobLogService.Clean()
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
@@ -106,21 +103,21 @@ func (s *SysJobLogController) Clean(c *gin.Context) {
 	c.JSON(200, result.Ok(nil))
 }
 
-// 导出调度任务日志信息
+// Export 导出调度任务日志信息
 //
 // POST /export
 func (s *SysJobLogController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	querys := ctx.BodyJSONMap(c)
-	data := s.sysJobLogService.SelectJobLogPage(querys)
-	if data["total"].(int64) == 0 {
+	query := ctx.BodyJSONMap(c)
+	data := s.sysJobLogService.FindByPage(query)
+	if parse.Number(data["total"]) == 0 {
 		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return
 	}
 	rows := data["rows"].([]model.SysJobLog)
 
 	// 导出文件名称
-	fileName := fmt.Sprintf("jobLog_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
+	fileName := fmt.Sprintf("job_log_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
 	// 第一行表头标题
 	headerCells := map[string]string{
 		"A1": "日志序号",

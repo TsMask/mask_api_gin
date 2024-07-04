@@ -3,8 +3,6 @@ package monitor
 import (
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/middleware"
-	"mask_api_gin/src/framework/middleware/collectlogs"
-	"mask_api_gin/src/framework/middleware/repeat"
 	"mask_api_gin/src/modules/monitor/controller"
 	"mask_api_gin/src/modules/monitor/processor"
 	"mask_api_gin/src/modules/monitor/service"
@@ -44,17 +42,17 @@ func Setup(router *gin.Engine) {
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:query"}}),
 			controller.NewSysCache.Value,
 		)
-		sysCacheGroup.DELETE("/clearCacheName/:cacheName",
+		sysCacheGroup.DELETE("/cleanCacheName/:cacheName",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
-			controller.NewSysCache.ClearCacheName,
+			controller.NewSysCache.CleanCacheName,
 		)
-		sysCacheGroup.DELETE("/clearCacheKey/:cacheName/:cacheKey",
+		sysCacheGroup.DELETE("/cleanCacheKey/:cacheName/:cacheKey",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
-			controller.NewSysCache.ClearCacheKey,
+			controller.NewSysCache.CleanCacheKey,
 		)
-		sysCacheGroup.DELETE("/clearCacheSafe",
+		sysCacheGroup.DELETE("/cleanCacheSafe",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
-			controller.NewSysCache.ClearCacheSafe,
+			controller.NewSysCache.CleanCacheSafe,
 		)
 	}
 
@@ -71,18 +69,18 @@ func Setup(router *gin.Engine) {
 		)
 		sysJobLogGroup.DELETE("/:jobLogIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("调度任务日志信息", collectlogs.BUSINESS_TYPE_DELETE)),
+			middleware.OperateLog(middleware.OptionNew("调度任务日志信息", middleware.BusinessTypeDelete)),
 			controller.NewSysJobLog.Remove,
 		)
 		sysJobLogGroup.DELETE("/clean",
-			repeat.RepeatSubmit(5),
+			middleware.RepeatSubmit(5),
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("调度任务日志信息", collectlogs.BUSINESS_TYPE_CLEAN)),
+			middleware.OperateLog(middleware.OptionNew("调度任务日志信息", middleware.BusinessTypeClean)),
 			controller.NewSysJobLog.Clean,
 		)
 		sysJobLogGroup.POST("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:export"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("调度任务日志信息", collectlogs.BUSINESS_TYPE_EXPORT)),
+			middleware.OperateLog(middleware.OptionNew("调度任务日志信息", middleware.BusinessTypeExport)),
 			controller.NewSysJobLog.Export,
 		)
 	}
@@ -100,39 +98,39 @@ func Setup(router *gin.Engine) {
 		)
 		sysJobGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:add"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("调度任务信息", collectlogs.BUSINESS_TYPE_INSERT)),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeInsert)),
 			controller.NewSysJob.Add,
 		)
 		sysJobGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:edit"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("调度任务信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeUpdate)),
 			controller.NewSysJob.Edit,
 		)
 		sysJobGroup.DELETE("/:jobIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("调度任务信息", collectlogs.BUSINESS_TYPE_DELETE)),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeDelete)),
 			controller.NewSysJob.Remove,
 		)
 		sysJobGroup.PUT("/changeStatus",
-			repeat.RepeatSubmit(5),
+			middleware.RepeatSubmit(5),
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("调度任务信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeUpdate)),
 			controller.NewSysJob.Status,
 		)
 		sysJobGroup.PUT("/run/:jobId",
-			repeat.RepeatSubmit(10),
+			middleware.RepeatSubmit(10),
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("调度任务信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeUpdate)),
 			controller.NewSysJob.Run,
 		)
 		sysJobGroup.PUT("/resetQueueJob",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("调度任务信息", collectlogs.BUSINESS_TYPE_CLEAN)),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeClean)),
 			controller.NewSysJob.ResetQueueJob,
 		)
 		sysJobGroup.POST("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:export"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("调度任务信息", collectlogs.BUSINESS_TYPE_EXPORT)),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeExport)),
 			controller.NewSysJob.Export,
 		)
 	}
@@ -156,5 +154,5 @@ func InitLoad() {
 	// 初始化定时任务处理
 	processor.InitCronQueue()
 	// 启动时，初始化调度任务
-	service.NewSysJobImpl.ResetQueueJob()
+	service.NewSysJobImpl.Reset()
 }

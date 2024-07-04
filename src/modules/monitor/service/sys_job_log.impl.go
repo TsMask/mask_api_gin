@@ -5,38 +5,38 @@ import (
 	"mask_api_gin/src/modules/monitor/repository"
 )
 
-// 实例化服务层 SysJobLogImpl 结构体
-var NewSysJobLogImpl = &SysJobLogImpl{
-	sysJobLogRepository: repository.NewSysJobLogImpl,
+// NewSysJobLogService 服务层实例化
+var NewSysJobLogService = &SysJobLogServiceImpl{
+	sysJobLogRepository: repository.NewSysJobLogRepository,
 }
 
-// SysJobLogImpl 调度任务日志 服务层处理
-type SysJobLogImpl struct {
+// SysJobLogServiceImpl 调度任务日志 服务层处理
+type SysJobLogServiceImpl struct {
 	// 调度任务日志数据信息
-	sysJobLogRepository repository.ISysJobLog
+	sysJobLogRepository repository.ISysJobLogRepository
 }
 
-// SelectJobLogPage 分页查询调度任务日志集合
-func (s *SysJobLogImpl) SelectJobLogPage(query map[string]any) map[string]any {
-	return s.sysJobLogRepository.SelectJobLogPage(query)
+// FindByPage 分页查询
+func (s *SysJobLogServiceImpl) FindByPage(query map[string]any) map[string]any {
+	return s.sysJobLogRepository.SelectByPage(query)
 }
 
-// SelectJobLogList 查询调度任务日志集合
-func (s *SysJobLogImpl) SelectJobLogList(sysJobLog model.SysJobLog) []model.SysJobLog {
-	return s.sysJobLogRepository.SelectJobLogList(sysJobLog)
+// Find 查询
+func (s *SysJobLogServiceImpl) Find(sysJobLog model.SysJobLog) []model.SysJobLog {
+	return s.sysJobLogRepository.Select(sysJobLog)
 }
 
-// SelectJobLogById 通过调度ID查询调度任务日志信息
-func (s *SysJobLogImpl) SelectJobLogById(jobLogId string) model.SysJobLog {
-	return s.sysJobLogRepository.SelectJobLogById(jobLogId)
+// FindById 通过ID查询
+func (s *SysJobLogServiceImpl) FindById(jobLogId string) model.SysJobLog {
+	return s.sysJobLogRepository.SelectById(jobLogId)
 }
 
-// DeleteJobLogByIds 批量删除调度任务日志信息
-func (s *SysJobLogImpl) DeleteJobLogByIds(jobLogIds []string) int64 {
-	return s.sysJobLogRepository.DeleteJobLogByIds(jobLogIds)
+// RemoveByIds 批量删除
+func (s *SysJobLogServiceImpl) RemoveByIds(jobLogIds []string) int64 {
+	return s.sysJobLogRepository.DeleteByIds(jobLogIds)
 }
 
-// CleanJobLog 清空调度任务日志
-func (s *SysJobLogImpl) CleanJobLog() error {
-	return s.sysJobLogRepository.CleanJobLog()
+// Clean 清空
+func (s *SysJobLogServiceImpl) Clean() error {
+	return s.sysJobLogRepository.Clean()
 }

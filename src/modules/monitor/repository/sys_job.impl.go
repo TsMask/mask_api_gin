@@ -1,7 +1,8 @@
 package repository
 
 import (
-	"mask_api_gin/src/framework/datasource"
+	"fmt"
+	db "mask_api_gin/src/framework/data_source"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/monitor/model"
@@ -9,10 +10,14 @@ import (
 	"time"
 )
 
-// 实例化数据层 SysJobImpl 结构体
-var NewSysJobImpl = &SysJobImpl{
-	selectSql: `select job_id, job_name, job_group, invoke_target, target_params, cron_expression, 
-	misfire_policy, concurrent, status, save_log, create_by, create_time, remark from sys_job`,
+// NewSysJobRepository 实例化数据层 NewSysJobRepository
+var NewSysJobRepository = &SysJobRepositoryImpl{
+	selectSql: `select 
+    job_id, job_name, job_group, 
+    invoke_target, target_params, cron_expression, 
+	misfire_policy, concurrent, status, 
+	save_log, create_by, create_time, remark 
+	from sys_job`,
 
 	resultMap: map[string]string{
 		"job_id":          "JobID",
@@ -33,8 +38,8 @@ var NewSysJobImpl = &SysJobImpl{
 	},
 }
 
-// SysJobImpl 调度任务表 数据层处理
-type SysJobImpl struct {
+// SysJobRepositoryImpl 调度任务 数据层处理
+type SysJobRepositoryImpl struct {
 	// 查询视图对象SQL
 	selectSql string
 	// 结果字段与实体映射
@@ -42,13 +47,13 @@ type SysJobImpl struct {
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysJobImpl) convertResultRows(rows []map[string]any) []model.SysJob {
+func (r *SysJobRepositoryImpl) convertResultRows(rows []map[string]any) []model.SysJob {
 	arr := make([]model.SysJob, 0)
 	for _, row := range rows {
 		sysJob := model.SysJob{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				datasource.SetFieldValue(&sysJob, keyMapper, value)
+				db.SetFieldValue(&sysJob, keyMapper, value)
 			}
 		}
 		arr = append(arr, sysJob)
@@ -56,8 +61,8 @@ func (r *SysJobImpl) convertResultRows(rows []map[string]any) []model.SysJob {
 	return arr
 }
 
-// SelectJobPage 分页查询调度任务集合
-func (r *SysJobImpl) SelectJobPage(query map[string]any) map[string]any {
+// SelectByPage 分页查询集合
+func (r *SysJobRepositoryImpl) SelectByPage(query map[string]any) map[string]any {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -86,33 +91,32 @@ func (r *SysJobImpl) SelectJobPage(query map[string]any) map[string]any {
 
 	// 查询结果
 	result := map[string]any{
-		"total": 0,
+		"total": int64(0),
 		"rows":  []model.SysJob{},
 	}
 
 	// 查询数量 长度为0直接返回
 	totalSql := "select count(1) as 'total' from sys_job"
-	totalRows, err := datasource.RawDB("", totalSql+whereSql, params)
+	totalRows, err := db.RawDB("", totalSql+whereSql, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
 		return result
 	}
-	total := parse.Number(totalRows[0]["total"])
-	if total == 0 {
-		return result
-	} else {
+	if total := parse.Number(totalRows[0]["total"]); total > 0 {
 		result["total"] = total
+	} else {
+		return result
 	}
 
 	// 分页
-	pageNum, pageSize := datasource.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
 
 	// 查询数据
 	querySql := r.selectSql + whereSql + pageSql
-	results, err := datasource.RawDB("", querySql, params)
+	results, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return result
@@ -123,8 +127,8 @@ func (r *SysJobImpl) SelectJobPage(query map[string]any) map[string]any {
 	return result
 }
 
-// SelectJobList 查询调度任务集合
-func (r *SysJobImpl) SelectJobList(sysJob model.SysJob) []model.SysJob {
+// Select 查询集合
+func (r *SysJobRepositoryImpl) Select(sysJob model.SysJob) []model.SysJob {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -153,7 +157,7 @@ func (r *SysJobImpl) SelectJobList(sysJob model.SysJob) []model.SysJob {
 
 	// 查询数据
 	querySql := r.selectSql + whereSql
-	results, err := datasource.RawDB("", querySql, params)
+	results, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysJob{}
@@ -163,12 +167,12 @@ func (r *SysJobImpl) SelectJobList(sysJob model.SysJob) []model.SysJob {
 	return r.convertResultRows(results)
 }
 
-// SelectJobByIds 通过调度ID查询调度任务信息
-func (r *SysJobImpl) SelectJobByIds(jobIds []string) []model.SysJob {
-	placeholder := datasource.KeyPlaceholderByQuery(len(jobIds))
+// SelectByIds 通过ID查询信息
+func (r *SysJobRepositoryImpl) SelectByIds(jobIds []string) []model.SysJob {
+	placeholder := db.KeyPlaceholderByQuery(len(jobIds))
 	querySql := r.selectSql + " where job_id in (" + placeholder + ")"
-	parameters := datasource.ConvertIdsSlice(jobIds)
-	results, err := datasource.RawDB("", querySql, parameters)
+	parameters := db.ConvertIdsSlice(jobIds)
+	results, err := db.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysJob{}
@@ -177,47 +181,8 @@ func (r *SysJobImpl) SelectJobByIds(jobIds []string) []model.SysJob {
 	return r.convertResultRows(results)
 }
 
-// CheckUniqueJob 校验调度任务是否唯一
-func (r *SysJobImpl) CheckUniqueJob(sysJob model.SysJob) string {
-	// 查询条件拼接
-	var conditions []string
-	var params []any
-	if sysJob.JobName != "" {
-		conditions = append(conditions, "job_name = ?")
-		params = append(params, sysJob.JobName)
-	}
-	if sysJob.JobGroup != "" {
-		conditions = append(conditions, "job_group = ?")
-		params = append(params, sysJob.JobGroup)
-	}
-
-	// 构建查询条件语句
-	whereSql := ""
-	if len(conditions) > 0 {
-		whereSql += " where " + strings.Join(conditions, " and ")
-	} else {
-		return ""
-	}
-
-	// 查询数据
-	querySql := "select job_id as 'str' from sys_job " + whereSql + " limit 1"
-	results, err := datasource.RawDB("", querySql, params)
-	if err != nil {
-		logger.Errorf("query err %v", err)
-		return ""
-	}
-	if len(results) > 0 {
-		v, ok := results[0]["str"].(string)
-		if ok {
-			return v
-		}
-		return ""
-	}
-	return ""
-}
-
-// InsertJob 新增调度任务信息
-func (r *SysJobImpl) InsertJob(sysJob model.SysJob) string {
+// Insert 新增信息
+func (r *SysJobRepositoryImpl) Insert(sysJob model.SysJob) string {
 	// 参数拼接
 	params := make(map[string]any)
 	if sysJob.JobID != "" {
@@ -259,34 +224,29 @@ func (r *SysJobImpl) InsertJob(sysJob model.SysJob) string {
 	}
 
 	// 构建执行语句
-	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
-	sql := "insert into sys_job (" + keys + ")values(" + placeholder + ")"
+	keys, values, placeholder := db.KeyValuePlaceholderByInsert(params)
+	sql := fmt.Sprintf("insert into sys_job (%s)values(%s)", keys, placeholder)
 
-	db := datasource.DefaultDB()
-	// 开启事务
-	tx := db.Begin()
+	tx := db.DB("").Begin() // 开启事务
 	// 执行插入
-	err := tx.Exec(sql, values...).Error
-	if err != nil {
+	if err := tx.Exec(sql, values...).Error; err != nil {
 		logger.Errorf("insert row : %v", err.Error())
 		tx.Rollback()
 		return ""
 	}
 	// 获取生成的自增 ID
 	var insertedID string
-	err = tx.Raw("select last_insert_id()").Row().Scan(&insertedID)
-	if err != nil {
+	if err := tx.Raw("select last_insert_id()").Row().Scan(&insertedID); err != nil {
 		logger.Errorf("insert last id : %v", err.Error())
 		tx.Rollback()
 		return ""
 	}
-	// 提交事务
-	tx.Commit()
+	tx.Commit() // 提交事务
 	return insertedID
 }
 
-// UpdateJob 修改调度任务信息
-func (r *SysJobImpl) UpdateJob(sysJob model.SysJob) int64 {
+// Update 修改信息
+func (r *SysJobRepositoryImpl) Update(sysJob model.SysJob) int64 {
 	// 参数拼接
 	params := make(map[string]any)
 	if sysJob.JobName != "" {
@@ -321,12 +281,12 @@ func (r *SysJobImpl) UpdateJob(sysJob model.SysJob) int64 {
 	}
 
 	// 构建执行语句
-	keys, values := datasource.KeyValueByUpdate(params)
-	sql := "update sys_job set " + keys + " where job_id = ?"
+	keys, values := db.KeyValueByUpdate(params)
+	sql := fmt.Sprintf("update sys_job set %s where job_id = ?", keys)
 
 	// 执行更新
 	values = append(values, sysJob.JobID)
-	rows, err := datasource.ExecDB("", sql, values)
+	rows, err := db.ExecDB("", sql, values)
 	if err != nil {
 		logger.Errorf("update row : %v", err.Error())
 		return 0
@@ -334,15 +294,50 @@ func (r *SysJobImpl) UpdateJob(sysJob model.SysJob) int64 {
 	return rows
 }
 
-// DeleteJobByIds 批量删除调度任务信息
-func (r *SysJobImpl) DeleteJobByIds(jobIds []string) int64 {
-	placeholder := datasource.KeyPlaceholderByQuery(len(jobIds))
-	sql := "delete from sys_job where job_id in (" + placeholder + ")"
-	parameters := datasource.ConvertIdsSlice(jobIds)
-	results, err := datasource.ExecDB("", sql, parameters)
+// DeleteByIds 批量删除信息
+func (r *SysJobRepositoryImpl) DeleteByIds(jobIds []string) int64 {
+	placeholder := db.KeyPlaceholderByQuery(len(jobIds))
+	sql := fmt.Sprintf("delete from sys_job where job_id in (%s)", placeholder)
+	parameters := db.ConvertIdsSlice(jobIds)
+	results, err := db.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
 		return 0
 	}
 	return results
+}
+
+// CheckUniqueJob 校验信息是否唯一
+func (r *SysJobRepositoryImpl) CheckUniqueJob(sysJob model.SysJob) string {
+	// 查询条件拼接
+	var conditions []string
+	var params []any
+	if sysJob.JobName != "" {
+		conditions = append(conditions, "job_name = ?")
+		params = append(params, sysJob.JobName)
+	}
+	if sysJob.JobGroup != "" {
+		conditions = append(conditions, "job_group = ?")
+		params = append(params, sysJob.JobGroup)
+	}
+
+	// 构建查询条件语句
+	whereSql := ""
+	if len(conditions) > 0 {
+		whereSql += " where " + strings.Join(conditions, " and ")
+	} else {
+		return "-"
+	}
+
+	// 查询数据
+	querySql := fmt.Sprintf("select job_id as 'str' from sys_job %s limit 1", whereSql)
+	results, err := db.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err %v", err)
+		return "-"
+	}
+	if len(results) > 0 {
+		return fmt.Sprint(results[0]["str"])
+	}
+	return "-"
 }
