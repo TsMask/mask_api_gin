@@ -11,17 +11,15 @@ import (
 func Setup(router *gin.Engine) {
 	logger.Infof("开始加载 ====> demo 模块路由")
 
-	demoGroup := router.Group("/demo")
-
 	// 演示-GORM基本使用
-	ormGroup := demoGroup.Group("/orm")
+	ormGroup := router.Group("/demo/orm")
 	{
 		ormGroup.GET("/list", controller.NewDemoORM.List)
 		ormGroup.GET("/all", controller.NewDemoORM.All)
-		ormGroup.GET("/:id", controller.NewDemoORM.Info)
+		ormGroup.GET("", controller.NewDemoORM.Info)
 		ormGroup.POST("", controller.NewDemoORM.Add)
 		ormGroup.PUT("", controller.NewDemoORM.Edit)
-		ormGroup.DELETE("/:ids", controller.NewDemoORM.Remove)
-		ormGroup.DELETE("/clear", controller.NewDemoORM.Clear)
+		ormGroup.DELETE("", controller.NewDemoORM.Remove)
+		ormGroup.DELETE("/clean", controller.NewDemoORM.Clean)
 	}
 }

@@ -59,10 +59,10 @@ func (s *DemoORMController) All(c *gin.Context) {
 
 // Info 信息
 //
-// GET /:id
+// GET /?id=xx
 func (s *DemoORMController) Info(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
+	id, idOk := c.GetQuery("id")
+	if id == "" || !idOk {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
@@ -115,16 +115,16 @@ func (s *DemoORMController) Edit(c *gin.Context) {
 
 // Remove 删除
 //
-// DELETE /:ids
+// DELETE /?id=xx,xx
 func (s *DemoORMController) Remove(c *gin.Context) {
-	ids := c.Param("ids")
-	if ids == "" {
+	id, idOk := c.GetQuery("id")
+	if id == "" || !idOk {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
 	// 处理字符转id数组后去重
-	idArr := strings.Split(ids, ",")
+	idArr := strings.Split(id, ",")
 	uniqueIDs := parse.RemoveDuplicates(idArr)
 	if len(uniqueIDs) <= 0 {
 		c.JSON(200, result.Err(nil))
@@ -139,11 +139,11 @@ func (s *DemoORMController) Remove(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// Clear 清空
+// Clean 清空
 //
-// DELETE /clear
-func (s *DemoORMController) Clear(c *gin.Context) {
-	_, err := s.demoORMService.Clear()
+// DELETE /clean
+func (s *DemoORMController) Clean(c *gin.Context) {
+	_, err := s.demoORMService.Clean()
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return

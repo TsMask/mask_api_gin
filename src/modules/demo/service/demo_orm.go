@@ -144,8 +144,8 @@ func (s *DemoORMService) DeleteByIds(ids []string) int64 {
 	return result.RowsAffected
 }
 
-// Clear 清空测试ORM表
-func (s *DemoORMService) Clear() (int64, error) {
+// Clean 清空测试ORM表
+func (s *DemoORMService) Clean() (int64, error) {
 	var rows int64
 	err := db.DB("").Model(&model.DemoORM{}).Count(&rows).Error
 	if err != nil {
