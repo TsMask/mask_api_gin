@@ -4,17 +4,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 实例化控制层 CommontController 结构体
-var NewCommont = &CommontController{}
+// NewCommon 实例化控制层
+var NewCommon = &CommonController{}
 
-// 通用请求
+// CommonController 通用请求 控制层处理
 //
 // PATH /
-type CommontController struct{}
+type CommonController struct{}
 
-// 哈希加密
+// Hash 哈希加密
 //
 // GET /hash
-func (s *CommontController) Hash(c *gin.Context) {
-	c.String(200, "commont Hash")
+func (s *CommonController) Hash(c *gin.Context) {
+	c.String(200, "Common Hash")
 }

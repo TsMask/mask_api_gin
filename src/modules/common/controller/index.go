@@ -8,15 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 实例化控制层 IndexController 结构体
+// NewIndex 实例化控制层
 var NewIndex = &IndexController{}
 
-// 路由主页
+// IndexController 路由主页 控制层处理
 //
 // PATH /
 type IndexController struct{}
 
-// 根路由
+// Handler 根路由
 //
 // GET /
 func (s *IndexController) Handler(c *gin.Context) {

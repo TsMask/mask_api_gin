@@ -1,9 +1,10 @@
 package controller
 
 import (
+	"fmt"
 	"mask_api_gin/src/framework/config"
-	commonConstants "mask_api_gin/src/framework/constants/common"
-	tokenConstants "mask_api_gin/src/framework/constants/token"
+	constCommon "mask_api_gin/src/framework/constants/common"
+	constToken "mask_api_gin/src/framework/constants/token"
 	ctxUtils "mask_api_gin/src/framework/utils/ctx"
 	tokenUtils "mask_api_gin/src/framework/utils/token"
 	"mask_api_gin/src/framework/vo/result"
@@ -14,23 +15,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 实例化控制层 AccountController 结构体
+// NewAccount 实例化控制层
 var NewAccount = &AccountController{
-	accountService:     commonService.NewAccountImpl,
-	sysLogLoginService: systemService.NewSysLogLoginImpl,
+	accountService:     commonService.NewAccountService,
+	sysLogLoginService: systemService.NewSysLogLoginService,
 }
 
-// 账号身份操作处理
+// AccountController 账号身份操作 控制层处理
 //
 // PATH /
 type AccountController struct {
-	// 账号身份操作服务
-	accountService commonService.IAccount
-	// 系统登录访问
-	sysLogLoginService systemService.ISysLogLogin
+	accountService     commonService.IAccountService     // 账号身份操作服务
+	sysLogLoginService systemService.ISysLogLoginService // 系统登录访问
 }
 
-// 系统登录
+// Login 系统登录
 //
 // POST /login
 func (s *AccountController) Login(c *gin.Context) {
@@ -45,47 +44,44 @@ func (s *AccountController) Login(c *gin.Context) {
 	os, browser := ctxUtils.UaOsBrowser(c)
 
 	// 校验验证码
-	err := s.accountService.ValidateCaptcha(
-		loginBody.Code,
-		loginBody.UUID,
-	)
+	err := s.accountService.ValidateCaptcha(loginBody.Code, loginBody.UUID)
 	// 根据错误信息，创建系统访问记录
 	if err != nil {
-		msg := err.Error() + " " + loginBody.Code
+		msg := fmt.Sprintf("%s code: %s", err.Error(), loginBody.Code)
 		s.sysLogLoginService.CreateSysLogLogin(
-			loginBody.Username, commonConstants.STATUS_NO, msg,
-			ipaddr, location, os, browser,
+			loginBody.Username, constCommon.StatusNo, msg,
+			[4]string{ipaddr, location, os, browser},
 		)
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
 	}
 
 	// 登录用户信息
-	loginUser, err := s.accountService.LoginByUsername(loginBody.Username, loginBody.Password)
+	loginUser, err := s.accountService.ByUsername(loginBody.Username, loginBody.Password)
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
 	}
 
 	// 生成令牌，创建系统访问记录
-	tokenStr := tokenUtils.Create(&loginUser, ipaddr, location, os, browser)
+	tokenStr := tokenUtils.Create(&loginUser, [4]string{ipaddr, location, os, browser})
 	if tokenStr == "" {
 		c.JSON(200, result.Err(nil))
 		return
 	} else {
 		s.accountService.UpdateLoginDateAndIP(&loginUser)
 		s.sysLogLoginService.CreateSysLogLogin(
-			loginBody.Username, commonConstants.STATUS_YES, "登录成功",
-			ipaddr, location, os, browser,
+			loginBody.Username, constCommon.StatusYes, "登录成功",
+			[4]string{ipaddr, location, os, browser},
 		)
 	}
 
 	c.JSON(200, result.OkData(map[string]any{
-		tokenConstants.RESPONSE_FIELD: tokenStr,
+		constToken.ResponseField: tokenStr,
 	}))
 }
 
-// 登录用户信息
+// Info 登录用户信息
 //
 // GET /getInfo
 func (s *AccountController) Info(c *gin.Context) {
@@ -106,7 +102,7 @@ func (s *AccountController) Info(c *gin.Context) {
 	}))
 }
 
-// 登录用户路由信息
+// Router 登录用户路由信息
 //
 // GET /getRouters
 func (s *AccountController) Router(c *gin.Context) {
@@ -118,7 +114,7 @@ func (s *AccountController) Router(c *gin.Context) {
 	c.JSON(200, result.OkData(buildMenus))
 }
 
-// 系统登出
+// Logout 系统登出
 //
 // POST /logout
 func (s *AccountController) Logout(c *gin.Context) {
@@ -132,8 +128,8 @@ func (s *AccountController) Logout(c *gin.Context) {
 			os, browser := ctxUtils.UaOsBrowser(c)
 			// 创建系统访问记录
 			s.sysLogLoginService.CreateSysLogLogin(
-				userName, commonConstants.STATUS_YES, "退出成功",
-				ipaddr, location, os, browser,
+				userName, constCommon.StatusYes, "退出成功",
+				[4]string{ipaddr, location, os, browser},
 			)
 		}
 	}

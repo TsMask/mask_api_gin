@@ -3,7 +3,7 @@ package controller
 import (
 	"encoding/base64"
 	"fmt"
-	"mask_api_gin/src/framework/constants/uploadsubpath"
+	constUploadSubPath "mask_api_gin/src/framework/constants/upload_sub_path"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/vo/result"
 	"net/url"
@@ -13,15 +13,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 实例化控制层 FileController 结构体
+// NewFile 实例化控制层
 var NewFile = &FileController{}
 
-// 文件操作处理
+// FileController 文件操作 控制层处理
 //
 // PATH /file
 type FileController struct{}
 
-// 下载文件
+// Download 下载文件
 //
 // GET /download/:filePath
 func (s *FileController) Download(c *gin.Context) {
@@ -60,10 +60,10 @@ func (s *FileController) Download(c *gin.Context) {
 		c.Status(200)
 
 	}
-	c.Writer.Write(resultMap["data"].([]byte))
+	_, _ = c.Writer.Write(resultMap["data"].([]byte))
 }
 
-// 上传文件
+// Upload 上传文件
 //
 // POST /upload
 func (s *FileController) Upload(c *gin.Context) {
@@ -75,12 +75,12 @@ func (s *FileController) Upload(c *gin.Context) {
 	}
 	// 子路径需要在指定范围内
 	subPath := c.PostForm("subPath")
-	if _, ok := uploadsubpath.UploadSubpath[subPath]; subPath != "" && !ok {
+	if _, ok := constUploadSubPath.UploadSubPath[subPath]; subPath != "" && !ok {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 	if subPath == "" {
-		subPath = uploadsubpath.COMMON
+		subPath = constUploadSubPath.Common
 	}
 
 	// 上传文件转存
@@ -99,7 +99,7 @@ func (s *FileController) Upload(c *gin.Context) {
 	}))
 }
 
-// 切片文件检查
+// ChunkCheck 切片文件检查
 //
 // POST /chunkCheck
 func (s *FileController) ChunkCheck(c *gin.Context) {
@@ -124,7 +124,7 @@ func (s *FileController) ChunkCheck(c *gin.Context) {
 	c.JSON(200, result.OkData(chunks))
 }
 
-// 切片文件合并
+// ChunkMerge 切片文件合并
 //
 // POST /chunkMerge
 func (s *FileController) ChunkMerge(c *gin.Context) {
@@ -142,12 +142,12 @@ func (s *FileController) ChunkMerge(c *gin.Context) {
 		return
 	}
 	// 子路径需要在指定范围内
-	if _, ok := uploadsubpath.UploadSubpath[body.SubPath]; body.SubPath != "" && !ok {
+	if _, ok := constUploadSubPath.UploadSubPath[body.SubPath]; body.SubPath != "" && !ok {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 	if body.SubPath == "" {
-		body.SubPath = uploadsubpath.COMMON
+		body.SubPath = constUploadSubPath.Common
 	}
 
 	// 切片文件合并
@@ -166,7 +166,7 @@ func (s *FileController) ChunkMerge(c *gin.Context) {
 	}))
 }
 
-// 切片文件上传
+// ChunkUpload 切片文件上传
 //
 // POST /chunkUpload
 func (s *FileController) ChunkUpload(c *gin.Context) {

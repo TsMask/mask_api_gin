@@ -8,60 +8,59 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 模块路由注册
+// Setup 模块路由注册
 func Setup(router *gin.Engine) {
 	logger.Infof("开始加载 ====> common 模块路由")
 
 	// 路由主页
-	indexGroup := router.Group("/")
-	indexGroup.GET("",
+	router.GET("/",
 		middleware.RateLimit(middleware.LimitOption{
 			Time:  300,
 			Count: 10,
-			Type:  middleware.LIMIT_IP,
+			Type:  middleware.LimitIP,
 		}),
 		controller.NewIndex.Handler,
 	)
 
-	// 验证码操作处理
-	indexGroup.GET("/captchaImage",
+	// 验证码操作
+	router.GET("/captchaImage",
 		middleware.RateLimit(middleware.LimitOption{
 			Time:  300,
 			Count: 60,
-			Type:  middleware.LIMIT_IP,
+			Type:  middleware.LimitIP,
 		}),
 		controller.NewCaptcha.Image,
 	)
 
-	// 账号身份操作处理
+	// 账号身份操作
 	{
-		indexGroup.POST("/login",
+		router.POST("/login",
 			middleware.RateLimit(middleware.LimitOption{
 				Time:  300,
 				Count: 10,
-				Type:  middleware.LIMIT_IP,
+				Type:  middleware.LimitIP,
 			}),
 			controller.NewAccount.Login,
 		)
-		indexGroup.GET("/getInfo", middleware.PreAuthorize(nil), controller.NewAccount.Info)
-		indexGroup.GET("/getRouters", middleware.PreAuthorize(nil), controller.NewAccount.Router)
-		indexGroup.POST("/logout",
+		router.GET("/getInfo", middleware.PreAuthorize(nil), controller.NewAccount.Info)
+		router.GET("/getRouters", middleware.PreAuthorize(nil), controller.NewAccount.Router)
+		router.POST("/logout",
 			middleware.RateLimit(middleware.LimitOption{
 				Time:  300,
 				Count: 5,
-				Type:  middleware.LIMIT_IP,
+				Type:  middleware.LimitIP,
 			}),
 			controller.NewAccount.Logout,
 		)
 	}
 
-	// 账号注册操作处理
+	// 账号注册操作
 	{
-		indexGroup.POST("/register",
+		router.POST("/register",
 			middleware.RateLimit(middleware.LimitOption{
 				Time:  300,
 				Count: 10,
-				Type:  middleware.LIMIT_IP,
+				Type:  middleware.LimitIP,
 			}),
 			controller.NewRegister.Register,
 		)
@@ -70,10 +69,10 @@ func Setup(router *gin.Engine) {
 	// 通用请求
 	commonGroup := router.Group("/common")
 	{
-		commonGroup.GET("/hash", middleware.PreAuthorize(nil), controller.NewCommont.Hash)
+		commonGroup.GET("/hash", middleware.PreAuthorize(nil), controller.NewCommon.Hash)
 	}
 
-	// 文件操作处理
+	// 文件操作
 	fileGroup := router.Group("/file")
 	{
 		fileGroup.GET("/download/:filePath", middleware.PreAuthorize(nil), controller.NewFile.Download)

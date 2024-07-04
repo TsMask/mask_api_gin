@@ -2,8 +2,8 @@ package controller
 
 import (
 	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/constants/cachekey"
-	"mask_api_gin/src/framework/constants/captcha"
+	constCachekey "mask_api_gin/src/framework/constants/cache_key"
+	constCaptcha "mask_api_gin/src/framework/constants/captcha"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/framework/utils/parse"
@@ -15,12 +15,12 @@ import (
 	"github.com/mojocn/base64Captcha"
 )
 
-// 实例化控制层 CaptchaController 结构体
+// NewCaptcha 实例化控制层
 var NewCaptcha = &CaptchaController{
 	sysConfigService: systemService.NewSysConfigImpl,
 }
 
-// 验证码操作处理
+// CaptchaController 验证码操作 控制层处理
 //
 // PATH /
 type CaptchaController struct {
@@ -28,7 +28,7 @@ type CaptchaController struct {
 	sysConfigService systemService.ISysConfig
 }
 
-// 获取验证码
+// Image 获取验证码
 //
 // GET /captchaImage
 func (s *CaptchaController) Image(c *gin.Context) {
@@ -52,7 +52,7 @@ func (s *CaptchaController) Image(c *gin.Context) {
 
 	// 从数据库配置获取验证码类型 math 数值计算 char 字符验证
 	captchaType := s.sysConfigService.SelectConfigValueByKey("sys.account.captchaType")
-	if captchaType == captcha.TYPE_MATH {
+	if captchaType == constCaptcha.TypeMath {
 		math := config.Get("mathCaptcha").(map[string]any)
 		driverCaptcha := &base64Captcha.DriverMath{
 			//Height png height in pixel.
@@ -77,12 +77,12 @@ func (s *CaptchaController) Image(c *gin.Context) {
 		} else {
 			data["uuid"] = id
 			data["img"] = item.EncodeB64string()
-			expiration := captcha.EXPIRATION * time.Second
-			verifyKey = cachekey.CAPTCHA_CODE_KEY + id
-			redis.SetByExpire("", verifyKey, answer, expiration)
+			expiration := constCaptcha.Expiration * time.Second
+			verifyKey = constCachekey.CaptchaCodeKey + id
+			_ = redis.SetByExpire("", verifyKey, answer, expiration)
 		}
 	}
-	if captchaType == captcha.TYPE_CHAR {
+	if captchaType == constCaptcha.TypeChar {
 		char := config.Get("charCaptcha").(map[string]any)
 		driverCaptcha := &base64Captcha.DriverString{
 			//Height png height in pixel.
@@ -111,9 +111,9 @@ func (s *CaptchaController) Image(c *gin.Context) {
 		} else {
 			data["uuid"] = id
 			data["img"] = item.EncodeB64string()
-			expiration := captcha.EXPIRATION * time.Second
-			verifyKey = cachekey.CAPTCHA_CODE_KEY + id
-			redis.SetByExpire("", verifyKey, answer, expiration)
+			expiration := constCaptcha.Expiration * time.Second
+			verifyKey = constCachekey.CaptchaCodeKey + id
+			_ = redis.SetByExpire("", verifyKey, answer, expiration)
 		}
 	}
 

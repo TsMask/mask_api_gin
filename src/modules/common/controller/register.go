@@ -1,8 +1,8 @@
 package controller
 
 import (
-	commonConstants "mask_api_gin/src/framework/constants/common"
-	ctxUtils "mask_api_gin/src/framework/utils/ctx"
+	constCommon "mask_api_gin/src/framework/constants/common"
+	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/framework/vo/result"
 	commonModel "mask_api_gin/src/modules/common/model"
@@ -12,23 +12,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 实例化控制层 RegisterController 结构体
+// NewRegister 实例化控制层
 var NewRegister = &RegisterController{
-	registerService:    commonService.NewRegisterImpl,
-	sysLogLoginService: systemService.NewSysLogLoginImpl,
+	registerService:    commonService.NewRegisterService,
+	sysLogLoginService: systemService.NewSysLogLoginService,
 }
 
-// 账号注册操作处理
+// RegisterController 账号注册操作 控制层处理
 //
 // PATH /
 type RegisterController struct {
-	// 账号注册操作服务
-	registerService commonService.IRegister
-	// 系统登录访问
-	sysLogLoginService systemService.ISysLogLogin
+	registerService    commonService.IRegisterService    // 账号注册操作服务
+	sysLogLoginService systemService.ISysLogLoginService // 系统登录访问服务
 }
 
-// 账号注册
+// Register 账号注册
 //
 // POST /register
 func (s *RegisterController) Register(c *gin.Context) {
@@ -53,8 +51,8 @@ func (s *RegisterController) Register(c *gin.Context) {
 	}
 
 	// 当前请求信息
-	ipaddr, location := ctxUtils.IPAddrLocation(c)
-	os, browser := ctxUtils.UaOsBrowser(c)
+	ipaddr, location := ctx.IPAddrLocation(c)
+	os, browser := ctx.UaOsBrowser(c)
 
 	// 校验验证码
 	err := s.registerService.ValidateCaptcha(
@@ -65,8 +63,8 @@ func (s *RegisterController) Register(c *gin.Context) {
 	if err != nil {
 		msg := err.Error() + " " + registerBody.Code
 		s.sysLogLoginService.CreateSysLogLogin(
-			registerBody.Username, commonConstants.STATUS_NO, msg,
-			ipaddr, location, os, browser,
+			registerBody.Username, constCommon.StatusNo, msg,
+			[4]string{ipaddr, location, os, browser},
 		)
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
@@ -76,8 +74,8 @@ func (s *RegisterController) Register(c *gin.Context) {
 	if err == nil {
 		msg := registerBody.Username + " 注册成功 " + userID
 		s.sysLogLoginService.CreateSysLogLogin(
-			registerBody.Username, commonConstants.STATUS_YES, msg,
-			ipaddr, location, os, browser,
+			registerBody.Username, constCommon.StatusYes, msg,
+			[4]string{ipaddr, location, os, browser},
 		)
 		c.JSON(200, result.OkMsg("注册成功"))
 		return
