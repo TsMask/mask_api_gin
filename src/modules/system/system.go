@@ -3,8 +3,6 @@ package system
 import (
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/middleware"
-	"mask_api_gin/src/framework/middleware/collectlogs"
-	"mask_api_gin/src/framework/middleware/repeat"
 	"mask_api_gin/src/modules/system/controller"
 	"mask_api_gin/src/modules/system/service"
 
@@ -31,29 +29,29 @@ func Setup(router *gin.Engine) {
 		)
 		sysConfigGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:add"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("参数配置信息", collectlogs.BUSINESS_TYPE_INSERT)),
+			middleware.OperateLog(middleware.OptionNew("参数配置信息", middleware.BusinessTypeInsert)),
 			controller.NewSysConfig.Add,
 		)
 		sysConfigGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:edit"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("参数配置信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("参数配置信息", middleware.BusinessTypeUpdate)),
 			controller.NewSysConfig.Edit,
 		)
 		sysConfigGroup.DELETE("/:configIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("参数配置信息", collectlogs.BUSINESS_TYPE_DELETE)),
+			middleware.OperateLog(middleware.OptionNew("参数配置信息", middleware.BusinessTypeDelete)),
 			controller.NewSysConfig.Remove,
 		)
 		sysConfigGroup.PUT("/refreshCache",
-			repeat.RepeatSubmit(5),
+			middleware.RepeatSubmit(5),
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("参数配置信息", collectlogs.BUSINESS_TYPE_CLEAN)),
+			middleware.OperateLog(middleware.OptionNew("参数配置信息", middleware.BusinessTypeClean)),
 			controller.NewSysConfig.RefreshCache,
 		)
 		sysConfigGroup.GET("/configKey/:configKey", controller.NewSysConfig.ConfigKey)
 		sysConfigGroup.POST("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:export"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("参数配置信息", collectlogs.BUSINESS_TYPE_EXPORT)),
+			middleware.OperateLog(middleware.OptionNew("参数配置信息", middleware.BusinessTypeExport)),
 			controller.NewSysConfig.Export,
 		)
 	}
@@ -71,17 +69,17 @@ func Setup(router *gin.Engine) {
 		)
 		sysDeptGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:add"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("部门信息", collectlogs.BUSINESS_TYPE_INSERT)),
+			middleware.OperateLog(middleware.OptionNew("部门信息", middleware.BusinessTypeInsert)),
 			controller.NewSysDept.Add,
 		)
 		sysDeptGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:edit"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("部门信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("部门信息", middleware.BusinessTypeUpdate)),
 			controller.NewSysDept.Edit,
 		)
 		sysDeptGroup.DELETE("/:deptId",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dept:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("部门信息", collectlogs.BUSINESS_TYPE_DELETE)),
+			middleware.OperateLog(middleware.OptionNew("部门信息", middleware.BusinessTypeDelete)),
 			controller.NewSysDept.Remove,
 		)
 		sysDeptGroup.GET("/list/exclude/:deptId",
@@ -111,17 +109,17 @@ func Setup(router *gin.Engine) {
 		)
 		sysDictDataGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:add"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("字典数据信息", collectlogs.BUSINESS_TYPE_INSERT)),
+			middleware.OperateLog(middleware.OptionNew("字典数据信息", middleware.BusinessTypeInsert)),
 			controller.NewSysDictData.Add,
 		)
 		sysDictDataGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:edit"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("字典数据信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("字典数据信息", middleware.BusinessTypeUpdate)),
 			controller.NewSysDictData.Edit,
 		)
 		sysDictDataGroup.DELETE("/:dictCodes",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("字典数据信息", collectlogs.BUSINESS_TYPE_DELETE)),
+			middleware.OperateLog(middleware.OptionNew("字典数据信息", middleware.BusinessTypeDelete)),
 			controller.NewSysDictData.Remove,
 		)
 		sysDictDataGroup.GET("/type/:dictType",
@@ -130,7 +128,7 @@ func Setup(router *gin.Engine) {
 		)
 		sysDictDataGroup.POST("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:export"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("字典类型信息", collectlogs.BUSINESS_TYPE_EXPORT)),
+			middleware.OperateLog(middleware.OptionNew("字典类型信息", middleware.BusinessTypeExport)),
 			controller.NewSysDictData.Export,
 		)
 	}
@@ -148,31 +146,31 @@ func Setup(router *gin.Engine) {
 		)
 		sysDictTypeGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:add"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("字典类型信息", collectlogs.BUSINESS_TYPE_INSERT)),
+			middleware.OperateLog(middleware.OptionNew("字典类型信息", middleware.BusinessTypeInsert)),
 			controller.NewSysDictType.Add,
 		)
 		sysDictTypeGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:edit"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("字典类型信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("字典类型信息", middleware.BusinessTypeUpdate)),
 			controller.NewSysDictType.Edit,
 		)
 		sysDictTypeGroup.DELETE("/:dictIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("字典类型信息", collectlogs.BUSINESS_TYPE_DELETE)),
+			middleware.OperateLog(middleware.OptionNew("字典类型信息", middleware.BusinessTypeDelete)),
 			controller.NewSysDictType.Remove,
 		)
 		sysDictTypeGroup.PUT("/refreshCache",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("字典类型信息", collectlogs.BUSINESS_TYPE_CLEAN)),
+			middleware.OperateLog(middleware.OptionNew("字典类型信息", middleware.BusinessTypeClean)),
 			controller.NewSysDictType.RefreshCache,
 		)
-		sysDictTypeGroup.GET("/getDictOptionselect",
+		sysDictTypeGroup.GET("/getDictOptionSelect",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:query"}}),
-			controller.NewSysDictType.DictOptionselect,
+			controller.NewSysDictType.DictOptionSelect,
 		)
 		sysDictTypeGroup.POST("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:dict:export"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("字典类型信息", collectlogs.BUSINESS_TYPE_EXPORT)),
+			middleware.OperateLog(middleware.OptionNew("字典类型信息", middleware.BusinessTypeExport)),
 			controller.NewSysDictType.Export,
 		)
 	}
@@ -190,17 +188,17 @@ func Setup(router *gin.Engine) {
 		)
 		sysMenuGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:add"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("菜单信息", collectlogs.BUSINESS_TYPE_INSERT)),
+			middleware.OperateLog(middleware.OptionNew("菜单信息", middleware.BusinessTypeInsert)),
 			controller.NewSysMenu.Add,
 		)
 		sysMenuGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:edit"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("菜单信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("菜单信息", middleware.BusinessTypeUpdate)),
 			controller.NewSysMenu.Edit,
 		)
 		sysMenuGroup.DELETE("/:menuId",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:menu:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("菜单信息", collectlogs.BUSINESS_TYPE_DELETE)),
+			middleware.OperateLog(middleware.OptionNew("菜单信息", middleware.BusinessTypeDelete)),
 			controller.NewSysMenu.Remove,
 		)
 		sysMenuGroup.GET("/treeSelect",
@@ -226,17 +224,17 @@ func Setup(router *gin.Engine) {
 		)
 		sysNoticeGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:add"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("通知公告信息", collectlogs.BUSINESS_TYPE_INSERT)),
+			middleware.OperateLog(middleware.OptionNew("通知公告信息", middleware.BusinessTypeInsert)),
 			controller.NewSysNotice.Add,
 		)
 		sysNoticeGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:edit"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("通知公告信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("通知公告信息", middleware.BusinessTypeUpdate)),
 			controller.NewSysNotice.Edit,
 		)
 		sysNoticeGroup.DELETE("/:noticeIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:notice:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("通知公告信息", collectlogs.BUSINESS_TYPE_DELETE)),
+			middleware.OperateLog(middleware.OptionNew("通知公告信息", middleware.BusinessTypeDelete)),
 			controller.NewSysNotice.Remove,
 		)
 	}
@@ -254,17 +252,17 @@ func Setup(router *gin.Engine) {
 		)
 		sysPostGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:post:add"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("岗位信息", collectlogs.BUSINESS_TYPE_INSERT)),
+			middleware.OperateLog(middleware.OptionNew("岗位信息", middleware.BusinessTypeInsert)),
 			controller.NewSysPost.Add,
 		)
 		sysPostGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:post:edit"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("岗位信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("岗位信息", middleware.BusinessTypeUpdate)),
 			controller.NewSysPost.Edit,
 		)
 		sysPostGroup.DELETE("/:postIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:post:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("岗位信息", collectlogs.BUSINESS_TYPE_DELETE)),
+			middleware.OperateLog(middleware.OptionNew("岗位信息", middleware.BusinessTypeDelete)),
 			controller.NewSysPost.Remove,
 		)
 		sysPostGroup.POST("/export",
@@ -286,12 +284,12 @@ func Setup(router *gin.Engine) {
 		)
 		sysProfileGroup.PUT("/updatePwd",
 			middleware.PreAuthorize(nil),
-			collectlogs.OperateLog(collectlogs.OptionNew("个人信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("个人信息", middleware.BusinessTypeUpdate)),
 			controller.NewSysProfile.UpdatePwd,
 		)
 		sysProfileGroup.POST("/avatar",
 			middleware.PreAuthorize(nil),
-			collectlogs.OperateLog(collectlogs.OptionNew("用户头像", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("用户头像", middleware.BusinessTypeUpdate)),
 			controller.NewSysProfile.Avatar,
 		)
 	}
@@ -309,29 +307,29 @@ func Setup(router *gin.Engine) {
 		)
 		sysRoleGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:role:add"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("角色信息", collectlogs.BUSINESS_TYPE_INSERT)),
+			middleware.OperateLog(middleware.OptionNew("角色信息", middleware.BusinessTypeInsert)),
 			controller.NewSysRole.Add,
 		)
 		sysRoleGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:role:edit"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("角色信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("角色信息", middleware.BusinessTypeUpdate)),
 			controller.NewSysRole.Edit,
 		)
 		sysRoleGroup.DELETE("/:roleIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:role:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("角色信息", collectlogs.BUSINESS_TYPE_DELETE)),
+			middleware.OperateLog(middleware.OptionNew("角色信息", middleware.BusinessTypeDelete)),
 			controller.NewSysRole.Remove,
 		)
 		sysRoleGroup.PUT("/changeStatus",
-			repeat.RepeatSubmit(5),
+			middleware.RepeatSubmit(5),
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:role:edit"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("角色信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("角色信息", middleware.BusinessTypeUpdate)),
 			controller.NewSysRole.Status,
 		)
 		sysRoleGroup.PUT("/dataScope",
-			repeat.RepeatSubmit(5),
+			middleware.RepeatSubmit(5),
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:edit"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("角色信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("角色信息", middleware.BusinessTypeUpdate)),
 			controller.NewSysRole.DataScope,
 		)
 		sysRoleGroup.GET("/authUser/allocatedList",
@@ -340,12 +338,12 @@ func Setup(router *gin.Engine) {
 		)
 		sysRoleGroup.PUT("/authUser/checked",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:edit"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("角色信息", collectlogs.BUSINESS_TYPE_GRANT)),
+			middleware.OperateLog(middleware.OptionNew("角色信息", middleware.BusinessTypeGrant)),
 			controller.NewSysRole.AuthUserChecked,
 		)
 		sysRoleGroup.POST("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:export"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("角色信息", collectlogs.BUSINESS_TYPE_EXPORT)),
+			middleware.OperateLog(middleware.OptionNew("角色信息", middleware.BusinessTypeExport)),
 			controller.NewSysRole.Export,
 		)
 	}
@@ -363,33 +361,33 @@ func Setup(router *gin.Engine) {
 		)
 		sysUserGroup.POST("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:add"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("用户信息", collectlogs.BUSINESS_TYPE_INSERT)),
+			middleware.OperateLog(middleware.OptionNew("用户信息", middleware.BusinessTypeInsert)),
 			controller.NewSysUser.Add,
 		)
 		sysUserGroup.PUT("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:edit"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("用户信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("用户信息", middleware.BusinessTypeUpdate)),
 			controller.NewSysUser.Edit,
 		)
 		sysUserGroup.DELETE("/:userIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("用户信息", collectlogs.BUSINESS_TYPE_DELETE)),
+			middleware.OperateLog(middleware.OptionNew("用户信息", middleware.BusinessTypeDelete)),
 			controller.NewSysUser.Remove,
 		)
 		sysUserGroup.PUT("/resetPwd",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:resetPwd"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("用户信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("用户信息", middleware.BusinessTypeUpdate)),
 			controller.NewSysUser.ResetPwd,
 		)
 		sysUserGroup.PUT("/changeStatus",
-			repeat.RepeatSubmit(5),
+			middleware.RepeatSubmit(5),
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:edit"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("用户信息", collectlogs.BUSINESS_TYPE_UPDATE)),
+			middleware.OperateLog(middleware.OptionNew("用户信息", middleware.BusinessTypeUpdate)),
 			controller.NewSysUser.Status,
 		)
 		sysUserGroup.POST("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:export"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("用户信息", collectlogs.BUSINESS_TYPE_EXPORT)),
+			middleware.OperateLog(middleware.OptionNew("用户信息", middleware.BusinessTypeExport)),
 			controller.NewSysUser.Export,
 		)
 		sysUserGroup.GET("/importTemplate",
@@ -398,7 +396,7 @@ func Setup(router *gin.Engine) {
 		)
 		sysUserGroup.POST("/importData",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:import"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("用户信息", collectlogs.BUSINESS_TYPE_INSERT)),
+			middleware.OperateLog(middleware.OptionNew("用户信息", middleware.BusinessTypeInsert)),
 			controller.NewSysUser.ImportData,
 		)
 	}
@@ -410,19 +408,19 @@ func Setup(router *gin.Engine) {
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:operate:list"}}),
 			controller.NewSysLogOperate.List,
 		)
-		sysLogOperateGroup.DELETE("/:operIds",
+		sysLogOperateGroup.DELETE("/:operaIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:operate:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("操作日志", collectlogs.BUSINESS_TYPE_DELETE)),
+			middleware.OperateLog(middleware.OptionNew("操作日志", middleware.BusinessTypeDelete)),
 			controller.NewSysLogOperate.Remove,
 		)
 		sysLogOperateGroup.DELETE("/clean",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:operate:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("操作日志", collectlogs.BUSINESS_TYPE_CLEAN)),
+			middleware.OperateLog(middleware.OptionNew("操作日志", middleware.BusinessTypeClean)),
 			controller.NewSysLogOperate.Clean,
 		)
 		sysLogOperateGroup.POST("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:operate:export"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("操作日志", collectlogs.BUSINESS_TYPE_EXPORT)),
+			middleware.OperateLog(middleware.OptionNew("操作日志", middleware.BusinessTypeExport)),
 			controller.NewSysLogOperate.Export,
 		)
 	}
@@ -436,22 +434,22 @@ func Setup(router *gin.Engine) {
 		)
 		sysLogLoginGroup.DELETE("/:loginIds",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:login:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("系统登录信息", collectlogs.BUSINESS_TYPE_DELETE)),
+			middleware.OperateLog(middleware.OptionNew("系统登录信息", middleware.BusinessTypeDelete)),
 			controller.NewSysLogLogin.Remove,
 		)
 		sysLogLoginGroup.DELETE("/clean",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:login:remove"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("系统登录信息", collectlogs.BUSINESS_TYPE_CLEAN)),
+			middleware.OperateLog(middleware.OptionNew("系统登录信息", middleware.BusinessTypeClean)),
 			controller.NewSysLogLogin.Clean,
 		)
 		sysLogLoginGroup.PUT("/unlock/:userName",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:login:unlock"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("系统登录信息", collectlogs.BUSINESS_TYPE_CLEAN)),
+			middleware.OperateLog(middleware.OptionNew("系统登录信息", middleware.BusinessTypeClean)),
 			controller.NewSysLogLogin.Unlock,
 		)
 		sysLogLoginGroup.POST("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:login:export"}}),
-			collectlogs.OperateLog(collectlogs.OptionNew("系统登录信息", collectlogs.BUSINESS_TYPE_EXPORT)),
+			middleware.OperateLog(middleware.OptionNew("系统登录信息", middleware.BusinessTypeExport)),
 			controller.NewSysLogLogin.Export,
 		)
 	}
