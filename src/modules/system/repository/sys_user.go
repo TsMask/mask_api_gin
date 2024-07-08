@@ -2,32 +2,32 @@ package repository
 
 import "mask_api_gin/src/modules/system/model"
 
-// ISysUser 用户表 数据层接口
-type ISysUser interface {
-	// SelectUserPage 根据条件分页查询用户列表
-	SelectUserPage(queryMap map[string]any, dataScopeSQL string) map[string]any
+// ISysUserRepository 用户表 数据层接口
+type ISysUserRepository interface {
+	// SelectByPage 分页查询集合
+	SelectByPage(queryMap map[string]any, dataScopeSQL string) map[string]any
 
-	// SelectAllocatedPage 根据条件分页查询分配用户角色列表
-	SelectAllocatedPage(query map[string]any, dataScopeSQL string) map[string]any
+	// Select 查询集合
+	Select(sysUser model.SysUser, dataScopeSQL string) []model.SysUser
 
-	// SelectUserList 根据条件查询用户列表
-	SelectUserList(sysUser model.SysUser, dataScopeSQL string) []model.SysUser
+	// SelectByIds 通过ID查询信息
+	SelectByIds(userIds []string) []model.SysUser
 
-	// SelectUserByIds 通过用户ID查询用户
-	SelectUserByIds(userIds []string) []model.SysUser
+	// Insert 新增信息
+	Insert(sysUser model.SysUser) string
 
-	// SelectUserByUserName 通过用户登录账号查询用户
-	SelectUserByUserName(userName string) model.SysUser
+	// Update 修改信息
+	Update(sysUser model.SysUser) int64
 
-	// InsertUser 新增用户信息
-	InsertUser(sysUser model.SysUser) string
+	// DeleteByIds 批量删除信息
+	DeleteByIds(userIds []string) int64
 
-	// UpdateUser 修改用户信息
-	UpdateUser(sysUser model.SysUser) int64
+	// CheckUnique 检查信息是否唯一
+	CheckUnique(sysUser model.SysUser) string
 
-	// DeleteUserByIds 批量删除用户信息
-	DeleteUserByIds(userIds []string) int64
+	// SelectAllocatedByPage 分页查询集合By分配用户角色
+	SelectAllocatedByPage(query map[string]any, dataScopeSQL string) map[string]any
 
-	// CheckUniqueUser 校验用户信息是否唯一
-	CheckUniqueUser(sysUser model.SysUser) string
+	// SelectByUserName 通过登录账号查询信息
+	SelectByUserName(userName string) model.SysUser
 }

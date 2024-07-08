@@ -2,32 +2,32 @@ package repository
 
 import "mask_api_gin/src/modules/system/model"
 
-// ISysDictData 字典类型数据表 数据层接口
-type ISysDictData interface {
-	// SelectDictDataPage 根据条件分页查询字典数据
-	SelectDictDataPage(query map[string]any) map[string]any
+// ISysDictDataRepository 字典类型数据表 数据层接口
+type ISysDictDataRepository interface {
+	// SelectByPage 分页查询集合
+	SelectByPage(query map[string]any) map[string]any
 
-	// SelectDictDataList 根据条件查询字典数据
-	SelectDictDataList(sysDictData model.SysDictData) []model.SysDictData
+	// Select 查询集合
+	Select(sysDictData model.SysDictData) []model.SysDictData
 
-	// SelectDictDataByCodes 根据字典数据编码查询信息
-	SelectDictDataByCodes(dictCodes []string) []model.SysDictData
+	// SelectByCodes 通过Code查询信息
+	SelectByCodes(dictCodes []string) []model.SysDictData
 
-	// CountDictDataByType 查询字典数据
-	CountDictDataByType(dictType string) int64
+	// Insert 新增信息
+	Insert(sysDictData model.SysDictData) string
 
-	// CheckUniqueDictData 校验字典数据是否唯一
-	CheckUniqueDictData(sysDictData model.SysDictData) string
+	// Update 修改信息
+	Update(sysDictData model.SysDictData) int64
 
-	// DeleteDictDataByCodes 批量删除字典数据信息
-	DeleteDictDataByCodes(dictCodes []string) int64
+	// DeleteByCodes 批量删除信息
+	DeleteByCodes(dictCodes []string) int64
 
-	// InsertDictData 新增字典数据信息
-	InsertDictData(sysDictData model.SysDictData) string
+	// CheckUnique 检查信息是否唯一
+	CheckUnique(sysDictData model.SysDictData) string
 
-	// UpdateDictData 修改字典数据信息
-	UpdateDictData(sysDictData model.SysDictData) int64
+	// ExistDataByDictType 存在数据数量
+	ExistDataByDictType(dictType string) int64
 
-	// UpdateDictDataType 同步修改字典类型
-	UpdateDictDataType(oldDictType string, newDictType string) int64
+	// UpdateDataByDictType 更新一组字典类型
+	UpdateDataByDictType(oldDictType string, newDictType string) int64
 }

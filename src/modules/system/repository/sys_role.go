@@ -2,29 +2,29 @@ package repository
 
 import "mask_api_gin/src/modules/system/model"
 
-// ISysRole 角色表 数据层接口
-type ISysRole interface {
-	// SelectRolePage 根据条件分页查询角色数据
-	SelectRolePage(query map[string]any, dataScopeSQL string) map[string]any
+// ISysRoleRepository 角色表 数据层接口
+type ISysRoleRepository interface {
+	// SelectByPage 分页查询集合
+	SelectByPage(query map[string]any, dataScopeSQL string) map[string]any
 
-	// SelectRoleList 根据条件查询角色数据
-	SelectRoleList(sysRole model.SysRole, dataScopeSQL string) []model.SysRole
+	// Select 查询集合
+	Select(sysRole model.SysRole, dataScopeSQL string) []model.SysRole
 
-	// SelectRoleListByUserId 根据用户ID获取角色选择框列表
-	SelectRoleListByUserId(userId string) []model.SysRole
+	// SelectByIds 通过ID查询信息
+	SelectByIds(roleIds []string) []model.SysRole
 
-	// SelectRoleByIds 通过角色ID查询角色
-	SelectRoleByIds(roleIds []string) []model.SysRole
+	// Update 修改信息
+	Update(sysRole model.SysRole) int64
 
-	// UpdateRole 修改角色信息
-	UpdateRole(sysRole model.SysRole) int64
+	// Insert 新增信息
+	Insert(sysRole model.SysRole) string
 
-	// InsertRole 新增角色信息
-	InsertRole(sysRole model.SysRole) string
+	// DeleteByIds 批量删除信息
+	DeleteByIds(roleIds []string) int64
 
-	// DeleteRoleByIds 批量删除角色信息
-	DeleteRoleByIds(roleIds []string) int64
+	// SelectByUserId 根据用户ID获取角色选择框列表
+	SelectByUserId(userId string) []model.SysRole
 
-	// CheckUniqueRole 校验角色是否唯一
-	CheckUniqueRole(sysRole model.SysRole) string
+	// CheckUnique 检查信息是否唯一
+	CheckUnique(sysRole model.SysRole) string
 }

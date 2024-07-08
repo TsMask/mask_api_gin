@@ -2,24 +2,24 @@ package repository
 
 import (
 	"fmt"
-	"mask_api_gin/src/framework/datasource"
+	db "mask_api_gin/src/framework/data_source"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 )
 
-// 实例化数据层 SysRoleDeptImpl 结构体
-var NewSysRoleDeptImpl = &SysRoleDeptImpl{}
+// NewSysRoleDept 实例化数据层
+var NewSysRoleDept = &SysRoleDeptRepository{}
 
-// SysRoleDeptImpl 角色与部门关联表 数据层处理
-type SysRoleDeptImpl struct{}
+// SysRoleDeptRepository 角色与部门关联表 数据层处理
+type SysRoleDeptRepository struct{}
 
-// DeleteRoleDept 批量删除角色部门关联信息
-func (r *SysRoleDeptImpl) DeleteRoleDept(roleIds []string) int64 {
-	placeholder := datasource.KeyPlaceholderByQuery(len(roleIds))
-	sql := "delete from sys_role_dept where role_id in (" + placeholder + ")"
-	parameters := datasource.ConvertIdsSlice(roleIds)
-	results, err := datasource.ExecDB("", sql, parameters)
+// DeleteByRoleIds 批量删除信息By角色
+func (r *SysRoleDeptRepository) DeleteByRoleIds(roleIds []string) int64 {
+	placeholder := db.KeyPlaceholderByQuery(len(roleIds))
+	sql := fmt.Sprintf("delete from sys_role_dept where role_id in (%s)", placeholder)
+	parameters := db.ConvertIdsSlice(roleIds)
+	results, err := db.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
 		return 0
@@ -27,12 +27,12 @@ func (r *SysRoleDeptImpl) DeleteRoleDept(roleIds []string) int64 {
 	return results
 }
 
-// DeleteDeptRole 批量删除部门角色关联信息
-func (r *SysRoleDeptImpl) DeleteDeptRole(deptIds []string) int64 {
-	placeholder := datasource.KeyPlaceholderByQuery(len(deptIds))
-	sql := "delete from sys_role_dept where dept_id in (" + placeholder + ")"
-	parameters := datasource.ConvertIdsSlice(deptIds)
-	results, err := datasource.ExecDB("", sql, parameters)
+// DeleteByDeptIds 批量删除信息By部门
+func (r *SysRoleDeptRepository) DeleteByDeptIds(deptIds []string) int64 {
+	placeholder := db.KeyPlaceholderByQuery(len(deptIds))
+	sql := fmt.Sprintf("delete from sys_role_dept where dept_id in (%s)", placeholder)
+	parameters := db.ConvertIdsSlice(deptIds)
+	results, err := db.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
 		return 0
@@ -40,14 +40,14 @@ func (r *SysRoleDeptImpl) DeleteDeptRole(deptIds []string) int64 {
 	return results
 }
 
-// BatchRoleDept 批量新增角色部门信息
-func (r *SysRoleDeptImpl) BatchRoleDept(sysRoleDepts []model.SysRoleDept) int64 {
-	keyValues := make([]string, 0)
-	for _, item := range sysRoleDepts {
-		keyValues = append(keyValues, fmt.Sprintf("(%s,%s)", item.RoleID, item.DeptID))
+// BatchInsert 批量新增信息
+func (r *SysRoleDeptRepository) BatchInsert(arr []model.SysRoleDept) int64 {
+	rd := make([]string, 0)
+	for _, item := range arr {
+		rd = append(rd, fmt.Sprintf("(%s,%s)", item.RoleID, item.DeptID))
 	}
-	sql := "insert into sys_role_dept(role_id, dept_id) values " + strings.Join(keyValues, ",")
-	results, err := datasource.ExecDB("", sql, nil)
+	sql := fmt.Sprintf("insert into sys_role_dept(role_id, dept_id) values %s", strings.Join(rd, ","))
+	results, err := db.ExecDB("", sql, nil)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
 		return 0

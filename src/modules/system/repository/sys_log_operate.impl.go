@@ -1,59 +1,58 @@
 package repository
 
 import (
-	"mask_api_gin/src/framework/datasource"
+	"fmt"
+	db "mask_api_gin/src/framework/data_source"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
-
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 	"time"
 )
 
-// 实例化数据层 SysLogOperateImpl 结构体
-var NewSysLogOperateImpl = &SysLogOperateImpl{
+// NewSysLogOperate 实例化数据层
+var NewSysLogOperate = &SysLogOperateRepository{
 	selectSql: `select 
-	oper_id, title, business_type, method, request_method, operator_type, oper_name, dept_name, 
-	oper_url, oper_ip, oper_location, oper_param, oper_msg, status, oper_time, cost_time
+	opera_id, title, business_type, method, request_method, operator_type, 
+	opera_name, dept_name, opera_url, opera_ip, opera_location, opera_param, 
+	opera_msg, status, opera_time, cost_time
 	from sys_log_operate`,
 
 	resultMap: map[string]string{
-		"oper_id":        "OperID",
+		"opera_id":       "OperaID",
 		"title":          "Title",
 		"business_type":  "BusinessType",
 		"method":         "Method",
 		"request_method": "RequestMethod",
 		"operator_type":  "OperatorType",
-		"oper_name":      "OperName",
+		"opera_name":     "OperaName",
 		"dept_name":      "DeptName",
-		"oper_url":       "OperURL",
-		"oper_ip":        "OperIP",
-		"oper_location":  "OperLocation",
-		"oper_param":     "OperParam",
-		"oper_msg":       "OperMsg",
+		"opera_url":      "OperaURL",
+		"opera_ip":       "OperaIP",
+		"opera_location": "OperaLocation",
+		"opera_param":    "OperaParam",
+		"opera_msg":      "OperaMsg",
 		"status":         "Status",
-		"oper_time":      "OperTime",
+		"opera_time":     "OperaTime",
 		"cost_time":      "CostTime",
 	},
 }
 
-// SysLogOperateImpl 操作日志表 数据层处理
-type SysLogOperateImpl struct {
-	// 查询视图对象SQL
-	selectSql string
-	// 结果字段与实体映射
-	resultMap map[string]string
+// SysLogOperateRepository 操作日志表 数据层处理
+type SysLogOperateRepository struct {
+	selectSql string            // 查询视图对象SQL
+	resultMap map[string]string // 结果字段与实体映射
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysLogOperateImpl) convertResultRows(rows []map[string]any) []model.SysLogOperate {
+func (r *SysLogOperateRepository) convertResultRows(rows []map[string]any) []model.SysLogOperate {
 	arr := make([]model.SysLogOperate, 0)
 	for _, row := range rows {
 		SysLogOperate := model.SysLogOperate{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				datasource.SetFieldValue(&SysLogOperate, keyMapper, value)
+				db.SetFieldValue(&SysLogOperate, keyMapper, value)
 			}
 		}
 		arr = append(arr, SysLogOperate)
@@ -61,8 +60,8 @@ func (r *SysLogOperateImpl) convertResultRows(rows []map[string]any) []model.Sys
 	return arr
 }
 
-// SelectSysLogOperatePage 分页查询系统操作日志集合
-func (r *SysLogOperateImpl) SelectSysLogOperatePage(query map[string]any) map[string]any {
+// SelectByPage 分页查询集合
+func (r *SysLogOperateRepository) SelectByPage(query map[string]any) map[string]any {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -74,12 +73,12 @@ func (r *SysLogOperateImpl) SelectSysLogOperatePage(query map[string]any) map[st
 		conditions = append(conditions, "business_type = ?")
 		params = append(params, v)
 	}
-	if v, ok := query["operName"]; ok && v != "" {
-		conditions = append(conditions, "oper_name like concat(?, '%')")
+	if v, ok := query["operaName"]; ok && v != "" {
+		conditions = append(conditions, "opera_name like concat(?, '%')")
 		params = append(params, v)
 	}
-	if v, ok := query["operIp"]; ok && v != "" {
-		conditions = append(conditions, "oper_ip like concat(?, '%')")
+	if v, ok := query["operaIp"]; ok && v != "" {
+		conditions = append(conditions, "opera_ip like concat(?, '%')")
 		params = append(params, v)
 	}
 	if v, ok := query["status"]; ok && v != "" {
@@ -91,7 +90,7 @@ func (r *SysLogOperateImpl) SelectSysLogOperatePage(query map[string]any) map[st
 		beginTime, ok = query["params[beginTime]"]
 	}
 	if ok && beginTime != "" {
-		conditions = append(conditions, "oper_time >= ?")
+		conditions = append(conditions, "opera_time >= ?")
 		beginDate := date.ParseStrToDate(beginTime.(string), date.YYYY_MM_DD)
 		params = append(params, beginDate.UnixMilli())
 	}
@@ -100,7 +99,7 @@ func (r *SysLogOperateImpl) SelectSysLogOperatePage(query map[string]any) map[st
 		endTime, ok = query["params[endTime]"]
 	}
 	if ok && endTime != "" {
-		conditions = append(conditions, "oper_time <= ?")
+		conditions = append(conditions, "opera_time <= ?")
 		endDate := date.ParseStrToDate(endTime.(string), date.YYYY_MM_DD)
 		params = append(params, endDate.UnixMilli())
 	}
@@ -113,33 +112,32 @@ func (r *SysLogOperateImpl) SelectSysLogOperatePage(query map[string]any) map[st
 
 	// 查询结果
 	result := map[string]any{
-		"total": 0,
+		"total": int64(0),
 		"rows":  []model.SysLogOperate{},
 	}
 
 	// 查询数量 长度为0直接返回
 	totalSql := "select count(1) as 'total' from sys_log_operate"
-	totalRows, err := datasource.RawDB("", totalSql+whereSql, params)
+	totalRows, err := db.RawDB("", totalSql+whereSql, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
 		return result
 	}
-	total := parse.Number(totalRows[0]["total"])
-	if total == 0 {
-		return result
-	} else {
+	if total := parse.Number(totalRows[0]["total"]); total > 0 {
 		result["total"] = total
+	} else {
+		return result
 	}
 
 	// 分页
-	pageNum, pageSize := datasource.PageNumSize(query["pageNum"], query["pageSize"])
-	pageSql := " order by oper_id desc limit ?,? "
+	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
+	pageSql := " order by opera_id desc limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
 
 	// 查询数据
 	querySql := r.selectSql + whereSql + pageSql
-	results, err := datasource.RawDB("", querySql, params)
+	results, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return result
@@ -150,8 +148,8 @@ func (r *SysLogOperateImpl) SelectSysLogOperatePage(query map[string]any) map[st
 	return result
 }
 
-// SelectSysLogOperateList 查询系统操作日志集合
-func (r *SysLogOperateImpl) SelectSysLogOperateList(SysLogOperate model.SysLogOperate) []model.SysLogOperate {
+// Select 查询集合
+func (r *SysLogOperateRepository) Select(SysLogOperate model.SysLogOperate) []model.SysLogOperate {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -163,9 +161,9 @@ func (r *SysLogOperateImpl) SelectSysLogOperateList(SysLogOperate model.SysLogOp
 		conditions = append(conditions, "business_type = ?")
 		params = append(params, SysLogOperate.BusinessType)
 	}
-	if SysLogOperate.OperName != "" {
-		conditions = append(conditions, "oper_name like concat(?, '%')")
-		params = append(params, SysLogOperate.OperName)
+	if SysLogOperate.OperaName != "" {
+		conditions = append(conditions, "opera_name like concat(?, '%')")
+		params = append(params, SysLogOperate.OperaName)
 	}
 	if SysLogOperate.Status != "" {
 		conditions = append(conditions, "status = ?")
@@ -180,7 +178,7 @@ func (r *SysLogOperateImpl) SelectSysLogOperateList(SysLogOperate model.SysLogOp
 
 	// 查询数据
 	querySql := r.selectSql + whereSql
-	results, err := datasource.RawDB("", querySql, params)
+	results, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysLogOperate{}
@@ -190,10 +188,10 @@ func (r *SysLogOperateImpl) SelectSysLogOperateList(SysLogOperate model.SysLogOp
 	return r.convertResultRows(results)
 }
 
-// SelectSysLogOperateById 查询操作日志详细
-func (r *SysLogOperateImpl) SelectSysLogOperateById(operId string) model.SysLogOperate {
-	querySql := r.selectSql + " where oper_id = ?"
-	results, err := datasource.RawDB("", querySql, []any{operId})
+// SelectById 通过ID查询信息
+func (r *SysLogOperateRepository) SelectById(operaId string) model.SysLogOperate {
+	querySql := r.selectSql + " where opera_id = ?"
+	results, err := db.RawDB("", querySql, []any{operaId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return model.SysLogOperate{}
@@ -206,11 +204,11 @@ func (r *SysLogOperateImpl) SelectSysLogOperateById(operId string) model.SysLogO
 	return model.SysLogOperate{}
 }
 
-// InsertSysLogOperate 新增操作日志
-func (r *SysLogOperateImpl) InsertSysLogOperate(SysLogOperate model.SysLogOperate) string {
+// Insert 新增信息
+func (r *SysLogOperateRepository) Insert(SysLogOperate model.SysLogOperate) string {
 	// 参数拼接
 	params := make(map[string]any)
-	params["oper_time"] = time.Now().UnixMilli()
+	params["opera_time"] = time.Now().UnixMilli()
 	if SysLogOperate.Title != "" {
 		params["title"] = SysLogOperate.Title
 	}
@@ -229,23 +227,23 @@ func (r *SysLogOperateImpl) InsertSysLogOperate(SysLogOperate model.SysLogOperat
 	if SysLogOperate.DeptName != "" {
 		params["dept_name"] = SysLogOperate.DeptName
 	}
-	if SysLogOperate.OperName != "" {
-		params["oper_name"] = SysLogOperate.OperName
+	if SysLogOperate.OperaName != "" {
+		params["opera_name"] = SysLogOperate.OperaName
 	}
-	if SysLogOperate.OperURL != "" {
-		params["oper_url"] = SysLogOperate.OperURL
+	if SysLogOperate.OperaURL != "" {
+		params["opera_url"] = SysLogOperate.OperaURL
 	}
-	if SysLogOperate.OperIP != "" {
-		params["oper_ip"] = SysLogOperate.OperIP
+	if SysLogOperate.OperaIP != "" {
+		params["opera_ip"] = SysLogOperate.OperaIP
 	}
-	if SysLogOperate.OperLocation != "" {
-		params["oper_location"] = SysLogOperate.OperLocation
+	if SysLogOperate.OperaLocation != "" {
+		params["opera_location"] = SysLogOperate.OperaLocation
 	}
-	if SysLogOperate.OperParam != "" {
-		params["oper_param"] = SysLogOperate.OperParam
+	if SysLogOperate.OperaParam != "" {
+		params["opera_param"] = SysLogOperate.OperaParam
 	}
-	if SysLogOperate.OperMsg != "" {
-		params["oper_msg"] = SysLogOperate.OperMsg
+	if SysLogOperate.OperaMsg != "" {
+		params["opera_msg"] = SysLogOperate.OperaMsg
 	}
 	if SysLogOperate.Status != "" {
 		params["status"] = parse.Number(SysLogOperate.Status)
@@ -255,38 +253,33 @@ func (r *SysLogOperateImpl) InsertSysLogOperate(SysLogOperate model.SysLogOperat
 	}
 
 	// 构建执行语句
-	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
-	sql := "insert into sys_log_operate (" + keys + ")values(" + placeholder + ")"
+	keys, values, placeholder := db.KeyValuePlaceholderByInsert(params)
+	sql := fmt.Sprintf("insert into sys_log_operate (%s)values(%s)", keys, placeholder)
 
-	db := datasource.DefaultDB()
-	// 开启事务
-	tx := db.Begin()
+	tx := db.DB("").Begin() // 开启事务
 	// 执行插入
-	err := tx.Exec(sql, values...).Error
-	if err != nil {
+	if err := tx.Exec(sql, values...).Error; err != nil {
 		logger.Errorf("insert row : %v", err.Error())
 		tx.Rollback()
 		return ""
 	}
 	// 获取生成的自增 ID
 	var insertedID string
-	err = tx.Raw("select last_insert_id()").Row().Scan(&insertedID)
-	if err != nil {
+	if err := tx.Raw("select last_insert_id()").Row().Scan(&insertedID); err != nil {
 		logger.Errorf("insert last id : %v", err.Error())
 		tx.Rollback()
 		return ""
 	}
-	// 提交事务
-	tx.Commit()
+	tx.Commit() // 提交事务
 	return insertedID
 }
 
-// DeleteSysLogOperateByIds 批量删除系统操作日志
-func (r *SysLogOperateImpl) DeleteSysLogOperateByIds(operIds []string) int64 {
-	placeholder := datasource.KeyPlaceholderByQuery(len(operIds))
-	sql := "delete from sys_log_operate where oper_id in (" + placeholder + ")"
-	parameters := datasource.ConvertIdsSlice(operIds)
-	results, err := datasource.ExecDB("", sql, parameters)
+// DeleteByIds 批量删除信息
+func (r *SysLogOperateRepository) DeleteByIds(operaIds []string) int64 {
+	placeholder := db.KeyPlaceholderByQuery(len(operaIds))
+	sql := fmt.Sprintf("delete from sys_log_operate where opera_id in (%s)", placeholder)
+	parameters := db.ConvertIdsSlice(operaIds)
+	results, err := db.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
 		return 0
@@ -294,9 +287,9 @@ func (r *SysLogOperateImpl) DeleteSysLogOperateByIds(operIds []string) int64 {
 	return results
 }
 
-// CleanSysLogOperate 清空操作日志
-func (r *SysLogOperateImpl) CleanSysLogOperate() error {
+// Clean 清空信息
+func (r *SysLogOperateRepository) Clean() error {
 	sql := "truncate table sys_log_operate"
-	_, err := datasource.ExecDB("", sql, []any{})
+	_, err := db.ExecDB("", sql, []any{})
 	return err
 }

@@ -2,29 +2,29 @@ package repository
 
 import "mask_api_gin/src/modules/system/model"
 
-// ISysConfig 参数配置表 数据层接口
-type ISysConfig interface {
-	// SelectDictDataPage 分页查询参数配置列表数据
-	SelectConfigPage(query map[string]any) map[string]any
+// ISysConfigRepository  参数配置表 数据层接口
+type ISysConfigRepository interface {
+	// SelectByPage 分页查询集合
+	SelectByPage(query map[string]any) map[string]any
 
-	// SelectConfigList 查询参数配置列表
-	SelectConfigList(sysConfig model.SysConfig) []model.SysConfig
+	// Select 查询集合
+	Select(sysConfig model.SysConfig) []model.SysConfig
 
-	// SelectConfigValueByKey 通过参数键名查询参数键值
-	SelectConfigValueByKey(configKey string) string
+	// SelectByIds 通过ID查询信息
+	SelectByIds(configIds []string) []model.SysConfig
 
-	// SelectConfigByIds 通过配置ID查询参数配置信息
-	SelectConfigByIds(configIds []string) []model.SysConfig
+	// Insert 新增信息
+	Insert(sysConfig model.SysConfig) string
 
-	// CheckUniqueConfig 校验配置参数是否唯一
-	CheckUniqueConfig(sysConfig model.SysConfig) string
+	// Update 修改信息
+	Update(sysConfig model.SysConfig) int64
 
-	// InsertConfig 新增参数配置
-	InsertConfig(sysConfig model.SysConfig) string
+	// DeleteByIds 批量删除信息
+	DeleteByIds(configIds []string) int64
 
-	// UpdateConfig 修改参数配置
-	UpdateConfig(sysConfig model.SysConfig) int64
+	// CheckUnique 检查信息是否唯一
+	CheckUnique(sysConfig model.SysConfig) string
 
-	// DeleteConfigByIds 批量删除参数配置信息
-	DeleteConfigByIds(configIds []string) int64
+	// SelectValueByKey 通过Key查询Value
+	SelectValueByKey(configKey string) string
 }

@@ -2,14 +2,14 @@ package repository
 
 import "mask_api_gin/src/modules/system/model"
 
-// ISysUserPost 用户与岗位关联表 数据层接口
-type ISysUserPost interface {
-	// CountUserPostByPostId 通过岗位ID查询岗位使用数量
-	CountUserPostByPostId(postId string) int64
+// ISysUserPostRepository 用户与岗位关联表 数据层接口
+type ISysUserPostRepository interface {
+	// ExistUserByPostId 存在用户使用数量
+	ExistUserByPostId(postId string) int64
 
-	// BatchUserPost 批量新增用户岗位信息
-	BatchUserPost(sysUserPosts []model.SysUserPost) int64
+	// DeleteByUserIds 批量删除关联By用户
+	DeleteByUserIds(userIds []string) int64
 
-	// DeleteUserPost 批量删除用户和岗位关联
-	DeleteUserPost(userIds []string) int64
+	// BatchInsert 批量新增信息
+	BatchInsert(arr []model.SysUserPost) int64
 }

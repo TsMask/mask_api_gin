@@ -2,19 +2,20 @@ package repository
 
 import (
 	"fmt"
-	"mask_api_gin/src/framework/datasource"
+	db "mask_api_gin/src/framework/data_source"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/parse"
-
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 	"time"
 )
 
-// 实例化数据层 SysDeptImpl 结构体
-var NewSysDeptImpl = &SysDeptImpl{
+// NewSysDept 实例化数据层
+var NewSysDept = &SysDeptRepository{
 	selectSql: `select 
-	d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status, d.del_flag, d.create_by, d.create_time 
+	d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, 
+	d.leader, d.phone, d.email, d.status, 
+	d.del_flag, d.create_by, d.create_time 
 	from sys_dept d`,
 
 	resultMap: map[string]string{
@@ -36,22 +37,20 @@ var NewSysDeptImpl = &SysDeptImpl{
 	},
 }
 
-// SysDeptImpl 部门表 数据层处理
-type SysDeptImpl struct {
-	// 查询视图对象SQL
-	selectSql string
-	// 结果字段与实体映射
-	resultMap map[string]string
+// SysDeptRepository 部门表 数据层处理
+type SysDeptRepository struct {
+	selectSql string            // 查询视图对象SQL
+	resultMap map[string]string // 结果字段与实体映射
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysDeptImpl) convertResultRows(rows []map[string]any) []model.SysDept {
+func (r *SysDeptRepository) convertResultRows(rows []map[string]any) []model.SysDept {
 	arr := make([]model.SysDept, 0)
 	for _, row := range rows {
 		sysDept := model.SysDept{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				datasource.SetFieldValue(&sysDept, keyMapper, value)
+				db.SetFieldValue(&sysDept, keyMapper, value)
 			}
 		}
 		arr = append(arr, sysDept)
@@ -59,8 +58,8 @@ func (r *SysDeptImpl) convertResultRows(rows []map[string]any) []model.SysDept {
 	return arr
 }
 
-// SelectDeptList 查询部门管理数据
-func (r *SysDeptImpl) SelectDeptList(sysDept model.SysDept, dataScopeSQL string) []model.SysDept {
+// Select 查询集合
+func (r *SysDeptRepository) Select(sysDept model.SysDept, dataScopeSQL string) []model.SysDept {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -90,7 +89,7 @@ func (r *SysDeptImpl) SelectDeptList(sysDept model.SysDept, dataScopeSQL string)
 	// 查询数据
 	orderSql := " order by d.parent_id, d.order_num asc "
 	querySql := r.selectSql + whereSql + dataScopeSQL + orderSql
-	results, err := datasource.RawDB("", querySql, params)
+	results, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysDept{}
@@ -100,47 +99,13 @@ func (r *SysDeptImpl) SelectDeptList(sysDept model.SysDept, dataScopeSQL string)
 	return r.convertResultRows(results)
 }
 
-// SelectDeptListByRoleId 根据角色ID查询部门树信息
-func (r *SysDeptImpl) SelectDeptListByRoleId(roleId string, deptCheckStrictly bool) []string {
-	querySql := `select d.dept_id as 'str' from sys_dept d
-    left join sys_role_dept rd on d.dept_id = rd.dept_id
-    where rd.role_id = ? `
-	var params []any
-	params = append(params, roleId)
-	// 展开
-	if deptCheckStrictly {
-		querySql += ` and d.dept_id not in 
-		(select d.parent_id from sys_dept d
-		inner join sys_role_dept rd on d.dept_id = rd.dept_id 
-		and rd.role_id = ?) `
-		params = append(params, roleId)
-	}
-	querySql += "order by d.parent_id, d.order_num"
-
-	// 查询结果
-	results, err := datasource.RawDB("", querySql, params)
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return []string{}
-	}
-
-	if len(results) > 0 {
-		ids := make([]string, 0)
-		for _, v := range results {
-			ids = append(ids, fmt.Sprintf("%v", v["str"]))
-		}
-		return ids
-	}
-	return []string{}
-}
-
-// SelectDeptById 根据部门ID查询信息
-func (r *SysDeptImpl) SelectDeptById(deptId string) model.SysDept {
+// SelectById 通过ID查询信息
+func (r *SysDeptRepository) SelectById(deptId string) model.SysDept {
 	querySql := `select d.dept_id, d.parent_id, d.ancestors,
 	d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status,
 	(select dept_name from sys_dept where dept_id = d.parent_id) parent_name
 	from sys_dept d where d.dept_id = ?`
-	results, err := datasource.RawDB("", querySql, []any{deptId})
+	results, err := db.RawDB("", querySql, []any{deptId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return model.SysDept{}
@@ -153,89 +118,8 @@ func (r *SysDeptImpl) SelectDeptById(deptId string) model.SysDept {
 	return model.SysDept{}
 }
 
-// SelectChildrenDeptById 根据ID查询所有子部门
-func (r *SysDeptImpl) SelectChildrenDeptById(deptId string) []model.SysDept {
-	querySql := r.selectSql + " where find_in_set(?, d.ancestors)"
-	results, err := datasource.RawDB("", querySql, []any{deptId})
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return []model.SysDept{}
-	}
-
-	// 转换实体
-	return r.convertResultRows(results)
-}
-
-// HasChildByDeptId 是否存在子节点
-func (r *SysDeptImpl) HasChildByDeptId(deptId string) int64 {
-	querySql := "select count(1) as 'total' from sys_dept where status = '1' and parent_id = ? limit 1"
-	results, err := datasource.RawDB("", querySql, []any{deptId})
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return 0
-	}
-	if len(results) > 0 {
-		return parse.Number(results[0]["total"])
-	}
-	return 0
-}
-
-// CheckDeptExistUser 查询部门是否存在用户
-func (r *SysDeptImpl) CheckDeptExistUser(deptId string) int64 {
-	querySql := "select count(1) as 'total' from sys_user where dept_id = ? and del_flag = '0'"
-	results, err := datasource.RawDB("", querySql, []any{deptId})
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return 0
-	}
-	if len(results) > 0 {
-		return parse.Number(results[0]["total"])
-	}
-	return 0
-}
-
-// CheckUniqueDept 校验部门是否唯一
-func (r *SysDeptImpl) CheckUniqueDept(sysDept model.SysDept) string {
-	// 查询条件拼接
-	var conditions []string
-	var params []any
-	if sysDept.DeptName != "" {
-		conditions = append(conditions, "dept_name = ?")
-		params = append(params, sysDept.DeptName)
-	}
-	if sysDept.ParentID != "" {
-		conditions = append(conditions, "parent_id = ?")
-		params = append(params, sysDept.ParentID)
-	}
-
-	// 构建查询条件语句
-	whereSql := ""
-	if len(conditions) > 0 {
-		whereSql += " where " + strings.Join(conditions, " and ")
-	}
-	if whereSql == "" {
-		return ""
-	}
-
-	// 查询数据
-	querySql := "select dept_id as 'str' from sys_dept " + whereSql + " and del_flag = '0' limit 1"
-	results, err := datasource.RawDB("", querySql, params)
-	if err != nil {
-		logger.Errorf("query err %v", err)
-		return ""
-	}
-	if len(results) > 0 {
-		v, ok := results[0]["str"].(string)
-		if ok {
-			return v
-		}
-		return ""
-	}
-	return ""
-}
-
-// InsertDept 新增部门信息
-func (r *SysDeptImpl) InsertDept(sysDept model.SysDept) string {
+// Insert 新增信息
+func (r *SysDeptRepository) Insert(sysDept model.SysDept) string {
 	// 参数拼接
 	params := make(map[string]any)
 	if sysDept.DeptID != "" {
@@ -271,34 +155,29 @@ func (r *SysDeptImpl) InsertDept(sysDept model.SysDept) string {
 	}
 
 	// 构建执行语句
-	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
-	sql := "insert into sys_dept (" + keys + ")values(" + placeholder + ")"
+	keys, values, placeholder := db.KeyValuePlaceholderByInsert(params)
+	sql := fmt.Sprintf("insert into sys_dept (%s)values(%s)", keys, placeholder)
 
-	db := datasource.DefaultDB()
-	// 开启事务
-	tx := db.Begin()
+	tx := db.DB("").Begin() // 开启事务
 	// 执行插入
-	err := tx.Exec(sql, values...).Error
-	if err != nil {
+	if err := tx.Exec(sql, values...).Error; err != nil {
 		logger.Errorf("insert row : %v", err.Error())
 		tx.Rollback()
 		return ""
 	}
 	// 获取生成的自增 ID
 	var insertedID string
-	err = tx.Raw("select last_insert_id()").Row().Scan(&insertedID)
-	if err != nil {
+	if err := tx.Raw("select last_insert_id()").Row().Scan(&insertedID); err != nil {
 		logger.Errorf("insert last id : %v", err.Error())
 		tx.Rollback()
 		return ""
 	}
-	// 提交事务
-	tx.Commit()
+	tx.Commit() // 提交事务
 	return insertedID
 }
 
-// UpdateDept 修改部门信息
-func (r *SysDeptImpl) UpdateDept(sysDept model.SysDept) int64 {
+// Update 修改信息
+func (r *SysDeptRepository) Update(sysDept model.SysDept) int64 {
 	// 参数拼接
 	params := make(map[string]any)
 	if sysDept.ParentID != "" {
@@ -325,12 +204,12 @@ func (r *SysDeptImpl) UpdateDept(sysDept model.SysDept) int64 {
 	}
 
 	// 构建执行语句
-	keys, values := datasource.KeyValueByUpdate(params)
-	sql := "update sys_dept set " + keys + " where dept_id = ?"
+	keys, values := db.KeyValueByUpdate(params)
+	sql := fmt.Sprintf("update sys_dept set %s where dept_id = ?", keys)
 
 	// 执行更新
 	values = append(values, sysDept.DeptID)
-	rows, err := datasource.ExecDB("", sql, values)
+	rows, err := db.ExecDB("", sql, values)
 	if err != nil {
 		logger.Errorf("update row : %v", err.Error())
 		return 0
@@ -338,12 +217,134 @@ func (r *SysDeptImpl) UpdateDept(sysDept model.SysDept) int64 {
 	return rows
 }
 
+// DeleteById 删除信息
+func (r *SysDeptRepository) DeleteById(deptId string) int64 {
+	sql := "update sys_dept set status = '0', del_flag = '1' where dept_id = ?"
+	results, err := db.ExecDB("", sql, []any{deptId})
+	if err != nil {
+		logger.Errorf("delete err => %v", err)
+		return 0
+	}
+	return results
+}
+
+// CheckUnique 检查信息是否唯一
+func (r *SysDeptRepository) CheckUnique(sysDept model.SysDept) string {
+	// 查询条件拼接
+	var conditions []string
+	var params []any
+	if sysDept.DeptName != "" {
+		conditions = append(conditions, "dept_name = ?")
+		params = append(params, sysDept.DeptName)
+	}
+	if sysDept.ParentID != "" {
+		conditions = append(conditions, "parent_id = ?")
+		params = append(params, sysDept.ParentID)
+	}
+
+	// 构建查询条件语句
+	whereSql := ""
+	if len(conditions) > 0 {
+		whereSql += " where " + strings.Join(conditions, " and ")
+	}
+	if whereSql == "" {
+		return ""
+	}
+
+	// 查询数据
+	querySql := fmt.Sprintf("select dept_id as 'str' from sys_dept %s and del_flag = '0' limit 1", whereSql)
+	results, err := db.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err %v", err)
+		return ""
+	}
+	if len(results) > 0 {
+		return fmt.Sprint(results[0]["str"])
+	}
+	return ""
+}
+
+// ExistChildrenByDeptId 存在子节点数量
+func (r *SysDeptRepository) ExistChildrenByDeptId(deptId string) int64 {
+	querySql := "select count(1) as 'total' from sys_dept where status = '1' and parent_id = ? limit 1"
+	results, err := db.RawDB("", querySql, []any{deptId})
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return 0
+	}
+	if len(results) > 0 {
+		return parse.Number(results[0]["total"])
+	}
+	return 0
+}
+
+// ExistUserByDeptId 存在用户使用数量
+func (r *SysDeptRepository) ExistUserByDeptId(deptId string) int64 {
+	querySql := "select count(1) as 'total' from sys_user where dept_id = ? and del_flag = '0'"
+	results, err := db.RawDB("", querySql, []any{deptId})
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return 0
+	}
+	if len(results) > 0 {
+		return parse.Number(results[0]["total"])
+	}
+	return 0
+}
+
+// SelectDeptIdsByRoleId 通过角色ID查询包含的部门ID
+func (r *SysDeptRepository) SelectDeptIdsByRoleId(roleId string, deptCheckStrictly bool) []string {
+	querySql := `select d.dept_id as 'str' from sys_dept d
+    left join sys_role_dept rd on d.dept_id = rd.dept_id
+    where rd.role_id = ? `
+	var params []any
+	params = append(params, roleId)
+	// 展开
+	if deptCheckStrictly {
+		querySql += ` and d.dept_id not in 
+		(select d.parent_id from sys_dept d
+		inner join sys_role_dept rd on d.dept_id = rd.dept_id 
+		and rd.role_id = ?) `
+		params = append(params, roleId)
+	}
+	querySql += "order by d.parent_id, d.order_num"
+
+	// 查询结果
+	results, err := db.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return []string{}
+	}
+
+	if len(results) > 0 {
+		ids := make([]string, 0)
+		for _, v := range results {
+			ids = append(ids, fmt.Sprintf("%v", v["str"]))
+		}
+		return ids
+	}
+	return []string{}
+}
+
+// SelectChildrenDeptById 根据ID查询所有子部门
+func (r *SysDeptRepository) SelectChildrenDeptById(deptId string) []model.SysDept {
+	querySql := r.selectSql + " where find_in_set(?, d.ancestors)"
+	results, err := db.RawDB("", querySql, []any{deptId})
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return []model.SysDept{}
+	}
+
+	// 转换实体
+	return r.convertResultRows(results)
+}
+
 // UpdateDeptStatusNormal 修改所在部门正常状态
-func (r *SysDeptImpl) UpdateDeptStatusNormal(deptIds []string) int64 {
-	placeholder := datasource.KeyPlaceholderByQuery(len(deptIds))
-	sql := "update sys_dept set status = '1' where dept_id in (" + placeholder + ")"
-	parameters := datasource.ConvertIdsSlice(deptIds)
-	results, err := datasource.ExecDB("", sql, parameters)
+func (r *SysDeptRepository) UpdateDeptStatusNormal(deptIds []string) int64 {
+	placeholder := db.KeyPlaceholderByQuery(len(deptIds))
+	sql := fmt.Sprintf("update sys_dept set status = '1' where dept_id in (%s)", placeholder)
+	parameters := db.ConvertIdsSlice(deptIds)
+	results, err := db.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("update err => %v", err)
 		return 0
@@ -352,36 +353,25 @@ func (r *SysDeptImpl) UpdateDeptStatusNormal(deptIds []string) int64 {
 }
 
 // UpdateDeptChildren 修改子元素关系
-func (r *SysDeptImpl) UpdateDeptChildren(sysDepts []model.SysDept) int64 {
+func (r *SysDeptRepository) UpdateDeptChildren(arr []model.SysDept) int64 {
 	// 无参数
-	if len(sysDepts) == 0 {
+	if len(arr) == 0 {
 		return 0
 	}
 
 	// 更新条件拼接
 	var conditions []string
 	var params []any
-	for _, dept := range sysDepts {
+	for _, dept := range arr {
 		caseSql := fmt.Sprintf("WHEN dept_id = '%s' THEN '%s'", dept.DeptID, dept.Ancestors)
 		conditions = append(conditions, caseSql)
 		params = append(params, dept.DeptID)
 	}
 
 	cases := strings.Join(conditions, " ")
-	placeholders := datasource.KeyPlaceholderByQuery(len(params))
-	sql := "update sys_dept set ancestors = CASE " + cases + " END where dept_id in (" + placeholders + ")"
-	results, err := datasource.ExecDB("", sql, params)
-	if err != nil {
-		logger.Errorf("delete err => %v", err)
-		return 0
-	}
-	return results
-}
-
-// DeleteDeptById 删除部门管理信息
-func (r *SysDeptImpl) DeleteDeptById(deptId string) int64 {
-	sql := "update sys_dept set status = '0', del_flag = '1' where dept_id = ?"
-	results, err := datasource.ExecDB("", sql, []any{deptId})
+	placeholders := db.KeyPlaceholderByQuery(len(params))
+	sql := fmt.Sprintf("update sys_dept set ancestors = CASE %s END where dept_id in (%s)", cases, placeholders)
+	results, err := db.ExecDB("", sql, params)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
 		return 0

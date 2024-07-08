@@ -1,20 +1,21 @@
 package repository
 
 import (
-	"mask_api_gin/src/framework/datasource"
+	"fmt"
+	db "mask_api_gin/src/framework/data_source"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
-
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 	"time"
 )
 
-// 实例化数据层 SysConfigImpl 结构体
-var NewSysConfigImpl = &SysConfigImpl{
+// NewSysConfig 实例化数据层
+var NewSysConfig = &SysConfigRepository{
 	selectSql: `select
-	config_id, config_name, config_key, config_value, config_type, create_by, create_time, update_by, update_time, remark 
+	config_id, config_name, config_key, config_value, config_type, 
+	create_by, create_time, update_by, update_time, remark 
 	from sys_config`,
 
 	resultMap: map[string]string{
@@ -31,22 +32,20 @@ var NewSysConfigImpl = &SysConfigImpl{
 	},
 }
 
-// SysConfigImpl 参数配置表 数据层处理
-type SysConfigImpl struct {
-	// 查询视图对象SQL
-	selectSql string
-	// 结果字段与实体映射
-	resultMap map[string]string
+// SysConfigRepository 参数配置表 数据层处理
+type SysConfigRepository struct {
+	selectSql string            // 查询视图对象SQL
+	resultMap map[string]string // 结果字段与实体映射
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysConfigImpl) convertResultRows(rows []map[string]any) []model.SysConfig {
+func (r *SysConfigRepository) convertResultRows(rows []map[string]any) []model.SysConfig {
 	arr := make([]model.SysConfig, 0)
 	for _, row := range rows {
 		sysConfig := model.SysConfig{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				datasource.SetFieldValue(&sysConfig, keyMapper, value)
+				db.SetFieldValue(&sysConfig, keyMapper, value)
 			}
 		}
 		arr = append(arr, sysConfig)
@@ -54,8 +53,8 @@ func (r *SysConfigImpl) convertResultRows(rows []map[string]any) []model.SysConf
 	return arr
 }
 
-// SelectDictDataPage 分页查询参数配置列表数据
-func (r *SysConfigImpl) SelectConfigPage(query map[string]any) map[string]any {
+// SelectByPage 分页查询集合
+func (r *SysConfigRepository) SelectByPage(query map[string]any) map[string]any {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -98,33 +97,33 @@ func (r *SysConfigImpl) SelectConfigPage(query map[string]any) map[string]any {
 
 	// 查询结果
 	result := map[string]any{
-		"total": 0,
+		"total": int64(0),
 		"rows":  []model.SysConfig{},
 	}
 
 	// 查询数量 长度为0直接返回
 	totalSql := "select count(1) as 'total' from sys_config"
-	totalRows, err := datasource.RawDB("", totalSql+whereSql, params)
+	totalRows, err := db.RawDB("", totalSql+whereSql, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
 		return result
 	}
-	total := parse.Number(totalRows[0]["total"])
-	if total == 0 {
+
+	if total := parse.Number(totalRows[0]["total"]); total > 0 {
 		return result
 	} else {
 		result["total"] = total
 	}
 
 	// 分页
-	pageNum, pageSize := datasource.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
 
 	// 查询数据
 	querySql := r.selectSql + whereSql + pageSql
-	results, err := datasource.RawDB("", querySql, params)
+	results, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return result
@@ -135,8 +134,8 @@ func (r *SysConfigImpl) SelectConfigPage(query map[string]any) map[string]any {
 	return result
 }
 
-// SelectConfigList 查询参数配置列表
-func (r *SysConfigImpl) SelectConfigList(sysConfig model.SysConfig) []model.SysConfig {
+// Select 查询集合
+func (r *SysConfigRepository) Select(sysConfig model.SysConfig) []model.SysConfig {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -165,7 +164,7 @@ func (r *SysConfigImpl) SelectConfigList(sysConfig model.SysConfig) []model.SysC
 
 	// 查询数据
 	querySql := r.selectSql + whereSql
-	results, err := datasource.RawDB("", querySql, params)
+	results, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysConfig{}
@@ -175,30 +174,12 @@ func (r *SysConfigImpl) SelectConfigList(sysConfig model.SysConfig) []model.SysC
 	return r.convertResultRows(results)
 }
 
-// SelectConfigValueByKey 通过参数键名查询参数键值
-func (r *SysConfigImpl) SelectConfigValueByKey(configKey string) string {
-	querySql := "select config_value as 'str' from sys_config where config_key = ?"
-	results, err := datasource.RawDB("", querySql, []any{configKey})
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return ""
-	}
-	if len(results) > 0 {
-		v, ok := results[0]["str"].(string)
-		if ok {
-			return v
-		}
-		return ""
-	}
-	return ""
-}
-
-// SelectConfigByIds 通过配置ID查询参数配置信息
-func (r *SysConfigImpl) SelectConfigByIds(configIds []string) []model.SysConfig {
-	placeholder := datasource.KeyPlaceholderByQuery(len(configIds))
+// SelectByIds 通过ID查询信息
+func (r *SysConfigRepository) SelectByIds(configIds []string) []model.SysConfig {
+	placeholder := db.KeyPlaceholderByQuery(len(configIds))
 	querySql := r.selectSql + " where config_id in (" + placeholder + ")"
-	parameters := datasource.ConvertIdsSlice(configIds)
-	results, err := datasource.RawDB("", querySql, parameters)
+	parameters := db.ConvertIdsSlice(configIds)
+	results, err := db.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysConfig{}
@@ -207,43 +188,8 @@ func (r *SysConfigImpl) SelectConfigByIds(configIds []string) []model.SysConfig 
 	return r.convertResultRows(results)
 }
 
-// CheckUniqueConfig 校验配置参数是否唯一
-func (r *SysConfigImpl) CheckUniqueConfig(sysConfig model.SysConfig) string {
-	// 查询条件拼接
-	var conditions []string
-	var params []any
-	if sysConfig.ConfigKey != "" {
-		conditions = append(conditions, "config_key = ?")
-		params = append(params, sysConfig.ConfigKey)
-	}
-
-	// 构建查询条件语句
-	whereSql := ""
-	if len(conditions) > 0 {
-		whereSql += " where " + strings.Join(conditions, " and ")
-	} else {
-		return ""
-	}
-
-	// 查询数据
-	querySql := "select config_id as 'str' from sys_config " + whereSql + " limit 1"
-	results, err := datasource.RawDB("", querySql, params)
-	if err != nil {
-		logger.Errorf("query err %v", err)
-		return ""
-	}
-	if len(results) > 0 {
-		v, ok := results[0]["str"].(string)
-		if ok {
-			return v
-		}
-		return ""
-	}
-	return ""
-}
-
-// InsertConfig 新增参数配置
-func (r *SysConfigImpl) InsertConfig(sysConfig model.SysConfig) string {
+// Insert 新增信息
+func (r *SysConfigRepository) Insert(sysConfig model.SysConfig) string {
 	// 参数拼接
 	params := make(map[string]any)
 	if sysConfig.ConfigName != "" {
@@ -267,34 +213,29 @@ func (r *SysConfigImpl) InsertConfig(sysConfig model.SysConfig) string {
 	}
 
 	// 构建执行语句
-	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
-	sql := "insert into sys_config (" + keys + ")values(" + placeholder + ")"
+	keys, values, placeholder := db.KeyValuePlaceholderByInsert(params)
+	sql := fmt.Sprintf("insert into sys_config (%s)values(%s)", keys, placeholder)
 
-	db := datasource.DefaultDB()
-	// 开启事务
-	tx := db.Begin()
+	tx := db.DB("").Begin() // 开启事务
 	// 执行插入
-	err := tx.Exec(sql, values...).Error
-	if err != nil {
+	if err := tx.Exec(sql, values...).Error; err != nil {
 		logger.Errorf("insert row : %v", err.Error())
 		tx.Rollback()
 		return ""
 	}
 	// 获取生成的自增 ID
 	var insertedID string
-	err = tx.Raw("select last_insert_id()").Row().Scan(&insertedID)
-	if err != nil {
+	if err := tx.Raw("select last_insert_id()").Row().Scan(&insertedID); err != nil {
 		logger.Errorf("insert last id : %v", err.Error())
 		tx.Rollback()
 		return ""
 	}
-	// 提交事务
-	tx.Commit()
+	tx.Commit() // 提交事务
 	return insertedID
 }
 
-// UpdateConfig 修改参数配置
-func (r *SysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int64 {
+// Update 修改信息
+func (r *SysConfigRepository) Update(sysConfig model.SysConfig) int64 {
 	// 参数拼接
 	params := make(map[string]any)
 	if sysConfig.ConfigName != "" {
@@ -316,12 +257,12 @@ func (r *SysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int64 {
 	}
 
 	// 构建执行语句
-	keys, values := datasource.KeyValueByUpdate(params)
-	sql := "update sys_config set " + keys + " where config_id = ?"
+	keys, values := db.KeyValueByUpdate(params)
+	sql := fmt.Sprintf("update sys_config set %s where config_id = ?", keys)
 
 	// 执行更新
 	values = append(values, sysConfig.ConfigID)
-	rows, err := datasource.ExecDB("", sql, values)
+	rows, err := db.ExecDB("", sql, values)
 	if err != nil {
 		logger.Errorf("update row : %v", err.Error())
 		return 0
@@ -329,15 +270,60 @@ func (r *SysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int64 {
 	return rows
 }
 
-// DeleteConfigByIds 批量删除参数配置信息
-func (r *SysConfigImpl) DeleteConfigByIds(configIds []string) int64 {
-	placeholder := datasource.KeyPlaceholderByQuery(len(configIds))
-	sql := "delete from sys_config where config_id in (" + placeholder + ")"
-	parameters := datasource.ConvertIdsSlice(configIds)
-	results, err := datasource.ExecDB("", sql, parameters)
+// DeleteByIds 批量删除信息
+func (r *SysConfigRepository) DeleteByIds(configIds []string) int64 {
+	placeholder := db.KeyPlaceholderByQuery(len(configIds))
+	sql := fmt.Sprintf("delete from sys_config where config_id in (%s)", placeholder)
+	parameters := db.ConvertIdsSlice(configIds)
+	results, err := db.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
 		return 0
 	}
 	return results
+}
+
+// CheckUnique 检查信息是否唯一
+func (r *SysConfigRepository) CheckUnique(sysConfig model.SysConfig) string {
+	// 查询条件拼接
+	var conditions []string
+	var params []any
+	if sysConfig.ConfigKey != "" {
+		conditions = append(conditions, "config_key = ?")
+		params = append(params, sysConfig.ConfigKey)
+	}
+
+	// 构建查询条件语句
+	whereSql := ""
+	if len(conditions) > 0 {
+		whereSql += " where " + strings.Join(conditions, " and ")
+	} else {
+		return ""
+	}
+
+	// 查询数据
+	querySql := fmt.Sprintf("select config_id as 'str' from sys_config %s limit 1", whereSql)
+	results, err := db.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err %v", err)
+		return ""
+	}
+	if len(results) > 0 {
+		return fmt.Sprint(results[0]["str"])
+	}
+	return ""
+}
+
+// SelectValueByKey 通过Key查询Value
+func (r *SysConfigRepository) SelectValueByKey(configKey string) string {
+	querySql := "select config_value as 'str' from sys_config where config_key = ?"
+	results, err := db.RawDB("", querySql, []any{configKey})
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return ""
+	}
+	if len(results) > 0 {
+		return fmt.Sprint(results[0]["str"])
+	}
+	return ""
 }

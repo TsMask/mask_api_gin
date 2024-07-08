@@ -2,20 +2,20 @@ package repository
 
 import "mask_api_gin/src/modules/system/model"
 
-// ISysLogLogin 系统登录日志表 数据层接口
-type ISysLogLogin interface {
-	// SelectSysLogLoginPage 分页查询系统登录日志集合
-	SelectSysLogLoginPage(query map[string]any) map[string]any
+// ISysLogLoginRepository 系统登录日志表 数据层接口
+type ISysLogLoginRepository interface {
+	// SelectByPage 分页查询集合
+	SelectByPage(query map[string]any) map[string]any
 
-	// SelectSysLogLoginList 查询系统登录日志集合
-	SelectSysLogLoginList(sysLogLogin model.SysLogLogin) []model.SysLogLogin
+	// Select 查询集合
+	Select(sysLogLogin model.SysLogLogin) []model.SysLogLogin
 
-	// InsertSysLogLogin 新增系统登录日志
-	InsertSysLogLogin(sysLogLogin model.SysLogLogin) string
+	// Insert 新增信息
+	Insert(sysLogLogin model.SysLogLogin) string
 
-	// DeleteSysLogLoginByIds 批量删除系统登录日志
-	DeleteSysLogLoginByIds(loginIds []string) int64
+	// DeleteByIds 批量删除信息
+	DeleteByIds(loginIds []string) int64
 
-	// CleanSysLogLogin 清空系统登录日志
-	CleanSysLogLogin() error
+	// Clean 清空信息
+	Clean() error
 }

@@ -2,41 +2,36 @@ package repository
 
 import (
 	"fmt"
-	"mask_api_gin/src/framework/datasource"
+	db "mask_api_gin/src/framework/data_source"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 )
 
-// 实例化数据层 SysUserRoleImpl 结构体
-var NewSysUserRoleImpl = &SysUserRoleImpl{}
+// NewSysUserRole 实例化数据层
+var NewSysUserRole = &SysUserRoleRepository{}
 
-// SysUserRoleImpl 用户与角色关联表 数据层处理
-type SysUserRoleImpl struct{}
+// SysUserRoleRepository 用户与角色关联表 数据层处理
+type SysUserRoleRepository struct{}
 
-// CountUserRoleByRoleId 通过角色ID查询角色使用数量
-func (r *SysUserRoleImpl) CountUserRoleByRoleId(roleId string) int64 {
+// ExistUserByRoleId 存在用户使用数量
+func (r *SysUserRoleRepository) ExistUserByRoleId(roleId string) int64 {
 	querySql := "select count(1) as total from sys_user_role where role_id = ?"
-	results, err := datasource.RawDB("", querySql, []any{roleId})
+	results, err := db.RawDB("", querySql, []any{roleId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return 0
 	}
-	if len(results) > 0 {
-		return parse.Number(results[0]["total"])
-	}
-	return 0
+	return parse.Number(results[0]["total"])
 }
 
-// BatchUserRole 批量新增用户角色信息
-func (r *SysUserRoleImpl) BatchUserRole(sysUserRoles []model.SysUserRole) int64 {
-	keyValues := make([]string, 0)
-	for _, item := range sysUserRoles {
-		keyValues = append(keyValues, fmt.Sprintf("(%s,%s)", item.UserID, item.RoleID))
-	}
-	sql := "insert into sys_user_role(user_id, role_id) values " + strings.Join(keyValues, ",")
-	results, err := datasource.ExecDB("", sql, nil)
+// DeleteByUserIds 批量删除关联By用户
+func (r *SysUserRoleRepository) DeleteByUserIds(userIds []string) int64 {
+	placeholder := db.KeyPlaceholderByQuery(len(userIds))
+	sql := fmt.Sprintf("delete from sys_user_role where user_id in (%s)", placeholder)
+	parameters := db.ConvertIdsSlice(userIds)
+	results, err := db.ExecDB("", sql, parameters)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
 		return 0
@@ -44,26 +39,28 @@ func (r *SysUserRoleImpl) BatchUserRole(sysUserRoles []model.SysUserRole) int64 
 	return results
 }
 
-// DeleteUserRole 批量删除用户和角色关联
-func (r *SysUserRoleImpl) DeleteUserRole(userIds []string) int64 {
-	placeholder := datasource.KeyPlaceholderByQuery(len(userIds))
-	sql := "delete from sys_user_role where user_id in (" + placeholder + ")"
-	parameters := datasource.ConvertIdsSlice(userIds)
-	results, err := datasource.ExecDB("", sql, parameters)
-	if err != nil {
-		logger.Errorf("delete err => %v", err)
-		return 0
-	}
-	return results
-}
-
-// DeleteUserRoleByRoleId 批量取消授权用户角色
-func (r *SysUserRoleImpl) DeleteUserRoleByRoleId(roleId string, userIds []string) int64 {
-	placeholder := datasource.KeyPlaceholderByQuery(len(userIds))
-	sql := "delete from sys_user_role where role_id= ? and user_id in (" + placeholder + ")"
-	parameters := datasource.ConvertIdsSlice(userIds)
+// DeleteByRoleId 批量删除关联By角色
+func (r *SysUserRoleRepository) DeleteByRoleId(roleId string, userIds []string) int64 {
+	placeholder := db.KeyPlaceholderByQuery(len(userIds))
+	sql := fmt.Sprintf("delete from sys_user_role where role_id= ? and user_id in (%s)", placeholder)
+	parameters := db.ConvertIdsSlice(userIds)
 	parameters = append([]any{roleId}, parameters...)
-	results, err := datasource.ExecDB("", sql, parameters)
+	results, err := db.ExecDB("", sql, parameters)
+	if err != nil {
+		logger.Errorf("delete err => %v", err)
+		return 0
+	}
+	return results
+}
+
+// BatchInsert 批量新增信息
+func (r *SysUserRoleRepository) BatchInsert(arr []model.SysUserRole) int64 {
+	ur := make([]string, 0)
+	for _, item := range arr {
+		ur = append(ur, fmt.Sprintf("(%s,%s)", item.UserID, item.RoleID))
+	}
+	sql := fmt.Sprintf("insert into sys_user_role(user_id, role_id) values %s", strings.Join(ur, ","))
+	results, err := db.ExecDB("", sql, nil)
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
 		return 0

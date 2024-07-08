@@ -1,18 +1,18 @@
 package repository
 
 import (
-	"mask_api_gin/src/framework/datasource"
+	"fmt"
+	db "mask_api_gin/src/framework/data_source"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
-
 	"mask_api_gin/src/modules/system/model"
 	"strings"
 	"time"
 )
 
-// 实例化数据层 SysDictTypeImpl 结构体
-var NewSysDictTypeImpl = &SysDictTypeImpl{
+// NewSysDictType 实例化数据层
+var NewSysDictType = &SysDictTypeRepository{
 	selectSql: `select 
 	dict_id, dict_name, dict_type, status, create_by, create_time, remark 
 	from sys_dict_type`,
@@ -30,22 +30,20 @@ var NewSysDictTypeImpl = &SysDictTypeImpl{
 	},
 }
 
-// SysDictTypeImpl 字典类型表 数据层处理
-type SysDictTypeImpl struct {
-	// 查询视图对象SQL
-	selectSql string
-	// 结果字段与实体映射
-	resultMap map[string]string
+// SysDictTypeRepository 字典类型表 数据层处理
+type SysDictTypeRepository struct {
+	selectSql string            // 查询视图对象SQL
+	resultMap map[string]string // 结果字段与实体映射
 }
 
 // convertResultRows 将结果记录转实体结果组
-func (r *SysDictTypeImpl) convertResultRows(rows []map[string]any) []model.SysDictType {
+func (r *SysDictTypeRepository) convertResultRows(rows []map[string]any) []model.SysDictType {
 	arr := make([]model.SysDictType, 0)
 	for _, row := range rows {
 		sysDictType := model.SysDictType{}
 		for key, value := range row {
 			if keyMapper, ok := r.resultMap[key]; ok {
-				datasource.SetFieldValue(&sysDictType, keyMapper, value)
+				db.SetFieldValue(&sysDictType, keyMapper, value)
 			}
 		}
 		arr = append(arr, sysDictType)
@@ -53,8 +51,8 @@ func (r *SysDictTypeImpl) convertResultRows(rows []map[string]any) []model.SysDi
 	return arr
 }
 
-// SelectDictTypePage 根据条件分页查询字典类型
-func (r *SysDictTypeImpl) SelectDictTypePage(query map[string]any) map[string]any {
+// SelectByPage 分页查询集合
+func (r *SysDictTypeRepository) SelectByPage(query map[string]any) map[string]any {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -97,33 +95,33 @@ func (r *SysDictTypeImpl) SelectDictTypePage(query map[string]any) map[string]an
 
 	// 查询结果
 	result := map[string]any{
-		"total": 0,
+		"total": int64(0),
 		"rows":  []model.SysDictType{},
 	}
 
 	// 查询数量 长度为0直接返回
 	totalSql := "select count(1) as 'total' from sys_dict_type"
-	totalRows, err := datasource.RawDB("", totalSql+whereSql, params)
+	totalRows, err := db.RawDB("", totalSql+whereSql, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
 		return result
 	}
-	total := parse.Number(totalRows[0]["total"])
-	if total == 0 {
-		return result
-	} else {
+
+	if total := parse.Number(totalRows[0]["total"]); total > 0 {
 		result["total"] = total
+	} else {
+		return result
 	}
 
 	// 分页
-	pageNum, pageSize := datasource.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	pageSql := " limit ?,? "
 	params = append(params, pageNum*pageSize)
 	params = append(params, pageSize)
 
 	// 查询数据
 	querySql := r.selectSql + whereSql + pageSql
-	results, err := datasource.RawDB("", querySql, params)
+	results, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return result
@@ -134,8 +132,8 @@ func (r *SysDictTypeImpl) SelectDictTypePage(query map[string]any) map[string]an
 	return result
 }
 
-// SelectDictTypeList 根据条件查询字典类型
-func (r *SysDictTypeImpl) SelectDictTypeList(sysDictType model.SysDictType) []model.SysDictType {
+// Select 查询集合
+func (r *SysDictTypeRepository) Select(sysDictType model.SysDictType) []model.SysDictType {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -160,7 +158,7 @@ func (r *SysDictTypeImpl) SelectDictTypeList(sysDictType model.SysDictType) []mo
 
 	// 查询数据
 	querySql := r.selectSql + whereSql
-	results, err := datasource.RawDB("", querySql, params)
+	results, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysDictType{}
@@ -170,12 +168,12 @@ func (r *SysDictTypeImpl) SelectDictTypeList(sysDictType model.SysDictType) []mo
 	return r.convertResultRows(results)
 }
 
-// SelectDictTypeByIDs 根据字典类型ID查询信息
-func (r *SysDictTypeImpl) SelectDictTypeByIDs(dictIDs []string) []model.SysDictType {
-	placeholder := datasource.KeyPlaceholderByQuery(len(dictIDs))
+// SelectByIds 通过ID查询信息
+func (r *SysDictTypeRepository) SelectByIds(dictIds []string) []model.SysDictType {
+	placeholder := db.KeyPlaceholderByQuery(len(dictIds))
 	querySql := r.selectSql + " where dict_id in (" + placeholder + ")"
-	parameters := datasource.ConvertIdsSlice(dictIDs)
-	results, err := datasource.RawDB("", querySql, parameters)
+	parameters := db.ConvertIdsSlice(dictIds)
+	results, err := db.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysDictType{}
@@ -184,24 +182,97 @@ func (r *SysDictTypeImpl) SelectDictTypeByIDs(dictIDs []string) []model.SysDictT
 	return r.convertResultRows(results)
 }
 
-// SelectDictTypeByType 根据字典类型查询信息
-func (r *SysDictTypeImpl) SelectDictTypeByType(dictType string) model.SysDictType {
-	querySql := r.selectSql + " where dict_type = ?"
-	results, err := datasource.RawDB("", querySql, []any{dictType})
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return model.SysDictType{}
+// Insert 新增信息
+func (r *SysDictTypeRepository) Insert(sysDictType model.SysDictType) string {
+	// 参数拼接
+	params := make(map[string]any)
+	if sysDictType.DictName != "" {
+		params["dict_name"] = sysDictType.DictName
 	}
-	// 转换实体
-	rows := r.convertResultRows(results)
-	if len(rows) > 0 {
-		return rows[0]
+	if sysDictType.DictType != "" {
+		params["dict_type"] = sysDictType.DictType
 	}
-	return model.SysDictType{}
+	if sysDictType.Status != "" {
+		params["status"] = sysDictType.Status
+	}
+	if sysDictType.Remark != "" {
+		params["remark"] = sysDictType.Remark
+	}
+	if sysDictType.CreateBy != "" {
+		params["create_by"] = sysDictType.CreateBy
+		params["create_time"] = time.Now().UnixMilli()
+	}
+
+	// 构建执行语句
+	keys, values, placeholder := db.KeyValuePlaceholderByInsert(params)
+	sql := "insert into sys_dict_type (" + keys + ")values(" + placeholder + ")"
+
+	tx := db.DB("").Begin() // 开启事务
+	// 执行插入
+	if err := tx.Exec(sql, values...).Error; err != nil {
+		logger.Errorf("insert row : %v", err.Error())
+		tx.Rollback()
+		return ""
+	}
+	// 获取生成的自增 ID
+	var insertedID string
+	if err := tx.Raw("select last_insert_id()").Row().Scan(&insertedID); err != nil {
+		logger.Errorf("insert last id : %v", err.Error())
+		tx.Rollback()
+		return ""
+	}
+	tx.Commit() // 提交事务
+	return insertedID
 }
 
-// CheckUniqueDictType 校验字典是否唯一
-func (r *SysDictTypeImpl) CheckUniqueDictType(sysDictType model.SysDictType) string {
+// Update 修改信息
+func (r *SysDictTypeRepository) Update(sysDictType model.SysDictType) int64 {
+	// 参数拼接
+	params := make(map[string]any)
+	if sysDictType.DictName != "" {
+		params["dict_name"] = sysDictType.DictName
+	}
+	if sysDictType.DictType != "" {
+		params["dict_type"] = sysDictType.DictType
+	}
+	if sysDictType.Status != "" {
+		params["status"] = sysDictType.Status
+	}
+	params["remark"] = sysDictType.Remark
+	if sysDictType.UpdateBy != "" {
+		params["update_by"] = sysDictType.UpdateBy
+		params["update_time"] = time.Now().UnixMilli()
+	}
+
+	// 构建执行语句
+	keys, values := db.KeyValueByUpdate(params)
+	sql := fmt.Sprintf("update sys_dict_type set %s where dict_id = ?", keys)
+
+	// 执行更新
+	values = append(values, sysDictType.DictID)
+	rows, err := db.ExecDB("", sql, values)
+	if err != nil {
+		logger.Errorf("update row : %v", err.Error())
+		return 0
+	}
+	return rows
+}
+
+// DeleteByIds 批量删除信息
+func (r *SysDictTypeRepository) DeleteByIds(dictIds []string) int64 {
+	placeholder := db.KeyPlaceholderByQuery(len(dictIds))
+	sql := fmt.Sprintf("delete from sys_dict_type where dict_id in (%s)", placeholder)
+	parameters := db.ConvertIdsSlice(dictIds)
+	results, err := db.ExecDB("", sql, parameters)
+	if err != nil {
+		logger.Errorf("delete err => %v", err)
+		return 0
+	}
+	return results
+}
+
+// CheckUnique 检查信息是否唯一
+func (r *SysDictTypeRepository) CheckUnique(sysDictType model.SysDictType) string {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -223,8 +294,8 @@ func (r *SysDictTypeImpl) CheckUniqueDictType(sysDictType model.SysDictType) str
 	}
 
 	// 查询数据
-	querySql := "select dict_id as 'str' from sys_dict_type " + whereSql + " limit 1"
-	results, err := datasource.RawDB("", querySql, params)
+	querySql := fmt.Sprintf("select dict_id as 'str' from sys_dict_type %s limit 1", whereSql)
+	results, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err %v", err)
 		return ""
@@ -239,96 +310,17 @@ func (r *SysDictTypeImpl) CheckUniqueDictType(sysDictType model.SysDictType) str
 	return ""
 }
 
-// InsertDictType 新增字典类型信息
-func (r *SysDictTypeImpl) InsertDictType(sysDictType model.SysDictType) string {
-	// 参数拼接
-	params := make(map[string]any)
-	if sysDictType.DictName != "" {
-		params["dict_name"] = sysDictType.DictName
-	}
-	if sysDictType.DictType != "" {
-		params["dict_type"] = sysDictType.DictType
-	}
-	if sysDictType.Status != "" {
-		params["status"] = sysDictType.Status
-	}
-	if sysDictType.Remark != "" {
-		params["remark"] = sysDictType.Remark
-	}
-	if sysDictType.CreateBy != "" {
-		params["create_by"] = sysDictType.CreateBy
-		params["create_time"] = time.Now().UnixMilli()
-	}
-
-	// 构建执行语句
-	keys, values, placeholder := datasource.KeyValuePlaceholderByInsert(params)
-	sql := "insert into sys_dict_type (" + keys + ")values(" + placeholder + ")"
-
-	db := datasource.DefaultDB()
-	// 开启事务
-	tx := db.Begin()
-	// 执行插入
-	err := tx.Exec(sql, values...).Error
+// SelectByDictType 通过字典类型查询信息
+func (r *SysDictTypeRepository) SelectByDictType(dictType string) model.SysDictType {
+	querySql := r.selectSql + " where dict_type = ?"
+	results, err := db.RawDB("", querySql, []any{dictType})
 	if err != nil {
-		logger.Errorf("insert row : %v", err.Error())
-		tx.Rollback()
-		return ""
+		logger.Errorf("query err => %v", err)
+		return model.SysDictType{}
 	}
-	// 获取生成的自增 ID
-	var insertedID string
-	err = tx.Raw("select last_insert_id()").Row().Scan(&insertedID)
-	if err != nil {
-		logger.Errorf("insert last id : %v", err.Error())
-		tx.Rollback()
-		return ""
+	// 转换实体
+	if rows := r.convertResultRows(results); len(rows) > 0 {
+		return rows[0]
 	}
-	// 提交事务
-	tx.Commit()
-	return insertedID
-}
-
-// UpdateDictType 修改字典类型信息
-func (r *SysDictTypeImpl) UpdateDictType(sysDictType model.SysDictType) int64 {
-	// 参数拼接
-	params := make(map[string]any)
-	if sysDictType.DictName != "" {
-		params["dict_name"] = sysDictType.DictName
-	}
-	if sysDictType.DictType != "" {
-		params["dict_type"] = sysDictType.DictType
-	}
-	if sysDictType.Status != "" {
-		params["status"] = sysDictType.Status
-	}
-	params["remark"] = sysDictType.Remark
-	if sysDictType.UpdateBy != "" {
-		params["update_by"] = sysDictType.UpdateBy
-		params["update_time"] = time.Now().UnixMilli()
-	}
-
-	// 构建执行语句
-	keys, values := datasource.KeyValueByUpdate(params)
-	sql := "update sys_dict_type set " + keys + " where dict_id = ?"
-
-	// 执行更新
-	values = append(values, sysDictType.DictID)
-	rows, err := datasource.ExecDB("", sql, values)
-	if err != nil {
-		logger.Errorf("update row : %v", err.Error())
-		return 0
-	}
-	return rows
-}
-
-// DeleteDictTypeByIDs 批量删除字典类型信息
-func (r *SysDictTypeImpl) DeleteDictTypeByIDs(dictIDs []string) int64 {
-	placeholder := datasource.KeyPlaceholderByQuery(len(dictIDs))
-	sql := "delete from sys_dict_type where dict_id in (" + placeholder + ")"
-	parameters := datasource.ConvertIdsSlice(dictIDs)
-	results, err := datasource.ExecDB("", sql, parameters)
-	if err != nil {
-		logger.Errorf("delete err => %v", err)
-		return 0
-	}
-	return results
+	return model.SysDictType{}
 }
