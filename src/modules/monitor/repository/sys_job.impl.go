@@ -40,10 +40,8 @@ var NewSysJobRepository = &SysJobRepositoryImpl{
 
 // SysJobRepositoryImpl 调度任务 数据层处理
 type SysJobRepositoryImpl struct {
-	// 查询视图对象SQL
-	selectSql string
-	// 结果字段与实体映射
-	resultMap map[string]string
+	selectSql string            // 查询视图对象SQL
+	resultMap map[string]string // 结果字段与实体映射
 }
 
 // convertResultRows 将结果记录转实体结果组
