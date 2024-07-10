@@ -248,7 +248,7 @@ func (r *SysDeptRepository) CheckUnique(sysDept model.SysDept) string {
 		whereSql += " where " + strings.Join(conditions, " and ")
 	}
 	if whereSql == "" {
-		return ""
+		return "-"
 	}
 
 	// 查询数据
@@ -256,12 +256,12 @@ func (r *SysDeptRepository) CheckUnique(sysDept model.SysDept) string {
 	results, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err %v", err)
-		return ""
+		return "-"
 	}
 	if len(results) > 0 {
 		return fmt.Sprint(results[0]["str"])
 	}
-	return ""
+	return "-"
 }
 
 // ExistChildrenByDeptId 存在子节点数量
