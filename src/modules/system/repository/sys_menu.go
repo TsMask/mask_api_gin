@@ -19,18 +19,18 @@ type ISysMenuRepository interface {
 	// DeleteById 删除信息
 	DeleteById(menuId string) int64
 
-	// ExistChildrenByMenuIdAndStatus 存在子节点数量
+	// ExistChildrenByMenuIdAndStatus 菜单下同状态存在子节点数量
 	ExistChildrenByMenuIdAndStatus(menuId, status string) int64
 
 	// CheckUnique 检查信息是否唯一
 	CheckUnique(sysMenu model.SysMenu) string
 
-	// SelectMenuPermsByUserId 根据用户ID查询权限
-	SelectMenuPermsByUserId(userId string) []string
-
-	// SelectMenuTreeByUserId 根据用户ID查询菜单
-	SelectMenuTreeByUserId(userId string) []model.SysMenu
-
+	// SelectPermsByUserId 根据用户ID查询权限标识
+	SelectPermsByUserId(userId string) []string
+	
 	// SelectByRoleId 根据角色ID查询菜单树信息
 	SelectByRoleId(roleId string, menuCheckStrictly bool) []string
+
+	// SelectTreeByUserId 根据用户ID查询菜单
+	SelectTreeByUserId(userId string) []model.SysMenu
 }

@@ -25,6 +25,6 @@ type ISysDictTypeRepository interface {
 	// CheckUnique 检查信息是否唯一
 	CheckUnique(sysDictType model.SysDictType) string
 
-	// SelectByDictType 通过字典类型查询信息
-	SelectByDictType(dictType string) model.SysDictType
+	// SelectByType 通过字典类型查询信息
+	SelectByType(dictType string) model.SysDictType
 }

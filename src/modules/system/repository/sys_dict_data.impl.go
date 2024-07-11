@@ -300,7 +300,7 @@ func (r *SysDictDataRepository) CheckUnique(sysDictData model.SysDictData) strin
 	if len(conditions) > 0 {
 		whereSql += " where " + strings.Join(conditions, " and ")
 	} else {
-		return ""
+		return "-"
 	}
 
 	// 查询数据
@@ -308,12 +308,12 @@ func (r *SysDictDataRepository) CheckUnique(sysDictData model.SysDictData) strin
 	results, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err %v", err)
-		return ""
+		return "-"
 	}
 	if len(results) > 0 {
 		return fmt.Sprint(results[0]["str"])
 	}
-	return ""
+	return "-"
 }
 
 // ExistDataByDictType 存在数据数量

@@ -290,7 +290,7 @@ func (r *SysDictTypeRepository) CheckUnique(sysDictType model.SysDictType) strin
 	if len(conditions) > 0 {
 		whereSql += " where " + strings.Join(conditions, " and ")
 	} else {
-		return ""
+		return "-"
 	}
 
 	// 查询数据
@@ -298,20 +298,16 @@ func (r *SysDictTypeRepository) CheckUnique(sysDictType model.SysDictType) strin
 	results, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err %v", err)
-		return ""
+		return "-"
 	}
 	if len(results) > 0 {
-		v, ok := results[0]["str"].(string)
-		if ok {
-			return v
-		}
-		return ""
+		return fmt.Sprint(results[0]["str"])
 	}
-	return ""
+	return "-"
 }
 
-// SelectByDictType 通过字典类型查询信息
-func (r *SysDictTypeRepository) SelectByDictType(dictType string) model.SysDictType {
+// SelectByType 通过字典类型查询信息
+func (r *SysDictTypeRepository) SelectByType(dictType string) model.SysDictType {
 	querySql := r.selectSql + " where dict_type = ?"
 	results, err := db.RawDB("", querySql, []any{dictType})
 	if err != nil {

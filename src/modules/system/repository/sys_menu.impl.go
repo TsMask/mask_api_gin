@@ -312,7 +312,7 @@ func (r *SysMenuRepository) DeleteById(menuId string) int64 {
 	return results
 }
 
-// ExistChildrenByMenuIdAndStatus 存在子节点数量
+// ExistChildrenByMenuIdAndStatus 菜单下同状态存在子节点数量
 func (r *SysMenuRepository) ExistChildrenByMenuIdAndStatus(menuId, status string) int64 {
 	querySql := "select count(1) as 'total' from sys_menu where parent_id = ?"
 	params := []any{menuId}
@@ -360,7 +360,7 @@ func (r *SysMenuRepository) CheckUnique(sysMenu model.SysMenu) string {
 		whereSql += " where " + strings.Join(conditions, " and ")
 	}
 	if whereSql == "" {
-		return ""
+		return "-"
 	}
 
 	// 查询数据
@@ -368,16 +368,16 @@ func (r *SysMenuRepository) CheckUnique(sysMenu model.SysMenu) string {
 	results, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err %v", err)
-		return ""
+		return "-"
 	}
 	if len(results) > 0 {
 		return fmt.Sprint(results[0]["str"])
 	}
-	return ""
+	return "-"
 }
 
-// SelectMenuPermsByUserId 根据用户ID查询权限
-func (r *SysMenuRepository) SelectMenuPermsByUserId(userId string) []string {
+// SelectPermsByUserId 根据用户ID查询权限标识
+func (r *SysMenuRepository) SelectPermsByUserId(userId string) []string {
 	querySql := `select distinct m.perms as 'str' from sys_menu m 
     left join sys_role_menu rm on m.menu_id = rm.menu_id 
     left join sys_user_role ur on rm.role_id = ur.role_id 
@@ -399,41 +399,8 @@ func (r *SysMenuRepository) SelectMenuPermsByUserId(userId string) []string {
 	return rows
 }
 
-// SelectMenuTreeByUserId 根据用户ID查询菜单
-func (r *SysMenuRepository) SelectMenuTreeByUserId(userId string) []model.SysMenu {
-	var params []any
-	var querySql string
-
-	if userId == "*" {
-		// 管理员全部菜单
-		querySql = r.selectSql + ` where 
-		m.menu_type in (?,?) and m.status = '1'
-		order by m.parent_id, m.menu_sort`
-		params = append(params, constMenu.TypeDir)
-		params = append(params, constMenu.TypeMenu)
-	} else {
-		// 用户ID权限
-		querySql = r.selectSqlByUser + ` where 
-		m.menu_type in (?, ?) and m.status = '1'
-		and ur.user_id = ? and ro.status = '1'
-		order by m.parent_id, m.menu_sort`
-		params = append(params, constMenu.TypeDir)
-		params = append(params, constMenu.TypeMenu)
-		params = append(params, userId)
-	}
-
-	// 查询结果
-	results, err := db.RawDB("", querySql, params)
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return []model.SysMenu{}
-	}
-
-	return r.convertResultRows(results)
-}
-
-// SelectMenuListByRoleId 根据角色ID查询菜单树信息
-func (r *SysMenuRepository) SelectMenuListByRoleId(roleId string, menuCheckStrictly bool) []string {
+// SelectByRoleId 根据角色ID查询菜单树信息 TODO
+func (r *SysMenuRepository) SelectByRoleId(roleId string, menuCheckStrictly bool) []string {
 	querySql := `select m.menu_id as 'str' from sys_menu m 
     left join sys_role_menu rm on m.menu_id = rm.menu_id
     where rm.role_id = ? `
@@ -463,4 +430,37 @@ func (r *SysMenuRepository) SelectMenuListByRoleId(roleId string, menuCheckStric
 		return ids
 	}
 	return []string{}
+}
+
+// SelectTreeByUserId 根据用户ID查询菜单 TODO
+func (r *SysMenuRepository) SelectTreeByUserId(userId string) []model.SysMenu {
+	var params []any
+	var querySql string
+
+	if userId == "*" {
+		// 管理员全部菜单
+		querySql = r.selectSql + ` where 
+		m.menu_type in (?,?) and m.status = '1'
+		order by m.parent_id, m.menu_sort`
+		params = append(params, constMenu.TypeDir)
+		params = append(params, constMenu.TypeMenu)
+	} else {
+		// 用户ID权限
+		querySql = r.selectSqlByUser + ` where 
+		m.menu_type in (?, ?) and m.status = '1'
+		and ur.user_id = ? and ro.status = '1'
+		order by m.parent_id, m.menu_sort`
+		params = append(params, constMenu.TypeDir)
+		params = append(params, constMenu.TypeMenu)
+		params = append(params, userId)
+	}
+
+	// 查询结果
+	results, err := db.RawDB("", querySql, params)
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return []model.SysMenu{}
+	}
+
+	return r.convertResultRows(results)
 }
