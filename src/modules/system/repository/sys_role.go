@@ -22,7 +22,7 @@ type ISysRoleRepository interface {
 	// DeleteByIds 批量删除信息
 	DeleteByIds(roleIds []string) int64
 
-	// SelectByUserId 根据用户ID获取角色选择框列表
+	// SelectByUserId 根据用户ID获取角色信息
 	SelectByUserId(userId string) []model.SysRole
 
 	// CheckUnique 检查信息是否唯一

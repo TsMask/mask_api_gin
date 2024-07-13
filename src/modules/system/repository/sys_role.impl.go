@@ -324,7 +324,7 @@ func (r *SysRoleRepository) DeleteByIds(roleIds []string) int64 {
 	return results
 }
 
-// SelectByUserId 根据用户ID获取角色选择框列表
+// SelectByUserId 根据用户ID获取角色信息
 func (r *SysRoleRepository) SelectByUserId(userId string) []model.SysRole {
 	querySql := r.selectSql + " where r.del_flag = '0' and ur.user_id = ?"
 	results, err := db.RawDB("", querySql, []any{userId})
@@ -354,7 +354,7 @@ func (r *SysRoleRepository) CheckUnique(sysRole model.SysRole) string {
 	if len(conditions) > 0 {
 		whereSql += " where " + strings.Join(conditions, " and ")
 	} else {
-		return ""
+		return "-"
 	}
 
 	// 查询数据
@@ -362,10 +362,10 @@ func (r *SysRoleRepository) CheckUnique(sysRole model.SysRole) string {
 	results, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err %v", err)
-		return ""
+		return "-"
 	}
 	if len(results) > 0 {
 		return fmt.Sprint(results[0]["str"])
 	}
-	return ""
+	return "-"
 }

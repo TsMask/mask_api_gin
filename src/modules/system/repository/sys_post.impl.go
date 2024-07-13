@@ -296,7 +296,7 @@ func (r *SysPostRepository) CheckUnique(sysPost model.SysPost) string {
 	if len(conditions) > 0 {
 		whereSql += " where " + strings.Join(conditions, " and ")
 	} else {
-		return ""
+		return "-"
 	}
 
 	// 查询数据
@@ -304,9 +304,10 @@ func (r *SysPostRepository) CheckUnique(sysPost model.SysPost) string {
 	results, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err %v", err)
+		return "-"
 	}
 	if len(results) > 0 {
 		return fmt.Sprint(results[0]["str"])
 	}
-	return ""
+	return "-"
 }

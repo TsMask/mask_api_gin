@@ -433,7 +433,7 @@ func (r *SysUserRepository) CheckUnique(sysUser model.SysUser) string {
 	if len(conditions) > 0 {
 		whereSql += " where " + strings.Join(conditions, " and ")
 	} else {
-		return ""
+		return "-"
 	}
 
 	// 查询数据
@@ -441,11 +441,28 @@ func (r *SysUserRepository) CheckUnique(sysUser model.SysUser) string {
 	results, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err %v", err)
+		return "-"
 	}
 	if len(results) > 0 {
 		return fmt.Sprint(results[0]["str"])
 	}
-	return ""
+	return "-"
+}
+
+// SelectByUserName 通过登录账号查询信息
+func (r *SysUserRepository) SelectByUserName(userName string) model.SysUser {
+	querySql := r.selectSql + " where u.del_flag = '0' and u.user_name = ?"
+	results, err := db.RawDB("", querySql, []any{userName})
+	if err != nil {
+		logger.Errorf("query err => %v", err)
+		return model.SysUser{}
+	}
+	// 转换实体
+	rows := r.convertResultRows(results)
+	if len(rows) > 0 {
+		return rows[0]
+	}
+	return model.SysUser{}
 }
 
 // SelectAllocatedByPage 分页查询集合By分配用户角色
@@ -536,20 +553,4 @@ func (r *SysUserRepository) SelectAllocatedByPage(query map[string]any, dataScop
 	// 转换实体
 	result["rows"] = r.convertResultRows(results)
 	return result
-}
-
-// SelectByUserName 通过登录账号查询信息
-func (r *SysUserRepository) SelectByUserName(userName string) model.SysUser {
-	querySql := r.selectSql + " where u.del_flag = '0' and u.user_name = ?"
-	results, err := db.RawDB("", querySql, []any{userName})
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return model.SysUser{}
-	}
-	// 转换实体
-	rows := r.convertResultRows(results)
-	if len(rows) > 0 {
-		return rows[0]
-	}
-	return model.SysUser{}
 }
