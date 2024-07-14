@@ -2,29 +2,29 @@ package service
 
 import "mask_api_gin/src/modules/system/model"
 
-// ISysConfig 参数配置 服务层接口
-type ISysConfig interface {
-	// SelectDictDataPage 分页查询参数配置列表数据
-	SelectConfigPage(query map[string]any) map[string]any
+// ISysConfigService 参数配置 服务层接口
+type ISysConfigService interface {
+	// FindByPage 分页查询列表数据
+	FindByPage(query map[string]any) map[string]any
 
-	// SelectConfigValueByKey 通过参数键名查询参数键值
-	SelectConfigValueByKey(configKey string) string
+	// FindById 通过ID查询信息
+	FindById(configId string) model.SysConfig
 
-	// SelectConfigById 通过配置ID查询参数配置信息
-	SelectConfigById(configId string) model.SysConfig
+	// Insert 新增信息
+	Insert(sysConfig model.SysConfig) string
 
-	// CheckUniqueConfigKey 校验参数键名是否唯一
-	CheckUniqueConfigKey(configKey, configId string) bool
+	// Update 修改信息
+	Update(sysConfig model.SysConfig) int64
 
-	// InsertConfig 新增参数配置
-	InsertConfig(sysConfig model.SysConfig) string
+	// DeleteByIds 批量删除信息
+	DeleteByIds(configIds []string) (int64, error)
 
-	// UpdateConfig 修改参数配置
-	UpdateConfig(sysConfig model.SysConfig) int64
+	// FindValueByKey 通过参数键名查询参数值
+	FindValueByKey(configKey string) string
 
-	// DeleteConfigByIds 批量删除参数配置信息
-	DeleteConfigByIds(configIds []string) (int64, error)
+	// CheckUniqueByKey 检查参数键名是否唯一
+	CheckUniqueByKey(configKey, configId string) bool
 
-	// ResetConfigCache 重置参数缓存数据
-	ResetConfigCache()
+	// ResetCache 重置缓存数据
+	ResetCache()
 }

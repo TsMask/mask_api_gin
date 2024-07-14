@@ -1,73 +1,53 @@
 package service
 
 import (
-	"errors"
 	"fmt"
+	constRoleDataScope "mask_api_gin/src/framework/constants/role_data_scope"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )
 
-// 实例化服务层 SysRoleImpl 结构体
-var NewSysRoleImpl = &SysRoleImpl{
-	sysRoleRepository:     repository.NewSysRoleImpl,
-	sysUserRoleRepository: repository.NewSysUserRoleImpl,
-	sysRoleDeptRepository: repository.NewSysRoleDeptImpl,
-	sysRoleMenuRepository: repository.NewSysRoleMenuImpl,
+// NewSysRole 实例化服务层
+var NewSysRole = &SysRoleService{
+	sysRoleRepository:     repository.NewSysRole,
+	sysUserRoleRepository: repository.NewSysUserRole,
+	sysRoleDeptRepository: repository.NewSysRoleDept,
+	sysRoleMenuRepository: repository.NewSysRoleMenu,
 }
 
-// SysRoleImpl 角色 服务层处理
-type SysRoleImpl struct {
-	// 角色服务
-	sysRoleRepository repository.ISysRole
-	//  用户与角色关联服务
-	sysUserRoleRepository repository.ISysUserRole
-	// 角色与部门关联服务
-	sysRoleDeptRepository repository.ISysRoleDept
-	// 角色与菜单关联服务
-	sysRoleMenuRepository repository.ISysRoleMenu
+// SysRoleService 角色 服务层处理
+type SysRoleService struct {
+	sysRoleRepository     repository.ISysRoleRepository     // 角色服务
+	sysUserRoleRepository repository.ISysUserRoleRepository // 用户与角色关联服务
+	sysRoleDeptRepository repository.ISysRoleDeptRepository // 角色与部门关联服务
+	sysRoleMenuRepository repository.ISysRoleMenuRepository // 角色与菜单关联服务
 }
 
-// SelectRolePage 根据条件分页查询角色数据
-func (r *SysRoleImpl) SelectRolePage(query map[string]any, dataScopeSQL string) map[string]any {
-	return r.sysRoleRepository.SelectRolePage(query, dataScopeSQL)
+// FindByPage 分页查询列表数据
+func (r *SysRoleService) FindByPage(query map[string]any, dataScopeSQL string) map[string]any {
+	return r.sysRoleRepository.SelectByPage(query, dataScopeSQL)
 }
 
-// SelectRoleList 根据条件查询角色数据
-func (r *SysRoleImpl) SelectRoleList(sysRole model.SysRole, dataScopeSQL string) []model.SysRole {
-	return r.sysRoleRepository.SelectRoleList(sysRole, dataScopeSQL)
+// Find 查询列表数据
+func (r *SysRoleService) Find(sysRole model.SysRole, dataScopeSQL string) []model.SysRole {
+	return r.sysRoleRepository.Select(sysRole, dataScopeSQL)
 }
 
-// SelectRoleListByUserId 根据用户ID获取角色选择框列表
-func (r *SysRoleImpl) SelectRoleListByUserId(userId string) []model.SysRole {
-	return r.sysRoleRepository.SelectRoleListByUserId(userId)
-}
-
-// SelectRoleById 通过角色ID查询角色
-func (r *SysRoleImpl) SelectRoleById(roleId string) model.SysRole {
+// FindById 通过ID查询信息
+func (r *SysRoleService) FindById(roleId string) model.SysRole {
 	if roleId == "" {
 		return model.SysRole{}
 	}
-	posts := r.sysRoleRepository.SelectRoleByIds([]string{roleId})
+	posts := r.sysRoleRepository.SelectByIds([]string{roleId})
 	if len(posts) > 0 {
 		return posts[0]
 	}
 	return model.SysRole{}
 }
 
-// UpdateRole 修改角色信息
-func (r *SysRoleImpl) UpdateRole(sysRole model.SysRole) int64 {
-	rows := r.sysRoleRepository.UpdateRole(sysRole)
-	if rows > 0 && len(sysRole.MenuIds) > 0 {
-		// 删除角色与菜单关联
-		r.sysRoleMenuRepository.DeleteRoleMenu([]string{sysRole.RoleID})
-		r.insertRoleMenu(sysRole.RoleID, sysRole.MenuIds)
-	}
-	return rows
-}
-
-// InsertRole 新增角色信息
-func (r *SysRoleImpl) InsertRole(sysRole model.SysRole) string {
-	insertId := r.sysRoleRepository.InsertRole(sysRole)
+// Insert 新增信息
+func (r *SysRoleService) Insert(sysRole model.SysRole) string {
+	insertId := r.sysRoleRepository.Insert(sysRole)
 	if insertId != "" && len(sysRole.MenuIds) > 0 {
 		r.insertRoleMenu(insertId, sysRole.MenuIds)
 	}
@@ -75,55 +55,66 @@ func (r *SysRoleImpl) InsertRole(sysRole model.SysRole) string {
 }
 
 // insertRoleMenu 新增角色菜单信息
-func (r *SysRoleImpl) insertRoleMenu(roleId string, menuIds []string) int64 {
+func (r *SysRoleService) insertRoleMenu(roleId string, menuIds []string) int64 {
 	if roleId == "" || len(menuIds) <= 0 {
 		return 0
 	}
-
-	sysRoleMenus := []model.SysRoleMenu{}
+	sysRoleMenus := make([]model.SysRoleMenu, 0)
 	for _, menuId := range menuIds {
 		if menuId == "" {
 			continue
 		}
-		sysRoleMenus = append(sysRoleMenus, model.NewSysRoleMenu(roleId, menuId))
+		sysRoleMenus = append(sysRoleMenus, model.SysRoleMenu{
+			RoleID: roleId, MenuID: menuId,
+		})
 	}
-
-	return r.sysRoleMenuRepository.BatchRoleMenu(sysRoleMenus)
+	return r.sysRoleMenuRepository.BatchInsert(sysRoleMenus)
 }
 
-// DeleteRoleByIds 批量删除角色信息
-func (r *SysRoleImpl) DeleteRoleByIds(roleIds []string) (int64, error) {
+// Update 修改信息
+func (r *SysRoleService) Update(sysRole model.SysRole) int64 {
+	rows := r.sysRoleRepository.Update(sysRole)
+	if rows > 0 && len(sysRole.MenuIds) > 0 {
+		// 删除角色与菜单关联
+		r.sysRoleMenuRepository.DeleteByRoleIds([]string{sysRole.RoleID})
+		r.insertRoleMenu(sysRole.RoleID, sysRole.MenuIds)
+	}
+	return rows
+}
+
+// DeleteByIds 批量删除信息
+func (r *SysRoleService) DeleteByIds(roleIds []string) (int64, error) {
 	// 检查是否存在
-	roles := r.sysRoleRepository.SelectRoleByIds(roleIds)
+	roles := r.sysRoleRepository.SelectByIds(roleIds)
 	if len(roles) <= 0 {
-		return 0, errors.New("没有权限访问角色数据！")
+		return 0, fmt.Errorf("没有权限访问角色数据！")
 	}
 	for _, role := range roles {
 		// 检查是否为已删除
 		if role.DelFlag == "1" {
-			return 0, errors.New(role.RoleID + " 角色信息已经删除！")
+			return 0, fmt.Errorf("%s 角色信息已经删除！", role.RoleID)
 		}
 		// 检查分配用户
-		userCount := r.sysUserRoleRepository.CountUserRoleByRoleId(role.RoleID)
-		if userCount > 0 {
-			msg := fmt.Sprintf("【%s】已分配给用户,不能删除", role.RoleName)
-			return 0, errors.New(msg)
+		if useCount := r.sysUserRoleRepository.ExistUserByRoleId(role.RoleID); useCount > 0 {
+			return 0, fmt.Errorf("【%s】已分配给用户,不能删除", role.RoleName)
 		}
 	}
 	if len(roles) == len(roleIds) {
-		// 删除角色与菜单关联
-		r.sysRoleMenuRepository.DeleteRoleMenu(roleIds)
-		// 删除角色与部门关联
-		r.sysRoleDeptRepository.DeleteRoleDept(roleIds)
-		rows := r.sysRoleRepository.DeleteRoleByIds(roleIds)
-		return rows, nil
+		r.sysRoleMenuRepository.DeleteByRoleIds(roleIds) // 删除角色与菜单关联
+		r.sysRoleDeptRepository.DeleteByRoleIds(roleIds) // 删除角色与部门关联
+		return r.sysRoleRepository.DeleteByIds(roleIds), nil
 	}
-	return 0, errors.New("删除角色信息失败！")
+	return 0, fmt.Errorf("删除角色信息失败！")
 }
 
-// CheckUniqueRoleName 校验角色名称是否唯一
-func (r *SysRoleImpl) CheckUniqueRoleName(roleName, roleId string) bool {
-	uniqueId := r.sysRoleRepository.CheckUniqueRole(model.SysRole{
+// FindByUserId 根据用户ID获取角色选择框列表
+func (r *SysRoleService) FindByUserId(userId string) []model.SysRole {
+	return r.sysRoleRepository.SelectByUserId(userId)
+}
+
+// CheckUniqueByName 检查角色名称是否唯一
+func (r *SysRoleService) CheckUniqueByName(roleName, roleId string) bool {
+	uniqueId := r.sysRoleRepository.CheckUnique(model.SysRole{
 		RoleName: roleName,
 	})
 	if uniqueId == roleId {
@@ -132,9 +123,9 @@ func (r *SysRoleImpl) CheckUniqueRoleName(roleName, roleId string) bool {
 	return uniqueId == ""
 }
 
-// CheckUniqueRoleKey 校验角色权限是否唯一
-func (r *SysRoleImpl) CheckUniqueRoleKey(roleKey, roleId string) bool {
-	uniqueId := r.sysRoleRepository.CheckUniqueRole(model.SysRole{
+// CheckUniqueByKey 检查角色权限是否唯一
+func (r *SysRoleService) CheckUniqueByKey(roleKey, roleId string) bool {
+	uniqueId := r.sysRoleRepository.CheckUnique(model.SysRole{
 		RoleKey: roleKey,
 	})
 	if uniqueId == roleId {
@@ -143,44 +134,48 @@ func (r *SysRoleImpl) CheckUniqueRoleKey(roleKey, roleId string) bool {
 	return uniqueId == ""
 }
 
-// AuthDataScope 修改数据权限信息
-func (r *SysRoleImpl) AuthDataScope(sysRole model.SysRole) int64 {
+// UpdateAndDataScope 修改信息同时更新数据权限信息
+func (r *SysRoleService) UpdateAndDataScope(sysRole model.SysRole) int64 {
 	// 修改角色信息
-	rows := r.sysRoleRepository.UpdateRole(sysRole)
-	// 删除角色与部门关联
-	r.sysRoleDeptRepository.DeleteRoleDept([]string{sysRole.RoleID})
-	// 新增角色和部门信息
-	if sysRole.DataScope == "2" && len(sysRole.DeptIds) > 0 {
-		sysRoleDepts := []model.SysRoleDept{}
-		for _, deptId := range sysRole.DeptIds {
-			if deptId == "" {
-				continue
+	rows := r.sysRoleRepository.Update(sysRole)
+	if rows > 0 {
+		// 删除角色与部门关联
+		r.sysRoleDeptRepository.DeleteByRoleIds([]string{sysRole.RoleID})
+		// 新增角色和部门信息
+		if sysRole.DataScope == constRoleDataScope.Custom && len(sysRole.DeptIds) > 0 {
+			arr := make([]model.SysRoleDept, 0)
+			for _, deptId := range sysRole.DeptIds {
+				if deptId == "" {
+					continue
+				}
+				arr = append(arr, model.SysRoleDept{
+					RoleID: sysRole.RoleID, DeptID: deptId,
+				})
 			}
-			sysRoleDepts = append(sysRoleDepts, model.NewSysRoleDept(sysRole.RoleID, deptId))
+			r.sysRoleDeptRepository.BatchInsert(arr)
 		}
-		rows += r.sysRoleDeptRepository.BatchRoleDept(sysRoleDepts)
 	}
 	return rows
 }
 
-// DeleteAuthUsers 批量取消授权用户角色
-func (r *SysRoleImpl) DeleteAuthUsers(roleId string, userIds []string) int64 {
-	return r.sysUserRoleRepository.DeleteUserRoleByRoleId(roleId, userIds)
-}
-
 // InsertAuthUsers 批量新增授权用户角色
-func (r *SysRoleImpl) InsertAuthUsers(roleId string, userIds []string) int64 {
+func (r *SysRoleService) InsertAuthUsers(roleId string, userIds []string) int64 {
 	if roleId == "" || len(userIds) <= 0 {
 		return 0
 	}
-
-	sysUserRoles := []model.SysUserRole{}
+	sysUserRoles := make([]model.SysUserRole, 0)
 	for _, userId := range userIds {
 		if userId == "" {
 			continue
 		}
-		sysUserRoles = append(sysUserRoles, model.NewSysUserRole(userId, roleId))
+		sysUserRoles = append(sysUserRoles, model.SysUserRole{
+			RoleID: roleId, UserID: userId,
+		})
 	}
+	return r.sysUserRoleRepository.BatchInsert(sysUserRoles)
+}
 
-	return r.sysUserRoleRepository.BatchUserRole(sysUserRoles)
+// DeleteAuthUsers 批量取消授权用户角色
+func (r *SysRoleService) DeleteAuthUsers(roleId string, userIds []string) int64 {
+	return r.sysUserRoleRepository.DeleteByRoleId(roleId, userIds)
 }

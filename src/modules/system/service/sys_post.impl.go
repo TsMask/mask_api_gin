@@ -1,87 +1,76 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )
 
-// 实例化服务层 SysPostImpl 结构体
-var NewSysPostImpl = &SysPostImpl{
-	sysPostRepository:     repository.NewSysPostImpl,
-	sysUserPostRepository: repository.NewSysUserPostImpl,
+// NewSysPost 实例化服务层
+var NewSysPost = &SysPostService{
+	sysPostRepository:     repository.NewSysPost,
+	sysUserPostRepository: repository.NewSysUserPost,
 }
 
-// SysPostImpl 岗位表 服务层处理
-type SysPostImpl struct {
-	// 岗位服务
-	sysPostRepository repository.ISysPost
-	// 用户与岗位关联服务
-	sysUserPostRepository repository.ISysUserPost
+// SysPostService 岗位表 服务层处理
+type SysPostService struct {
+	sysPostRepository     repository.ISysPostRepository     // 岗位服务
+	sysUserPostRepository repository.ISysUserPostRepository // 用户与岗位关联服务
 }
 
-// SelectPostPage 查询岗位分页数据集合
-func (r *SysPostImpl) SelectPostPage(query map[string]any) map[string]any {
-	return r.sysPostRepository.SelectPostPage(query)
+// FindByPage 分页查询列表数据
+func (r *SysPostService) FindByPage(query map[string]any) map[string]any {
+	return r.sysPostRepository.SelectByPage(query)
 }
 
-// SelectPostList 查询岗位数据集合
-func (r *SysPostImpl) SelectPostList(sysPost model.SysPost) []model.SysPost {
-	return r.sysPostRepository.SelectPostList(sysPost)
+// Find 查询列表数据
+func (r *SysPostService) Find(sysPost model.SysPost) []model.SysPost {
+	return r.sysPostRepository.Select(sysPost)
 }
 
-// SelectPostById 通过岗位ID查询岗位信息
-func (r *SysPostImpl) SelectPostById(postId string) model.SysPost {
+// FindById 通过ID查询信息
+func (r *SysPostService) FindById(postId string) model.SysPost {
 	if postId == "" {
 		return model.SysPost{}
 	}
-	posts := r.sysPostRepository.SelectPostByIds([]string{postId})
+	posts := r.sysPostRepository.SelectByIds([]string{postId})
 	if len(posts) > 0 {
 		return posts[0]
 	}
 	return model.SysPost{}
 }
 
-// SelectPostListByUserId 根据用户ID获取岗位选择框列表
-func (r *SysPostImpl) SelectPostListByUserId(userId string) []model.SysPost {
-	return r.sysPostRepository.SelectPostListByUserId(userId)
+// Insert 新增信息
+func (r *SysPostService) Insert(sysPost model.SysPost) string {
+	return r.sysPostRepository.Insert(sysPost)
 }
 
-// DeletePostByIds 批量删除岗位信息
-func (r *SysPostImpl) DeletePostByIds(postIds []string) (int64, error) {
+// Update 修改信息
+func (r *SysPostService) Update(sysPost model.SysPost) int64 {
+	return r.sysPostRepository.Update(sysPost)
+}
+
+// DeleteByIds 批量删除信息
+func (r *SysPostService) DeleteByIds(postIds []string) (int64, error) {
 	// 检查是否存在
-	posts := r.sysPostRepository.SelectPostByIds(postIds)
+	posts := r.sysPostRepository.SelectByIds(postIds)
 	if len(posts) <= 0 {
-		return 0, errors.New("没有权限访问岗位数据！")
+		return 0, fmt.Errorf("没有权限访问岗位数据！")
 	}
 	for _, post := range posts {
-		useCount := r.sysUserPostRepository.CountUserPostByPostId(post.PostID)
-		if useCount > 0 {
-			msg := fmt.Sprintf("【%s】已分配给用户,不能删除", post.PostName)
-			return 0, errors.New(msg)
+		if useCount := r.sysUserPostRepository.ExistUserByPostId(post.PostID); useCount > 0 {
+			return 0, fmt.Errorf("【%s】已分配给用户,不能删除", post.PostName)
 		}
 	}
 	if len(posts) == len(postIds) {
-		rows := r.sysPostRepository.DeletePostByIds(postIds)
-		return rows, nil
+		return r.sysPostRepository.DeleteByIds(postIds), nil
 	}
-	return 0, errors.New("删除岗位信息失败！")
+	return 0, fmt.Errorf("删除岗位信息失败！")
 }
 
-// UpdatePost 修改岗位信息
-func (r *SysPostImpl) UpdatePost(sysPost model.SysPost) int64 {
-	return r.sysPostRepository.UpdatePost(sysPost)
-}
-
-// InsertPost 新增岗位信息
-func (r *SysPostImpl) InsertPost(sysPost model.SysPost) string {
-	return r.sysPostRepository.InsertPost(sysPost)
-}
-
-// CheckUniquePostName 校验岗位名称
-func (r *SysPostImpl) CheckUniquePostName(postName, postId string) bool {
-	uniqueId := r.sysPostRepository.CheckUniquePost(model.SysPost{
+// CheckUniqueByName 检查岗位名称是否唯一
+func (r *SysPostService) CheckUniqueByName(postName, postId string) bool {
+	uniqueId := r.sysPostRepository.CheckUnique(model.SysPost{
 		PostName: postName,
 	})
 	if uniqueId == postId {
@@ -90,13 +79,18 @@ func (r *SysPostImpl) CheckUniquePostName(postName, postId string) bool {
 	return uniqueId == ""
 }
 
-// CheckUniquePostCode 校验岗位编码
-func (r *SysPostImpl) CheckUniquePostCode(postCode, postId string) bool {
-	uniqueId := r.sysPostRepository.CheckUniquePost(model.SysPost{
+// CheckUniqueByCode 检查岗位编码是否唯一
+func (r *SysPostService) CheckUniqueByCode(postCode, postId string) bool {
+	uniqueId := r.sysPostRepository.CheckUnique(model.SysPost{
 		PostCode: postCode,
 	})
 	if uniqueId == postId {
 		return true
 	}
 	return uniqueId == ""
+}
+
+// FindByUserId 根据用户ID获取岗位选择框列表
+func (r *SysPostService) FindByUserId(userId string) []model.SysPost {
+	return r.sysPostRepository.SelectByUserId(userId)
 }

@@ -5,35 +5,35 @@ import (
 	"mask_api_gin/src/modules/system/model"
 )
 
-// ISysDept 部门管理 服务层接口
-type ISysDept interface {
-	// SelectDeptList 查询部门管理数据
-	SelectDeptList(sysDept model.SysDept, dataScopeSQL string) []model.SysDept
+// ISysDeptService 部门管理 服务层接口
+type ISysDeptService interface {
+	// Find 查询数据
+	Find(sysDept model.SysDept, dataScopeSQL string) []model.SysDept
 
-	// SelectDeptListByRoleId 根据角色ID查询部门树信息
-	SelectDeptListByRoleId(roleId string) []string
+	// FindById 根据ID查询信息
+	FindById(deptId string) model.SysDept
 
-	// SelectDeptById 根据部门ID查询信息
-	SelectDeptById(deptId string) model.SysDept
+	// Insert 新增信息
+	Insert(sysDept model.SysDept) string
 
-	// HasChildByDeptId 是否存在子节点
-	HasChildByDeptId(deptId string) int64
+	// Update 修改信息
+	Update(sysDept model.SysDept) int64
 
-	// CheckDeptExistUser 查询部门是否存在用户
-	CheckDeptExistUser(deptId string) int64
+	// DeleteById 删除信息
+	DeleteById(deptId string) int64
 
-	// CheckUniqueDeptName 校验同级部门名称是否唯一
-	CheckUniqueDeptName(deptName, parentId, deptId string) bool
+	// FindDeptIdsByRoleId 根据角色ID查询包含的部门ID
+	FindDeptIdsByRoleId(roleId string) []string
 
-	// InsertDept 新增部门信息
-	InsertDept(sysDept model.SysDept) string
+	// ExistChildrenByDeptId 部门下存在子节点数量
+	ExistChildrenByDeptId(deptId string) int64
 
-	// UpdateDept 修改部门信息
-	UpdateDept(sysDept model.SysDept) int64
+	// ExistUserByDeptId 部门下存在用户数量
+	ExistUserByDeptId(deptId string) int64
 
-	// DeleteDeptById 删除部门管理信息
-	DeleteDeptById(deptId string) int64
+	// CheckUniqueParentIdByDeptName 检查同级下部门名称唯一
+	CheckUniqueParentIdByDeptName(parentId, deptName,  deptId string) bool
 
-	// SelectDeptTreeSelect 查询部门树结构信息
-	SelectDeptTreeSelect(sysDept model.SysDept, dataScopeSQL string) []vo.TreeSelect
+	// BuildTreeSelect 查询部门树状结构
+	BuildTreeSelect(sysDept model.SysDept, dataScopeSQL string) []vo.TreeSelect
 }

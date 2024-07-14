@@ -1,68 +1,122 @@
 package service
 
 import (
-	"mask_api_gin/src/framework/constants/common"
+	constCommon "mask_api_gin/src/framework/constants/common"
 	"mask_api_gin/src/framework/vo"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 	"strings"
 )
 
-// 实例化服务层 SysDeptImpl 结构体
-var NewSysDeptImpl = &SysDeptImpl{
-	sysDeptRepository:     repository.NewSysDeptImpl,
-	sysRoleRepository:     repository.NewSysRoleImpl,
-	sysRoleDeptRepository: repository.NewSysRoleDeptImpl,
+// NewSysDept  实例化服务层
+var NewSysDept = &SysDeptService{
+	sysDeptRepository:     repository.NewSysDept,
+	sysRoleRepository:     repository.NewSysRole,
+	sysRoleDeptRepository: repository.NewSysRoleDept,
 }
 
-// SysDeptImpl 部门表 服务层处理
-type SysDeptImpl struct {
-	// 部门服务
-	sysDeptRepository repository.ISysDept
-	// 角色服务
-	sysRoleRepository repository.ISysRole
-	// 角色与部门关联服务
-	sysRoleDeptRepository repository.ISysRoleDept
+// SysDeptService 部门管理 服务层处理
+type SysDeptService struct {
+	sysDeptRepository     repository.ISysDeptRepository     // 部门服务
+	sysRoleRepository     repository.ISysRoleRepository     // 角色服务
+	sysRoleDeptRepository repository.ISysRoleDeptRepository // 角色与部门关联服务
 }
 
-// SelectDeptList 查询部门管理数据
-func (r *SysDeptImpl) SelectDeptList(sysDept model.SysDept, dataScopeSQL string) []model.SysDept {
-	return r.sysDeptRepository.SelectDeptList(sysDept, dataScopeSQL)
+// Find 查询数据
+func (r *SysDeptService) Find(sysDept model.SysDept, dataScopeSQL string) []model.SysDept {
+	return r.sysDeptRepository.Select(sysDept, dataScopeSQL)
 }
 
-// SelectDeptListByRoleId 根据角色ID查询部门树信息 TODO
-func (r *SysDeptImpl) SelectDeptListByRoleId(roleId string) []string {
-	roles := r.sysRoleRepository.SelectRoleByIds([]string{roleId})
-	if len(roles) > 0 {
-		role := roles[0]
-		if role.RoleID == roleId {
-			return r.sysDeptRepository.SelectDeptListByRoleId(
-				role.RoleID,
-				role.DeptCheckStrictly == "1",
-			)
+// FindById 根据ID查询信息
+func (r *SysDeptService) FindById(deptId string) model.SysDept {
+	return r.sysDeptRepository.SelectById(deptId)
+}
+
+// Insert 新增信息
+func (r *SysDeptService) Insert(sysDept model.SysDept) string {
+	return r.sysDeptRepository.Insert(sysDept)
+}
+
+// Update 修改信息
+func (r *SysDeptService) Update(sysDept model.SysDept) int64 {
+	dept := r.sysDeptRepository.SelectById(sysDept.DeptID)
+	parentDept := r.sysDeptRepository.SelectById(sysDept.ParentID)
+	// 上级与当前部门祖级列表更新
+	if parentDept.DeptID == sysDept.ParentID && dept.DeptID == sysDept.DeptID {
+		newAncestors := parentDept.Ancestors + "," + parentDept.DeptID
+		oldAncestors := dept.Ancestors
+		// 祖级列表不一致时更新
+		if newAncestors != oldAncestors {
+			dept.Ancestors = newAncestors
+			r.updateDeptChildren(dept.DeptID, newAncestors, oldAncestors)
 		}
 	}
-	return []string{}
+	// 如果该部门是启用状态，则启用该部门的所有上级部门
+	if sysDept.Status == constCommon.StatusYes && parentDept.Status == constCommon.StatusNo {
+		r.updateDeptStatusNormal(sysDept.Ancestors)
+	}
+	return r.sysDeptRepository.Update(sysDept)
 }
 
-// SelectDeptById 根据部门ID查询信息
-func (r *SysDeptImpl) SelectDeptById(deptId string) model.SysDept {
-	return r.sysDeptRepository.SelectDeptById(deptId)
+// updateDeptStatusNormal 修改所在部门正常状态
+func (r *SysDeptService) updateDeptStatusNormal(ancestors string) int64 {
+	if ancestors == "" || ancestors == "0" {
+		return 0
+	}
+	deptIds := strings.Split(ancestors, ",")
+	return r.sysDeptRepository.UpdateDeptStatusNormal(deptIds)
 }
 
-// HasChildByDeptId 是否存在子节点
-func (r *SysDeptImpl) HasChildByDeptId(deptId string) int64 {
-	return r.sysDeptRepository.HasChildByDeptId(deptId)
+// updateDeptChildren 修改子元素关系
+func (r *SysDeptService) updateDeptChildren(deptId, newAncestors, oldAncestors string) int64 {
+	arr := r.sysDeptRepository.SelectChildrenDeptById(deptId)
+	if len(arr) == 0 {
+		return 0
+	}
+	// 替换父ID
+	for i := range arr {
+		item := &arr[i]
+		ancestors := strings.Replace(item.Ancestors, oldAncestors, newAncestors, 1)
+		item.Ancestors = ancestors
+	}
+	return r.sysDeptRepository.UpdateDeptChildren(arr)
 }
 
-// CheckDeptExistUser 查询部门是否存在用户
-func (r *SysDeptImpl) CheckDeptExistUser(deptId string) int64 {
-	return r.sysDeptRepository.CheckDeptExistUser(deptId)
+// DeleteById 删除信息
+func (r *SysDeptService) DeleteById(deptId string) int64 {
+	r.sysRoleDeptRepository.DeleteByDeptIds([]string{deptId}) // 删除角色与部门关联
+	return r.sysDeptRepository.DeleteById(deptId)
 }
 
-// CheckUniqueDeptName 校验同级部门名称是否唯一
-func (r *SysDeptImpl) CheckUniqueDeptName(deptName, parentId, deptId string) bool {
-	uniqueId := r.sysDeptRepository.CheckUniqueDept(model.SysDept{
+// FindDeptIdsByRoleId 根据角色ID查询包含的部门ID TODO
+func (r *SysDeptService) FindDeptIdsByRoleId(roleId string) []string {
+	roles := r.sysRoleRepository.SelectByIds([]string{roleId})
+	if len(roles) == 0 {
+		return []string{}
+	}
+	role := roles[0]
+	if role.RoleID != roleId {
+		return []string{}
+	}
+	return r.sysDeptRepository.SelectDeptIdsByRoleId(
+		role.RoleID,
+		role.DeptCheckStrictly == "1",
+	)
+}
+
+// ExistChildrenByDeptId 部门下存在子节点数量
+func (r *SysDeptService) ExistChildrenByDeptId(deptId string) int64 {
+	return r.sysDeptRepository.ExistChildrenByDeptId(deptId)
+}
+
+// ExistUserByDeptId 部门下存在用户数量
+func (r *SysDeptService) ExistUserByDeptId(deptId string) int64 {
+	return r.sysDeptRepository.ExistUserByDeptId(deptId)
+}
+
+// CheckUniqueParentIdByDeptName 检查同级下部门名称唯一
+func (r *SysDeptService) CheckUniqueParentIdByDeptName(parentId, deptName, deptId string) bool {
+	uniqueId := r.sysDeptRepository.CheckUnique(model.SysDept{
 		DeptName: deptName,
 		ParentID: parentId,
 	})
@@ -72,84 +126,27 @@ func (r *SysDeptImpl) CheckUniqueDeptName(deptName, parentId, deptId string) boo
 	return uniqueId == ""
 }
 
-// InsertDept 新增部门信息
-func (r *SysDeptImpl) InsertDept(sysDept model.SysDept) string {
-	return r.sysDeptRepository.InsertDept(sysDept)
-}
-
-// UpdateDept 修改部门信息
-func (r *SysDeptImpl) UpdateDept(sysDept model.SysDept) int64 {
-	parentDept := r.sysDeptRepository.SelectDeptById(sysDept.ParentID)
-	dept := r.sysDeptRepository.SelectDeptById(sysDept.DeptID)
-	// 上级与当前部门祖级列表更新
-	if parentDept.DeptID == sysDept.ParentID && dept.DeptID == sysDept.DeptID {
-		newAncestors := parentDept.Ancestors + "," + parentDept.DeptID
-		oldAncestors := dept.Ancestors
-		// 祖级列表不一致时更新
-		if newAncestors != oldAncestors {
-			sysDept.Ancestors = newAncestors
-			r.updateDeptChildren(sysDept.DeptID, newAncestors, oldAncestors)
-		}
-	}
-	// 如果该部门是启用状态，则启用该部门的所有上级部门
-	if sysDept.Status == common.STATUS_YES && parentDept.Status == common.STATUS_NO {
-		r.updateDeptStatusNormal(sysDept.Ancestors)
-	}
-	return r.sysDeptRepository.UpdateDept(sysDept)
-}
-
-// updateDeptStatusNormal 修改所在部门正常状态
-func (r *SysDeptImpl) updateDeptStatusNormal(ancestors string) int64 {
-	if ancestors == "" || ancestors == "0" {
-		return 0
-	}
-	deptIds := strings.Split(ancestors, ",")
-	return r.sysDeptRepository.UpdateDeptStatusNormal(deptIds)
-}
-
-// updateDeptChildren 修改子元素关系
-func (r *SysDeptImpl) updateDeptChildren(deptId, newAncestors, oldAncestors string) int64 {
-	childrens := r.sysDeptRepository.SelectChildrenDeptById(deptId)
-	if len(childrens) == 0 {
-		return 0
-	}
-	// 替换父ID
-	for i := range childrens {
-		child := &childrens[i]
-		ancestors := strings.Replace(child.Ancestors, oldAncestors, newAncestors, -1)
-		child.Ancestors = ancestors
-	}
-	return r.sysDeptRepository.UpdateDeptChildren(childrens)
-}
-
-// DeleteDeptById 删除部门管理信息
-func (r *SysDeptImpl) DeleteDeptById(deptId string) int64 {
-	// 删除角色与部门关联
-	r.sysRoleDeptRepository.DeleteDeptRole([]string{deptId})
-	return r.sysDeptRepository.DeleteDeptById(deptId)
-}
-
-// SelectDeptTreeSelect 查询部门树结构信息
-func (r *SysDeptImpl) SelectDeptTreeSelect(sysDept model.SysDept, dataScopeSQL string) []vo.TreeSelect {
-	sysDepts := r.sysDeptRepository.SelectDeptList(sysDept, dataScopeSQL)
-	depts := r.parseDataToTree(sysDepts)
+// BuildTreeSelect 查询部门树状结构 TODO
+func (r *SysDeptService) BuildTreeSelect(sysDept model.SysDept, dataScopeSQL string) []vo.TreeSelect {
+	arr := r.sysDeptRepository.Select(sysDept, dataScopeSQL)
+	treeArr := r.parseDataToTree(arr)
 	tree := make([]vo.TreeSelect, 0)
-	for _, dept := range depts {
-		tree = append(tree, vo.SysDeptTreeSelect(dept))
+	for _, item := range treeArr {
+		tree = append(tree, vo.SysDeptTreeSelect(item))
 	}
 	return tree
 }
 
 // parseDataToTree 将数据解析为树结构，构建前端所需要下拉树结构
-func (r *SysDeptImpl) parseDataToTree(sysDepts []model.SysDept) []model.SysDept {
+func (r *SysDeptService) parseDataToTree(arr []model.SysDept) []model.SysDept {
 	// 节点分组
 	nodesMap := make(map[string][]model.SysDept)
 	// 节点id
-	treeIds := []string{}
+	treeIds := make([]string, 0)
 	// 树节点
-	tree := []model.SysDept{}
+	tree := make([]model.SysDept, 0)
 
-	for _, item := range sysDepts {
+	for _, item := range arr {
 		parentID := item.ParentID
 		// 分组
 		mapItem, ok := nodesMap[parentID]
@@ -177,15 +174,15 @@ func (r *SysDeptImpl) parseDataToTree(sysDepts []model.SysDept) []model.SysDept 
 	}
 
 	for i, node := range tree {
-		iN := r.parseDataToTreeComponet(node, &nodesMap)
+		iN := r.parseDataToTreeComponent(node, &nodesMap)
 		tree[i] = iN
 	}
 
 	return tree
 }
 
-// parseDataToTreeComponet 递归函数处理子节点
-func (r *SysDeptImpl) parseDataToTreeComponet(node model.SysDept, nodesMap *map[string][]model.SysDept) model.SysDept {
+// parseDataToTreeComponent 递归函数处理子节点
+func (r *SysDeptService) parseDataToTreeComponent(node model.SysDept, nodesMap *map[string][]model.SysDept) model.SysDept {
 	id := node.DeptID
 	children, ok := (*nodesMap)[id]
 	if ok {
@@ -193,7 +190,7 @@ func (r *SysDeptImpl) parseDataToTreeComponet(node model.SysDept, nodesMap *map[
 	}
 	if len(node.Children) > 0 {
 		for i, child := range node.Children {
-			icN := r.parseDataToTreeComponet(child, nodesMap)
+			icN := r.parseDataToTreeComponent(child, nodesMap)
 			node.Children[i] = icN
 		}
 	}

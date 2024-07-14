@@ -2,23 +2,20 @@ package service
 
 import "mask_api_gin/src/modules/system/model"
 
-// ISysLogLogin 系统登录日志 服务层接口
-type ISysLogLogin interface {
-	// SelectSysLogLoginPage 分页查询系统登录日志集合
-	SelectSysLogLoginPage(query map[string]any) map[string]any
+// ISysLogLoginService 系统登录日志 服务层接口
+type ISysLogLoginService interface {
+	// FindByPage 分页查询列表数据
+	FindByPage(query map[string]any) map[string]any
 
-	// SelectSysLogLoginList 查询系统登录日志集合
-	SelectSysLogLoginList(sysLogLogin model.SysLogLogin) []model.SysLogLogin
+	// Find 查询数据
+	Find(sysLogLogin model.SysLogLogin) []model.SysLogLogin
 
-	// InsertSysLogLogin 新增系统登录日志
-	InsertSysLogLogin(sysLogLogin model.SysLogLogin) string
+	// Insert 新增信息
+	Insert(userName, status, msg string, ilobArr [4]string) string
 
-	// DeleteSysLogLoginByIds 批量删除系统登录日志
-	DeleteSysLogLoginByIds(loginIds []string) int64
+	// DeleteByIds 批量删除信息
+	DeleteByIds(loginIds []string) int64
 
-	// CleanSysLogLogin 清空系统登录日志
-	CleanSysLogLogin() error
-
-	// CreateSysLogLogin 创建系统登录日志
-	CreateSysLogLogin(userName, status, msg string, ilobArgs ...string) string
+	// Clean 清空系统登录日志
+	Clean() error
 }

@@ -5,46 +5,46 @@ import (
 	"mask_api_gin/src/modules/system/model"
 )
 
-// ISysMenu 菜单 服务层接口
-type ISysMenu interface {
-	// SelectMenuList 查询系统菜单列表
-	SelectMenuList(sysMenu model.SysMenu, userId string) []model.SysMenu
+// ISysMenuService 菜单 服务层接口
+type ISysMenuService interface {
+	// Find 查询数据
+	Find(sysMenu model.SysMenu, userId string) []model.SysMenu
 
-	// SelectMenuPermsByUserId 根据用户ID查询权限
-	SelectMenuPermsByUserId(userId string) []string
+	// FindById 通过ID查询信息
+	FindById(menuId string) model.SysMenu
 
-	// SelectMenuTreeByUserId 根据用户ID查询权限
-	SelectMenuTreeByUserId(userId string) []model.SysMenu
+	// Insert 新增信息
+	Insert(sysMenu model.SysMenu) string
 
-	// SelectMenuTreeSelectByUserId 查询菜单树结构信息
-	SelectMenuTreeSelectByUserId(sysMenu model.SysMenu, userId string) []vo.TreeSelect
+	// Update 修改信息
+	Update(sysMenu model.SysMenu) int64
 
-	// SelectMenuListByRoleId 根据角色ID查询菜单树信息
-	SelectMenuListByRoleId(roleId string) []string
+	// DeleteById 删除信息
+	DeleteById(menuId string) int64
 
-	// SelectMenuById 根据菜单ID查询信息
-	SelectMenuById(menuId string) model.SysMenu
+	// ExistChildrenByMenuIdAndStatus 菜单下同状态存在子节点数量
+	ExistChildrenByMenuIdAndStatus(menuId, status string) int64
 
-	// HasChildByMenuIdAndStatus 存在菜单子节点数量与状态
-	HasChildByMenuIdAndStatus(menuId, status string) int64
+	// ExistRoleByMenuId 菜单分配给的角色数量
+	ExistRoleByMenuId(menuId string) int64
 
-	// CheckMenuExistRole 查询菜单分配角色数量
-	CheckMenuExistRole(menuId string) int64
+	// CheckUniqueParentIdByMenuName 检查同级下菜单名称是否唯一
+	CheckUniqueParentIdByMenuName(parentId, menuName, menuId string) bool
 
-	// InsertMenu 新增菜单信息
-	InsertMenu(sysMenu model.SysMenu) string
+	// CheckUniqueParentIdByMenuPath 检查同级下路由地址是否唯一（针对目录和菜单）
+	CheckUniqueParentIdByMenuPath(parentId, path, menuId string) bool
 
-	// UpdateMenu 修改菜单信息
-	UpdateMenu(sysMenu model.SysMenu) int64
+	// FindPermsByUserId 根据用户ID查询权限标识
+	FindPermsByUserId(userId string) []string
 
-	// DeleteMenuById 删除菜单管理信息
-	DeleteMenuById(menuId string) int64
+	// FindByRoleId 根据角色ID查询菜单树信息
+	FindByRoleId(roleId string) []string
 
-	// CheckUniqueMenuName 校验菜单名称是否唯一
-	CheckUniqueMenuName(menuName, parentId, menuId string) bool
+	// BuildTreeMenusByUserId 根据用户ID查询菜单树状嵌套
+	BuildTreeMenusByUserId(userId string) []model.SysMenu
 
-	// CheckUniqueMenuPath 校验路由地址是否唯一（针对目录和菜单）
-	CheckUniqueMenuPath(path, parentId, menuId string) bool
+	// BuildTreeSelectByUserId 根据用户ID查询菜单树状结构
+	BuildTreeSelectByUserId(sysMenu model.SysMenu, userId string) []vo.TreeSelect
 
 	// BuildRouteMenus 构建前端路由所需要的菜单
 	BuildRouteMenus(sysMenus []model.SysMenu, prefix string) []vo.Router

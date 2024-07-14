@@ -2,32 +2,32 @@ package service
 
 import "mask_api_gin/src/modules/system/model"
 
-// ISysPost 岗位信息 服务层接口
-type ISysPost interface {
-	// SelectPostPage 查询岗位分页数据集合
-	SelectPostPage(query map[string]any) map[string]any
+// ISysPostService 岗位信息 服务层接口
+type ISysPostService interface {
+	// FindByPage 分页查询列表数据
+	FindByPage(query map[string]any) map[string]any
 
-	// SelectPostList 查询岗位数据集合
-	SelectPostList(sysPost model.SysPost) []model.SysPost
+	// Find 查询列表数据
+	Find(sysPost model.SysPost) []model.SysPost
 
-	// SelectPostById 通过岗位ID查询岗位信息
-	SelectPostById(postId string) model.SysPost
+	// FindById 通过ID查询信息
+	FindById(postId string) model.SysPost
 
-	// SelectPostListByUserId 根据用户ID获取岗位选择框列表
-	SelectPostListByUserId(userId string) []model.SysPost
+	// Insert 新增信息
+	Insert(sysPost model.SysPost) string
 
-	// DeletePostByIds 批量删除岗位信息
-	DeletePostByIds(postIds []string) (int64, error)
+	// Update 修改信息
+	Update(sysPost model.SysPost) int64
 
-	// UpdatePost 修改岗位信息
-	UpdatePost(sysPost model.SysPost) int64
+	// DeleteByIds 批量删除信息
+	DeleteByIds(postIds []string) (int64, error)
 
-	// InsertPost 新增岗位信息
-	InsertPost(sysPost model.SysPost) string
+	// CheckUniqueByName 检查岗位名称是否唯一
+	CheckUniqueByName(postName, postId string) bool
 
-	// CheckUniquePostName 校验岗位名称
-	CheckUniquePostName(postName, postId string) bool
+	// CheckUniqueByCode 检查岗位编码是否唯一
+	CheckUniqueByCode(postCode, postId string) bool
 
-	// CheckUniquePostCode 校验岗位编码
-	CheckUniquePostCode(postCode, postId string) bool
+	// FindByUserId 根据用户ID获取岗位选择框列表
+	FindByUserId(userId string) []model.SysPost
 }

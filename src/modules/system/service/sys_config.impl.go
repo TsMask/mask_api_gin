@@ -1,66 +1,95 @@
 package service
 
 import (
-	"errors"
-	"mask_api_gin/src/framework/constants/cachekey"
+	"fmt"
+	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
 	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )
 
-// 实例化服务层 SysConfigImpl 结构体
-var NewSysConfigImpl = &SysConfigImpl{
-	sysConfigRepository: repository.NewSysConfigImpl,
+// NewSysConfig 实例化服务层
+var NewSysConfig = &SysConfigService{
+	sysConfigRepository: repository.NewSysConfig,
 }
 
-// SysConfigImpl 参数配置 服务层处理
-type SysConfigImpl struct {
-	// 参数配置表
-	sysConfigRepository repository.ISysConfig
+// SysConfigService 参数配置 服务层处理
+type SysConfigService struct {
+	sysConfigRepository repository.ISysConfigRepository // 参数配置表
 }
 
-// SelectDictDataPage 分页查询参数配置列表数据
-func (r *SysConfigImpl) SelectConfigPage(query map[string]any) map[string]any {
-	return r.sysConfigRepository.SelectConfigPage(query)
+// FindByPage 分页查询列表数据
+func (r *SysConfigService) FindByPage(query map[string]any) map[string]any {
+	return r.sysConfigRepository.SelectByPage(query)
 }
 
-// SelectConfigList 查询参数配置列表
-func (r *SysConfigImpl) SelectConfigList(sysConfig model.SysConfig) []model.SysConfig {
-	return r.sysConfigRepository.SelectConfigList(sysConfig)
-}
-
-// SelectConfigValueByKey 通过参数键名查询参数键值
-func (r *SysConfigImpl) SelectConfigValueByKey(configKey string) string {
-	cacheKey := r.getCacheKey(configKey)
-	// 从缓存中读取
-	cacheValue, err := redis.Get("", cacheKey)
-	if cacheValue != "" || err != nil {
-		return cacheValue
-	}
-	// 无缓存时读取数据放入缓存中
-	configValue := r.sysConfigRepository.SelectConfigValueByKey(configKey)
-	if configValue != "" {
-		redis.Set("", cacheKey, configValue)
-		return configValue
-	}
-	return ""
-}
-
-// SelectConfigById 通过配置ID查询参数配置信息
-func (r *SysConfigImpl) SelectConfigById(configId string) model.SysConfig {
+// FindById 通过ID查询信息
+func (r *SysConfigService) FindById(configId string) model.SysConfig {
 	if configId == "" {
 		return model.SysConfig{}
 	}
-	configs := r.sysConfigRepository.SelectConfigByIds([]string{configId})
+	configs := r.sysConfigRepository.SelectByIds([]string{configId})
 	if len(configs) > 0 {
 		return configs[0]
 	}
 	return model.SysConfig{}
 }
 
-// CheckUniqueConfigKey 校验参数键名是否唯一
-func (r *SysConfigImpl) CheckUniqueConfigKey(configKey, configId string) bool {
-	uniqueId := r.sysConfigRepository.CheckUniqueConfig(model.SysConfig{
+// Insert 新增信息
+func (r *SysConfigService) Insert(sysConfig model.SysConfig) string {
+	if configId := r.sysConfigRepository.Insert(sysConfig); configId != "" {
+		r.loadCache(sysConfig.ConfigKey)
+	}
+	return ""
+}
+
+// Update 修改信息
+func (r *SysConfigService) Update(sysConfig model.SysConfig) int64 {
+	if rows := r.sysConfigRepository.Update(sysConfig); rows > 0 {
+		r.loadCache(sysConfig.ConfigKey)
+	}
+	return 0
+}
+
+// DeleteByIds 批量删除信息
+func (r *SysConfigService) DeleteByIds(configIds []string) (int64, error) {
+	// 检查是否存在
+	configs := r.sysConfigRepository.SelectByIds(configIds)
+	if len(configs) <= 0 {
+		return 0, fmt.Errorf("没有权限访问参数配置数据！")
+	}
+	for _, config := range configs {
+		// 检查是否为内置参数
+		if config.ConfigType == "Y" {
+			return 0, fmt.Errorf("%s 配置参数属于内置参数，禁止删除！", config.ConfigID)
+		}
+		// 清除缓存
+		r.cleanCache(config.ConfigKey)
+	}
+	if len(configs) == len(configIds) {
+		return r.sysConfigRepository.DeleteByIds(configIds), nil
+	}
+	return 0, fmt.Errorf("删除参数配置信息失败！")
+}
+
+// FindValueByKey 通过参数键名查询参数值
+func (r *SysConfigService) FindValueByKey(configKey string) string {
+	cacheKey := r.getCacheKey(configKey)
+	// 从缓存中读取
+	if cacheValue, err := redis.Get("", cacheKey); cacheValue != "" || err != nil {
+		return cacheValue
+	}
+	// 无缓存时读取数据放入缓存中
+	if configValue := r.sysConfigRepository.SelectValueByKey(configKey); configValue != "" {
+		_ = redis.Set("", cacheKey, configValue)
+		return configValue
+	}
+	return ""
+}
+
+// CheckUniqueByKey 检查参数键名是否唯一
+func (r *SysConfigService) CheckUniqueByKey(configKey, configId string) bool {
+	uniqueId := r.sysConfigRepository.CheckUnique(model.SysConfig{
 		ConfigKey: configKey,
 	})
 	if uniqueId == configId {
@@ -69,88 +98,45 @@ func (r *SysConfigImpl) CheckUniqueConfigKey(configKey, configId string) bool {
 	return uniqueId == ""
 }
 
-// InsertConfig 新增参数配置
-func (r *SysConfigImpl) InsertConfig(sysConfig model.SysConfig) string {
-	configId := r.sysConfigRepository.InsertConfig(sysConfig)
-	if configId != "" {
-		r.loadingConfigCache(sysConfig.ConfigKey)
-	}
-	return configId
-}
-
-// UpdateConfig 修改参数配置
-func (r *SysConfigImpl) UpdateConfig(sysConfig model.SysConfig) int64 {
-	rows := r.sysConfigRepository.UpdateConfig(sysConfig)
-	if rows > 0 {
-		r.loadingConfigCache(sysConfig.ConfigKey)
-	}
-	return rows
-}
-
-// DeleteConfigByIds 批量删除参数配置信息
-func (r *SysConfigImpl) DeleteConfigByIds(configIds []string) (int64, error) {
-	// 检查是否存在
-	configs := r.sysConfigRepository.SelectConfigByIds(configIds)
-	if len(configs) <= 0 {
-		return 0, errors.New("没有权限访问参数配置数据！")
-	}
-	for _, config := range configs {
-		// 检查是否为内置参数
-		if config.ConfigType == "Y" {
-			return 0, errors.New(config.ConfigID + " 配置参数属于内置参数，禁止删除！")
-		}
-		// 清除缓存
-		r.clearConfigCache(config.ConfigKey)
-	}
-	if len(configs) == len(configIds) {
-		rows := r.sysConfigRepository.DeleteConfigByIds(configIds)
-		return rows, nil
-	}
-	return 0, errors.New("删除参数配置信息失败！")
-}
-
-// ResetConfigCache 重置参数缓存数据
-func (r *SysConfigImpl) ResetConfigCache() {
-	r.clearConfigCache("*")
-	r.loadingConfigCache("*")
+// ResetCache 重置缓存数据
+func (r *SysConfigService) ResetCache() {
+	r.cleanCache("*")
+	r.loadCache("*")
 }
 
 // getCacheKey 组装缓存key
-func (r *SysConfigImpl) getCacheKey(configKey string) string {
-	return cachekey.SYS_CONFIG_KEY + configKey
+func (r *SysConfigService) getCacheKey(configKey string) string {
+	return constCacheKey.SysConfigKey + configKey
 }
 
-// loadingConfigCache 加载参数缓存数据
-func (r *SysConfigImpl) loadingConfigCache(configKey string) {
+// loadConfigCache 加载参数缓存数据 传入*查询全部
+func (r *SysConfigService) loadCache(configKey string) {
 	// 查询全部参数
-	if configKey == "*" {
-		sysConfigs := r.SelectConfigList(model.SysConfig{})
+	if configKey == "*" || configKey == "" {
+		sysConfigs := r.sysConfigRepository.Select(model.SysConfig{})
 		for _, v := range sysConfigs {
 			key := r.getCacheKey(v.ConfigKey)
-			redis.Del("", key)
-			redis.Set("", key, v.ConfigValue)
+			_ = redis.Del("", key)
+			_ = redis.Set("", key, v.ConfigValue)
 		}
 		return
 	}
 	// 指定参数
-	if configKey != "" {
-		cacheValue := r.sysConfigRepository.SelectConfigValueByKey(configKey)
-		if cacheValue != "" {
-			key := r.getCacheKey(configKey)
-			redis.Del("", key)
-			redis.Set("", key, cacheValue)
-		}
-		return
+	cacheValue := r.sysConfigRepository.SelectValueByKey(configKey)
+	if cacheValue != "" {
+		key := r.getCacheKey(configKey)
+		_ = redis.Del("", key)
+		_ = redis.Set("", key, cacheValue)
 	}
+	return
 }
 
-// clearConfigCache 清空参数缓存数据
-func (r *SysConfigImpl) clearConfigCache(configKey string) bool {
+// cleanConfigCache 清空参数缓存数据 传入*清除全部
+func (r *SysConfigService) cleanCache(configKey string) bool {
 	key := r.getCacheKey(configKey)
 	keys, err := redis.GetKeys("", key)
 	if err != nil {
 		return false
 	}
-	delOk, _ := redis.DelKeys("", keys)
-	return delOk
+	return redis.DelKeys("", keys) == nil
 }

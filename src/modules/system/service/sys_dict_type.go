@@ -2,44 +2,38 @@ package service
 
 import "mask_api_gin/src/modules/system/model"
 
-// ISysDictType 字典类型 服务层接口
-type ISysDictType interface {
-	// SelectDictTypePage 根据条件分页查询字典类型
-	SelectDictTypePage(query map[string]any) map[string]any
+// ISysDictTypeService 字典类型 服务层接口
+type ISysDictTypeService interface {
+	// FindByPage 分页查询列表数据
+	FindByPage(query map[string]any) map[string]any
 
-	// SelectDictTypeList 根据条件查询字典类型
-	SelectDictTypeList(sysDictType model.SysDictType) []model.SysDictType
+	// Find 查询数据
+	Find(sysDictType model.SysDictType) []model.SysDictType
 
-	// SelectDictTypeByID 根据字典类型ID查询信息
-	SelectDictTypeByID(dictID string) model.SysDictType
+	// FindById 通过ID查询信息
+	FindById(dictId string) model.SysDictType
 
-	// SelectDictTypeByType 根据字典类型查询信息
-	SelectDictTypeByType(dictType string) model.SysDictType
+	// FindByType 根据字典类型查询信息
+	FindByType(dictType string) model.SysDictType
 
-	// CheckUniqueDictName 校验字典名称是否唯一
-	CheckUniqueDictName(dictName, dictID string) bool
+	// Insert 新增信息
+	Insert(sysDictType model.SysDictType) string
 
-	// CheckUniqueDictType 校验字典类型是否唯一
-	CheckUniqueDictType(dictType, dictID string) bool
+	// Update 修改信息
+	Update(sysDictType model.SysDictType) int64
 
-	// InsertDictType 新增字典类型信息
-	InsertDictType(sysDictType model.SysDictType) string
+	// DeleteByIds 批量删除信息
+	DeleteByIds(dictIds []string) (int64, error)
 
-	// UpdateDictType 修改字典类型信息
-	UpdateDictType(sysDictType model.SysDictType) int64
+	// CheckUniqueByName 检查字典名称是否唯一
+	CheckUniqueByName(dictName, dictId string) bool
 
-	// DeleteDictTypeByIDs 批量删除字典类型信息
-	DeleteDictTypeByIDs(dictIDs []string) (int64, error)
+	// CheckUniqueByType 检查字典类型是否唯一
+	CheckUniqueByType(dictType, dictId string) bool
 
-	// ResetDictCache 重置字典缓存数据
-	ResetDictCache()
+	// ResetCache 重置字典缓存数据
+	ResetCache()
 
-	// 加载字典缓存数据
-	LoadingDictCache(dictType string)
-
-	// 清空字典缓存数据
-	ClearDictCache(dictType string) bool
-
-	// DictDataCache 获取字典数据缓存数据
-	DictDataCache(dictType string) []model.SysDictData
+	// FindDataByType 获取字典数据缓存数据
+	FindDataByType(dictType string) []model.SysDictData
 }
