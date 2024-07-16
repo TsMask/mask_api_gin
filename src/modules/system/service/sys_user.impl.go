@@ -64,18 +64,18 @@ func (r *SysUserService) insertUserRole(userId string, roleIds []string) int64 {
 		return 0
 	}
 
-	var sysUserRoles []model.SysUserRole
+	var arr []model.SysUserRole
 	for _, roleId := range roleIds {
 		// 管理员角色禁止操作，只能通过配置指定用户ID分配
 		if roleId == "" || roleId == constAdmin.RoleId {
 			continue
 		}
-		sysUserRoles = append(sysUserRoles, model.SysUserRole{
+		arr = append(arr, model.SysUserRole{
 			UserID: userId, RoleID: roleId,
 		})
 	}
 
-	return r.sysUserRoleRepository.BatchUserRole(sysUserRoles)
+	return r.sysUserRoleRepository.BatchInsert(arr)
 }
 
 // insertUserPost 新增用户岗位信息
@@ -84,17 +84,17 @@ func (r *SysUserService) insertUserPost(userId string, postIds []string) int64 {
 		return 0
 	}
 
-	var sysUserPosts []model.SysUserPost
+	var arr []model.SysUserPost
 	for _, postId := range postIds {
 		if postId == "" {
 			continue
 		}
-		sysUserPosts = append(sysUserPosts, model.SysUserPost{
+		arr = append(arr, model.SysUserPost{
 			UserID: userId, PostID: postId,
 		})
 	}
 
-	return r.sysUserPostRepository.BatchUserPost(sysUserPosts)
+	return r.sysUserPostRepository.BatchInsert(arr)
 }
 
 // Update 修改信息

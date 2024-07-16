@@ -16,29 +16,28 @@ import (
 	"github.com/gin-gonic/gin/binding"
 )
 
-// 实例化控制层 SysPostController 结构体
+// NewSysPost 实例化控制层
 var NewSysPost = &SysPostController{
-	sysPostService: service.NewSysPostImpl,
+	sysPostService: service.NewSysPost,
 }
 
-// 岗位信息
+// SysPostController 岗位信息
 //
 // PATH /system/post
 type SysPostController struct {
-	// 岗位服务
-	sysPostService service.ISysPost
+	sysPostService service.ISysPostService // 岗位服务
 }
 
-// 岗位列表
+// List 岗位列表
 //
 // GET /list
 func (s *SysPostController) List(c *gin.Context) {
-	querys := ctx.QueryMap(c)
-	data := s.sysPostService.SelectPostPage(querys)
+	query := ctx.QueryMap(c)
+	data := s.sysPostService.FindByPage(query)
 	c.JSON(200, result.Ok(data))
 }
 
-// 岗位信息
+// Info 岗位信息
 //
 // GET /:postId
 func (s *SysPostController) Info(c *gin.Context) {
@@ -47,7 +46,7 @@ func (s *SysPostController) Info(c *gin.Context) {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
-	data := s.sysPostService.SelectPostById(postId)
+	data := s.sysPostService.FindById(postId)
 	if data.PostID == postId {
 		c.JSON(200, result.OkData(data))
 		return
@@ -55,7 +54,7 @@ func (s *SysPostController) Info(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 岗位新增
+// Add 岗位新增
 //
 // POST /
 func (s *SysPostController) Add(c *gin.Context) {
@@ -67,15 +66,15 @@ func (s *SysPostController) Add(c *gin.Context) {
 	}
 
 	// 检查名称唯一
-	uniqueuPostName := s.sysPostService.CheckUniquePostName(body.PostName, "")
-	if !uniqueuPostName {
+	uniquePostName := s.sysPostService.CheckUniqueByName(body.PostName, "")
+	if !uniquePostName {
 		msg := fmt.Sprintf("岗位新增【%s】失败，岗位名称已存在", body.PostName)
 		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
 	// 检查编码属性值唯一
-	uniquePostCode := s.sysPostService.CheckUniquePostCode(body.PostCode, "")
+	uniquePostCode := s.sysPostService.CheckUniqueByCode(body.PostCode, "")
 	if !uniquePostCode {
 		msg := fmt.Sprintf("岗位新增【%s】失败，岗位编码已存在", body.PostCode)
 		c.JSON(200, result.ErrMsg(msg))
@@ -83,7 +82,7 @@ func (s *SysPostController) Add(c *gin.Context) {
 	}
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
-	insertId := s.sysPostService.InsertPost(body)
+	insertId := s.sysPostService.Insert(body)
 	if insertId != "" {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -91,7 +90,7 @@ func (s *SysPostController) Add(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 岗位修改
+// Edit 岗位修改
 //
 // PUT /
 func (s *SysPostController) Edit(c *gin.Context) {
@@ -103,22 +102,22 @@ func (s *SysPostController) Edit(c *gin.Context) {
 	}
 
 	// 检查是否存在
-	post := s.sysPostService.SelectPostById(body.PostID)
+	post := s.sysPostService.FindById(body.PostID)
 	if post.PostID != body.PostID {
 		c.JSON(200, result.ErrMsg("没有权限访问岗位数据！"))
 		return
 	}
 
 	// 检查名称唯一
-	uniqueuPostName := s.sysPostService.CheckUniquePostName(body.PostName, body.PostID)
-	if !uniqueuPostName {
+	uniquePostName := s.sysPostService.CheckUniqueByName(body.PostName, body.PostID)
+	if !uniquePostName {
 		msg := fmt.Sprintf("岗位修改【%s】失败，岗位名称已存在", body.PostName)
 		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
 	// 检查编码属性值唯一
-	uniquePostCode := s.sysPostService.CheckUniquePostCode(body.PostCode, body.PostID)
+	uniquePostCode := s.sysPostService.CheckUniqueByCode(body.PostCode, body.PostID)
 	if !uniquePostCode {
 		msg := fmt.Sprintf("岗位修改【%s】失败，岗位编码已存在", body.PostCode)
 		c.JSON(200, result.ErrMsg(msg))
@@ -126,7 +125,7 @@ func (s *SysPostController) Edit(c *gin.Context) {
 	}
 
 	body.UpdateBy = ctx.LoginUserToUserName(c)
-	rows := s.sysPostService.UpdatePost(body)
+	rows := s.sysPostService.Update(body)
 	if rows > 0 {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -134,7 +133,7 @@ func (s *SysPostController) Edit(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 岗位删除
+// Remove 岗位删除
 //
 // DELETE /:postIds
 func (s *SysPostController) Remove(c *gin.Context) {
@@ -150,7 +149,7 @@ func (s *SysPostController) Remove(c *gin.Context) {
 		c.JSON(200, result.Err(nil))
 		return
 	}
-	rows, err := s.sysPostService.DeletePostByIds(uniqueIDs)
+	rows, err := s.sysPostService.DeleteByIds(uniqueIDs)
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
@@ -159,13 +158,13 @@ func (s *SysPostController) Remove(c *gin.Context) {
 	c.JSON(200, result.OkMsg(msg))
 }
 
-// 导出岗位信息
+// Export 导出岗位信息
 //
 // POST /export
 func (s *SysPostController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	querys := ctx.BodyJSONMap(c)
-	data := s.sysPostService.SelectPostPage(querys)
+	query := ctx.BodyJSONMap(c)
+	data := s.sysPostService.FindByPage(query)
 	if data["total"].(int64) == 0 {
 		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return

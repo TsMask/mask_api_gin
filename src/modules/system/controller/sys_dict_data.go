@@ -16,32 +16,30 @@ import (
 	"github.com/gin-gonic/gin/binding"
 )
 
-// 实例化控制层 SysDictDataController 结构体
+// NewSysDictData 实例化控制层
 var NewSysDictData = &SysDictDataController{
-	sysDictDataService: service.NewSysDictDataImpl,
-	sysDictTypeService: service.NewSysDictTypeImpl,
+	sysDictDataService: service.NewSysDictData,
+	sysDictTypeService: service.NewSysDictType,
 }
 
-// 字典类型对应的字典数据信息
+// SysDictDataController 字典类型对应的字典数据信息 控制层处理
 //
 // PATH /system/dict/data
 type SysDictDataController struct {
-	// 字典数据服务
-	sysDictDataService service.ISysDictData
-	// 字典类型服务
-	sysDictTypeService service.ISysDictType
+	sysDictDataService service.ISysDictDataService // 字典数据服务
+	sysDictTypeService service.ISysDictTypeService // 字典类型服务
 }
 
-// 字典数据列表
+// List 字典数据列表
 //
 // GET /list
 func (s *SysDictDataController) List(c *gin.Context) {
-	querys := ctx.QueryMap(c)
-	data := s.sysDictDataService.SelectDictDataPage(querys)
+	query := ctx.QueryMap(c)
+	data := s.sysDictDataService.FindByPage(query)
 	c.JSON(200, result.Ok(data))
 }
 
-// 字典数据详情
+// Info 字典数据详情
 //
 // GET /:dictCode
 func (s *SysDictDataController) Info(c *gin.Context) {
@@ -50,7 +48,7 @@ func (s *SysDictDataController) Info(c *gin.Context) {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
-	data := s.sysDictDataService.SelectDictDataByCode(dictCode)
+	data := s.sysDictDataService.FindByCode(dictCode)
 	if data.DictCode == dictCode {
 		c.JSON(200, result.OkData(data))
 		return
@@ -58,7 +56,7 @@ func (s *SysDictDataController) Info(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 字典数据新增
+// Add 字典数据新增
 //
 // POST /
 func (s *SysDictDataController) Add(c *gin.Context) {
@@ -70,14 +68,14 @@ func (s *SysDictDataController) Add(c *gin.Context) {
 	}
 
 	// 检查字典类型是否存在
-	sysDictType := s.sysDictTypeService.SelectDictTypeByType(body.DictType)
+	sysDictType := s.sysDictTypeService.FindByType(body.DictType)
 	if sysDictType.DictType != body.DictType {
 		c.JSON(200, result.ErrMsg("没有权限访问字典类型数据！"))
 		return
 	}
 
 	// 检查字典标签唯一
-	uniqueDictLabel := s.sysDictDataService.CheckUniqueDictLabel(body.DictType, body.DictLabel, "")
+	uniqueDictLabel := s.sysDictDataService.CheckUniqueTypeByLabel(body.DictType, body.DictLabel, "")
 	if !uniqueDictLabel {
 		msg := fmt.Sprintf("数据新增【%s】失败，该字典类型下标签名已存在", body.DictLabel)
 		c.JSON(200, result.ErrMsg(msg))
@@ -85,7 +83,7 @@ func (s *SysDictDataController) Add(c *gin.Context) {
 	}
 
 	// 检查字典键值唯一
-	uniqueDictValue := s.sysDictDataService.CheckUniqueDictValue(body.DictType, body.DictValue, "")
+	uniqueDictValue := s.sysDictDataService.CheckUniqueTypeByValue(body.DictType, body.DictValue, "")
 	if !uniqueDictValue {
 		msg := fmt.Sprintf("数据新增【%s】失败，该字典类型下标签值已存在", body.DictValue)
 		c.JSON(200, result.ErrMsg(msg))
@@ -93,7 +91,7 @@ func (s *SysDictDataController) Add(c *gin.Context) {
 	}
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
-	insertId := s.sysDictDataService.InsertDictData(body)
+	insertId := s.sysDictDataService.Insert(body)
 	if insertId != "" {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -101,7 +99,7 @@ func (s *SysDictDataController) Add(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 字典类型修改
+// Edit 字典类型修改
 //
 // PUT /
 func (s *SysDictDataController) Edit(c *gin.Context) {
@@ -113,21 +111,21 @@ func (s *SysDictDataController) Edit(c *gin.Context) {
 	}
 
 	// 检查字典类型是否存在
-	sysDictType := s.sysDictTypeService.SelectDictTypeByType(body.DictType)
+	sysDictType := s.sysDictTypeService.FindByType(body.DictType)
 	if sysDictType.DictType != body.DictType {
 		c.JSON(200, result.ErrMsg("没有权限访问字典类型数据！"))
 		return
 	}
 
 	// 检查字典编码是否存在
-	SysDictDataController := s.sysDictDataService.SelectDictDataByCode(body.DictCode)
+	SysDictDataController := s.sysDictDataService.FindByCode(body.DictCode)
 	if SysDictDataController.DictCode != body.DictCode {
 		c.JSON(200, result.ErrMsg("没有权限访问字典编码数据！"))
 		return
 	}
 
 	// 检查字典标签唯一
-	uniqueDictLabel := s.sysDictDataService.CheckUniqueDictLabel(body.DictType, body.DictLabel, body.DictCode)
+	uniqueDictLabel := s.sysDictDataService.CheckUniqueTypeByLabel(body.DictType, body.DictLabel, body.DictCode)
 	if !uniqueDictLabel {
 		msg := fmt.Sprintf("数据修改【%s】失败，该字典类型下标签名已存在", body.DictLabel)
 		c.JSON(200, result.ErrMsg(msg))
@@ -135,7 +133,7 @@ func (s *SysDictDataController) Edit(c *gin.Context) {
 	}
 
 	// 检查字典键值唯一
-	uniqueDictValue := s.sysDictDataService.CheckUniqueDictValue(body.DictType, body.DictValue, body.DictCode)
+	uniqueDictValue := s.sysDictDataService.CheckUniqueTypeByValue(body.DictType, body.DictValue, body.DictCode)
 	if !uniqueDictValue {
 		msg := fmt.Sprintf("数据修改【%s】失败，该字典类型下标签值已存在", body.DictValue)
 		c.JSON(200, result.ErrMsg(msg))
@@ -143,7 +141,7 @@ func (s *SysDictDataController) Edit(c *gin.Context) {
 	}
 
 	body.UpdateBy = ctx.LoginUserToUserName(c)
-	rows := s.sysDictDataService.UpdateDictData(body)
+	rows := s.sysDictDataService.Update(body)
 	if rows > 0 {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -151,7 +149,7 @@ func (s *SysDictDataController) Edit(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 字典数据删除
+// Remove 字典数据删除
 //
 // DELETE /:dictCodes
 func (s *SysDictDataController) Remove(c *gin.Context) {
@@ -167,7 +165,7 @@ func (s *SysDictDataController) Remove(c *gin.Context) {
 		c.JSON(200, result.Err(nil))
 		return
 	}
-	rows, err := s.sysDictDataService.DeleteDictDataByCodes(uniqueIDs)
+	rows, err := s.sysDictDataService.DeleteByCodes(uniqueIDs)
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
@@ -176,7 +174,7 @@ func (s *SysDictDataController) Remove(c *gin.Context) {
 	c.JSON(200, result.OkMsg(msg))
 }
 
-// 字典数据列表（指定字典类型）
+// DictType 字典数据列表（指定字典类型）
 //
 // GET /type/:dictType
 func (s *SysDictDataController) DictType(c *gin.Context) {
@@ -186,18 +184,18 @@ func (s *SysDictDataController) DictType(c *gin.Context) {
 		return
 	}
 
-	data := s.sysDictDataService.SelectDictDataByType(dictType)
+	data := s.sysDictDataService.FindByType(dictType)
 	c.JSON(200, result.OkData(data))
 }
 
-// 字典数据列表导出
+// Export 字典数据列表导出
 //
 // POST /export
 func (s *SysDictDataController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	querys := ctx.BodyJSONMap(c)
-	data := s.sysDictDataService.SelectDictDataPage(querys)
-	if data["total"].(int64) == 0 {
+	query := ctx.BodyJSONMap(c)
+	data := s.sysDictDataService.FindByPage(query)
+	if parse.Number(data["total"]) == 0 {
 		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return
 	}

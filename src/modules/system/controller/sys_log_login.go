@@ -17,32 +17,30 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 实例化控制层 SysLogLoginController 结构体
+// NewSysLogLogin 实例化控制层
 var NewSysLogLogin = &SysLogLoginController{
-	sysLogLoginService: service.NewSysLogLoginImpl,
-	accountService:     commonService.NewAccountImpl,
+	sysLogLoginService: service.NewSysLogLogin,
+	accountService:     commonService.NewAccountService,
 }
 
-// 系统登录日志信息
+// SysLogLoginController 系统登录日志信息 控制层处理
 //
 // PATH /system/log/login
 type SysLogLoginController struct {
-	// 系统登录日志服务
-	sysLogLoginService service.ISysLogLogin
-	// 账号身份操作服务
-	accountService commonService.IAccount
+	sysLogLoginService service.ISysLogLoginService   // 系统登录日志服务
+	accountService     commonService.IAccountService // 账号身份操作服务
 }
 
-// 系统登录日志列表
+// List 系统登录日志列表
 //
 // GET /list
 func (s *SysLogLoginController) List(c *gin.Context) {
-	querys := ctx.QueryMap(c)
-	data := s.sysLogLoginService.SelectSysLogLoginPage(querys)
+	query := ctx.QueryMap(c)
+	data := s.sysLogLoginService.FindByPage(query)
 	c.JSON(200, result.Ok(data))
 }
 
-// 系统登录日志删除
+// Remove 系统登录日志删除
 //
 // DELETE /:infoIds
 func (s *SysLogLoginController) Remove(c *gin.Context) {
@@ -59,7 +57,7 @@ func (s *SysLogLoginController) Remove(c *gin.Context) {
 		c.JSON(200, result.Err(nil))
 		return
 	}
-	rows := s.sysLogLoginService.DeleteSysLogLoginByIds(uniqueIDs)
+	rows := s.sysLogLoginService.DeleteByIds(uniqueIDs)
 	if rows > 0 {
 		msg := fmt.Sprintf("删除成功：%d", rows)
 		c.JSON(200, result.OkMsg(msg))
@@ -68,11 +66,11 @@ func (s *SysLogLoginController) Remove(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 系统登录日志清空
+// Clean 系统登录日志清空
 //
 // DELETE /clean
 func (s *SysLogLoginController) Clean(c *gin.Context) {
-	err := s.sysLogLoginService.CleanSysLogLogin()
+	err := s.sysLogLoginService.Clean()
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
@@ -80,7 +78,7 @@ func (s *SysLogLoginController) Clean(c *gin.Context) {
 	c.JSON(200, result.Ok(nil))
 }
 
-// 系统登录日志账户解锁
+// Unlock 系统登录日志账户解锁
 //
 // PUT /unlock/:userName
 func (s *SysLogLoginController) Unlock(c *gin.Context) {
@@ -89,7 +87,7 @@ func (s *SysLogLoginController) Unlock(c *gin.Context) {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
-	ok := s.accountService.ClearLoginRecordCache(userName)
+	ok := s.accountService.CleanLoginRecordCache(userName)
 	if ok {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -97,13 +95,13 @@ func (s *SysLogLoginController) Unlock(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 导出系统登录日志信息
+// Export 导出系统登录日志信息
 //
 // POST /export
 func (s *SysLogLoginController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	querys := ctx.BodyJSONMap(c)
-	data := s.sysLogLoginService.SelectSysLogLoginPage(querys)
+	query := ctx.BodyJSONMap(c)
+	data := s.sysLogLoginService.FindByPage(query)
 	if data["total"].(int64) == 0 {
 		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return

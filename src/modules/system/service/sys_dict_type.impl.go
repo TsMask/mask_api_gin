@@ -53,7 +53,7 @@ func (r *SysDictTypeService) FindByType(dictType string) model.SysDictType {
 func (r *SysDictTypeService) Insert(sysDictType model.SysDictType) string {
 	insertId := r.sysDictTypeRepository.Insert(sysDictType)
 	if insertId != "" {
-		r.loadCache(sysDictType.DictType)
+		r.CacheLoad(sysDictType.DictType)
 	}
 	return insertId
 }
@@ -71,7 +71,7 @@ func (r *SysDictTypeService) Update(sysDictType model.SysDictType) int64 {
 		r.sysDictDataRepository.UpdateDataByDictType(oldDictType, sysDictType.DictType)
 	}
 	// 刷新缓存
-	r.loadCache(sysDictType.DictType)
+	r.CacheLoad(sysDictType.DictType)
 	return rows
 }
 
@@ -88,7 +88,7 @@ func (r *SysDictTypeService) DeleteByIds(dictIds []string) (int64, error) {
 			return 0, fmt.Errorf("【%s】存在字典数据,不能删除", v.DictName)
 		}
 		// 清除缓存
-		r.cleanCache(v.DictType)
+		r.CacheClean(v.DictType)
 	}
 	if len(arr) == len(dictIds) {
 		return r.sysDictTypeRepository.DeleteByIds(dictIds), nil
@@ -118,19 +118,13 @@ func (r *SysDictTypeService) CheckUniqueByType(dictType, dictId string) bool {
 	return uniqueId == ""
 }
 
-// ResetCache 重置字典缓存数据
-func (r *SysDictTypeService) ResetCache() {
-	r.cleanCache("*")
-	r.loadCache("*")
-}
-
 // getCacheKey 组装缓存key
 func (r *SysDictTypeService) getCacheKey(dictType string) string {
 	return constCacheKey.SysDictKey + dictType
 }
 
-// LoadingDictCache 加载字典缓存数据 传入*查询全部
-func (r *SysDictTypeService) loadCache(dictType string) {
+// CacheLoad 加载字典缓存数据 传入*查询全部
+func (r *SysDictTypeService) CacheLoad(dictType string) {
 	sysDictData := model.SysDictData{
 		DictType: dictType,
 		Status:   constCommon.StatusYes,
@@ -166,8 +160,8 @@ func (r *SysDictTypeService) loadCache(dictType string) {
 	}
 }
 
-// cleanCache 清空字典缓存数据
-func (r *SysDictTypeService) cleanCache(dictType string) bool {
+// CacheClean 清空字典缓存数据 传入*清除全部
+func (r *SysDictTypeService) CacheClean(dictType string) bool {
 	key := r.getCacheKey(dictType)
 	keys, err := redis.GetKeys("", key)
 	if err != nil {

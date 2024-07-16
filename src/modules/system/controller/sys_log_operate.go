@@ -16,46 +16,45 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 实例化控制层 SysLogOperateController 结构体
+// NewSysLogOperate 实例化控制层
 var NewSysLogOperate = &SysLogOperateController{
-	SysLogOperateService: service.NewSysLogOperateImpl,
+	SysLogOperateService: service.NewSysLogOperate,
 }
 
-// 操作日志记录信息
+// SysLogOperateController 操作日志记录信息
 //
 // PATH /system/log/operate
 type SysLogOperateController struct {
-	// 操作日志服务
-	SysLogOperateService service.ISysLogOperate
+	SysLogOperateService service.ISysLogOperateService // 操作日志服务
 }
 
-// 操作日志列表
+// List 操作日志列表
 //
 // GET /list
 func (s *SysLogOperateController) List(c *gin.Context) {
-	querys := ctx.QueryMap(c)
-	data := s.SysLogOperateService.SelectSysLogOperatePage(querys)
+	query := ctx.QueryMap(c)
+	data := s.SysLogOperateService.FindByPage(query)
 	c.JSON(200, result.Ok(data))
 }
 
-// 操作日志删除
+// Remove 操作日志删除
 //
-// DELETE /:operIds
+// DELETE /:operaIds
 func (s *SysLogOperateController) Remove(c *gin.Context) {
-	operIds := c.Param("operIds")
-	if operIds == "" {
+	operaIds := c.Param("operaIds")
+	if operaIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
 	// 处理字符转id数组后去重
-	ids := strings.Split(operIds, ",")
+	ids := strings.Split(operaIds, ",")
 	uniqueIDs := parse.RemoveDuplicates(ids)
 	if len(uniqueIDs) <= 0 {
 		c.JSON(200, result.Err(nil))
 		return
 	}
-	rows := s.SysLogOperateService.DeleteSysLogOperateByIds(uniqueIDs)
+	rows := s.SysLogOperateService.DeleteById(uniqueIDs)
 	if rows > 0 {
 		msg := fmt.Sprintf("删除成功：%d", rows)
 		c.JSON(200, result.OkMsg(msg))
@@ -64,11 +63,11 @@ func (s *SysLogOperateController) Remove(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 操作日志清空
+// Clean 操作日志清空
 //
 // DELETE /clean
 func (s *SysLogOperateController) Clean(c *gin.Context) {
-	err := s.SysLogOperateService.CleanSysLogOperate()
+	err := s.SysLogOperateService.Clean()
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
@@ -76,13 +75,13 @@ func (s *SysLogOperateController) Clean(c *gin.Context) {
 	c.JSON(200, result.Ok(nil))
 }
 
-// 导出操作日志
+// Export 导出操作日志
 //
 // POST /export
 func (s *SysLogOperateController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	querys := ctx.BodyJSONMap(c)
-	data := s.SysLogOperateService.SelectSysLogOperatePage(querys)
+	query := ctx.BodyJSONMap(c)
+	data := s.SysLogOperateService.FindByPage(query)
 	if data["total"].(int64) == 0 {
 		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return
@@ -124,22 +123,22 @@ func (s *SysLogOperateController) Export(c *gin.Context) {
 			statusValue = "成功"
 		}
 		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.OperID,
+			"A" + idx: row.OperaID,
 			"B" + idx: row.Title,
 			"C" + idx: businessType,
 			"D" + idx: row.Method,
 			"E" + idx: row.RequestMethod,
 			"F" + idx: operatorType,
-			"G" + idx: row.OperName,
+			"G" + idx: row.OperaName,
 			"H" + idx: row.DeptName,
-			"I" + idx: row.OperURL,
-			"J" + idx: row.OperIP,
-			"K" + idx: row.OperLocation,
-			"L" + idx: row.OperParam,
-			"M" + idx: row.OperMsg,
+			"I" + idx: row.OperaURL,
+			"J" + idx: row.OperaIP,
+			"K" + idx: row.OperaLocation,
+			"L" + idx: row.OperaParam,
+			"M" + idx: row.OperaMsg,
 			"N" + idx: statusValue,
 			"O" + idx: row.CostTime,
-			"P" + idx: date.ParseDateToStr(row.OperTime, date.YYYY_MM_DD_HH_MM_SS),
+			"P" + idx: date.ParseDateToStr(row.OperaTime, date.YYYY_MM_DD_HH_MM_SS),
 		})
 	}
 

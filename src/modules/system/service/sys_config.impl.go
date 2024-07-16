@@ -38,7 +38,7 @@ func (r *SysConfigService) FindById(configId string) model.SysConfig {
 // Insert 新增信息
 func (r *SysConfigService) Insert(sysConfig model.SysConfig) string {
 	if configId := r.sysConfigRepository.Insert(sysConfig); configId != "" {
-		r.loadCache(sysConfig.ConfigKey)
+		r.CacheLoad(sysConfig.ConfigKey)
 	}
 	return ""
 }
@@ -46,7 +46,7 @@ func (r *SysConfigService) Insert(sysConfig model.SysConfig) string {
 // Update 修改信息
 func (r *SysConfigService) Update(sysConfig model.SysConfig) int64 {
 	if rows := r.sysConfigRepository.Update(sysConfig); rows > 0 {
-		r.loadCache(sysConfig.ConfigKey)
+		r.CacheLoad(sysConfig.ConfigKey)
 	}
 	return 0
 }
@@ -64,7 +64,7 @@ func (r *SysConfigService) DeleteByIds(configIds []string) (int64, error) {
 			return 0, fmt.Errorf("%s 配置参数属于内置参数，禁止删除！", config.ConfigID)
 		}
 		// 清除缓存
-		r.cleanCache(config.ConfigKey)
+		r.CacheClean(config.ConfigKey)
 	}
 	if len(configs) == len(configIds) {
 		return r.sysConfigRepository.DeleteByIds(configIds), nil
@@ -98,19 +98,13 @@ func (r *SysConfigService) CheckUniqueByKey(configKey, configId string) bool {
 	return uniqueId == ""
 }
 
-// ResetCache 重置缓存数据
-func (r *SysConfigService) ResetCache() {
-	r.cleanCache("*")
-	r.loadCache("*")
-}
-
 // getCacheKey 组装缓存key
 func (r *SysConfigService) getCacheKey(configKey string) string {
 	return constCacheKey.SysConfigKey + configKey
 }
 
-// loadConfigCache 加载参数缓存数据 传入*查询全部
-func (r *SysConfigService) loadCache(configKey string) {
+// CacheLoad 加载参数缓存数据 传入*查询全部
+func (r *SysConfigService) CacheLoad(configKey string) {
 	// 查询全部参数
 	if configKey == "*" || configKey == "" {
 		sysConfigs := r.sysConfigRepository.Select(model.SysConfig{})
@@ -131,8 +125,8 @@ func (r *SysConfigService) loadCache(configKey string) {
 	return
 }
 
-// cleanConfigCache 清空参数缓存数据 传入*清除全部
-func (r *SysConfigService) cleanCache(configKey string) bool {
+// CacheClean 清空参数缓存数据 传入*清除全部
+func (r *SysConfigService) CacheClean(configKey string) bool {
 	key := r.getCacheKey(configKey)
 	keys, err := redis.GetKeys("", key)
 	if err != nil {

@@ -42,14 +42,14 @@ func (r *SysDictDataService) FindByCode(dictCode string) model.SysDictData {
 
 // FindByType 根据字典类型查询信息
 func (r *SysDictDataService) FindByType(dictType string) []model.SysDictData {
-	return r.sysDictTypeService.DictDataCache(dictType)
+	return r.sysDictTypeService.FindDataByType(dictType)
 }
 
 // Insert 新增信息
 func (r *SysDictDataService) Insert(sysDictData model.SysDictData) string {
 	insertId := r.sysDictDataRepository.Insert(sysDictData)
 	if insertId != "" {
-		r.sysDictTypeService.LoadingDictCache(sysDictData.DictType)
+		r.sysDictTypeService.CacheLoad(sysDictData.DictType)
 	}
 	return insertId
 }
@@ -58,7 +58,7 @@ func (r *SysDictDataService) Insert(sysDictData model.SysDictData) string {
 func (r *SysDictDataService) Update(sysDictData model.SysDictData) int64 {
 	rows := r.sysDictDataRepository.Update(sysDictData)
 	if rows > 0 {
-		r.sysDictTypeService.LoadingDictCache(sysDictData.DictType)
+		r.sysDictTypeService.CacheLoad(sysDictData.DictType)
 	}
 	return rows
 }
@@ -73,8 +73,8 @@ func (r *SysDictDataService) DeleteByCodes(dictCodes []string) (int64, error) {
 	if len(arr) == len(dictCodes) {
 		for _, v := range arr {
 			// 刷新缓存
-			r.sysDictTypeService.CleanDictCache(v.DictType)
-			r.sysDictTypeService.LoadingDictCache(v.DictType)
+			r.sysDictTypeService.CacheClean(v.DictType)
+			r.sysDictTypeService.CacheLoad(v.DictType)
 		}
 		rows := r.sysDictDataRepository.DeleteByCodes(dictCodes)
 		return rows, nil

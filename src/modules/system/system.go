@@ -458,7 +458,9 @@ func Setup(router *gin.Engine) {
 // InitLoad 初始参数
 func InitLoad() {
 	// 启动时，刷新缓存-参数配置
-	service.NewSysConfigImpl.ResetConfigCache()
+	service.NewSysConfig.CacheClean("*")
+	service.NewSysConfig.CacheLoad("*")
 	// 启动时，刷新缓存-字典类型数据
-	service.NewSysDictTypeImpl.ResetDictCache()
+	service.NewSysDictType.CacheClean("*")
+	service.NewSysDictType.CacheLoad("*")
 }

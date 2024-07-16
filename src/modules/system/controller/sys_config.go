@@ -16,29 +16,28 @@ import (
 	"github.com/gin-gonic/gin/binding"
 )
 
-// 实例化控制层 SysConfigController 结构体
+// NewSysConfig 实例化控制层
 var NewSysConfig = &SysConfigController{
-	sysConfigService: service.NewSysConfigImpl,
+	sysConfigService: service.NewSysConfig,
 }
 
-// 参数配置信息
+// SysConfigController 参数配置信息 控制层处理
 //
 // PATH /system/config
 type SysConfigController struct {
-	// 参数配置服务
-	sysConfigService service.ISysConfig
+	sysConfigService service.ISysConfigService // 参数配置服务
 }
 
-// 参数配置列表
+// List 参数配置列表
 //
 // GET /list
 func (s *SysConfigController) List(c *gin.Context) {
-	querys := ctx.QueryMap(c)
-	data := s.sysConfigService.SelectConfigPage(querys)
+	query := ctx.QueryMap(c)
+	data := s.sysConfigService.FindByPage(query)
 	c.JSON(200, result.Ok(data))
 }
 
-// 参数配置信息
+// Info 参数配置信息
 //
 // GET /:configId
 func (s *SysConfigController) Info(c *gin.Context) {
@@ -47,7 +46,7 @@ func (s *SysConfigController) Info(c *gin.Context) {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
-	data := s.sysConfigService.SelectConfigById(configId)
+	data := s.sysConfigService.FindById(configId)
 	if data.ConfigID == configId {
 		c.JSON(200, result.OkData(data))
 		return
@@ -55,7 +54,7 @@ func (s *SysConfigController) Info(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 参数配置新增
+// Add 参数配置新增
 //
 // POST /
 func (s *SysConfigController) Add(c *gin.Context) {
@@ -67,7 +66,7 @@ func (s *SysConfigController) Add(c *gin.Context) {
 	}
 
 	// 检查属性值唯一
-	uniqueConfigKey := s.sysConfigService.CheckUniqueConfigKey(body.ConfigKey, "")
+	uniqueConfigKey := s.sysConfigService.CheckUniqueByKey(body.ConfigKey, "")
 	if !uniqueConfigKey {
 		msg := fmt.Sprintf("参数配置新增【%s】失败，参数键名已存在", body.ConfigKey)
 		c.JSON(200, result.ErrMsg(msg))
@@ -75,7 +74,7 @@ func (s *SysConfigController) Add(c *gin.Context) {
 	}
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
-	insertId := s.sysConfigService.InsertConfig(body)
+	insertId := s.sysConfigService.Insert(body)
 	if insertId != "" {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -83,7 +82,7 @@ func (s *SysConfigController) Add(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 参数配置修改
+// Edit 参数配置修改
 //
 // PUT /
 func (s *SysConfigController) Edit(c *gin.Context) {
@@ -95,14 +94,14 @@ func (s *SysConfigController) Edit(c *gin.Context) {
 	}
 
 	// 检查是否存在
-	config := s.sysConfigService.SelectConfigById(body.ConfigID)
+	config := s.sysConfigService.FindById(body.ConfigID)
 	if config.ConfigID != body.ConfigID {
 		c.JSON(200, result.ErrMsg("没有权限访问参数配置数据！"))
 		return
 	}
 
 	// 检查属性值唯一
-	uniqueConfigKey := s.sysConfigService.CheckUniqueConfigKey(body.ConfigKey, body.ConfigID)
+	uniqueConfigKey := s.sysConfigService.CheckUniqueByKey(body.ConfigKey, body.ConfigID)
 	if !uniqueConfigKey {
 		msg := fmt.Sprintf("参数配置修改【%s】失败，参数键名已存在", body.ConfigKey)
 		c.JSON(200, result.ErrMsg(msg))
@@ -110,7 +109,7 @@ func (s *SysConfigController) Edit(c *gin.Context) {
 	}
 
 	body.UpdateBy = ctx.LoginUserToUserName(c)
-	rows := s.sysConfigService.UpdateConfig(body)
+	rows := s.sysConfigService.Update(body)
 	if rows > 0 {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -118,7 +117,7 @@ func (s *SysConfigController) Edit(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 参数配置删除
+// Remove 参数配置删除
 //
 // DELETE /:configIds
 func (s *SysConfigController) Remove(c *gin.Context) {
@@ -134,7 +133,7 @@ func (s *SysConfigController) Remove(c *gin.Context) {
 		c.JSON(200, result.Err(nil))
 		return
 	}
-	rows, err := s.sysConfigService.DeleteConfigByIds(uniqueIDs)
+	rows, err := s.sysConfigService.DeleteByIds(uniqueIDs)
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
@@ -143,15 +142,16 @@ func (s *SysConfigController) Remove(c *gin.Context) {
 	c.JSON(200, result.OkMsg(msg))
 }
 
-// 参数配置刷新缓存
+// RefreshCache 参数配置刷新缓存
 //
 // PUT /refreshCache
 func (s *SysConfigController) RefreshCache(c *gin.Context) {
-	s.sysConfigService.ResetConfigCache()
+	s.sysConfigService.CacheClean("*")
+	s.sysConfigService.CacheLoad("*")
 	c.JSON(200, result.Ok(nil))
 }
 
-// 参数配置根据参数键名
+// ConfigKey 参数配置根据参数键名
 //
 // GET /configKey/:configKey
 func (s *SysConfigController) ConfigKey(c *gin.Context) {
@@ -160,7 +160,7 @@ func (s *SysConfigController) ConfigKey(c *gin.Context) {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
-	key := s.sysConfigService.SelectConfigValueByKey(configKey)
+	key := s.sysConfigService.FindValueByKey(configKey)
 	if key != "" {
 		c.JSON(200, result.OkData(key))
 		return
@@ -168,13 +168,13 @@ func (s *SysConfigController) ConfigKey(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 导出参数配置信息
+// Export 导出参数配置信息
 //
 // POST /export
 func (s *SysConfigController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	querys := ctx.BodyJSONMap(c)
-	data := s.sysConfigService.SelectConfigPage(querys)
+	query := ctx.BodyJSONMap(c)
+	data := s.sysConfigService.FindByPage(query)
 	if data["total"].(int64) == 0 {
 		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return

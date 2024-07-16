@@ -13,29 +13,28 @@ import (
 	"github.com/gin-gonic/gin/binding"
 )
 
-// 实例化控制层 SysNoticeController 结构体
+// NewSysNotice 实例化控制层
 var NewSysNotice = &SysNoticeController{
-	sysNoticeService: service.NewSysNoticeImpl,
+	sysNoticeService: service.NewSysNotice,
 }
 
-// 通知公告信息
+// SysNoticeController 通知公告信息
 //
 // PATH /system/notice
 type SysNoticeController struct {
-	// 公告服务
-	sysNoticeService service.ISysNotice
+	sysNoticeService service.ISysNoticeService // 公告服务
 }
 
-// 通知公告列表
+// List 通知公告列表
 //
 // GET /list
 func (s *SysNoticeController) List(c *gin.Context) {
-	querys := ctx.QueryMap(c)
-	data := s.sysNoticeService.SelectNoticePage(querys)
+	query := ctx.QueryMap(c)
+	data := s.sysNoticeService.FindByPage(query)
 	c.JSON(200, result.Ok(data))
 }
 
-// 通知公告信息
+// Info 通知公告信息
 //
 // GET /:noticeId
 func (s *SysNoticeController) Info(c *gin.Context) {
@@ -44,7 +43,7 @@ func (s *SysNoticeController) Info(c *gin.Context) {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
-	data := s.sysNoticeService.SelectNoticeById(noticeId)
+	data := s.sysNoticeService.FindById(noticeId)
 	if data.NoticeID == noticeId {
 		c.JSON(200, result.OkData(data))
 		return
@@ -52,7 +51,7 @@ func (s *SysNoticeController) Info(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 通知公告新增
+// Add 通知公告新增
 //
 // POST /
 func (s *SysNoticeController) Add(c *gin.Context) {
@@ -64,7 +63,7 @@ func (s *SysNoticeController) Add(c *gin.Context) {
 	}
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
-	insertId := s.sysNoticeService.InsertNotice(body)
+	insertId := s.sysNoticeService.Insert(body)
 	if insertId != "" {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -72,7 +71,7 @@ func (s *SysNoticeController) Add(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 通知公告修改
+// Edit 通知公告修改
 //
 // PUT /
 func (s *SysNoticeController) Edit(c *gin.Context) {
@@ -84,14 +83,14 @@ func (s *SysNoticeController) Edit(c *gin.Context) {
 	}
 
 	// 检查是否存在
-	notice := s.sysNoticeService.SelectNoticeById(body.NoticeID)
+	notice := s.sysNoticeService.FindById(body.NoticeID)
 	if notice.NoticeID != body.NoticeID {
 		c.JSON(200, result.ErrMsg("没有权限访问公告信息数据！"))
 		return
 	}
 
 	body.UpdateBy = ctx.LoginUserToUserName(c)
-	rows := s.sysNoticeService.UpdateNotice(body)
+	rows := s.sysNoticeService.Update(body)
 	if rows > 0 {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -99,7 +98,7 @@ func (s *SysNoticeController) Edit(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 通知公告删除
+// Remove 通知公告删除
 //
 // DELETE /:noticeIds
 func (s *SysNoticeController) Remove(c *gin.Context) {
@@ -115,7 +114,7 @@ func (s *SysNoticeController) Remove(c *gin.Context) {
 		c.JSON(200, result.Err(nil))
 		return
 	}
-	rows, err := s.sysNoticeService.DeleteNoticeByIds(uniqueIDs)
+	rows, err := s.sysNoticeService.DeleteByIds(uniqueIDs)
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return

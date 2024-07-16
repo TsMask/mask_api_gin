@@ -3,7 +3,7 @@ package controller
 import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/constants/uploadsubpath"
+	constUploadSubPath "mask_api_gin/src/framework/constants/upload_sub_path"
 	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/file"
@@ -17,29 +17,25 @@ import (
 	"github.com/gin-gonic/gin/binding"
 )
 
-// 实例化控制层 SysProfileController 结构体
+// NewSysProfile 实例化控制层
 var NewSysProfile = &SysProfileController{
-	sysUserService: service.NewSysUserImpl,
-	sysRoleService: service.NewSysRoleImpl,
-	sysPostService: service.NewSysPostImpl,
-	sysMenuService: service.NewSysMenuImpl,
+	sysUserService: service.NewSysUser,
+	sysRoleService: service.NewSysRole,
+	sysPostService: service.NewSysPost,
+	sysMenuService: service.NewSysMenu,
 }
 
-// 个人信息
+// SysProfileController 个人信息
 //
 // PATH /system/user/profile
 type SysProfileController struct {
-	// 用户服务
-	sysUserService service.ISysUser
-	// 角色服务
-	sysRoleService service.ISysRole
-	// 岗位服务
-	sysPostService service.ISysPost
-	// 菜单服务
-	sysMenuService service.ISysMenu
+	sysUserService service.ISysUserService // 用户服务
+	sysRoleService service.ISysRoleService // 角色服务
+	sysPostService service.ISysPostService // 岗位服务
+	sysMenuService service.ISysMenuService // 菜单服务
 }
 
-// 个人信息
+// Info 个人信息
 //
 // GET /
 func (s *SysProfileController) Info(c *gin.Context) {
@@ -50,8 +46,8 @@ func (s *SysProfileController) Info(c *gin.Context) {
 	}
 
 	// 查询用户所属角色组
-	roleGroup := []string{}
-	roles := s.sysRoleService.SelectRoleListByUserId(loginUser.UserID)
+	var roleGroup []string
+	roles := s.sysRoleService.FindByUserId(loginUser.UserID)
 	for _, role := range roles {
 		roleGroup = append(roleGroup, role.RoleName)
 	}
@@ -61,8 +57,8 @@ func (s *SysProfileController) Info(c *gin.Context) {
 	}
 
 	// 查询用户所属岗位组
-	postGroup := []string{}
-	posts := s.sysPostService.SelectPostListByUserId(loginUser.UserID)
+	var postGroup []string
+	posts := s.sysPostService.FindByUserId(loginUser.UserID)
 	for _, post := range posts {
 		postGroup = append(postGroup, post.PostName)
 	}
@@ -74,7 +70,7 @@ func (s *SysProfileController) Info(c *gin.Context) {
 	}))
 }
 
-// 个人信息修改
+// UpdateProfile 个人信息修改
 //
 // PUT /
 func (s *SysProfileController) UpdateProfile(c *gin.Context) {
@@ -101,7 +97,7 @@ func (s *SysProfileController) UpdateProfile(c *gin.Context) {
 	// 检查手机号码格式并判断是否唯一
 	if body.PhoneNumber != "" {
 		if regular.ValidMobile(body.PhoneNumber) {
-			uniquePhone := s.sysUserService.CheckUniquePhone(body.PhoneNumber, userId)
+			uniquePhone := s.sysUserService.CheckUniqueByPhone(body.PhoneNumber, userId)
 			if !uniquePhone {
 				msg := fmt.Sprintf("修改用户【%s】失败，手机号码已存在", userName)
 				c.JSON(200, result.ErrMsg(msg))
@@ -117,7 +113,7 @@ func (s *SysProfileController) UpdateProfile(c *gin.Context) {
 	// 检查邮箱格式并判断是否唯一
 	if body.Email != "" {
 		if regular.ValidEmail(body.Email) {
-			uniqueEmail := s.sysUserService.CheckUniqueEmail(body.Email, userId)
+			uniqueEmail := s.sysUserService.CheckUniqueByEmail(body.Email, userId)
 			if !uniqueEmail {
 				msg := fmt.Sprintf("修改用户【%s】失败，邮箱已存在", userName)
 				c.JSON(200, result.ErrMsg(msg))
@@ -131,7 +127,7 @@ func (s *SysProfileController) UpdateProfile(c *gin.Context) {
 	}
 
 	// 查询当前登录用户信息
-	user := s.sysUserService.SelectUserById(userId)
+	user := s.sysUserService.FindById(userId)
 	if user.UserID != userId {
 		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
 		return
@@ -140,10 +136,10 @@ func (s *SysProfileController) UpdateProfile(c *gin.Context) {
 	// 用户基本资料
 	user.UpdateBy = userName
 	user.NickName = body.NickName
-	user.PhoneNumber = body.PhoneNumber
+	user.Phone = body.PhoneNumber
 	user.Email = body.Email
 	user.Sex = body.Sex
-	rows := s.sysUserService.UpdateUser(user)
+	rows := s.sysUserService.Update(user)
 	if rows > 0 {
 		// 更新缓存用户信息
 		loginUser.User = user
@@ -156,18 +152,15 @@ func (s *SysProfileController) UpdateProfile(c *gin.Context) {
 	c.JSON(200, result.ErrMsg("上传图片异常"))
 }
 
-// 个人重置密码
+// UpdatePwd 个人重置密码
 //
 // PUT /updatePwd
 func (s *SysProfileController) UpdatePwd(c *gin.Context) {
 	var body struct {
-		// 旧密码
-		OldPassword string `json:"oldPassword" binding:"required"`
-		// 新密码
-		NewPassword string `json:"newPassword" binding:"required"`
+		OldPassword string `json:"oldPassword" binding:"required"` // 旧密码
+		NewPassword string `json:"newPassword" binding:"required"` // 新密码
 	}
-	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil {
+	if err := c.ShouldBindBodyWith(&body, binding.JSON); err != nil {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
@@ -182,7 +175,7 @@ func (s *SysProfileController) UpdatePwd(c *gin.Context) {
 	userName := loginUser.User.UserName
 
 	// 查询当前登录用户信息得到密码值
-	user := s.sysUserService.SelectUserById(userId)
+	user := s.sysUserService.FindById(userId)
 	if user.UserID != userId {
 		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
 		return
@@ -203,7 +196,7 @@ func (s *SysProfileController) UpdatePwd(c *gin.Context) {
 	// 修改新密码
 	user.UpdateBy = userName
 	user.Password = body.NewPassword
-	rows := s.sysUserService.UpdateUser(user)
+	rows := s.sysUserService.Update(user)
 	if rows > 0 {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -211,7 +204,7 @@ func (s *SysProfileController) UpdatePwd(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 个人头像上传
+// Avatar 个人头像上传
 //
 // POST /avatar
 func (s *SysProfileController) Avatar(c *gin.Context) {
@@ -222,7 +215,7 @@ func (s *SysProfileController) Avatar(c *gin.Context) {
 	}
 
 	// 上传文件转存
-	filePath, err := file.TransferUploadFile(formFile, uploadsubpath.AVATART, []string{".jpg", ".jpeg", ".png"})
+	filePath, err := file.TransferUploadFile(formFile, constUploadSubPath.Avatar, []string{".jpg", ".jpeg", ".png"})
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
@@ -238,7 +231,7 @@ func (s *SysProfileController) Avatar(c *gin.Context) {
 	userName := loginUser.User.UserName
 
 	// 查询当前登录用户信息
-	user := s.sysUserService.SelectUserById(userId)
+	user := s.sysUserService.FindById(userId)
 	if user.UserID != userId {
 		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
 		return
@@ -247,7 +240,7 @@ func (s *SysProfileController) Avatar(c *gin.Context) {
 	// 更新头像地址
 	user.Avatar = filePath
 	user.UpdateBy = userName
-	rows := s.sysUserService.UpdateUser(user)
+	rows := s.sysUserService.Update(user)
 	if rows > 0 {
 		// 更新缓存用户信息
 		loginUser.User = user

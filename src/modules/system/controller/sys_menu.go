@@ -3,8 +3,8 @@ package controller
 import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/constants/common"
-	"mask_api_gin/src/framework/constants/menu"
+	constCommon "mask_api_gin/src/framework/constants/common"
+	constMenu "mask_api_gin/src/framework/constants/menu"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/framework/vo/result"
@@ -15,20 +15,19 @@ import (
 	"github.com/gin-gonic/gin/binding"
 )
 
-// 实例化控制层 SysMenuController 结构体
+// NewSysMenu 实例化控制层
 var NewSysMenu = &SysMenuController{
-	sysMenuService: service.NewSysMenuImpl,
+	sysMenuService: service.NewSysMenu,
 }
 
-// 菜单信息
+// SysMenuController 菜单信息
 //
 // PATH /system/menu
 type SysMenuController struct {
-	// 菜单服务
-	sysMenuService service.ISysMenu
+	sysMenuService service.ISysMenuService // 菜单服务
 }
 
-// 菜单列表
+// List 菜单列表
 //
 // GET /list
 func (s *SysMenuController) List(c *gin.Context) {
@@ -44,11 +43,11 @@ func (s *SysMenuController) List(c *gin.Context) {
 	if config.IsAdmin(userId) {
 		userId = "*"
 	}
-	data := s.sysMenuService.SelectMenuList(query, userId)
+	data := s.sysMenuService.Find(query, userId)
 	c.JSON(200, result.OkData(data))
 }
 
-// 菜单信息
+// Info 菜单信息
 //
 // GET /:menuId
 func (s *SysMenuController) Info(c *gin.Context) {
@@ -57,7 +56,7 @@ func (s *SysMenuController) Info(c *gin.Context) {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
-	data := s.sysMenuService.SelectMenuById(menuId)
+	data := s.sysMenuService.FindById(menuId)
 	if data.MenuID == menuId {
 		c.JSON(200, result.OkData(data))
 		return
@@ -65,7 +64,7 @@ func (s *SysMenuController) Info(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 菜单新增
+// Add 菜单新增
 //
 // POST /
 func (s *SysMenuController) Add(c *gin.Context) {
@@ -77,9 +76,9 @@ func (s *SysMenuController) Add(c *gin.Context) {
 	}
 
 	// 目录和菜单检查地址唯一
-	if menu.TYPE_DIR == body.MenuType || menu.TYPE_MENU == body.MenuType {
-		uniqueNenuPath := s.sysMenuService.CheckUniqueMenuPath(body.Path, body.ParentID, "")
-		if !uniqueNenuPath {
+	if constMenu.TypeDir == body.MenuType || constMenu.TypeMenu == body.MenuType {
+		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentID, body.Path, "")
+		if !uniqueMenuPath {
 			msg := fmt.Sprintf("菜单新增【%s】失败，菜单路由地址已存在", body.MenuName)
 			c.JSON(200, result.ErrMsg(msg))
 			return
@@ -87,22 +86,22 @@ func (s *SysMenuController) Add(c *gin.Context) {
 	}
 
 	// 检查名称唯一
-	uniqueNenuName := s.sysMenuService.CheckUniqueMenuName(body.MenuName, body.ParentID, "")
-	if !uniqueNenuName {
+	uniqueMenuName := s.sysMenuService.CheckUniqueParentIdByMenuName(body.ParentID, body.MenuName, "")
+	if !uniqueMenuName {
 		msg := fmt.Sprintf("菜单新增【%s】失败，菜单名称已存在", body.MenuName)
 		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
 	// 外链菜单需要符合网站http(s)开头
-	if body.IsFrame == common.STATUS_NO && !regular.ValidHttp(body.Path) {
+	if body.IsFrame == constCommon.StatusNo && !regular.ValidHttp(body.Path) {
 		msg := fmt.Sprintf("菜单新增【%s】失败，非内部地址必须以http(s)://开头", body.MenuName)
 		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
-	insertId := s.sysMenuService.InsertMenu(body)
+	insertId := s.sysMenuService.Insert(body)
 	if insertId != "" {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -110,7 +109,7 @@ func (s *SysMenuController) Add(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 菜单修改
+// Edit 菜单修改
 //
 // PUT /
 func (s *SysMenuController) Edit(c *gin.Context) {
@@ -129,29 +128,29 @@ func (s *SysMenuController) Edit(c *gin.Context) {
 	}
 
 	// 检查数据是否存在
-	menuInfo := s.sysMenuService.SelectMenuById(body.MenuID)
+	menuInfo := s.sysMenuService.FindById(body.MenuID)
 	if menuInfo.MenuID != body.MenuID {
 		c.JSON(200, result.ErrMsg("没有权限访问菜单数据"))
 		return
 	}
 	// 父级ID不为0是要检查
 	if body.ParentID != "0" {
-		menuParent := s.sysMenuService.SelectMenuById(body.ParentID)
+		menuParent := s.sysMenuService.FindById(body.ParentID)
 		if menuParent.MenuID != body.ParentID {
 			c.JSON(200, result.ErrMsg("没有权限访问菜单数据"))
 			return
 		}
 		// 禁用菜单时检查父菜单是否使用
-		if body.Status == common.STATUS_YES && menuParent.Status == common.STATUS_NO {
+		if body.Status == constCommon.StatusYes && menuParent.Status == constCommon.StatusNo {
 			c.JSON(200, result.ErrMsg("上级菜单未启用！"))
 			return
 		}
 	}
 
 	// 目录和菜单检查地址唯一
-	if menu.TYPE_DIR == body.MenuType || menu.TYPE_MENU == body.MenuType {
-		uniqueNenuPath := s.sysMenuService.CheckUniqueMenuPath(body.Path, body.ParentID, body.MenuID)
-		if !uniqueNenuPath {
+	if constMenu.TypeDir == body.MenuType || constMenu.TypeMenu == body.MenuType {
+		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentID, body.Path, body.MenuID)
+		if !uniqueMenuPath {
 			msg := fmt.Sprintf("菜单修改【%s】失败，菜单路由地址已存在", body.MenuName)
 			c.JSON(200, result.ErrMsg(msg))
 			return
@@ -159,23 +158,23 @@ func (s *SysMenuController) Edit(c *gin.Context) {
 	}
 
 	// 检查名称唯一
-	uniqueNenuName := s.sysMenuService.CheckUniqueMenuName(body.MenuName, body.ParentID, body.MenuID)
-	if !uniqueNenuName {
+	uniqueMenuName := s.sysMenuService.CheckUniqueParentIdByMenuName(body.ParentID, body.MenuName, body.MenuID)
+	if !uniqueMenuName {
 		msg := fmt.Sprintf("菜单修改【%s】失败，菜单名称已存在", body.MenuName)
 		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
 	// 外链菜单需要符合网站http(s)开头
-	if body.IsFrame == common.STATUS_NO && !regular.ValidHttp(body.Path) {
+	if body.IsFrame == constCommon.StatusNo && !regular.ValidHttp(body.Path) {
 		msg := fmt.Sprintf("菜单修改【%s】失败，非内部地址必须以http(s)://开头", body.MenuName)
 		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
 	// 禁用菜单时检查子菜单是否使用
-	if body.Status == common.STATUS_NO {
-		hasStatus := s.sysMenuService.HasChildByMenuIdAndStatus(body.MenuID, common.STATUS_YES)
+	if body.Status == constCommon.StatusNo {
+		hasStatus := s.sysMenuService.ExistChildrenByMenuIdAndStatus(body.MenuID, constCommon.StatusYes)
 		if hasStatus > 0 {
 			msg := fmt.Sprintf("不允许禁用，存在使用子菜单数：%d", hasStatus)
 			c.JSON(200, result.ErrMsg(msg))
@@ -184,7 +183,7 @@ func (s *SysMenuController) Edit(c *gin.Context) {
 	}
 
 	body.UpdateBy = ctx.LoginUserToUserName(c)
-	rows := s.sysMenuService.UpdateMenu(body)
+	rows := s.sysMenuService.Update(body)
 	if rows > 0 {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -192,7 +191,7 @@ func (s *SysMenuController) Edit(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 菜单删除
+// Remove 菜单删除
 //
 // DELETE /:menuId
 func (s *SysMenuController) Remove(c *gin.Context) {
@@ -203,14 +202,14 @@ func (s *SysMenuController) Remove(c *gin.Context) {
 	}
 
 	// 检查数据是否存在
-	menu := s.sysMenuService.SelectMenuById(menuId)
+	menu := s.sysMenuService.FindById(menuId)
 	if menu.MenuID != menuId {
 		c.JSON(200, result.ErrMsg("没有权限访问菜单数据！"))
 		return
 	}
 
 	// 检查是否存在子菜单
-	hasChild := s.sysMenuService.HasChildByMenuIdAndStatus(menuId, "")
+	hasChild := s.sysMenuService.ExistChildrenByMenuIdAndStatus(menuId, "")
 	if hasChild > 0 {
 		msg := fmt.Sprintf("不允许删除，存在子菜单数：%d", hasChild)
 		c.JSON(200, result.ErrMsg(msg))
@@ -218,14 +217,14 @@ func (s *SysMenuController) Remove(c *gin.Context) {
 	}
 
 	// 检查是否分配给角色
-	existRole := s.sysMenuService.CheckMenuExistRole(menuId)
+	existRole := s.sysMenuService.ExistRoleByMenuId(menuId)
 	if existRole > 0 {
 		msg := fmt.Sprintf("不允许删除，菜单已分配给角色数：%d", existRole)
 		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
-	rows := s.sysMenuService.DeleteMenuById(menuId)
+	rows := s.sysMenuService.DeleteById(menuId)
 	if rows > 0 {
 		msg := fmt.Sprintf("删除成功：%d", rows)
 		c.JSON(200, result.OkMsg(msg))
@@ -234,7 +233,7 @@ func (s *SysMenuController) Remove(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// 菜单树结构列表
+// TreeSelect 菜单树结构列表
 //
 // GET /treeSelect
 func (s *SysMenuController) TreeSelect(c *gin.Context) {
@@ -250,12 +249,12 @@ func (s *SysMenuController) TreeSelect(c *gin.Context) {
 	if config.IsAdmin(userId) {
 		userId = "*"
 	}
-	data := s.sysMenuService.SelectMenuTreeSelectByUserId(query, userId)
+	data := s.sysMenuService.BuildTreeSelectByUserId(query, userId)
 	c.JSON(200, result.OkData(data))
 
 }
 
-// 菜单树结构列表（指定角色）
+// RoleMenuTreeSelect 菜单树结构列表（指定角色）
 //
 // GET /roleMenuTreeSelect/:roleId
 func (s *SysMenuController) RoleMenuTreeSelect(c *gin.Context) {
@@ -277,8 +276,8 @@ func (s *SysMenuController) RoleMenuTreeSelect(c *gin.Context) {
 	if config.IsAdmin(userId) {
 		userId = "*"
 	}
-	menuTreeSelect := s.sysMenuService.SelectMenuTreeSelectByUserId(query, userId)
-	checkedKeys := s.sysMenuService.SelectMenuListByRoleId(roleId)
+	menuTreeSelect := s.sysMenuService.BuildTreeSelectByUserId(query, userId)
+	checkedKeys := s.sysMenuService.FindByRoleId(roleId)
 	c.JSON(200, result.OkData(map[string]any{
 		"menus":       menuTreeSelect,
 		"checkedKeys": checkedKeys,

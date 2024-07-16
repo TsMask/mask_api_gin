@@ -31,8 +31,11 @@ type ISysDictTypeService interface {
 	// CheckUniqueByType 检查字典类型是否唯一
 	CheckUniqueByType(dictType, dictId string) bool
 
-	// ResetCache 重置字典缓存数据
-	ResetCache()
+	// CacheLoad 加载字典缓存数据 传入*查询全部
+	CacheLoad(dictType string)
+
+	// CacheClean 清空字典缓存数据 传入*清除全部
+	CacheClean(dictType string) bool
 
 	// FindDataByType 获取字典数据缓存数据
 	FindDataByType(dictType string) []model.SysDictData

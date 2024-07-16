@@ -25,6 +25,9 @@ type ISysConfigService interface {
 	// CheckUniqueByKey 检查参数键名是否唯一
 	CheckUniqueByKey(configKey, configId string) bool
 
-	// ResetCache 重置缓存数据
-	ResetCache()
+	// CacheLoad 加载参数缓存数据 传入*查询全部
+	CacheLoad(configKey string)
+
+	// CacheClean 清空参数缓存数据 传入*清除全部
+	CacheClean(configKey string) bool
 }
