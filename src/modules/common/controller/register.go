@@ -15,7 +15,7 @@ import (
 // NewRegister 实例化控制层
 var NewRegister = &RegisterController{
 	registerService:    commonService.NewRegisterService,
-	sysLogLoginService: systemService.NewSysLogLoginService,
+	sysLogLoginService: systemService.NewSysLogLogin,
 }
 
 // RegisterController 账号注册操作 控制层处理
@@ -62,7 +62,7 @@ func (s *RegisterController) Register(c *gin.Context) {
 	// 根据错误信息，创建系统访问记录
 	if err != nil {
 		msg := err.Error() + " " + registerBody.Code
-		s.sysLogLoginService.CreateSysLogLogin(
+		s.sysLogLoginService.Insert(
 			registerBody.Username, constCommon.StatusNo, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
@@ -73,7 +73,7 @@ func (s *RegisterController) Register(c *gin.Context) {
 	userID, err := s.registerService.ByUserName(registerBody.Username, registerBody.Password, registerBody.UserType)
 	if err == nil {
 		msg := registerBody.Username + " 注册成功 " + userID
-		s.sysLogLoginService.CreateSysLogLogin(
+		s.sysLogLoginService.Insert(
 			registerBody.Username, constCommon.StatusYes, msg,
 			[4]string{ipaddr, location, os, browser},
 		)

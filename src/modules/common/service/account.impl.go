@@ -16,24 +16,24 @@ import (
 
 // NewAccountService 实例化服务层
 var NewAccountService = &AccountServiceImpl{
-	sysUserService:   systemService.NewSysUserImpl,
-	sysConfigService: systemService.NewSysConfigImpl,
-	sysRoleService:   systemService.NewSysRoleImpl,
-	sysMenuService:   systemService.NewSysMenuImpl,
+	sysUserService:   systemService.NewSysUser,
+	sysConfigService: systemService.NewSysConfig,
+	sysRoleService:   systemService.NewSysRole,
+	sysMenuService:   systemService.NewSysMenu,
 }
 
 // AccountServiceImpl 账号身份操作 服务层处理
 type AccountServiceImpl struct {
-	sysUserService   systemService.ISysUser   // 用户信息服务
-	sysConfigService systemService.ISysConfig // 参数配置服务
-	sysRoleService   systemService.ISysRole   // 角色服务
-	sysMenuService   systemService.ISysMenu   // 菜单服务
+	sysUserService   systemService.ISysUserService   // 用户信息服务
+	sysConfigService systemService.ISysConfigService // 参数配置服务
+	sysRoleService   systemService.ISysRoleService   // 角色服务
+	sysMenuService   systemService.ISysMenuService   // 菜单服务
 }
 
 // ValidateCaptcha 校验验证码
 func (s *AccountServiceImpl) ValidateCaptcha(code, uuid string) error {
 	// 验证码检查，从数据库配置获取验证码开关 true开启，false关闭
-	captchaEnabledStr := s.sysConfigService.SelectConfigValueByKey("sys.account.captchaEnabled")
+	captchaEnabledStr := s.sysConfigService.FindValueByKey("sys.account.captchaEnabled")
 	if !parse.Boolean(captchaEnabledStr) {
 		return nil
 	}
@@ -63,7 +63,7 @@ func (s *AccountServiceImpl) ByUsername(username, password string) (vo.LoginUser
 	}
 
 	// 查询用户登录账号
-	sysUser := s.sysUserService.SelectUserByUserName(username)
+	sysUser := s.sysUserService.FindByUserName(username)
 	if sysUser.UserName != username {
 		return loginUser, fmt.Errorf("用户不存在或密码错误")
 	}
@@ -93,7 +93,7 @@ func (s *AccountServiceImpl) ByUsername(username, password string) (vo.LoginUser
 	if isAdmin {
 		loginUser.Permissions = []string{constAdmin.Permission}
 	} else {
-		perms := s.sysMenuService.SelectMenuPermsByUserId(sysUser.UserID)
+		perms := s.sysMenuService.FindPermsByUserId(sysUser.UserID)
 		loginUser.Permissions = parse.RemoveDuplicates(perms)
 	}
 	return loginUser, nil
@@ -102,10 +102,10 @@ func (s *AccountServiceImpl) ByUsername(username, password string) (vo.LoginUser
 // UpdateLoginDateAndIP 更新登录时间和IP
 func (s *AccountServiceImpl) UpdateLoginDateAndIP(loginUser *vo.LoginUser) bool {
 	sysUser := loginUser.User
-	user := s.sysUserService.SelectUserById(sysUser.UserID)
+	user := s.sysUserService.FindById(sysUser.UserID)
 	user.LoginIP = sysUser.LoginIP
 	user.LoginDate = sysUser.LoginDate
-	return s.sysUserService.UpdateUser(user) > 0
+	return s.sysUserService.Update(user) > 0
 }
 
 // CleanLoginRecordCache 清除错误记录次数
@@ -145,12 +145,12 @@ func (s *AccountServiceImpl) RoleAndMenuPerms(userId string, isAdmin bool) ([]st
 	}
 	// 角色key
 	var roleGroup []string
-	roles := s.sysRoleService.SelectRoleListByUserId(userId)
+	roles := s.sysRoleService.FindByUserId(userId)
 	for _, role := range roles {
 		roleGroup = append(roleGroup, role.RoleKey)
 	}
 	// 菜单权限key
-	perms := s.sysMenuService.SelectMenuPermsByUserId(userId)
+	perms := s.sysMenuService.FindPermsByUserId(userId)
 	return parse.RemoveDuplicates(roleGroup), parse.RemoveDuplicates(perms)
 }
 
@@ -158,10 +158,10 @@ func (s *AccountServiceImpl) RoleAndMenuPerms(userId string, isAdmin bool) ([]st
 func (s *AccountServiceImpl) RouteMenus(userId string, isAdmin bool) []vo.Router {
 	var buildMenus []vo.Router
 	if isAdmin {
-		menus := s.sysMenuService.SelectMenuTreeByUserId("*")
+		menus := s.sysMenuService.BuildTreeMenusByUserId("*")
 		buildMenus = s.sysMenuService.BuildRouteMenus(menus, "")
 	} else {
-		menus := s.sysMenuService.SelectMenuTreeByUserId(userId)
+		menus := s.sysMenuService.BuildTreeMenusByUserId(userId)
 		buildMenus = s.sysMenuService.BuildRouteMenus(menus, "")
 	}
 	return buildMenus

@@ -18,7 +18,7 @@ import (
 // NewAccount 实例化控制层
 var NewAccount = &AccountController{
 	accountService:     commonService.NewAccountService,
-	sysLogLoginService: systemService.NewSysLogLoginService,
+	sysLogLoginService: systemService.NewSysLogLogin,
 }
 
 // AccountController 账号身份操作 控制层处理
@@ -48,7 +48,7 @@ func (s *AccountController) Login(c *gin.Context) {
 	// 根据错误信息，创建系统访问记录
 	if err != nil {
 		msg := fmt.Sprintf("%s code: %s", err.Error(), loginBody.Code)
-		s.sysLogLoginService.CreateSysLogLogin(
+		s.sysLogLoginService.Insert(
 			loginBody.Username, constCommon.StatusNo, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
@@ -70,7 +70,7 @@ func (s *AccountController) Login(c *gin.Context) {
 		return
 	} else {
 		s.accountService.UpdateLoginDateAndIP(&loginUser)
-		s.sysLogLoginService.CreateSysLogLogin(
+		s.sysLogLoginService.Insert(
 			loginBody.Username, constCommon.StatusYes, "登录成功",
 			[4]string{ipaddr, location, os, browser},
 		)
@@ -127,7 +127,7 @@ func (s *AccountController) Logout(c *gin.Context) {
 			ipaddr, location := ctxUtils.IPAddrLocation(c)
 			os, browser := ctxUtils.UaOsBrowser(c)
 			// 创建系统访问记录
-			s.sysLogLoginService.CreateSysLogLogin(
+			s.sysLogLoginService.Insert(
 				userName, constCommon.StatusYes, "退出成功",
 				[4]string{ipaddr, location, os, browser},
 			)

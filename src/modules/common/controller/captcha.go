@@ -17,15 +17,14 @@ import (
 
 // NewCaptcha 实例化控制层
 var NewCaptcha = &CaptchaController{
-	sysConfigService: systemService.NewSysConfigImpl,
+	sysConfigService: systemService.NewSysConfig,
 }
 
 // CaptchaController 验证码操作 控制层处理
 //
 // PATH /
 type CaptchaController struct {
-	// 参数配置服务
-	sysConfigService systemService.ISysConfig
+	sysConfigService systemService.ISysConfigService // 参数配置服务
 }
 
 // Image 获取验证码
@@ -33,7 +32,7 @@ type CaptchaController struct {
 // GET /captchaImage
 func (s *CaptchaController) Image(c *gin.Context) {
 	// 从数据库配置获取验证码开关 true开启，false关闭
-	captchaEnabledStr := s.sysConfigService.SelectConfigValueByKey("sys.account.captchaEnabled")
+	captchaEnabledStr := s.sysConfigService.FindValueByKey("sys.account.captchaEnabled")
 	captchaEnabled := parse.Boolean(captchaEnabledStr)
 	if !captchaEnabled {
 		c.JSON(200, result.Ok(map[string]any{
@@ -51,7 +50,7 @@ func (s *CaptchaController) Image(c *gin.Context) {
 	}
 
 	// 从数据库配置获取验证码类型 math 数值计算 char 字符验证
-	captchaType := s.sysConfigService.SelectConfigValueByKey("sys.account.captchaType")
+	captchaType := s.sysConfigService.FindValueByKey("sys.account.captchaType")
 	if captchaType == constCaptcha.TypeMath {
 		math := config.Get("mathCaptcha").(map[string]any)
 		driverCaptcha := &base64Captcha.DriverMath{

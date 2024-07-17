@@ -19,18 +19,18 @@ import (
 
 // NewSysJobLog 实例化控制层
 var NewSysJobLog = &SysJobLogController{
-	sysJobService:      service.NewSysJobImpl,
+	sysJobService:      service.NewSysJob,
 	sysJobLogService:   service.NewSysJobLogService,
-	sysDictDataService: systemService.NewSysDictDataImpl,
+	sysDictTypeService: systemService.NewSysDictType,
 }
 
 // SysJobLogController 调度任务日志信息 控制层处理
 //
 // PATH /monitor/jobLog
 type SysJobLogController struct {
-	sysJobService      service.ISysJob            // 调度任务服务
-	sysJobLogService   service.ISysJobLogService  // 调度任务日志服务
-	sysDictDataService systemService.ISysDictData // 字典数据服务
+	sysJobService      service.ISysJobService            // 调度任务服务
+	sysJobLogService   service.ISysJobLogService         // 调度任务日志服务
+	sysDictTypeService systemService.ISysDictTypeService // 字典类型服务
 }
 
 // List 调度任务日志列表
@@ -130,7 +130,7 @@ func (s *SysJobLogController) Export(c *gin.Context) {
 		"H1": "记录时间",
 	}
 	// 读取任务组名字典数据
-	dictSysJobGroup := s.sysDictDataService.SelectDictDataByType("sys_job_group")
+	dictSysJobGroup := s.sysDictTypeService.FindDataByType("sys_job_group")
 	// 从第二行开始的数据
 	dataCells := make([]map[string]any, 0)
 	for i, row := range rows {

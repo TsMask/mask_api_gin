@@ -154,5 +154,5 @@ func InitLoad() {
 	// 初始化定时任务处理
 	processor.InitCronQueue()
 	// 启动时，初始化调度任务
-	service.NewSysJobImpl.Reset()
+	service.NewSysJob.Reset()
 }

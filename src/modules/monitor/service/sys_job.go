@@ -4,8 +4,8 @@ import (
 	"mask_api_gin/src/modules/monitor/model"
 )
 
-// ISysJob 调度任务 服务层接口
-type ISysJob interface {
+// ISysJobService 调度任务 服务层接口
+type ISysJobService interface {
 	// FindByPage 分页查询
 	FindByPage(query map[string]any) map[string]any
 

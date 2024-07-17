@@ -13,25 +13,22 @@ import (
 
 // NewRegisterService 实例化服务层
 var NewRegisterService = &RegisterServiceImpl{
-	sysUserService:   systemService.NewSysUserImpl,
-	sysConfigService: systemService.NewSysConfigImpl,
-	sysRoleService:   systemService.NewSysRoleImpl,
+	sysUserService:   systemService.NewSysUser,
+	sysConfigService: systemService.NewSysConfig,
+	sysRoleService:   systemService.NewSysRole,
 }
 
 // RegisterServiceImpl 账号注册操作 服务层处理
 type RegisterServiceImpl struct {
-	// 用户信息服务
-	sysUserService systemService.ISysUser
-	// 参数配置服务
-	sysConfigService systemService.ISysConfig
-	// 角色服务
-	sysRoleService systemService.ISysRole
+	sysUserService   systemService.ISysUserService   // 用户信息服务
+	sysConfigService systemService.ISysConfigService // 参数配置服务
+	sysRoleService   systemService.ISysRoleService   // 角色服务
 }
 
 // ValidateCaptcha 校验验证码
 func (s *RegisterServiceImpl) ValidateCaptcha(code, uuid string) error {
 	// 验证码检查，从数据库配置获取验证码开关 true开启，false关闭
-	captchaEnabledStr := s.sysConfigService.SelectConfigValueByKey("sys.account.captchaEnabled")
+	captchaEnabledStr := s.sysConfigService.FindValueByKey("sys.account.captchaEnabled")
 	if !parse.Boolean(captchaEnabledStr) {
 		return nil
 	}
@@ -53,14 +50,14 @@ func (s *RegisterServiceImpl) ValidateCaptcha(code, uuid string) error {
 // ByUserName 账号注册
 func (s *RegisterServiceImpl) ByUserName(username, password, userType string) (string, error) {
 	// 是否开启用户注册功能 true开启，false关闭
-	registerUserStr := s.sysConfigService.SelectConfigValueByKey("sys.account.registerUser")
+	registerUserStr := s.sysConfigService.FindValueByKey("sys.account.registerUser")
 	captchaEnabled := parse.Boolean(registerUserStr)
 	if !captchaEnabled {
 		return "", fmt.Errorf("注册用户【%s】失败，很抱歉，系统已关闭外部用户注册通道", username)
 	}
 
 	// 检查用户登录账号是否唯一
-	uniqueUserName := s.sysUserService.CheckUniqueUserName(username, "")
+	uniqueUserName := s.sysUserService.CheckUniqueByUserName(username, "")
 	if !uniqueUserName {
 		return "", fmt.Errorf("注册用户【%s】失败，注册账号已存在", username)
 	}
@@ -82,7 +79,7 @@ func (s *RegisterServiceImpl) ByUserName(username, password, userType string) (s
 	// 新增用户的岗位管理
 	sysUser.PostIDs = s.registerPostInit(userType)
 
-	insertId := s.sysUserService.InsertUser(sysUser)
+	insertId := s.sysUserService.Insert(sysUser)
 	if insertId != "" {
 		return insertId, nil
 	}

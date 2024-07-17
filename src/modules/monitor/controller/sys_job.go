@@ -20,16 +20,16 @@ import (
 
 // NewSysJob 实例化控制层
 var NewSysJob = &SysJobController{
-	sysJobService:      service.NewSysJobImpl,
-	sysDictDataService: systemService.NewSysDictDataImpl,
+	sysJobService:      service.NewSysJob,
+	sysDictTypeService: systemService.NewSysDictType,
 }
 
 // SysJobController 调度任务信息 控制层处理
 //
 // PATH /monitor/job
 type SysJobController struct {
-	sysJobService      service.ISysJob            // 调度任务服务
-	sysDictDataService systemService.ISysDictData // 字典数据服务
+	sysJobService      service.ISysJobService            // 调度任务服务
+	sysDictTypeService systemService.ISysDictTypeService // 字典类型服务
 }
 
 // List 调度任务列表
@@ -280,7 +280,7 @@ func (s *SysJobController) Export(c *gin.Context) {
 		"J1": "备注说明",
 	}
 	// 读取任务组名字典数据
-	dictSysJobGroup := s.sysDictDataService.SelectDictDataByType("sys_job_group")
+	dictSysJobGroup := s.sysDictTypeService.FindDataByType("sys_job_group")
 	// 从第二行开始的数据
 	dataCells := make([]map[string]any, 0)
 	for i, row := range rows {
