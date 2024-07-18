@@ -2,23 +2,20 @@ package logger
 
 import (
 	"log"
-
-	"github.com/spf13/viper"
+	"mask_api_gin/src/framework/config"
 )
 
 var logWriter *Logger
 
 // InitLogger 初始程序日志
 func InitLogger() {
-	env := viper.GetString("env")
-	conf := viper.GetStringMap("logger")
-	fileDir := conf["filedir"].(string)
-	fileName := conf["filename"].(string)
-	level := conf["level"].(int)
-	maxDay := conf["maxday"].(int)
-	maxSize := conf["maxsize"].(int)
+	fileDir := config.Get("logger.fileDir").(string)
+	fileName := config.Get("logger.fileName").(string)
+	level := config.Get("logger.level").(int)
+	maxDay := config.Get("logger.maxDay").(int)
+	maxSize := config.Get("logger.maxSize").(int)
 
-	newLog, err := NewLogger(env, fileDir, fileName, level, maxDay, maxSize)
+	newLog, err := NewLogger(config.Env(), fileDir, fileName, level, maxDay, maxSize)
 	if err != nil {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}

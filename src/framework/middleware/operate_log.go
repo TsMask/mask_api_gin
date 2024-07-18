@@ -163,7 +163,7 @@ func OperateLog(options Options) gin.HandlerFunc {
 		operaLog.OperaTime = time.Now().UnixMilli()
 
 		// 保存操作记录到数据库
-		service.NewSysLogOperateImpl.InsertSysLogOperate(operaLog)
+		service.NewSysLogOperate.Insert(operaLog)
 	}
 }
 

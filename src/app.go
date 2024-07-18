@@ -90,9 +90,9 @@ func initDefeat(app *gin.Engine) {
 
 // 初始模块路由
 func initModulesRoute(app *gin.Engine) {
-	demo.Setup(app)
+	demo.Setup(app) // 演示模块（可移除）
 
-	common.Setup(app)
-	monitor.Setup(app)
-	system.Setup(app)
+	common.Setup(app)  // 通用模块
+	system.Setup(app)  // 系统模块
+	monitor.Setup(app) // 监控模块（含定时任务放最后）
 }
