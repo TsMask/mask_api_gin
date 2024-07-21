@@ -78,13 +78,13 @@ func Get(key string) any {
 	return conf.Get(key)
 }
 
-// IsAdmin 用户是否为管理员
-func IsAdmin(userID string) bool {
+// IsSysAdmin 用户是否为系统管理员
+func IsSysAdmin(userID string) bool {
 	if userID == "" {
 		return false
 	}
-	// 从本地配置获取user信息
-	admins := Get("user.adminList").([]any)
+	// 从配置中获取系统管理员id列表
+	admins := Get("user.sysAdminList").([]any)
 	for _, s := range admins {
 		if s.(string) == userID {
 			return true

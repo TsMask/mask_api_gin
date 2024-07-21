@@ -170,8 +170,8 @@ user:
     maxRetryCount: 5
     # 密码锁定时间,单位分钟（默认10分钟）
     lockTime: 10
-  # 管理员列表
-  adminList:
+  # 系统管理员列表
+  sysAdminList:
     - "1"
 
 # char 字符验证码配置
