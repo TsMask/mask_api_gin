@@ -3,7 +3,7 @@ package controller
 import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
-	constCommon "mask_api_gin/src/framework/constants/common"
+	constSystem "mask_api_gin/src/framework/constants/system"
 	constToken "mask_api_gin/src/framework/constants/token"
 	ctxUtils "mask_api_gin/src/framework/utils/ctx"
 	tokenUtils "mask_api_gin/src/framework/utils/token"
@@ -49,7 +49,7 @@ func (s *AccountController) Login(c *gin.Context) {
 	if err != nil {
 		msg := fmt.Sprintf("%s code: %s", err.Error(), loginBody.Code)
 		s.sysLogLoginService.Insert(
-			loginBody.Username, constCommon.StatusNo, msg,
+			loginBody.Username, constSystem.StatusNo, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
 		c.JSON(200, result.ErrMsg(err.Error()))
@@ -71,7 +71,7 @@ func (s *AccountController) Login(c *gin.Context) {
 	} else {
 		s.accountService.UpdateLoginDateAndIP(&loginUser)
 		s.sysLogLoginService.Insert(
-			loginBody.Username, constCommon.StatusYes, "登录成功",
+			loginBody.Username, constSystem.StatusYes, "登录成功",
 			[4]string{ipaddr, location, os, browser},
 		)
 	}
@@ -91,8 +91,8 @@ func (s *AccountController) Info(c *gin.Context) {
 		return
 	}
 
-	// 角色权限集合，管理员拥有所有权限
-	isAdmin := config.IsAdmin(loginUser.UserID)
+	// 角色权限集合，系统管理员拥有所有权限
+	isAdmin := config.IsSysAdmin(loginUser.UserID)
 	roles, perms := s.accountService.RoleAndMenuPerms(loginUser.UserID, isAdmin)
 
 	c.JSON(200, result.OkData(map[string]any{
@@ -108,8 +108,8 @@ func (s *AccountController) Info(c *gin.Context) {
 func (s *AccountController) Router(c *gin.Context) {
 	userID := ctxUtils.LoginUserToUserID(c)
 
-	// 前端路由，管理员拥有所有
-	isAdmin := config.IsAdmin(userID)
+	// 前端路由，系统管理员拥有所有
+	isAdmin := config.IsSysAdmin(userID)
 	buildMenus := s.accountService.RouteMenus(userID, isAdmin)
 	c.JSON(200, result.OkData(buildMenus))
 }
@@ -128,7 +128,7 @@ func (s *AccountController) Logout(c *gin.Context) {
 			os, browser := ctxUtils.UaOsBrowser(c)
 			// 创建系统访问记录
 			s.sysLogLoginService.Insert(
-				userName, constCommon.StatusYes, "退出成功",
+				userName, constSystem.StatusYes, "退出成功",
 				[4]string{ipaddr, location, os, browser},
 			)
 		}

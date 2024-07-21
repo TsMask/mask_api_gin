@@ -3,9 +3,8 @@ package service
 import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
-	constAdmin "mask_api_gin/src/framework/constants/admin"
 	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
-	constCommon "mask_api_gin/src/framework/constants/common"
+	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/parse"
@@ -67,10 +66,10 @@ func (s *AccountServiceImpl) ByUsername(username, password string) (vo.LoginUser
 	if sysUser.UserName != username {
 		return loginUser, fmt.Errorf("用户不存在或密码错误")
 	}
-	if sysUser.DelFlag == constCommon.StatusYes {
+	if sysUser.DelFlag == constSystem.StatusYes {
 		return loginUser, fmt.Errorf("对不起，您的账号已被删除")
 	}
-	if sysUser.Status == constCommon.StatusNo {
+	if sysUser.Status == constSystem.StatusNo {
 		return loginUser, fmt.Errorf("对不起，您的账号已禁用")
 	}
 
@@ -89,9 +88,9 @@ func (s *AccountServiceImpl) ByUsername(username, password string) (vo.LoginUser
 	loginUser.DeptID = sysUser.DeptID
 	loginUser.User = sysUser
 	// 用户权限组标识
-	isAdmin := config.IsAdmin(sysUser.UserID)
+	isAdmin := config.IsSysAdmin(sysUser.UserID)
 	if isAdmin {
-		loginUser.Permissions = []string{constAdmin.Permission}
+		loginUser.Permissions = []string{constSystem.Permission}
 	} else {
 		perms := s.sysMenuService.FindPermsByUserId(sysUser.UserID)
 		loginUser.Permissions = parse.RemoveDuplicates(perms)
@@ -103,6 +102,7 @@ func (s *AccountServiceImpl) ByUsername(username, password string) (vo.LoginUser
 func (s *AccountServiceImpl) UpdateLoginDateAndIP(loginUser *vo.LoginUser) bool {
 	sysUser := loginUser.User
 	user := s.sysUserService.FindById(sysUser.UserID)
+	user.Password = "" // 密码不更新
 	user.LoginIP = sysUser.LoginIP
 	user.LoginDate = sysUser.LoginDate
 	return s.sysUserService.Update(user) > 0
@@ -141,7 +141,7 @@ func (s *AccountServiceImpl) passwordRetryCount(username string) (string, int64,
 // RoleAndMenuPerms 角色和菜单数据权限
 func (s *AccountServiceImpl) RoleAndMenuPerms(userId string, isAdmin bool) ([]string, []string) {
 	if isAdmin {
-		return []string{constAdmin.RoleKey}, []string{constAdmin.Permission}
+		return []string{constSystem.RoleKey}, []string{constSystem.Permission}
 	}
 	// 角色key
 	var roleGroup []string

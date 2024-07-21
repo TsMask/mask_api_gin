@@ -3,8 +3,8 @@ package controller
 import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
-	constCommon "mask_api_gin/src/framework/constants/common"
 	constMenu "mask_api_gin/src/framework/constants/menu"
+	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/framework/vo/result"
@@ -40,7 +40,7 @@ func (s *SysMenuController) List(c *gin.Context) {
 	}
 
 	userId := ctx.LoginUserToUserID(c)
-	if config.IsAdmin(userId) {
+	if config.IsSysAdmin(userId) {
 		userId = "*"
 	}
 	data := s.sysMenuService.Find(query, userId)
@@ -94,7 +94,7 @@ func (s *SysMenuController) Add(c *gin.Context) {
 	}
 
 	// 外链菜单需要符合网站http(s)开头
-	if body.IsFrame == constCommon.StatusNo && !regular.ValidHttp(body.Path) {
+	if body.IsFrame == constSystem.StatusNo && !regular.ValidHttp(body.Path) {
 		msg := fmt.Sprintf("菜单新增【%s】失败，非内部地址必须以http(s)://开头", body.MenuName)
 		c.JSON(200, result.ErrMsg(msg))
 		return
@@ -141,7 +141,7 @@ func (s *SysMenuController) Edit(c *gin.Context) {
 			return
 		}
 		// 禁用菜单时检查父菜单是否使用
-		if body.Status == constCommon.StatusYes && menuParent.Status == constCommon.StatusNo {
+		if body.Status == constSystem.StatusYes && menuParent.Status == constSystem.StatusNo {
 			c.JSON(200, result.ErrMsg("上级菜单未启用！"))
 			return
 		}
@@ -166,15 +166,15 @@ func (s *SysMenuController) Edit(c *gin.Context) {
 	}
 
 	// 外链菜单需要符合网站http(s)开头
-	if body.IsFrame == constCommon.StatusNo && !regular.ValidHttp(body.Path) {
+	if body.IsFrame == constSystem.StatusNo && !regular.ValidHttp(body.Path) {
 		msg := fmt.Sprintf("菜单修改【%s】失败，非内部地址必须以http(s)://开头", body.MenuName)
 		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
 	// 禁用菜单时检查子菜单是否使用
-	if body.Status == constCommon.StatusNo {
-		hasStatus := s.sysMenuService.ExistChildrenByMenuIdAndStatus(body.MenuID, constCommon.StatusYes)
+	if body.Status == constSystem.StatusNo {
+		hasStatus := s.sysMenuService.ExistChildrenByMenuIdAndStatus(body.MenuID, constSystem.StatusYes)
 		if hasStatus > 0 {
 			msg := fmt.Sprintf("不允许禁用，存在使用子菜单数：%d", hasStatus)
 			c.JSON(200, result.ErrMsg(msg))
@@ -246,7 +246,7 @@ func (s *SysMenuController) TreeSelect(c *gin.Context) {
 	}
 
 	userId := ctx.LoginUserToUserID(c)
-	if config.IsAdmin(userId) {
+	if config.IsSysAdmin(userId) {
 		userId = "*"
 	}
 	data := s.sysMenuService.BuildTreeSelectByUserId(query, userId)
@@ -273,7 +273,7 @@ func (s *SysMenuController) RoleMenuTreeSelect(c *gin.Context) {
 	}
 
 	userId := ctx.LoginUserToUserID(c)
-	if config.IsAdmin(userId) {
+	if config.IsSysAdmin(userId) {
 		userId = "*"
 	}
 	menuTreeSelect := s.sysMenuService.BuildTreeSelectByUserId(query, userId)

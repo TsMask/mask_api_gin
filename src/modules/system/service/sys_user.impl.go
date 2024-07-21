@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	constAdmin "mask_api_gin/src/framework/constants/admin"
+	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )
@@ -66,8 +66,8 @@ func (r *SysUserService) insertUserRole(userId string, roleIds []string) int64 {
 
 	var arr []model.SysUserRole
 	for _, roleId := range roleIds {
-		// 管理员角色禁止操作，只能通过配置指定用户ID分配
-		if roleId == "" || roleId == constAdmin.RoleId {
+		// 系统管理员角色禁止操作，只能通过配置指定用户ID分配
+		if roleId == "" || roleId == constSystem.RoleId {
 			continue
 		}
 		arr = append(arr, model.SysUserRole{

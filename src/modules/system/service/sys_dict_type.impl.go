@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
-	constCommon "mask_api_gin/src/framework/constants/common"
+	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
@@ -127,7 +127,7 @@ func (r *SysDictTypeService) getCacheKey(dictType string) string {
 func (r *SysDictTypeService) CacheLoad(dictType string) {
 	sysDictData := model.SysDictData{
 		DictType: dictType,
-		Status:   constCommon.StatusYes,
+		Status:   constSystem.StatusYes,
 	}
 
 	// 指定字典类型
@@ -181,7 +181,7 @@ func (r *SysDictTypeService) FindDataByType(dictType string) []model.SysDictData
 		}
 	} else {
 		data = r.sysDictDataRepository.Select(model.SysDictData{
-			Status:   constCommon.StatusYes,
+			Status:   constSystem.StatusYes,
 			DictType: dictType,
 		})
 		if len(data) > 0 {

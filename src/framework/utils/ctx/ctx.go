@@ -3,8 +3,8 @@ package ctx
 import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
-	constCommon "mask_api_gin/src/framework/constants/common"
 	constRoleDataScope "mask_api_gin/src/framework/constants/role_data_scope"
+	constSystem "mask_api_gin/src/framework/constants/system"
 	constToken "mask_api_gin/src/framework/constants/token"
 	"mask_api_gin/src/framework/utils/ip2region"
 	"mask_api_gin/src/framework/utils/ua"
@@ -100,7 +100,7 @@ func UaOsBrowser(c *gin.Context) (string, string) {
 
 // LoginUser 登录用户信息
 func LoginUser(c *gin.Context) (vo.LoginUser, error) {
-	value, exists := c.Get(constCommon.CtxLoginUser)
+	value, exists := c.Get(constSystem.CtxLoginUser)
 	if exists {
 		return value.(vo.LoginUser), nil
 	}
@@ -109,7 +109,7 @@ func LoginUser(c *gin.Context) (vo.LoginUser, error) {
 
 // LoginUserToUserID 登录用户信息-用户ID
 func LoginUserToUserID(c *gin.Context) string {
-	value, exists := c.Get(constCommon.CtxLoginUser)
+	value, exists := c.Get(constSystem.CtxLoginUser)
 	if exists {
 		loginUser := value.(vo.LoginUser)
 		return loginUser.UserID
@@ -119,7 +119,7 @@ func LoginUserToUserID(c *gin.Context) string {
 
 // LoginUserToUserName 登录用户信息-用户名称
 func LoginUserToUserName(c *gin.Context) string {
-	value, exists := c.Get(constCommon.CtxLoginUser)
+	value, exists := c.Get(constSystem.CtxLoginUser)
 	if exists {
 		loginUser := value.(vo.LoginUser)
 		return loginUser.User.UserName
@@ -137,8 +137,8 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 	}
 	userInfo := loginUser.User
 
-	// 如果是管理员，则不过滤数据
-	if config.IsAdmin(userInfo.UserID) {
+	// 如果是系统管理员，则不过滤数据
+	if config.IsSysAdmin(userInfo.UserID) {
 		return dataScopeSQL
 	}
 	// 无用户角色

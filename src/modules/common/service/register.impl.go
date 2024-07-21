@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
-	constCommon "mask_api_gin/src/framework/constants/common"
+	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/framework/utils/parse"
 	systemModel "mask_api_gin/src/modules/system/model"
@@ -66,7 +66,7 @@ func (s *RegisterServiceImpl) ByUserName(username, password, userType string) (s
 		UserName: username,
 		NickName: username,              // 昵称使用名称账号
 		Password: password,              // 原始密码
-		Status:   constCommon.StatusYes, // 账号状态激活
+		Status:   constSystem.StatusYes, // 账号状态激活
 		DeptID:   "100",                 // 归属部门为根节点
 		CreateBy: "注册",                  // 创建来源
 	}

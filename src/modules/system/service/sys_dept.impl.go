@@ -1,7 +1,7 @@
 package service
 
 import (
-	constCommon "mask_api_gin/src/framework/constants/common"
+	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/vo"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
@@ -52,7 +52,7 @@ func (r *SysDeptService) Update(sysDept model.SysDept) int64 {
 		}
 	}
 	// 如果该部门是启用状态，则启用该部门的所有上级部门
-	if sysDept.Status == constCommon.StatusYes && parentDept.Status == constCommon.StatusNo {
+	if sysDept.Status == constSystem.StatusYes && parentDept.Status == constSystem.StatusNo {
 		r.updateDeptStatusNormal(sysDept.Ancestors)
 	}
 	return r.sysDeptRepository.Update(sysDept)

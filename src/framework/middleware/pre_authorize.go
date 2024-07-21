@@ -2,8 +2,7 @@ package middleware
 
 import (
 	"fmt"
-	constAdmin "mask_api_gin/src/framework/constants/admin"
-	constCommon "mask_api_gin/src/framework/constants/common"
+	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/token"
 	"mask_api_gin/src/framework/vo/result"
@@ -48,7 +47,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 
 		// 检查刷新有效期后存入上下文
 		token.RefreshIn(&loginUser)
-		c.Set(constCommon.CtxLoginUser, loginUser)
+		c.Set(constSystem.CtxLoginUser, loginUser)
 
 		// 登录用户角色权限校验
 		if options != nil {
@@ -79,8 +78,8 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 //
 // options 参数
 func verifyRolePermission(roles, perms []string, options map[string][]string) bool {
-	// 直接放行 管理员角色或任意权限
-	if contains(roles, constAdmin.RoleKey) || contains(perms, constAdmin.Permission) {
+	// 直接放行 系统管理员角色或任意权限
+	if contains(roles, constSystem.Permission) || contains(perms, constSystem.Permission) {
 		return true
 	}
 	opts := make([]bool, 4)

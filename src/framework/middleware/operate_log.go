@@ -3,7 +3,7 @@ package middleware
 import (
 	"encoding/json"
 	"fmt"
-	constCommon "mask_api_gin/src/framework/constants/common"
+	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
@@ -143,9 +143,9 @@ func OperateLog(options Options) gin.HandlerFunc {
 		// 响应状态
 		status := c.Writer.Status()
 		if status == 200 {
-			operaLog.Status = constCommon.StatusYes
+			operaLog.Status = constSystem.StatusYes
 		} else {
-			operaLog.Status = constCommon.StatusNo
+			operaLog.Status = constSystem.StatusNo
 		}
 
 		// 是否需要保存response，参数和值

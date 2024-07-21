@@ -3,8 +3,7 @@ package controller
 import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
-	constAdmin "mask_api_gin/src/framework/constants/admin"
-	constCommon "mask_api_gin/src/framework/constants/common"
+	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
@@ -64,11 +63,11 @@ func (s *SysUserController) Info(c *gin.Context) {
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
 	roles := s.sysRoleService.Find(model.SysRole{}, dataScopeSQL)
 
-	// 不是系统指定管理员需要排除其角色
-	if !config.IsAdmin(userId) {
+	// 不是系统指定系统管理员需要排除其角色
+	if !config.IsSysAdmin(userId) {
 		rolesFilter := make([]model.SysRole, 0)
 		for _, r := range roles {
-			if r.RoleID != constAdmin.RoleId {
+			if r.RoleID != constSystem.RoleId {
 				rolesFilter = append(rolesFilter, r)
 			}
 		}
@@ -200,9 +199,9 @@ func (s *SysUserController) Edit(c *gin.Context) {
 		return
 	}
 
-	// 检查是否管理员用户
-	if config.IsAdmin(body.UserID) {
-		c.JSON(200, result.ErrMsg("不允许操作管理员用户"))
+	// 检查是否系统管理员用户
+	if config.IsSysAdmin(body.UserID) {
+		c.JSON(200, result.ErrMsg("不允许操作系统管理员用户"))
 		return
 	}
 
@@ -290,8 +289,8 @@ func (s *SysUserController) Remove(c *gin.Context) {
 			c.JSON(200, result.ErrMsg("当前用户不能删除"))
 			return
 		}
-		if config.IsAdmin(id) {
-			c.JSON(200, result.ErrMsg("不允许操作管理员用户"))
+		if config.IsSysAdmin(id) {
+			c.JSON(200, result.ErrMsg("不允许操作系统管理员用户"))
 			return
 		}
 	}
@@ -318,9 +317,9 @@ func (s *SysUserController) ResetPwd(c *gin.Context) {
 		return
 	}
 
-	// 检查是否管理员用户
-	if config.IsAdmin(body.UserID) {
-		c.JSON(200, result.ErrMsg("不允许操作管理员用户"))
+	// 检查是否系统管理员用户
+	if config.IsSysAdmin(body.UserID) {
+		c.JSON(200, result.ErrMsg("不允许操作系统管理员用户"))
 		return
 	}
 
@@ -359,9 +358,9 @@ func (s *SysUserController) Status(c *gin.Context) {
 		return
 	}
 
-	// 检查是否管理员用户
-	if config.IsAdmin(body.UserID) {
-		c.JSON(200, result.ErrMsg("不允许操作管理员用户"))
+	// 检查是否系统管理员用户
+	if config.IsSysAdmin(body.UserID) {
+		c.JSON(200, result.ErrMsg("不允许操作系统管理员用户"))
 		return
 	}
 
@@ -540,9 +539,9 @@ func (s *SysUserController) ImportData(c *gin.Context) {
 				break
 			}
 		}
-		sysUserStatus := constCommon.StatusNo
+		sysUserStatus := constSystem.StatusNo
 		if row["G"] == "正常" {
-			sysUserStatus = constCommon.StatusYes
+			sysUserStatus = constSystem.StatusYes
 		}
 
 		// 验证是否存在这个用户

@@ -51,9 +51,8 @@ func (s *SysProfileController) Info(c *gin.Context) {
 	for _, role := range roles {
 		roleGroup = append(roleGroup, role.RoleName)
 	}
-	isAdmin := config.IsAdmin(loginUser.UserID)
-	if isAdmin {
-		roleGroup = append(roleGroup, "管理员")
+	if config.IsSysAdmin(loginUser.UserID) {
+		roleGroup = append(roleGroup, "系统管理员")
 	}
 
 	// 查询用户所属岗位组

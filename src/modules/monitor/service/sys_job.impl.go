@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	constCommon "mask_api_gin/src/framework/constants/common"
+	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/cron"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/repository"
@@ -43,7 +43,7 @@ func (r *SysJobService) FindById(jobId string) model.SysJob {
 // Insert 新增调度任务信息
 func (r *SysJobService) Insert(sysJob model.SysJob) string {
 	insertId := r.sysJobRepository.Insert(sysJob)
-	if insertId == "" && sysJob.Status == constCommon.StatusYes {
+	if insertId == "" && sysJob.Status == constSystem.StatusYes {
 		sysJob.JobID = insertId
 		r.insertQueueJob(sysJob, true)
 	}
@@ -55,11 +55,11 @@ func (r *SysJobService) Update(sysJob model.SysJob) int64 {
 	rows := r.sysJobRepository.Update(sysJob)
 	if rows > 0 {
 		//状态正常添加队列任务
-		if sysJob.Status == constCommon.StatusYes {
+		if sysJob.Status == constSystem.StatusYes {
 			r.insertQueueJob(sysJob, true)
 		}
 		// 状态禁用删除队列任务
-		if sysJob.Status == constCommon.StatusNo {
+		if sysJob.Status == constSystem.StatusNo {
 			r.deleteQueueJob(sysJob)
 		}
 	}
@@ -151,7 +151,7 @@ func (r *SysJobService) Reset() {
 	}
 	// 查询系统中定义状态为正常启用的任务
 	sysJobs := r.sysJobRepository.Select(model.SysJob{
-		Status: constCommon.StatusYes,
+		Status: constSystem.StatusYes,
 	})
 	for _, sysJob := range sysJobs {
 		for _, name := range queueNames {

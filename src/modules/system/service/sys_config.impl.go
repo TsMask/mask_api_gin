@@ -122,7 +122,6 @@ func (r *SysConfigService) CacheLoad(configKey string) {
 		_ = redis.Del("", key)
 		_ = redis.Set("", key, cacheValue)
 	}
-	return
 }
 
 // CacheClean 清空参数缓存数据 传入*清除全部

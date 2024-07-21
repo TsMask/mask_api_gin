@@ -2,8 +2,8 @@ package service
 
 import (
 	"encoding/base64"
-	constCommon "mask_api_gin/src/framework/constants/common"
 	constMenu "mask_api_gin/src/framework/constants/menu"
+	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/framework/vo"
@@ -212,7 +212,7 @@ func (r *SysMenuService) BuildRouteMenus(sysMenus []model.SysMenu, prefix string
 			router.Redirect = redirectPath
 			// 子菜单进入递归
 			router.Children = r.BuildRouteMenus(cMenus, redirectPrefix)
-		} else if item.ParentID == "0" && item.IsFrame == constCommon.StatusYes && item.MenuType == constMenu.TypeMenu {
+		} else if item.ParentID == "0" && item.IsFrame == constSystem.StatusYes && item.MenuType == constMenu.TypeMenu {
 			// 父菜单 内部跳转 菜单类型
 			menuPath := "/" + item.MenuID
 			childPath := menuPath + r.getRouterPath(item)
@@ -228,7 +228,7 @@ func (r *SysMenuService) BuildRouteMenus(sysMenus []model.SysMenu, prefix string
 			router.Path = menuPath
 			router.Redirect = childPath
 			router.Component = constMenu.ComponentLayoutBasic
-		} else if item.ParentID == "0" && item.IsFrame == constCommon.StatusYes && regular.ValidHttp(item.Path) {
+		} else if item.ParentID == "0" && item.IsFrame == constSystem.StatusYes && regular.ValidHttp(item.Path) {
 			// 父菜单 内部跳转 路径链接
 			menuPath := "/" + item.MenuID
 			childPath := menuPath + r.getRouterPath(item)
@@ -272,13 +272,13 @@ func (r *SysMenuService) getRouterPath(sysMenu model.SysMenu) string {
 	}
 
 	// 路径链接 内部跳转
-	if regular.ValidHttp(routerPath) && sysMenu.IsFrame == constCommon.StatusYes {
+	if regular.ValidHttp(routerPath) && sysMenu.IsFrame == constSystem.StatusYes {
 		routerPath = regular.Replace(routerPath, `/^http(s)?:\/\/+/`, "")
 		routerPath = base64.StdEncoding.EncodeToString([]byte(routerPath))
 	}
 
 	// 父菜单 内部跳转
-	if sysMenu.ParentID == "0" && sysMenu.IsFrame == constCommon.StatusYes {
+	if sysMenu.ParentID == "0" && sysMenu.IsFrame == constSystem.StatusYes {
 		routerPath = "/" + routerPath
 	}
 
@@ -288,7 +288,7 @@ func (r *SysMenuService) getRouterPath(sysMenu model.SysMenu) string {
 // getComponent 获取组件信息
 func (r *SysMenuService) getComponent(sysMenu model.SysMenu) string {
 	// 内部跳转 路径链接
-	if sysMenu.IsFrame == constCommon.StatusYes && regular.ValidHttp(sysMenu.Path) {
+	if sysMenu.IsFrame == constSystem.StatusYes && regular.ValidHttp(sysMenu.Path) {
 		return constMenu.ComponentLayoutLink
 	}
 
@@ -298,7 +298,7 @@ func (r *SysMenuService) getComponent(sysMenu model.SysMenu) string {
 	}
 
 	// 组件路径 内部跳转 菜单类型
-	if sysMenu.Component != "" && sysMenu.IsFrame == constCommon.StatusYes && sysMenu.MenuType == constMenu.TypeMenu {
+	if sysMenu.Component != "" && sysMenu.IsFrame == constSystem.StatusYes && sysMenu.MenuType == constMenu.TypeMenu {
 		// 父菜单套外层布局
 		if sysMenu.ParentID == "0" {
 			return constMenu.ComponentLayoutBasic
@@ -319,12 +319,12 @@ func (r *SysMenuService) getRouteMeta(sysMenu model.SysMenu) vo.RouterMeta {
 	}
 	meta.Title = sysMenu.MenuName
 	meta.HideChildInMenu = false
-	meta.HideInMenu = sysMenu.Visible == constCommon.StatusNo
-	meta.Cache = sysMenu.IsCache == constCommon.StatusYes
+	meta.HideInMenu = sysMenu.Visible == constSystem.StatusNo
+	meta.Cache = sysMenu.IsCache == constSystem.StatusYes
 	meta.Target = ""
 
 	// 路径链接 非内部跳转
-	if regular.ValidHttp(sysMenu.Path) && sysMenu.IsFrame == constCommon.StatusNo {
+	if regular.ValidHttp(sysMenu.Path) && sysMenu.IsFrame == constSystem.StatusNo {
 		meta.Target = "_blank"
 	}
 
@@ -342,7 +342,7 @@ func (r *SysMenuService) getRouteRedirect(cMenus []model.SysMenu, routerPath str
 	// 重定向为首个显示并启用的子菜单
 	var firstChild *model.SysMenu
 	for _, item := range cMenus {
-		if item.IsFrame == constCommon.StatusYes && item.Visible == constCommon.StatusYes {
+		if item.IsFrame == constSystem.StatusYes && item.Visible == constSystem.StatusYes {
 			firstChild = &item
 			break
 		}
@@ -351,7 +351,7 @@ func (r *SysMenuService) getRouteRedirect(cMenus []model.SysMenu, routerPath str
 	// 检查内嵌隐藏菜单是否可做重定向
 	if firstChild == nil {
 		for _, item := range cMenus {
-			if item.IsFrame == constCommon.StatusYes && item.Visible == constCommon.StatusNo && strings.Contains(item.Path, constMenu.PathInline) {
+			if item.IsFrame == constSystem.StatusYes && item.Visible == constSystem.StatusNo && strings.Contains(item.Path, constMenu.PathInline) {
 				firstChild = &item
 				break
 			}

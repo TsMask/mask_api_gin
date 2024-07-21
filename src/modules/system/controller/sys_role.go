@@ -2,8 +2,8 @@ package controller
 
 import (
 	"fmt"
-	constAdmin "mask_api_gin/src/framework/constants/admin"
 	constRoleDataScope "mask_api_gin/src/framework/constants/role_data_scope"
+	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
@@ -106,9 +106,9 @@ func (s *SysRoleController) Edit(c *gin.Context) {
 		return
 	}
 
-	// 检查是否管理员角色
-	if body.RoleID == constAdmin.RoleId {
-		c.JSON(200, result.ErrMsg("不允许操作管理员角色"))
+	// 检查是否系统管理员角色
+	if body.RoleID == constSystem.RoleId {
+		c.JSON(200, result.ErrMsg("不允许操作系统管理员角色"))
 		return
 	}
 
@@ -160,10 +160,10 @@ func (s *SysRoleController) Remove(c *gin.Context) {
 		c.JSON(200, result.Err(nil))
 		return
 	}
-	// 检查是否管理员角色
+	// 检查是否系统管理员角色
 	for _, id := range uniqueIDs {
-		if id == constAdmin.RoleId {
-			c.JSON(200, result.ErrMsg("不允许操作管理员角色"))
+		if id == constSystem.RoleId {
+			c.JSON(200, result.ErrMsg("不允许操作系统管理员角色"))
 			return
 		}
 	}
@@ -190,9 +190,9 @@ func (s *SysRoleController) Status(c *gin.Context) {
 		return
 	}
 
-	// 检查是否管理员角色
-	if body.RoleID == constAdmin.RoleId {
-		c.JSON(200, result.ErrMsg("不允许操作管理员角色"))
+	// 检查是否系统管理员角色
+	if body.RoleID == constSystem.RoleId {
+		c.JSON(200, result.ErrMsg("不允许操作系统管理员角色"))
 		return
 	}
 
@@ -236,9 +236,9 @@ func (s *SysRoleController) DataScope(c *gin.Context) {
 		return
 	}
 
-	// 检查是否管理员角色
-	if body.RoleID == constAdmin.RoleId {
-		c.JSON(200, result.ErrMsg("不允许操作管理员角色"))
+	// 检查是否系统管理员角色
+	if body.RoleID == constSystem.RoleId {
+		c.JSON(200, result.ErrMsg("不允许操作系统管理员角色"))
 		return
 	}
 

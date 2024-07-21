@@ -1,7 +1,7 @@
 package controller
 
 import (
-	constCommon "mask_api_gin/src/framework/constants/common"
+	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/framework/vo/result"
@@ -63,7 +63,7 @@ func (s *RegisterController) Register(c *gin.Context) {
 	if err != nil {
 		msg := err.Error() + " " + registerBody.Code
 		s.sysLogLoginService.Insert(
-			registerBody.Username, constCommon.StatusNo, msg,
+			registerBody.Username, constSystem.StatusNo, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
 		c.JSON(200, result.ErrMsg(err.Error()))
@@ -74,7 +74,7 @@ func (s *RegisterController) Register(c *gin.Context) {
 	if err == nil {
 		msg := registerBody.Username + " 注册成功 " + userID
 		s.sysLogLoginService.Insert(
-			registerBody.Username, constCommon.StatusYes, msg,
+			registerBody.Username, constSystem.StatusYes, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
 		c.JSON(200, result.OkMsg("注册成功"))

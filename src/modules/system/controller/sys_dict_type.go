@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	constCommon "mask_api_gin/src/framework/constants/common"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
@@ -172,9 +171,7 @@ func (s *SysDictTypeController) RefreshCache(c *gin.Context) {
 //
 // GET /getDictOptionSelect
 func (s *SysDictTypeController) DictOptionSelect(c *gin.Context) {
-	data := s.sysDictTypeService.Find(model.SysDictType{
-		Status: constCommon.StatusYes,
-	})
+	data := s.sysDictTypeService.Find(model.SysDictType{Status: "1"})
 
 	type labelValue struct {
 		Label string `json:"label"`
