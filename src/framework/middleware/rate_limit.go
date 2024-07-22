@@ -26,8 +26,8 @@ const (
 
 // LimitOption 请求限流参数
 type LimitOption struct {
-	Time  int64 `json:"time"`  // 限流时间,单位秒
-	Count int64 `json:"count"` // 限流次数
+	Time  int64 `json:"time"`  // 限流时间,单位秒 5
+	Count int64 `json:"count"` // 限流次数,单位次 10
 	Type  int64 `json:"type"`  // 限流条件类型,默认LIMIT_GLOBAL
 }
 

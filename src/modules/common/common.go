@@ -36,8 +36,8 @@ func Setup(router *gin.Engine) {
 	{
 		router.POST("/login",
 			middleware.RateLimit(middleware.LimitOption{
-				Time:  300,
-				Count: 10,
+				Time:  180,
+				Count: 15,
 				Type:  middleware.LimitIP,
 			}),
 			controller.NewAccount.Login,
@@ -46,8 +46,8 @@ func Setup(router *gin.Engine) {
 		router.GET("/getRouters", middleware.PreAuthorize(nil), controller.NewAccount.Router)
 		router.POST("/logout",
 			middleware.RateLimit(middleware.LimitOption{
-				Time:  300,
-				Count: 5,
+				Time:  120,
+				Count: 15,
 				Type:  middleware.LimitIP,
 			}),
 			controller.NewAccount.Logout,
@@ -69,7 +69,7 @@ func Setup(router *gin.Engine) {
 	// 通用请求
 	commonGroup := router.Group("/common")
 	{
-		commonGroup.GET("/hash", middleware.PreAuthorize(nil), controller.NewCommon.Hash)
+		commonGroup.POST("/hash", middleware.PreAuthorize(nil), controller.NewCommon.Hash)
 	}
 
 	// 文件操作
