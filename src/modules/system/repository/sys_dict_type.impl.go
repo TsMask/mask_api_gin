@@ -303,7 +303,7 @@ func (r *SysDictTypeRepository) CheckUnique(sysDictType model.SysDictType) strin
 	if len(results) > 0 {
 		return fmt.Sprint(results[0]["str"])
 	}
-	return "-"
+	return ""
 }
 
 // SelectByType 通过字典类型查询信息

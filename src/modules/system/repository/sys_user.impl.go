@@ -446,7 +446,7 @@ func (r *SysUserRepository) CheckUnique(sysUser model.SysUser) string {
 	if len(results) > 0 {
 		return fmt.Sprint(results[0]["str"])
 	}
-	return "-"
+	return ""
 }
 
 // SelectByUserName 通过登录账号查询信息

@@ -367,5 +367,5 @@ func (r *SysRoleRepository) CheckUnique(sysRole model.SysRole) string {
 	if len(results) > 0 {
 		return fmt.Sprint(results[0]["str"])
 	}
-	return "-"
+	return ""
 }

@@ -373,7 +373,7 @@ func (r *SysMenuRepository) CheckUnique(sysMenu model.SysMenu) string {
 	if len(results) > 0 {
 		return fmt.Sprint(results[0]["str"])
 	}
-	return "-"
+	return ""
 }
 
 // SelectPermsByUserId 根据用户ID查询权限标识

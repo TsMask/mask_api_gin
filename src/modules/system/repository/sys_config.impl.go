@@ -311,7 +311,7 @@ func (r *SysConfigRepository) CheckUnique(sysConfig model.SysConfig) string {
 	if len(results) > 0 {
 		return fmt.Sprint(results[0]["str"])
 	}
-	return "-"
+	return ""
 }
 
 // SelectValueByKey 通过Key查询Value

@@ -309,5 +309,5 @@ func (r *SysPostRepository) CheckUnique(sysPost model.SysPost) string {
 	if len(results) > 0 {
 		return fmt.Sprint(results[0]["str"])
 	}
-	return "-"
+	return ""
 }

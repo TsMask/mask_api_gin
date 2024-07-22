@@ -337,5 +337,5 @@ func (r *SysJobRepositoryImpl) CheckUniqueJob(sysJob model.SysJob) string {
 	if len(results) > 0 {
 		return fmt.Sprint(results[0]["str"])
 	}
-	return "-"
+	return ""
 }

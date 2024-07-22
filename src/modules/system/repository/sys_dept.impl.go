@@ -261,7 +261,7 @@ func (r *SysDeptRepository) CheckUnique(sysDept model.SysDept) string {
 	if len(results) > 0 {
 		return fmt.Sprint(results[0]["str"])
 	}
-	return "-"
+	return ""
 }
 
 // ExistChildrenByDeptId 存在子节点数量
