@@ -17,8 +17,8 @@ type IAccountService interface {
 	CleanLoginRecordCache(username string) bool
 
 	// RoleAndMenuPerms 角色和菜单数据权限
-	RoleAndMenuPerms(userId string, isAdmin bool) ([]string, []string)
+	RoleAndMenuPerms(userId string, isSysAdmin bool) ([]string, []string)
 
 	// RouteMenus 前端路由所需要的菜单
-	RouteMenus(userId string, isAdmin bool) []vo.Router
+	RouteMenus(userId string, isSysAdmin bool) []vo.Router
 }
