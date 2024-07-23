@@ -26,7 +26,7 @@ func Remove(token string) string {
 	uuid := claims[constToken.JwtUuid].(string)
 	tokenKey := constCacheKey.LoginTokenKey + uuid
 	hasKey, err := redis.Has("", tokenKey)
-	if hasKey > 1 && err == nil {
+	if hasKey > 0 && err == nil {
 		_ = redis.Del("", tokenKey)
 	}
 	return claims[constToken.JwtName].(string)
