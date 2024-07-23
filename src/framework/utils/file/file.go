@@ -58,8 +58,8 @@ func uploadWhiteList() []string {
 func generateFileName(fileName string) string {
 	fileExt := filepath.Ext(fileName)
 	// 替换掉后缀和特殊字符保留文件名
-	newFileName := regular.Replace(fileName, fileExt, "")
-	newFileName = regular.Replace(newFileName, `[<>:"\\|?*]+`, "")
+	newFileName := regular.Replace(fileExt, fileName, "")
+	newFileName = regular.Replace(`[<>:"\\|?*]+`, newFileName, "")
 	newFileName = strings.TrimSpace(newFileName)
 	return fmt.Sprintf("%s_%s%s", newFileName, generate.Code(6), fileExt)
 }

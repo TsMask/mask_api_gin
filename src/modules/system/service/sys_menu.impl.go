@@ -273,7 +273,7 @@ func (r *SysMenuService) getRouterPath(sysMenu model.SysMenu) string {
 
 	// 路径链接 内部跳转
 	if regular.ValidHttp(routerPath) && sysMenu.IsFrame == constSystem.StatusYes {
-		routerPath = regular.Replace(routerPath, `/^http(s)?:\/\/+/`, "")
+		routerPath = regular.Replace(`/^http(s)?:\/\/+/`, routerPath, "")
 		routerPath = base64.StdEncoding.EncodeToString([]byte(routerPath))
 	}
 
