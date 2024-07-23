@@ -36,20 +36,6 @@ func (s *RegisterController) Register(c *gin.Context) {
 		return
 	}
 
-	// 判断必传参数
-	if !regular.ValidUsername(registerBody.Username) {
-		c.JSON(200, result.ErrMsg("账号不能以数字开头，可包含大写小写字母，数字，且不少于5位"))
-		return
-	}
-	if !regular.ValidPassword(registerBody.Password) {
-		c.JSON(200, result.ErrMsg("登录密码至少包含大小写字母、数字、特殊符号，且不少于6位"))
-		return
-	}
-	if registerBody.Password != registerBody.ConfirmPassword {
-		c.JSON(200, result.ErrMsg("用户确认输入密码不一致"))
-		return
-	}
-
 	// 当前请求信息
 	ipaddr, location := ctx.IPAddrLocation(c)
 	os, browser := ctx.UaOsBrowser(c)
@@ -67,6 +53,20 @@ func (s *RegisterController) Register(c *gin.Context) {
 			[4]string{ipaddr, location, os, browser},
 		)
 		c.JSON(200, result.ErrMsg(err.Error()))
+		return
+	}
+
+	// 判断必传参数
+	if !regular.ValidUsername(registerBody.Username) {
+		c.JSON(200, result.ErrMsg("用户账号只能包含大写小写字母，数字，且不少于6位"))
+		return
+	}
+	if !regular.ValidPassword(registerBody.Password) {
+		c.JSON(200, result.ErrMsg("登录密码至少包含大小写字母、数字、特殊符号，且不少于6位"))
+		return
+	}
+	if registerBody.Password != registerBody.ConfirmPassword {
+		c.JSON(200, result.ErrMsg("用户确认输入密码不一致"))
 		return
 	}
 
