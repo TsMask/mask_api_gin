@@ -72,8 +72,8 @@ create table sys_user (
 -- ----------------------------
 -- 初始化-用户信息表数据
 -- ----------------------------
-insert into sys_user values(1,  103, 'systemAdmin', '系统管理员',    'sys', 'systemAdmin@163.com', '15612341234', '1', '', '$2y$10$a6y06cCCB2Dl3wmwN5eRmO5oLuu7eSrEKKl0hwCizJsKcIPFZh0fa', '1', '0', '127.0.0.1', REPLACE(unix_timestamp(now(3)),'.',''), 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '系统管理员');
-insert into sys_user values(2,  105, 'maskUser',  '普通用户',  'sys', 'maskUser@qq.com',   '13412341234', '1', '', '$2y$10$MZWv2ptjit8uQA4LjXq6nOBtGsl1NmCo2iuzWiYAs7o7UtnLzckd.', '1', '0', '127.0.0.1', REPLACE(unix_timestamp(now(3)),'.',''), 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '普通人员');
+insert into sys_user values(1,  100, 'systemAdmin', '系统管理员',    'sys', 'systemAdmin@163.com', '15612341234', '1', '', '$2y$10$a6y06cCCB2Dl3wmwN5eRmO5oLuu7eSrEKKl0hwCizJsKcIPFZh0fa', '1', '0', '127.0.0.1', REPLACE(unix_timestamp(now(3)),'.',''), 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '系统管理员');
+insert into sys_user values(2,  105, 'maskUser',    '普通用户',      'sys', 'maskUser@qq.com',     '13412341234', '1', '', '$2y$10$MZWv2ptjit8uQA4LjXq6nOBtGsl1NmCo2iuzWiYAs7o7UtnLzckd.', '1', '0', '127.0.0.1', REPLACE(unix_timestamp(now(3)),'.',''), 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '普通人员');
 
 
 -- ----------------------------
