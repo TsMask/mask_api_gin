@@ -8,7 +8,6 @@ import (
 	"mask_api_gin/src/framework/vo/result"
 	"net/url"
 	"path/filepath"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -84,17 +83,16 @@ func (s *FileController) Upload(c *gin.Context) {
 	}
 
 	// 上传文件转存
-	upFilePath, err := file.TransferUploadFile(formFile, subPath, nil)
+	uploadFilePath, err := file.TransferUploadFile(formFile, subPath, nil)
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
 	}
 
-	newFileName := upFilePath[strings.LastIndex(upFilePath, "/")+1:]
 	c.JSON(200, result.OkData(map[string]string{
-		"url":              "http://" + c.Request.Host + upFilePath,
-		"fileName":         upFilePath,
-		"newFileName":      newFileName,
+		"url":              "http://" + c.Request.Host + uploadFilePath,
+		"filePath":         uploadFilePath,
+		"newFileName":      filepath.Base(uploadFilePath),
 		"originalFileName": formFile.Filename,
 	}))
 }
@@ -104,13 +102,10 @@ func (s *FileController) Upload(c *gin.Context) {
 // POST /chunkCheck
 func (s *FileController) ChunkCheck(c *gin.Context) {
 	var body struct {
-		// 唯一标识
-		Identifier string `json:"identifier" binding:"required"`
-		// 文件名
-		FileName string `json:"fileName" binding:"required"`
+		Identifier string `json:"identifier" binding:"required"` // 唯一标识
+		FileName   string `json:"fileName" binding:"required"`   // 文件名
 	}
-	err := c.ShouldBindJSON(&body)
-	if err != nil {
+	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
@@ -129,12 +124,9 @@ func (s *FileController) ChunkCheck(c *gin.Context) {
 // POST /chunkMerge
 func (s *FileController) ChunkMerge(c *gin.Context) {
 	var body struct {
-		// 唯一标识
-		Identifier string `json:"identifier" binding:"required"`
-		// 文件名
-		FileName string `json:"fileName" binding:"required"`
-		// 子路径类型
-		SubPath string `json:"subPath"`
+		Identifier string `json:"identifier" binding:"required"` // 唯一标识
+		FileName   string `json:"fileName" binding:"required"`   // 文件名
+		SubPath    string `json:"subPath"`                       // 子路径类型
 	}
 	err := c.ShouldBindJSON(&body)
 	if err != nil {
@@ -157,11 +149,10 @@ func (s *FileController) ChunkMerge(c *gin.Context) {
 		return
 	}
 
-	newFileName := mergeFilePath[strings.LastIndex(mergeFilePath, "/")+1:]
 	c.JSON(200, result.OkData(map[string]string{
 		"url":              "http://" + c.Request.Host + mergeFilePath,
-		"fileName":         mergeFilePath,
-		"newFileName":      newFileName,
+		"filePath":         mergeFilePath,
+		"newFileName":      filepath.Base(mergeFilePath),
 		"originalFileName": body.FileName,
 	}))
 }

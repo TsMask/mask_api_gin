@@ -53,10 +53,7 @@ func transferToNewFile(file *multipart.FileHeader, dst string) error {
 func mergeToNewFile(dirPath string, writePath string, fileName string) error {
 	// 读取目录下所有文件并排序，注意文件名称是否数值
 	fileNameList, err := getDirFileNameList(dirPath)
-	if err != nil {
-		return fmt.Errorf("读取合并目标文件失败: %v", err)
-	}
-	if len(fileNameList) <= 0 {
+	if err != nil || len(fileNameList) <= 0 {
 		return fmt.Errorf("读取合并目标文件失败")
 	}
 
@@ -182,9 +179,10 @@ func getDirFileNameList(dirPath string) ([]string, error) {
 		return fileNames, err
 	}
 
-	for _, v := range fileInfos {
-		if v.Mode().IsRegular() {
-			fileNames = append(fileNames, v.Name())
+	// 遍历文件/目录信息，只收集文件名
+	for _, fileInfo := range fileInfos {
+		if fileInfo.Mode().IsRegular() {
+			fileNames = append(fileNames, fileInfo.Name())
 		}
 	}
 

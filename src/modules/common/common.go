@@ -75,10 +75,10 @@ func Setup(router *gin.Engine) {
 	// 文件操作
 	fileGroup := router.Group("/file")
 	{
-		fileGroup.GET("/download/:filePath", middleware.PreAuthorize(nil), controller.NewFile.Download)
 		fileGroup.POST("/upload", middleware.PreAuthorize(nil), controller.NewFile.Upload)
 		fileGroup.POST("/chunkCheck", middleware.PreAuthorize(nil), controller.NewFile.ChunkCheck)
 		fileGroup.POST("/chunkUpload", middleware.PreAuthorize(nil), controller.NewFile.ChunkUpload)
 		fileGroup.POST("/chunkMerge", middleware.PreAuthorize(nil), controller.NewFile.ChunkMerge)
+		fileGroup.GET("/download/:filePath", middleware.PreAuthorize(nil), controller.NewFile.Download)
 	}
 }
