@@ -4,6 +4,7 @@ import (
 	db "mask_api_gin/src/framework/data_source"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/demo/model"
+	"time"
 )
 
 // NewDemoORMService 实例化服务层
@@ -15,52 +16,43 @@ type DemoORMService struct{}
 
 // FindByPage 分页查询
 func (s *DemoORMService) FindByPage(query map[string]any) (map[string]any, error) {
-	var (
-		pageSize int64
-		pageNum  int64
-		title    string
-	)
-	if v, ok := query["pageSize"]; ok && v != "" {
-		pageSize = parse.Number(v)
-	}
-	if v, ok := query["pageNum"]; ok && v != "" {
-		pageNum = parse.Number(v)
-	}
-	if v, ok := query["title"]; ok && v != "" {
-		title = v.(string)
-	}
-
 	// 检查分页条件
-	if pageSize < 0 || pageSize > 50 {
-		pageSize = 0
-	}
+	pageNum := int(parse.Number(query["pageNum"]))
 	if pageNum < 1 || pageNum > 50 {
-		pageNum = 10
+		pageNum = 1
+	}
+	pageSize := int(parse.Number(query["pageSize"]))
+	if pageSize < 10 || pageSize > 50 {
+		pageSize = 10
 	}
 
 	// 条件判断
 	where := &model.DemoORM{}
-	if title != "" {
-		where.Title = title
+	if v, ok := query["title"]; ok && v != "" {
+		where.Title = v.(string)
+	}
+	if v, ok := query["status"]; ok && v != "" {
+		where.Status = v.(string)
 	}
 
+	var total int64 = 0
+	var rows = make([]model.DemoORM, 0)
+
 	// 执行查询记录总数
-	var total int64
 	totalResult := db.DB("").Model(&model.DemoORM{}).Where(where).Count(&total)
 	if total == 0 || totalResult.Error != nil {
 		return map[string]any{
 			"total": total,
-			"rows":  []model.DemoORM{},
+			"rows":  rows,
 		}, totalResult.Error
 	}
 
 	// 执行查询记录
-	var rows []model.DemoORM
-	rowsResult := db.DB("").Where(where).Limit(int(pageSize)).Offset(int((pageNum - 1) * pageSize)).Find(&rows)
+	rowsResult := db.DB("").Where(where).Limit(pageSize).Offset(int((pageNum - 1) * pageSize)).Find(&rows)
 	if rowsResult.Error != nil {
 		return map[string]any{
 			"total": total,
-			"rows":  []model.DemoORM{},
+			"rows":  rows,
 		}, rowsResult.Error
 	}
 
@@ -102,6 +94,8 @@ func (s *DemoORMService) FindById(id string) (model.DemoORM, error) {
 
 // Insert 新增
 func (s *DemoORMService) Insert(demoORM model.DemoORM) (model.DemoORM, error) {
+	demoORM.CreateBy = "system"
+	demoORM.CreateTime = time.Now().UnixMilli()
 	result := db.DB("").Create(&demoORM)
 	if result.Error != nil {
 		return demoORM, result.Error
@@ -123,9 +117,9 @@ func (s *DemoORMService) Update(demoORM model.DemoORM) (model.DemoORM, error) {
 	result.Title = demoORM.Title
 	result.OrmType = demoORM.OrmType
 	result.Status = demoORM.Status
-	result.UpdateBy = demoORM.UpdateBy
-	result.UpdateTime = demoORM.UpdateTime
 	result.Remark = demoORM.Remark
+	result.UpdateBy = "system"
+	result.UpdateTime = time.Now().UnixMilli()
 	updateResult := db.DB("").Save(&result)
 	if updateResult.Error != nil {
 		return result, updateResult.Error
