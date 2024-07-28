@@ -79,7 +79,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 // options 参数
 func verifyRolePermission(roles, perms []string, options map[string][]string) bool {
 	// 直接放行 系统管理员角色或任意权限
-	if contains(roles, constSystem.Permission) || contains(perms, constSystem.Permission) {
+	if contains(roles, constSystem.RoleKey) || contains(perms, constSystem.Permission) {
 		return true
 	}
 	opts := make([]bool, 4)

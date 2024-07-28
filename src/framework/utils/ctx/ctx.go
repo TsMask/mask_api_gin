@@ -20,7 +20,7 @@ func QueryMap(c *gin.Context) map[string]any {
 	queryValues := c.Request.URL.Query()
 	queryParams := make(map[string]any, len(queryValues))
 	for key, values := range queryValues {
-		queryParams[key] = values
+		queryParams[key] = values[0]
 	}
 	return queryParams
 }
@@ -125,6 +125,44 @@ func LoginUserToUserName(c *gin.Context) string {
 		return loginUser.User.UserName
 	}
 	return ""
+}
+
+// LoginUserByContainRoles 登录用户信息-包含角色KEY
+func LoginUserByContainRoles(c *gin.Context, target string) bool {
+	value, exists := c.Get(constSystem.CtxLoginUser)
+	if !exists {
+		return false
+	}
+	loginUser := value.(vo.LoginUser)
+	if config.IsSysAdmin(loginUser.UserID) {
+		return true
+	}
+	roles := loginUser.User.Roles
+	for _, item := range roles {
+		if item.RoleKey == target {
+			return true
+		}
+	}
+	return false
+}
+
+// LoginUserByContainPerms 登录用户信息-包含权限标识
+func LoginUserByContainPerms(c *gin.Context, target string) bool {
+	value, exists := c.Get(constSystem.CtxLoginUser)
+	if !exists {
+		return false
+	}
+	loginUser := value.(vo.LoginUser)
+	if config.IsSysAdmin(loginUser.UserID) {
+		return true
+	}
+	perms := loginUser.Permissions
+	for _, str := range perms {
+		if str == target {
+			return true
+		}
+	}
+	return false
 }
 
 // LoginUserToDataScopeSQL 登录用户信息-角色数据范围过滤SQL字符串
