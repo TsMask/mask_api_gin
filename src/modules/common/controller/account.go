@@ -81,10 +81,10 @@ func (s *AccountController) Login(c *gin.Context) {
 	}))
 }
 
-// Info 登录用户信息
+// Self 登录用户信息
 //
-// GET /getInfo
-func (s *AccountController) Info(c *gin.Context) {
+// GET /self
+func (s *AccountController) Self(c *gin.Context) {
 	loginUser, err := ctxUtils.LoginUser(c)
 	if err != nil {
 		c.JSON(401, result.CodeMsg(401, err.Error()))
@@ -104,7 +104,7 @@ func (s *AccountController) Info(c *gin.Context) {
 
 // Router 登录用户路由信息
 //
-// GET /getRouters
+// GET /router
 func (s *AccountController) Router(c *gin.Context) {
 	userID := ctxUtils.LoginUserToUserID(c)
 

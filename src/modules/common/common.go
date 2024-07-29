@@ -23,7 +23,7 @@ func Setup(router *gin.Engine) {
 	)
 
 	// 验证码操作
-	router.GET("/captchaImage",
+	router.GET("/captcha-image",
 		middleware.RateLimit(middleware.LimitOption{
 			Time:  300,
 			Count: 60,
@@ -42,8 +42,8 @@ func Setup(router *gin.Engine) {
 			}),
 			controller.NewAccount.Login,
 		)
-		router.GET("/getInfo", middleware.PreAuthorize(nil), controller.NewAccount.Info)
-		router.GET("/getRouters", middleware.PreAuthorize(nil), controller.NewAccount.Router)
+		router.GET("/self", middleware.PreAuthorize(nil), controller.NewAccount.Self)
+		router.GET("/router", middleware.PreAuthorize(nil), controller.NewAccount.Router)
 		router.POST("/logout",
 			middleware.RateLimit(middleware.LimitOption{
 				Time:  120,
@@ -76,9 +76,9 @@ func Setup(router *gin.Engine) {
 	fileGroup := router.Group("/file")
 	{
 		fileGroup.POST("/upload", middleware.PreAuthorize(nil), controller.NewFile.Upload)
-		fileGroup.POST("/chunkCheck", middleware.PreAuthorize(nil), controller.NewFile.ChunkCheck)
-		fileGroup.POST("/chunkUpload", middleware.PreAuthorize(nil), controller.NewFile.ChunkUpload)
-		fileGroup.POST("/chunkMerge", middleware.PreAuthorize(nil), controller.NewFile.ChunkMerge)
+		fileGroup.POST("/chunk-check", middleware.PreAuthorize(nil), controller.NewFile.ChunkCheck)
+		fileGroup.POST("/chunk-upload", middleware.PreAuthorize(nil), controller.NewFile.ChunkUpload)
+		fileGroup.POST("/chunk-merge", middleware.PreAuthorize(nil), controller.NewFile.ChunkMerge)
 		fileGroup.GET("/download/:filePath", middleware.PreAuthorize(nil), controller.NewFile.Download)
 	}
 }
