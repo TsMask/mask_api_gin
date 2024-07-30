@@ -1,10 +1,8 @@
 package service
 
 import (
-	"bufio"
 	"fmt"
 	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/parse"
 	"os"
 	"runtime"
@@ -31,58 +29,12 @@ func (s *SystemInfoServiceImpl) ProjectInfo() map[string]any {
 	if err != nil {
 		appDir = ""
 	}
-	// 项目依赖
-	dependencies := s.dependencies()
 	return map[string]any{
-		"appDir":       appDir,
-		"env":          config.Env(),
-		"name":         config.Get("framework.name"),
-		"version":      config.Get("framework.version"),
-		"dependencies": dependencies,
+		"appDir":  appDir,
+		"env":     config.Env(),
+		"name":    config.Get("framework.name"),
+		"version": config.Get("framework.version"),
 	}
-}
-
-// dependencies 读取mod内项目包依赖
-func (s *SystemInfoServiceImpl) dependencies() map[string]string {
-	var requireModules = make(map[string]string)
-
-	// 打开 go.mod 文件
-	file, err := os.Open("go.mod")
-	if err != nil {
-		return requireModules
-	}
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			logger.Errorf("Close go.mod file error: %s", err.Error())
-		}
-	}(file)
-
-	// 逐行读取文件内容
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		line = strings.TrimSpace(line)
-
-		// 行不为空，不以module\require开头，不带有 // indirect 注释，则解析包名和版本
-		prefixLine := strings.HasPrefix(line, "module") || strings.HasPrefix(line, "require") || strings.HasPrefix(line, "go ")
-		suffixLine := strings.HasSuffix(line, ")") || strings.HasSuffix(line, "// indirect")
-		if line == "" || prefixLine || suffixLine {
-			continue
-		}
-
-		modInfo := strings.Split(line, " ")
-		if len(modInfo) >= 2 {
-			moduleName := strings.TrimSpace(modInfo[0])
-			version := strings.TrimSpace(modInfo[1])
-			requireModules[moduleName] = version
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		requireModules["scanner-err"] = err.Error()
-	}
-	return requireModules
 }
 
 // SystemInfo 系统信息
