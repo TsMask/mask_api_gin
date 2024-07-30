@@ -142,9 +142,9 @@ func Setup(router *gin.Engine) {
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:online:list"}}),
 			controller.NewSysUserOnline.List,
 		)
-		sysUserOnlineGroup.DELETE("/:tokenId",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:online:forceLogout"}}),
-			controller.NewSysUserOnline.ForceLogout,
+		sysUserOnlineGroup.DELETE("/logout",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:online:logout"}}),
+			controller.NewSysUserOnline.Logout,
 		)
 	}
 }

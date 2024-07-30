@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
 	"mask_api_gin/src/framework/redis"
+	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo"
 	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/monitor/model"
@@ -19,12 +20,11 @@ var NewSysUserOnline = &SysUserOnlineController{
 	sysUserOnlineService: service.NewSysUserOnlineService,
 }
 
-// SysUserOnlineController 在线用户监控 控制层处理
+// SysUserOnlineController 在线用户信息 控制层处理
 //
 // PATH /monitor/online
 type SysUserOnlineController struct {
-	// 在线用户服务
-	sysUserOnlineService service.ISysUserOnlineService
+	sysUserOnlineService service.ISysUserOnlineService // 在线用户服务
 }
 
 // List 在线用户列表
@@ -105,21 +105,31 @@ func (s *SysUserOnlineController) List(c *gin.Context) {
 	}))
 }
 
-// ForceLogout 在线用户强制退出
+// Logout 在线用户强制退出
 //
-// DELETE /:tokenId
-func (s *SysUserOnlineController) ForceLogout(c *gin.Context) {
-	tokenId := c.Param("tokenId")
-	if tokenId == "" || tokenId == "*" {
+// DELETE /?tokenId=xxxxx
+func (s *SysUserOnlineController) Logout(c *gin.Context) {
+	tokenId, ok := c.GetQuery("tokenId")
+	if !ok || tokenId == "" || strings.Contains(tokenId, "*") {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
-	// 删除token
-	err := redis.Del("", constCacheKey.LoginTokenKey+tokenId)
-	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+	// 处理字符转id数组后去重
+	ids := strings.Split(tokenId, ",")
+	uniqueIDs := parse.RemoveDuplicates(ids)
+	if len(uniqueIDs) <= 0 {
+		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
+	// 批量删除token
+	for _, v := range uniqueIDs {
+		key := constCacheKey.LoginTokenKey + v
+		if err := redis.Del("", key); err != nil {
+			c.JSON(200, result.ErrMsg(err.Error()))
+			return
+		}
+	}
+
 	c.JSON(200, result.Ok(nil))
 }
