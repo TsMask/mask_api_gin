@@ -12,7 +12,7 @@ import (
 // NewSysCache 实例化控制层
 var NewSysCache = &SysCacheController{}
 
-// SysCacheController 缓存监控信息 控制层处理
+// SysCacheController 缓存信息 控制层处理
 //
 // PATH /monitor/cache
 type SysCacheController struct{}
@@ -30,7 +30,7 @@ func (s *SysCacheController) Info(c *gin.Context) {
 
 // Names 缓存名称列表
 //
-// GET /getNames
+// GET /names
 func (s *SysCacheController) Names(c *gin.Context) {
 	caches := []model.SysCache{
 		model.NewSysCacheNames("用户信息", constCacheKey.LoginTokenKey),
@@ -46,10 +46,10 @@ func (s *SysCacheController) Names(c *gin.Context) {
 
 // Keys 缓存名称下键名列表
 //
-// GET /getKeys/:cacheName
+// GET /keys?cacheName=xxx
 func (s *SysCacheController) Keys(c *gin.Context) {
-	cacheName := c.Param("cacheName")
-	if cacheName == "" {
+	cacheName, ok := c.GetQuery("cacheName")
+	if cacheName == "" || !ok {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
@@ -66,10 +66,10 @@ func (s *SysCacheController) Keys(c *gin.Context) {
 
 // Value 缓存内容
 //
-// GET /getValue/:cacheName/:cacheKey
+// GET /value?cacheName=xxx&cacheKey=xxx
 func (s *SysCacheController) Value(c *gin.Context) {
-	cacheName := c.Param("cacheName")
-	cacheKey := c.Param("cacheKey")
+	cacheName, _ := c.GetQuery("cacheName")
+	cacheKey, _ := c.GetQuery("cacheKey")
 	if cacheName == "" || cacheKey == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
@@ -84,12 +84,12 @@ func (s *SysCacheController) Value(c *gin.Context) {
 	c.JSON(200, result.OkData(sysCache))
 }
 
-// CleanCacheName 删除缓存名称下键名列表
+// CleanKeys 删除缓存名称下键名列表
 //
-// DELETE /cleanCacheName/:cacheName
-func (s *SysCacheController) CleanCacheName(c *gin.Context) {
-	cacheName := c.Param("cacheName")
-	if cacheName == "" {
+// DELETE /clean/keys?cacheName=xxx
+func (s *SysCacheController) CleanKeys(c *gin.Context) {
+	cacheName, ok := c.GetQuery("cacheName")
+	if cacheName == "" || !ok {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
@@ -107,12 +107,12 @@ func (s *SysCacheController) CleanCacheName(c *gin.Context) {
 	c.JSON(200, result.Ok(nil))
 }
 
-// CleanCacheKey 删除缓存键名
+// CleanValue 删除缓存内容
 //
-// DELETE /cleanCacheKey/:cacheName/:cacheKey
-func (s *SysCacheController) CleanCacheKey(c *gin.Context) {
-	cacheName := c.Param("cacheName")
-	cacheKey := c.Param("cacheKey")
+// DELETE /clean/value?cacheName=xxx&cacheKey=xxx
+func (s *SysCacheController) CleanValue(c *gin.Context) {
+	cacheName, _ := c.GetQuery("cacheName")
+	cacheKey, _ := c.GetQuery("cacheKey")
 	if cacheName == "" || cacheKey == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
@@ -126,10 +126,10 @@ func (s *SysCacheController) CleanCacheKey(c *gin.Context) {
 	c.JSON(200, result.Ok(nil))
 }
 
-// CleanCacheSafe 安全清理缓存名称
+// CleanSafe 安全清理缓存名称
 //
-// DELETE /cleanCacheSafe
-func (s *SysCacheController) CleanCacheSafe(c *gin.Context) {
+// DELETE /clean/safe
+func (s *SysCacheController) CleanSafe(c *gin.Context) {
 	caches := []model.SysCache{
 		model.NewSysCacheNames("配置信息", constCacheKey.SysConfigKey),
 		model.NewSysCacheNames("数据字典", constCacheKey.SysDictKey),

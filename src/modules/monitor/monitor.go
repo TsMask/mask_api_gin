@@ -17,42 +17,55 @@ func Setup(router *gin.Engine) {
 	// 启动时需要的初始参数
 	InitLoad()
 
-	// 服务器服务信息
+	// 服务器信息
 	router.GET("/monitor/system-info",
 		middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:system:info"}}),
 		controller.NewSystemInfo.Info,
 	)
 
-	// 缓存服务信息
+	// 在线用户监控
+	sysUserOnlineGroup := router.Group("/monitor/online")
+	{
+		sysUserOnlineGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:online:list"}}),
+			controller.NewSysUserOnline.List,
+		)
+		sysUserOnlineGroup.DELETE("/logout",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:online:logout"}}),
+			controller.NewSysUserOnline.Logout,
+		)
+	}
+
+	// 缓存信息
 	sysCacheGroup := router.Group("/monitor/cache")
 	{
 		sysCacheGroup.GET("",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:info"}}),
 			controller.NewSysCache.Info,
 		)
-		sysCacheGroup.GET("/getNames",
+		sysCacheGroup.GET("/names",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:list"}}),
 			controller.NewSysCache.Names,
 		)
-		sysCacheGroup.GET("/getKeys/:cacheName",
+		sysCacheGroup.GET("/keys",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:list"}}),
 			controller.NewSysCache.Keys,
 		)
-		sysCacheGroup.GET("/getValue/:cacheName/:cacheKey",
+		sysCacheGroup.GET("/value",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:query"}}),
 			controller.NewSysCache.Value,
 		)
-		sysCacheGroup.DELETE("/cleanCacheName/:cacheName",
+		sysCacheGroup.DELETE("/clean/keys",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
-			controller.NewSysCache.CleanCacheName,
+			controller.NewSysCache.CleanKeys,
 		)
-		sysCacheGroup.DELETE("/cleanCacheKey/:cacheName/:cacheKey",
+		sysCacheGroup.DELETE("/clean/value",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
-			controller.NewSysCache.CleanCacheKey,
+			controller.NewSysCache.CleanValue,
 		)
-		sysCacheGroup.DELETE("/cleanCacheSafe",
+		sysCacheGroup.DELETE("/clean/safe",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
-			controller.NewSysCache.CleanCacheSafe,
+			controller.NewSysCache.CleanSafe,
 		)
 	}
 
@@ -135,18 +148,6 @@ func Setup(router *gin.Engine) {
 		)
 	}
 
-	// 在线用户监控
-	sysUserOnlineGroup := router.Group("/monitor/online")
-	{
-		sysUserOnlineGroup.GET("/list",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:online:list"}}),
-			controller.NewSysUserOnline.List,
-		)
-		sysUserOnlineGroup.DELETE("/logout",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:online:logout"}}),
-			controller.NewSysUserOnline.Logout,
-		)
-	}
 }
 
 // InitLoad 初始参数
