@@ -64,7 +64,7 @@ func (s *SysCacheController) Keys(c *gin.Context) {
 	c.JSON(200, result.OkData(caches))
 }
 
-// Value 缓存内容
+// Value 缓存内容信息
 //
 // GET /value?cacheName=xxx&cacheKey=xxx
 func (s *SysCacheController) Value(c *gin.Context) {
@@ -84,7 +84,29 @@ func (s *SysCacheController) Value(c *gin.Context) {
 	c.JSON(200, result.OkData(sysCache))
 }
 
-// CleanKeys 删除缓存名称下键名列表
+// CleanSafe 缓存名称安全清理
+//
+// DELETE /clean/safe
+func (s *SysCacheController) CleanSafe(c *gin.Context) {
+	caches := []model.SysCache{
+		model.NewSysCacheNames("配置信息", constCacheKey.SysConfigKey),
+		model.NewSysCacheNames("数据字典", constCacheKey.SysDictKey),
+		model.NewSysCacheNames("验证码", constCacheKey.CaptchaCodeKey),
+		model.NewSysCacheNames("防重提交", constCacheKey.RepeatSubmitKey),
+		model.NewSysCacheNames("限流处理", constCacheKey.RateLimitKey),
+		model.NewSysCacheNames("密码错误次数", constCacheKey.PwdErrCntKey),
+	}
+	for _, v := range caches {
+		cacheKeys, err := redis.GetKeys("", v.CacheName+":*")
+		if err != nil {
+			continue
+		}
+		_ = redis.DelKeys("", cacheKeys)
+	}
+	c.JSON(200, result.Ok(nil))
+}
+
+// CleanKeys 缓存名称下键名删除
 //
 // DELETE /clean/keys?cacheName=xxx
 func (s *SysCacheController) CleanKeys(c *gin.Context) {
@@ -107,7 +129,7 @@ func (s *SysCacheController) CleanKeys(c *gin.Context) {
 	c.JSON(200, result.Ok(nil))
 }
 
-// CleanValue 删除缓存内容
+// CleanValue 缓存内容删除
 //
 // DELETE /clean/value?cacheName=xxx&cacheKey=xxx
 func (s *SysCacheController) CleanValue(c *gin.Context) {
@@ -122,28 +144,6 @@ func (s *SysCacheController) CleanValue(c *gin.Context) {
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
-	}
-	c.JSON(200, result.Ok(nil))
-}
-
-// CleanSafe 安全清理缓存名称
-//
-// DELETE /clean/safe
-func (s *SysCacheController) CleanSafe(c *gin.Context) {
-	caches := []model.SysCache{
-		model.NewSysCacheNames("配置信息", constCacheKey.SysConfigKey),
-		model.NewSysCacheNames("数据字典", constCacheKey.SysDictKey),
-		model.NewSysCacheNames("验证码", constCacheKey.CaptchaCodeKey),
-		model.NewSysCacheNames("防重提交", constCacheKey.RepeatSubmitKey),
-		model.NewSysCacheNames("限流处理", constCacheKey.RateLimitKey),
-		model.NewSysCacheNames("密码错误次数", constCacheKey.PwdErrCntKey),
-	}
-	for _, v := range caches {
-		cacheKeys, err := redis.GetKeys("", v.CacheName+":*")
-		if err != nil {
-			continue
-		}
-		_ = redis.DelKeys("", cacheKeys)
 	}
 	c.JSON(200, result.Ok(nil))
 }
