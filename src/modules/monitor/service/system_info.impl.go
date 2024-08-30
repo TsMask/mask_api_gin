@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/utils/parse"
@@ -177,9 +178,12 @@ func (s *SystemInfoServiceImpl) NetworkInfo() map[string]string {
 // DiskInfo 磁盘信息
 func (s *SystemInfoServiceImpl) DiskInfo() []map[string]string {
 	disks := make([]map[string]string, 0)
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
 
-	partitions, err := disk.Partitions(false)
-	if err != nil {
+	partitions, err := disk.PartitionsWithContext(ctx, false)
+	if err != nil && err != context.DeadlineExceeded {
 		return disks
 	}
 
