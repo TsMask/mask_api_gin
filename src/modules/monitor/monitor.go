@@ -55,17 +55,17 @@ func Setup(router *gin.Engine) {
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:query"}}),
 			controller.NewSysCache.Value,
 		)
-		sysCacheGroup.DELETE("/clean/keys",
+		sysCacheGroup.DELETE("/names",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
+			controller.NewSysCache.CleanNames,
+		)
+		sysCacheGroup.DELETE("/keys",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
 			controller.NewSysCache.CleanKeys,
 		)
-		sysCacheGroup.DELETE("/clean/value",
+		sysCacheGroup.DELETE("/value",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
 			controller.NewSysCache.CleanValue,
-		)
-		sysCacheGroup.DELETE("/clean/safe",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
-			controller.NewSysCache.CleanSafe,
 		)
 	}
 

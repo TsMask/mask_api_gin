@@ -48,17 +48,18 @@ func (s *SysCacheController) Names(c *gin.Context) {
 //
 // GET /keys?cacheName=xxx
 func (s *SysCacheController) Keys(c *gin.Context) {
-	cacheName, ok := c.GetQuery("cacheName")
-	if cacheName == "" || !ok {
+	var query struct {
+		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
-	caches := []model.SysCache{}
 
-	// 遍历组装
-	cacheKeys, _ := redis.GetKeys("", cacheName+":*")
+	caches := []model.SysCache{}
+	cacheKeys, _ := redis.GetKeys("", query.CacheName+":*")
 	for _, key := range cacheKeys {
-		caches = append(caches, model.NewSysCacheKeys(cacheName, key))
+		caches = append(caches, model.NewSysCacheKeys(query.CacheName, key))
 	}
 
 	c.JSON(200, result.OkData(caches))
@@ -68,26 +69,28 @@ func (s *SysCacheController) Keys(c *gin.Context) {
 //
 // GET /value?cacheName=xxx&cacheKey=xxx
 func (s *SysCacheController) Value(c *gin.Context) {
-	cacheName, _ := c.GetQuery("cacheName")
-	cacheKey, _ := c.GetQuery("cacheKey")
-	if cacheName == "" || cacheKey == "" {
+	var query struct {
+		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称
+		CacheKey  string `form:"cacheKey" binding:"required"`  // 键名列表中得到的缓存键名
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
-	cacheValue, err := redis.Get("", cacheName+":"+cacheKey)
+	cacheValue, err := redis.Get("", query.CacheName+":"+query.CacheKey)
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
 	}
-	sysCache := model.NewSysCacheValue(cacheName, cacheKey, cacheValue)
+	sysCache := model.NewSysCacheValue(query.CacheName, query.CacheKey, cacheValue)
 	c.JSON(200, result.OkData(sysCache))
 }
 
-// CleanSafe 缓存名称安全清理
+// CleanNames 缓存名称列表安全删除
 //
-// DELETE /clean/safe
-func (s *SysCacheController) CleanSafe(c *gin.Context) {
+// DELETE /clean/names
+func (s *SysCacheController) CleanNames(c *gin.Context) {
 	caches := []model.SysCache{
 		model.NewSysCacheNames("配置信息", constCacheKey.SysConfigKey),
 		model.NewSysCacheNames("数据字典", constCacheKey.SysDictKey),
@@ -110,19 +113,25 @@ func (s *SysCacheController) CleanSafe(c *gin.Context) {
 //
 // DELETE /clean/keys?cacheName=xxx
 func (s *SysCacheController) CleanKeys(c *gin.Context) {
-	cacheName, ok := c.GetQuery("cacheName")
-	if cacheName == "" || !ok {
+	var query struct {
+		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
+	if constCacheKey.LoginTokenKey == query.CacheName {
+		c.JSON(200, result.ErrMsg("不能删除用户信息缓存"))
+		return
+	}
 
-	cacheKeys, err := redis.GetKeys("", cacheName+":*")
+	cacheKeys, err := redis.GetKeys("", query.CacheName+":*")
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
 	}
-	err = redis.DelKeys("", cacheKeys)
-	if err != nil {
+
+	if err = redis.DelKeys("", cacheKeys); err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
 	}
@@ -133,15 +142,16 @@ func (s *SysCacheController) CleanKeys(c *gin.Context) {
 //
 // DELETE /clean/value?cacheName=xxx&cacheKey=xxx
 func (s *SysCacheController) CleanValue(c *gin.Context) {
-	cacheName, _ := c.GetQuery("cacheName")
-	cacheKey, _ := c.GetQuery("cacheKey")
-	if cacheName == "" || cacheKey == "" {
+	var query struct {
+		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称
+		CacheKey  string `form:"cacheKey" binding:"required"`  // 键名列表中得到的缓存键名
+	}
+	if err := c.ShouldBindQuery(&query); err != nil {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
-	err := redis.Del("", cacheName+":"+cacheKey)
-	if err != nil {
+	if err := redis.Del("", query.CacheName+":"+query.CacheKey); err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
 	}
