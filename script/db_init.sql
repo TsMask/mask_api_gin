@@ -250,15 +250,14 @@ insert into sys_menu values('1046', '缓存查询', '114', '1', '#', '', '1', '1
 insert into sys_menu values('1047', '缓存删除', '114', '2', '#', '', '1', '1', 'B', '1', '1', 'monitor:cache:remove',       '#', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
 -- 在线用户按钮
 insert into sys_menu values('1048', '在线查询', '115', '1', '#', '', '1', '1', 'B', '1', '1', 'monitor:online:query',       '#', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
-insert into sys_menu values('1049', '批量强退', '115', '2', '#', '', '1', '1', 'B', '1', '1', 'monitor:online:batchLogout', '#', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
-insert into sys_menu values('1050', '单条强退', '115', '3', '#', '', '1', '1', 'B', '1', '1', 'monitor:online:forceLogout', '#', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
+insert into sys_menu values('1049', '强退用户', '115', '3', '#', '', '1', '1', 'B', '1', '1', 'monitor:online:logout',      '#', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
 -- 调度任务按钮
-insert into sys_menu values('1051', '任务查询', '116', '1', '#', '', '1', '1', 'B', '1', '1', 'monitor:job:query',          '#', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
-insert into sys_menu values('1052', '任务新增', '116', '2', '#', '', '1', '1', 'B', '1', '1', 'monitor:job:add',            '#', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
-insert into sys_menu values('1053', '任务修改', '116', '3', '#', '', '1', '1', 'B', '1', '1', 'monitor:job:edit',           '#', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
-insert into sys_menu values('1054', '任务删除', '116', '4', '#', '', '1', '1', 'B', '1', '1', 'monitor:job:remove',         '#', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
-insert into sys_menu values('1055', '状态修改', '116', '5', '#', '', '1', '1', 'B', '1', '1', 'monitor:job:changeStatus',   '#', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
-insert into sys_menu values('1056', '任务导出', '116', '6', '#', '', '1', '1', 'B', '1', '1', 'monitor:job:export',         '#', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
+insert into sys_menu values('1050', '任务查询', '116', '1', '#', '', '1', '1', 'B', '1', '1', 'monitor:job:query',          '#', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
+insert into sys_menu values('1051', '任务新增', '116', '2', '#', '', '1', '1', 'B', '1', '1', 'monitor:job:add',            '#', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
+insert into sys_menu values('1052', '任务修改', '116', '3', '#', '', '1', '1', 'B', '1', '1', 'monitor:job:edit',           '#', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
+insert into sys_menu values('1053', '任务删除', '116', '4', '#', '', '1', '1', 'B', '1', '1', 'monitor:job:remove',         '#', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
+insert into sys_menu values('1054', '状态修改', '116', '5', '#', '', '1', '1', 'B', '1', '1', 'monitor:job:changeStatus',   '#', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
+insert into sys_menu values('1055', '任务导出', '116', '6', '#', '', '1', '1', 'B', '1', '1', 'monitor:job:export',         '#', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
 
 
 -- ----------------------------
@@ -573,4 +572,3 @@ create table sys_notice (
 insert into sys_notice values('1', '温馨提醒：2022-11-05 MASK新版本发布啦', '2', '新版本内容', '1', '0', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '系统管理员');
 insert into sys_notice values('2', '维护通知：2022-11-10 MASK系统凌晨维护', '1', '维护内容',   '1', '0', 'systemAdmin', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '系统管理员');
 
- 
