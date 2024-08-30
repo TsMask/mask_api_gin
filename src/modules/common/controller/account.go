@@ -81,10 +81,10 @@ func (s *AccountController) Login(c *gin.Context) {
 	}))
 }
 
-// Self 登录用户信息
+// Me 登录用户信息
 //
-// GET /self
-func (s *AccountController) Self(c *gin.Context) {
+// GET /me
+func (s *AccountController) Me(c *gin.Context) {
 	loginUser, err := ctxUtils.LoginUser(c)
 	if err != nil {
 		c.JSON(401, result.CodeMsg(401, err.Error()))

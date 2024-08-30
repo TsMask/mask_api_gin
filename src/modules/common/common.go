@@ -42,7 +42,7 @@ func Setup(router *gin.Engine) {
 			}),
 			controller.NewAccount.Login,
 		)
-		router.GET("/self", middleware.PreAuthorize(nil), controller.NewAccount.Self)
+		router.GET("/me", middleware.PreAuthorize(nil), controller.NewAccount.Me)
 		router.GET("/router", middleware.PreAuthorize(nil), controller.NewAccount.Router)
 		router.POST("/logout",
 			middleware.RateLimit(middleware.LimitOption{
