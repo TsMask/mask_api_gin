@@ -232,7 +232,10 @@ func Get(source, key string) (string, error) {
 
 	ctx := context.Background()
 	v, err := rdb.Get(ctx, key).Result()
-	if err != nil || errors.Is(err, redis.Nil) {
+	if errors.Is(err, redis.Nil) {
+		return "", fmt.Errorf("no keys")
+	}
+	if err != nil {
 		return "", err
 	}
 	return v, nil
