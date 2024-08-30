@@ -1,8 +1,8 @@
 package ua
 
-import "github.com/mssola/user_agent"
+import "github.com/mssola/useragent"
 
 // Info 获取user-agent信息
-func Info(userAgent string) *user_agent.UserAgent {
-	return user_agent.New(userAgent)
+func Info(userAgent string) *useragent.UserAgent {
+	return useragent.New(userAgent)
 }

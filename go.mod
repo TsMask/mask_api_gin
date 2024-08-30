@@ -8,7 +8,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/matoous/go-nanoid/v2 v2.1.0
 	github.com/mojocn/base64Captcha v1.3.6
-	github.com/mssola/user_agent v0.6.0
+	github.com/mssola/useragent v1.0.0
 	github.com/redis/go-redis/v9 v9.6.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/shirou/gopsutil/v4 v4.24.7

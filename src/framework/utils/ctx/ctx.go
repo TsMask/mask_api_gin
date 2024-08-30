@@ -84,15 +84,16 @@ func UaOsBrowser(c *gin.Context) (string, string) {
 	userAgent := c.GetHeader("user-agent")
 	uaInfo := ua.Info(userAgent)
 
-	browser := "未知 未知"
-	bName, bVersion := uaInfo.Browser()
-	if bName != "" && bVersion != "" {
-		browser = bName + " " + bVersion
+	browser := "未知"
+	if bName, bVersion := uaInfo.Browser(); bName != "" {
+		browser = bName
+		if bVersion != "" {
+			browser = bName + " " + bVersion
+		}
 	}
 
-	os := "未知 未知"
-	bos := uaInfo.OS()
-	if bos != "" {
+	os := "未知"
+	if bos := uaInfo.OS(); bos != "" {
 		os = bos
 	}
 	return os, browser
