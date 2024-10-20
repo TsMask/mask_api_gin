@@ -44,6 +44,21 @@ type SysJob struct {
 	resultMap map[string]string // 结果字段与实体映射
 }
 
+// convertResultRows 将结果记录转实体结果组
+func (r *SysJob) convertResultRows(rows []map[string]any) []model.SysJob {
+	arr := make([]model.SysJob, 0)
+	for _, row := range rows {
+		sysJob := model.SysJob{}
+		for key, value := range row {
+			if keyMapper, ok := r.resultMap[key]; ok {
+				db.SetFieldValue(&sysJob, keyMapper, value)
+			}
+		}
+		arr = append(arr, sysJob)
+	}
+	return arr
+}
+
 // SelectByPage 分页查询集合
 func (r *SysJob) SelectByPage(query map[string]any) map[string]any {
 	// 查询条件拼接
@@ -106,7 +121,7 @@ func (r *SysJob) SelectByPage(query map[string]any) map[string]any {
 	}
 
 	// 转换实体
-	result["rows"] = db.ConvertResultRows[model.SysJob](model.SysJob{}, r.resultMap, rows)
+	result["rows"] = r.convertResultRows(rows)
 	return result
 }
 
@@ -147,7 +162,7 @@ func (r *SysJob) Select(sysJob model.SysJob) []model.SysJob {
 	}
 
 	// 转换实体
-	return db.ConvertResultRows[model.SysJob](model.SysJob{}, r.resultMap, rows)
+	return r.convertResultRows(rows)
 }
 
 // SelectByIds 通过ID查询信息
@@ -161,7 +176,7 @@ func (r *SysJob) SelectByIds(jobIds []string) []model.SysJob {
 		return []model.SysJob{}
 	}
 	// 转换实体
-	return db.ConvertResultRows[model.SysJob](model.SysJob{}, r.resultMap, rows)
+	return r.convertResultRows(rows)
 }
 
 // Insert 新增信息

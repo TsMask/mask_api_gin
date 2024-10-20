@@ -38,6 +38,21 @@ type SysConfigRepository struct {
 	resultMap map[string]string // 结果字段与实体映射
 }
 
+// convertResultRows 将结果记录转实体结果组
+func (r *SysConfigRepository) convertResultRows(rows []map[string]any) []model.SysConfig {
+	arr := make([]model.SysConfig, 0)
+	for _, row := range rows {
+		sysConfig := model.SysConfig{}
+		for key, value := range row {
+			if keyMapper, ok := r.resultMap[key]; ok {
+				db.SetFieldValue(&sysConfig, keyMapper, value)
+			}
+		}
+		arr = append(arr, sysConfig)
+	}
+	return arr
+}
+
 // SelectByPage 分页查询集合
 func (r *SysConfigRepository) SelectByPage(query map[string]any) map[string]any {
 	// 查询条件拼接
@@ -115,7 +130,7 @@ func (r *SysConfigRepository) SelectByPage(query map[string]any) map[string]any 
 	}
 
 	// 转换实体
-	result["rows"] = db.ConvertResultRows[model.SysConfig](model.SysConfig{}, r.resultMap, rows)
+	result["rows"] = r.convertResultRows(rows)
 	return result
 }
 
@@ -156,7 +171,7 @@ func (r *SysConfigRepository) Select(sysConfig model.SysConfig) []model.SysConfi
 	}
 
 	// 转换实体
-	return db.ConvertResultRows[model.SysConfig](model.SysConfig{}, r.resultMap, rows)
+	return r.convertResultRows(rows)
 }
 
 // SelectByIds 通过ID查询信息
@@ -170,7 +185,7 @@ func (r *SysConfigRepository) SelectByIds(configIds []string) []model.SysConfig 
 		return []model.SysConfig{}
 	}
 	// 转换实体
-	return db.ConvertResultRows[model.SysConfig](model.SysConfig{}, r.resultMap, rows)
+	return r.convertResultRows(rows)
 }
 
 // Insert 新增信息
