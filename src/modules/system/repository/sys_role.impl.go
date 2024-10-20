@@ -46,21 +46,6 @@ type SysRoleRepository struct {
 	resultMap map[string]string // 结果字段与实体映射
 }
 
-// convertResultRows 将结果记录转实体结果组
-func (r *SysRoleRepository) convertResultRows(rows []map[string]any) []model.SysRole {
-	arr := make([]model.SysRole, 0)
-	for _, row := range rows {
-		sysRole := model.SysRole{}
-		for key, value := range row {
-			if keyMapper, ok := r.resultMap[key]; ok {
-				db.SetFieldValue(&sysRole, keyMapper, value)
-			}
-		}
-		arr = append(arr, sysRole)
-	}
-	return arr
-}
-
 // SelectByPage 分页查询集合
 func (r *SysRoleRepository) SelectByPage(query map[string]any, dataScopeSQL string) map[string]any {
 	// 查询条件拼接
@@ -144,14 +129,14 @@ func (r *SysRoleRepository) SelectByPage(query map[string]any, dataScopeSQL stri
 
 	// 查询数据
 	querySql := r.selectSql + whereSql + dataScopeSQL + pageSql
-	results, err := db.RawDB("", querySql, params)
+	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return result
 	}
 
 	// 转换实体
-	result["rows"] = r.convertResultRows(results)
+	result["rows"] = db.ConvertResultRows[model.SysRole](model.SysRole{}, r.resultMap, rows)
 	return result
 }
 
@@ -191,7 +176,7 @@ func (r *SysRoleRepository) Select(sysRole model.SysRole, dataScopeSQL string) [
 		logger.Errorf("query err => %v", err)
 		return []model.SysRole{}
 	}
-	return r.convertResultRows(rows)
+	return db.ConvertResultRows[model.SysRole](model.SysRole{}, r.resultMap, rows)
 }
 
 // SelectByIds 通过ID查询信息
@@ -199,13 +184,13 @@ func (r *SysRoleRepository) SelectByIds(roleIds []string) []model.SysRole {
 	placeholder := db.KeyPlaceholderByQuery(len(roleIds))
 	querySql := r.selectSql + " where r.role_id in (" + placeholder + ")"
 	parameters := db.ConvertIdsSlice(roleIds)
-	results, err := db.RawDB("", querySql, parameters)
+	rows, err := db.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysRole{}
 	}
 	// 转换实体
-	return r.convertResultRows(results)
+	return db.ConvertResultRows[model.SysRole](model.SysRole{}, r.resultMap, rows)
 }
 
 // Update 修改信息
@@ -327,12 +312,12 @@ func (r *SysRoleRepository) DeleteByIds(roleIds []string) int64 {
 // SelectByUserId 根据用户ID获取角色信息
 func (r *SysRoleRepository) SelectByUserId(userId string) []model.SysRole {
 	querySql := r.selectSql + " where r.del_flag = '0' and ur.user_id = ?"
-	results, err := db.RawDB("", querySql, []any{userId})
+	rows, err := db.RawDB("", querySql, []any{userId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysRole{}
 	}
-	return r.convertResultRows(results)
+	return db.ConvertResultRows[model.SysRole](model.SysRole{}, r.resultMap, rows)
 }
 
 // CheckUnique 检查信息是否唯一

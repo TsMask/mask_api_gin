@@ -28,7 +28,7 @@ var NewSysJob = &SysJobController{
 //
 // PATH /monitor/job
 type SysJobController struct {
-	sysJobService      service.ISysJobService            // 调度任务服务
+	sysJobService      *service.SysJob                   // 调度任务服务
 	sysDictTypeService systemService.ISysDictTypeService // 字典类型服务
 }
 
@@ -43,16 +43,16 @@ func (s *SysJobController) List(c *gin.Context) {
 
 // Info 调度任务信息
 //
-// GET /:jobId
+// GET /?jobId=xxx
 func (s *SysJobController) Info(c *gin.Context) {
-	jobId := c.Param("jobId")
-	if jobId == "" {
+	id, idOk := c.GetQuery("jobId")
+	if id == "" || !idOk {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
-	data := s.sysJobService.FindById(jobId)
-	if data.JobID == jobId {
+	data := s.sysJobService.FindById(id)
+	if data.JobID == id {
 		c.JSON(200, result.OkData(data))
 		return
 	}
@@ -157,15 +157,15 @@ func (s *SysJobController) Edit(c *gin.Context) {
 
 // Remove 调度任务删除
 //
-// DELETE /:jobIds
+// DELETE /?jobId=xxx
 func (s *SysJobController) Remove(c *gin.Context) {
-	jobIds := c.Param("jobIds")
-	if jobIds == "" {
+	id, idOk := c.GetQuery("jobId")
+	if id == "" || !idOk {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 	// 处理字符转id数组后去重
-	ids := strings.Split(jobIds, ",")
+	ids := strings.Split(id, ",")
 	uniqueIDs := parse.RemoveDuplicates(ids)
 	if len(uniqueIDs) <= 0 {
 		c.JSON(200, result.Err(nil))
@@ -188,8 +188,7 @@ func (s *SysJobController) Status(c *gin.Context) {
 		JobId  string `json:"jobId" binding:"required"`
 		Status string `json:"status" binding:"required"`
 	}
-	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil {
+	if err := c.ShouldBindBodyWith(&body, binding.JSON); err != nil {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
@@ -243,10 +242,10 @@ func (s *SysJobController) Run(c *gin.Context) {
 	c.JSON(200, result.Err(nil))
 }
 
-// ResetQueueJob 调度任务重置刷新队列
+// Reset 调度任务重置刷新队列
 //
-// PUT /resetQueueJob
-func (s *SysJobController) ResetQueueJob(c *gin.Context) {
+// PUT /reset
+func (s *SysJobController) Reset(c *gin.Context) {
 	s.sysJobService.Reset()
 	c.JSON(200, result.Ok(nil))
 }

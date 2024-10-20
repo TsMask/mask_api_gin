@@ -45,21 +45,6 @@ type SysLogOperateRepository struct {
 	resultMap map[string]string // 结果字段与实体映射
 }
 
-// convertResultRows 将结果记录转实体结果组
-func (r *SysLogOperateRepository) convertResultRows(rows []map[string]any) []model.SysLogOperate {
-	arr := make([]model.SysLogOperate, 0)
-	for _, row := range rows {
-		SysLogOperate := model.SysLogOperate{}
-		for key, value := range row {
-			if keyMapper, ok := r.resultMap[key]; ok {
-				db.SetFieldValue(&SysLogOperate, keyMapper, value)
-			}
-		}
-		arr = append(arr, SysLogOperate)
-	}
-	return arr
-}
-
 // SelectByPage 分页查询集合
 func (r *SysLogOperateRepository) SelectByPage(query map[string]any) map[string]any {
 	// 查询条件拼接
@@ -137,14 +122,14 @@ func (r *SysLogOperateRepository) SelectByPage(query map[string]any) map[string]
 
 	// 查询数据
 	querySql := r.selectSql + whereSql + pageSql
-	results, err := db.RawDB("", querySql, params)
+	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return result
 	}
 
 	// 转换实体
-	result["rows"] = r.convertResultRows(results)
+	result["rows"] = db.ConvertResultRows[model.SysLogOperate](model.SysLogOperate{}, r.resultMap, rows)
 	return result
 }
 
@@ -178,28 +163,27 @@ func (r *SysLogOperateRepository) Select(SysLogOperate model.SysLogOperate) []mo
 
 	// 查询数据
 	querySql := r.selectSql + whereSql
-	results, err := db.RawDB("", querySql, params)
+	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysLogOperate{}
 	}
 
 	// 转换实体
-	return r.convertResultRows(results)
+	return db.ConvertResultRows[model.SysLogOperate](model.SysLogOperate{}, r.resultMap, rows)
 }
 
 // SelectById 通过ID查询信息
 func (r *SysLogOperateRepository) SelectById(operaId string) model.SysLogOperate {
 	querySql := r.selectSql + " where opera_id = ?"
-	results, err := db.RawDB("", querySql, []any{operaId})
+	rows, err := db.RawDB("", querySql, []any{operaId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return model.SysLogOperate{}
 	}
 	// 转换实体
-	rows := r.convertResultRows(results)
-	if len(rows) > 0 {
-		return rows[0]
+	if v := db.ConvertResultRows[model.SysLogOperate](model.SysLogOperate{}, r.resultMap, rows); len(v) > 0 {
+		return v[0]
 	}
 	return model.SysLogOperate{}
 }

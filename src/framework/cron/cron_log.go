@@ -3,8 +3,8 @@ package cron
 import (
 	"encoding/json"
 	constSystem "mask_api_gin/src/framework/constants/system"
-	"mask_api_gin/src/modules/monitor/model"
-	"mask_api_gin/src/modules/monitor/repository"
+	monitorModel "mask_api_gin/src/modules/monitor/model"
+	monitorRepository "mask_api_gin/src/modules/monitor/repository"
 	"time"
 )
 
@@ -101,7 +101,7 @@ func (jl *jobLogData) SaveLog(status string) {
 
 	// 创建日志对象
 	duration := time.Since(time.UnixMilli(jl.Timestamp))
-	sysJobLog := model.SysJobLog{
+	sysJobLog := monitorModel.SysJobLog{
 		JobName:      sysJob.JobName,
 		JobGroup:     sysJob.JobGroup,
 		InvokeTarget: sysJob.InvokeTarget,
@@ -111,7 +111,7 @@ func (jl *jobLogData) SaveLog(status string) {
 		CostTime:     duration.Milliseconds(),
 	}
 	// 插入数据
-	repository.NewSysJobLogRepository.Insert(sysJobLog)
+	monitorRepository.NewSysJobLog.Insert(sysJobLog)
 }
 
 // JobData 调度任务日志收集结构体，执行任务时传入的接收参数
@@ -119,5 +119,5 @@ type JobData struct {
 	// 触发执行cron重复多次
 	Repeat bool
 	// 定时任务调度表记录信息
-	SysJob model.SysJob
+	SysJob monitorModel.SysJob
 }

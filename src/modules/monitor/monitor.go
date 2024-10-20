@@ -69,6 +69,56 @@ func Setup(router *gin.Engine) {
 		)
 	}
 
+	// 调度任务信息
+	sysJobGroup := router.Group("/monitor/job")
+	{
+		sysJobGroup.GET("/list",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:list"}}),
+			controller.NewSysJob.List,
+		)
+		sysJobGroup.GET("",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:query"}}),
+			controller.NewSysJob.Info,
+		)
+		sysJobGroup.POST("",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:add"}}),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeInsert)),
+			controller.NewSysJob.Add,
+		)
+		sysJobGroup.PUT("",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:edit"}}),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeUpdate)),
+			controller.NewSysJob.Edit,
+		)
+		sysJobGroup.DELETE("",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeDelete)),
+			controller.NewSysJob.Remove,
+		)
+		sysJobGroup.PUT("/changeStatus",
+			middleware.RepeatSubmit(5),
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeUpdate)),
+			controller.NewSysJob.Status,
+		)
+		sysJobGroup.PUT("/run/:jobId",
+			middleware.RepeatSubmit(10),
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeUpdate)),
+			controller.NewSysJob.Run,
+		)
+		sysJobGroup.PUT("/reset",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeClean)),
+			controller.NewSysJob.Reset,
+		)
+		sysJobGroup.POST("/export",
+			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:export"}}),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeExport)),
+			controller.NewSysJob.Export,
+		)
+	}
+
 	// 调度任务日志信息
 	sysJobLogGroup := router.Group("/monitor/jobLog")
 	{
@@ -95,56 +145,6 @@ func Setup(router *gin.Engine) {
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:export"}}),
 			middleware.OperateLog(middleware.OptionNew("调度任务日志信息", middleware.BusinessTypeExport)),
 			controller.NewSysJobLog.Export,
-		)
-	}
-
-	// 调度任务信息
-	sysJobGroup := router.Group("/monitor/job")
-	{
-		sysJobGroup.GET("/list",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:list"}}),
-			controller.NewSysJob.List,
-		)
-		sysJobGroup.GET("/:jobId",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:query"}}),
-			controller.NewSysJob.Info,
-		)
-		sysJobGroup.POST("",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:add"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeInsert)),
-			controller.NewSysJob.Add,
-		)
-		sysJobGroup.PUT("",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:edit"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeUpdate)),
-			controller.NewSysJob.Edit,
-		)
-		sysJobGroup.DELETE("/:jobIds",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeDelete)),
-			controller.NewSysJob.Remove,
-		)
-		sysJobGroup.PUT("/changeStatus",
-			middleware.RepeatSubmit(5),
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeUpdate)),
-			controller.NewSysJob.Status,
-		)
-		sysJobGroup.PUT("/run/:jobId",
-			middleware.RepeatSubmit(10),
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeUpdate)),
-			controller.NewSysJob.Run,
-		)
-		sysJobGroup.PUT("/resetQueueJob",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:changeStatus"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeClean)),
-			controller.NewSysJob.ResetQueueJob,
-		)
-		sysJobGroup.POST("/export",
-			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:export"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BusinessTypeExport)),
-			controller.NewSysJob.Export,
 		)
 	}
 

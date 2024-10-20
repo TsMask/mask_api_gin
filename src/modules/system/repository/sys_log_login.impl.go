@@ -35,21 +35,6 @@ type SysLogLoginRepository struct {
 	resultMap map[string]string // 结果字段与实体映射
 }
 
-// convertResultRows 将结果记录转实体结果组
-func (r *SysLogLoginRepository) convertResultRows(rows []map[string]any) []model.SysLogLogin {
-	arr := make([]model.SysLogLogin, 0)
-	for _, row := range rows {
-		SysLogLogin := model.SysLogLogin{}
-		for key, value := range row {
-			if keyMapper, ok := r.resultMap[key]; ok {
-				db.SetFieldValue(&SysLogLogin, keyMapper, value)
-			}
-		}
-		arr = append(arr, SysLogLogin)
-	}
-	return arr
-}
-
 // SelectByPage 分页查询集合
 func (r *SysLogLoginRepository) SelectByPage(query map[string]any) map[string]any {
 	// 查询条件拼接
@@ -120,14 +105,14 @@ func (r *SysLogLoginRepository) SelectByPage(query map[string]any) map[string]an
 
 	// 查询数据
 	querySql := r.selectSql + whereSql + pageSql
-	results, err := db.RawDB("", querySql, params)
+	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return result
 	}
 
 	// 转换实体
-	result["rows"] = r.convertResultRows(results)
+	result["rows"] = db.ConvertResultRows[model.SysLogLogin](model.SysLogLogin{}, r.resultMap, rows)
 	return result
 }
 
@@ -157,14 +142,14 @@ func (r *SysLogLoginRepository) Select(SysLogLogin model.SysLogLogin) []model.Sy
 
 	// 查询数据
 	querySql := r.selectSql + whereSql
-	results, err := db.RawDB("", querySql, params)
+	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysLogLogin{}
 	}
 
 	// 转换实体
-	return r.convertResultRows(results)
+	return db.ConvertResultRows[model.SysLogLogin](model.SysLogLogin{}, r.resultMap, rows)
 }
 
 // Insert 新增信息

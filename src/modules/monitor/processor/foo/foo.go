@@ -6,18 +6,18 @@ import (
 	"time"
 )
 
-var NewProcessor = &fooProcessor{
+var NewProcessor = &foo{
 	progress: 0,
 	count:    0,
 }
 
-// fooProcessor 队列任务处理
-type fooProcessor struct {
+// foo 队列任务处理
+type foo struct {
 	progress int // 任务进度
 	count    int // 执行次数
 }
 
-func (s *fooProcessor) Execute(data any) (any, error) {
+func (s *foo) Execute(data any) (any, error) {
 	logger.Infof("执行 %d 次，上次进度： %d ", s.count, s.progress)
 	s.count++
 

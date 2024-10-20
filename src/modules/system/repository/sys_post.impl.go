@@ -36,21 +36,6 @@ type SysPostRepository struct {
 	resultMap map[string]string // 结果字段与实体映射
 }
 
-// convertResultRows 将结果记录转实体结果组
-func (r *SysPostRepository) convertResultRows(rows []map[string]any) []model.SysPost {
-	arr := make([]model.SysPost, 0)
-	for _, row := range rows {
-		sysPost := model.SysPost{}
-		for key, value := range row {
-			if keyMapper, ok := r.resultMap[key]; ok {
-				db.SetFieldValue(&sysPost, keyMapper, value)
-			}
-		}
-		arr = append(arr, sysPost)
-	}
-	return arr
-}
-
 // SelectByPage 分页查询集合
 func (r *SysPostRepository) SelectByPage(query map[string]any) map[string]any {
 	// 查询条件拼接
@@ -103,13 +88,13 @@ func (r *SysPostRepository) SelectByPage(query map[string]any) map[string]any {
 
 	// 查询数据
 	querySql := r.selectSql + whereSql + pageSql
-	results, err := db.RawDB("", querySql, params)
+	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 	}
 
 	// 转换实体
-	result["rows"] = r.convertResultRows(results)
+	result["rows"] = db.ConvertResultRows[model.SysPost](model.SysPost{}, r.resultMap, rows)
 	return result
 }
 
@@ -145,7 +130,7 @@ func (r *SysPostRepository) Select(sysPost model.SysPost) []model.SysPost {
 		logger.Errorf("query err => %v", err)
 		return []model.SysPost{}
 	}
-	return r.convertResultRows(rows)
+	return db.ConvertResultRows[model.SysPost](model.SysPost{}, r.resultMap, rows)
 }
 
 // SelectByIds 通过ID查询信息
@@ -153,13 +138,13 @@ func (r *SysPostRepository) SelectByIds(postIds []string) []model.SysPost {
 	placeholder := db.KeyPlaceholderByQuery(len(postIds))
 	querySql := r.selectSql + " where post_id in (" + placeholder + ")"
 	parameters := db.ConvertIdsSlice(postIds)
-	results, err := db.RawDB("", querySql, parameters)
+	rows, err := db.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysPost{}
 	}
 	// 转换实体
-	return r.convertResultRows(results)
+	return db.ConvertResultRows[model.SysPost](model.SysPost{}, r.resultMap, rows)
 }
 
 // Update 修改信息
@@ -274,7 +259,7 @@ func (r *SysPostRepository) SelectByUserId(userId string) []model.SysPost {
 		logger.Errorf("query err => %v", err)
 		return []model.SysPost{}
 	}
-	return r.convertResultRows(rows)
+	return db.ConvertResultRows[model.SysPost](model.SysPost{}, r.resultMap, rows)
 }
 
 // CheckUnique 检查信息是否唯一

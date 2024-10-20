@@ -58,21 +58,6 @@ type SysMenuRepository struct {
 	resultMap       map[string]string // 结果字段与实体映射
 }
 
-// convertResultRows 将结果记录转实体结果组
-func (r *SysMenuRepository) convertResultRows(rows []map[string]any) []model.SysMenu {
-	arr := make([]model.SysMenu, 0)
-	for _, row := range rows {
-		sysMenu := model.SysMenu{}
-		for key, value := range row {
-			if keyMapper, ok := r.resultMap[key]; ok {
-				db.SetFieldValue(&sysMenu, keyMapper, value)
-			}
-		}
-		arr = append(arr, sysMenu)
-	}
-	return arr
-}
-
 // Select 查询集合
 func (r *SysMenuRepository) Select(sysMenu model.SysMenu, userId string) []model.SysMenu {
 	// 查询条件拼接
@@ -109,14 +94,14 @@ func (r *SysMenuRepository) Select(sysMenu model.SysMenu, userId string) []model
 	// 查询数据
 	orderSql := " order by m.parent_id, m.menu_sort"
 	querySql := fromSql + whereSql + orderSql
-	results, err := db.RawDB("", querySql, params)
+	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysMenu{}
 	}
 
 	// 转换实体
-	return r.convertResultRows(results)
+	return db.ConvertResultRows[model.SysMenu](model.SysMenu{}, r.resultMap, rows)
 }
 
 // SelectByIds 通过ID查询信息
@@ -124,13 +109,13 @@ func (r *SysMenuRepository) SelectByIds(menuIds []string) []model.SysMenu {
 	placeholder := db.KeyPlaceholderByQuery(len(menuIds))
 	querySql := r.selectSql + " where m.menu_id in (" + placeholder + ")"
 	parameters := db.ConvertIdsSlice(menuIds)
-	results, err := db.RawDB("", querySql, parameters)
+	rows, err := db.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysMenu{}
 	}
 	// 转换实体
-	return r.convertResultRows(results)
+	return db.ConvertResultRows[model.SysMenu](model.SysMenu{}, r.resultMap, rows)
 }
 
 // Insert 新增信息
@@ -456,11 +441,12 @@ func (r *SysMenuRepository) SelectTreeByUserId(userId string) []model.SysMenu {
 	}
 
 	// 查询结果
-	results, err := db.RawDB("", querySql, params)
+	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysMenu{}
 	}
 
-	return r.convertResultRows(results)
+	// 转换实体
+	return db.ConvertResultRows[model.SysMenu](model.SysMenu{}, r.resultMap, rows)
 }

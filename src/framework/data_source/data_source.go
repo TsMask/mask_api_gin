@@ -156,6 +156,22 @@ func ExecDB(source string, sql string, parameters []any) (int64, error) {
 	return res.RowsAffected, nil
 }
 
+// ConvertResultRows 将结果记录转实体结果组 db.ConvertResultRows[T](T{}, r.resultMap, rows)
+func ConvertResultRows[T any](resultType any, resultMap map[string]string, rows []map[string]any) []T {
+	arr := make([]T, 0, len(rows))
+	obj := reflect.TypeOf(resultType)
+	for _, row := range rows {
+		item := reflect.New(obj).Elem()
+		for key, value := range row {
+			if keyMapper, ok := resultMap[key]; ok {
+				SetFieldValue(item, keyMapper, value)
+			}
+		}
+		arr = append(arr, item.Interface().(T))
+	}
+	return arr
+}
+
 // SetFieldValue 判断结构体内是否存在指定字段并设置值
 func SetFieldValue(obj any, fieldName string, value any) {
 	// 获取结构体的反射值

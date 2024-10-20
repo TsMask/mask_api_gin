@@ -43,21 +43,6 @@ type SysDeptRepository struct {
 	resultMap map[string]string // 结果字段与实体映射
 }
 
-// convertResultRows 将结果记录转实体结果组
-func (r *SysDeptRepository) convertResultRows(rows []map[string]any) []model.SysDept {
-	arr := make([]model.SysDept, 0)
-	for _, row := range rows {
-		sysDept := model.SysDept{}
-		for key, value := range row {
-			if keyMapper, ok := r.resultMap[key]; ok {
-				db.SetFieldValue(&sysDept, keyMapper, value)
-			}
-		}
-		arr = append(arr, sysDept)
-	}
-	return arr
-}
-
 // Select 查询集合
 func (r *SysDeptRepository) Select(sysDept model.SysDept, dataScopeSQL string) []model.SysDept {
 	// 查询条件拼接
@@ -89,14 +74,14 @@ func (r *SysDeptRepository) Select(sysDept model.SysDept, dataScopeSQL string) [
 	// 查询数据
 	orderSql := " order by d.parent_id, d.order_num asc "
 	querySql := r.selectSql + whereSql + dataScopeSQL + orderSql
-	results, err := db.RawDB("", querySql, params)
+	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysDept{}
 	}
 
 	// 转换实体
-	return r.convertResultRows(results)
+	return db.ConvertResultRows[model.SysDept](model.SysDept{}, r.resultMap, rows)
 }
 
 // SelectById 通过ID查询信息
@@ -105,15 +90,14 @@ func (r *SysDeptRepository) SelectById(deptId string) model.SysDept {
 	d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status,
 	(select dept_name from sys_dept where dept_id = d.parent_id) parent_name
 	from sys_dept d where d.dept_id = ?`
-	results, err := db.RawDB("", querySql, []any{deptId})
+	rows, err := db.RawDB("", querySql, []any{deptId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return model.SysDept{}
 	}
 	// 转换实体
-	rows := r.convertResultRows(results)
-	if len(rows) > 0 {
-		return rows[0]
+	if v := db.ConvertResultRows[model.SysDept](model.SysDept{}, r.resultMap, rows); len(v) > 0 {
+		return v[0]
 	}
 	return model.SysDept{}
 }
@@ -329,14 +313,14 @@ func (r *SysDeptRepository) SelectDeptIdsByRoleId(roleId string, deptCheckStrict
 // SelectChildrenDeptById 根据ID查询所有子部门
 func (r *SysDeptRepository) SelectChildrenDeptById(deptId string) []model.SysDept {
 	querySql := r.selectSql + " where find_in_set(?, d.ancestors)"
-	results, err := db.RawDB("", querySql, []any{deptId})
+	rows, err := db.RawDB("", querySql, []any{deptId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysDept{}
 	}
 
 	// 转换实体
-	return r.convertResultRows(results)
+	return db.ConvertResultRows[model.SysDept](model.SysDept{}, r.resultMap, rows)
 }
 
 // UpdateDeptStatusNormal 修改所在部门正常状态

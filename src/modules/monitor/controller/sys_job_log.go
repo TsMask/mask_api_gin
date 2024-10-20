@@ -20,7 +20,7 @@ import (
 // NewSysJobLog 实例化控制层
 var NewSysJobLog = &SysJobLogController{
 	sysJobService:      service.NewSysJob,
-	sysJobLogService:   service.NewSysJobLogService,
+	sysJobLogService:   service.NewSysJobLog,
 	sysDictTypeService: systemService.NewSysDictType,
 }
 
@@ -28,8 +28,8 @@ var NewSysJobLog = &SysJobLogController{
 //
 // PATH /monitor/jobLog
 type SysJobLogController struct {
-	sysJobService      service.ISysJobService            // 调度任务服务
-	sysJobLogService   service.ISysJobLogService         // 调度任务日志服务
+	sysJobService      *service.SysJob                   // 调度任务服务
+	sysJobLogService   *service.SysJobLog                // 调度任务日志服务
 	sysDictTypeService systemService.ISysDictTypeService // 字典类型服务
 }
 

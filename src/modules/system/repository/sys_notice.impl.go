@@ -39,21 +39,6 @@ type SysNoticeRepository struct {
 	resultMap map[string]string // 结果字段与实体映射
 }
 
-// convertResultRows 将结果记录转实体结果组
-func (r *SysNoticeRepository) convertResultRows(rows []map[string]any) []model.SysNotice {
-	arr := make([]model.SysNotice, 0)
-	for _, row := range rows {
-		sysNotice := model.SysNotice{}
-		for key, value := range row {
-			if keyMapper, ok := r.resultMap[key]; ok {
-				db.SetFieldValue(&sysNotice, keyMapper, value)
-			}
-		}
-		arr = append(arr, sysNotice)
-	}
-	return arr
-}
-
 // SelectByPage 分页查询集合
 func (r *SysNoticeRepository) SelectByPage(query map[string]any) map[string]any {
 	// 查询条件拼接
@@ -127,13 +112,13 @@ func (r *SysNoticeRepository) SelectByPage(query map[string]any) map[string]any 
 
 	// 查询数据
 	querySql := r.selectSql + whereSql + pageSql
-	results, err := db.RawDB("", querySql, params)
+	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 	}
 
 	// 转换实体
-	result["rows"] = r.convertResultRows(results)
+	result["rows"] = db.ConvertResultRows[model.SysNotice](model.SysNotice{}, r.resultMap, rows)
 	return result
 }
 
@@ -167,14 +152,14 @@ func (r *SysNoticeRepository) Select(sysNotice model.SysNotice) []model.SysNotic
 
 	// 查询数据
 	querySql := r.selectSql + whereSql
-	results, err := db.RawDB("", querySql, params)
+	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysNotice{}
 	}
 
 	// 转换实体
-	return r.convertResultRows(results)
+	return db.ConvertResultRows[model.SysNotice](model.SysNotice{}, r.resultMap, rows)
 }
 
 // SelectByIds 通过ID查询信息
@@ -182,13 +167,13 @@ func (r *SysNoticeRepository) SelectByIds(noticeIds []string) []model.SysNotice 
 	placeholder := db.KeyPlaceholderByQuery(len(noticeIds))
 	querySql := r.selectSql + " where notice_id in (" + placeholder + ")"
 	parameters := db.ConvertIdsSlice(noticeIds)
-	results, err := db.RawDB("", querySql, parameters)
+	rows, err := db.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return []model.SysNotice{}
 	}
 	// 转换实体
-	return r.convertResultRows(results)
+	return db.ConvertResultRows[model.SysNotice](model.SysNotice{}, r.resultMap, rows)
 }
 
 // Insert 新增信息
