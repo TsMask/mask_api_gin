@@ -1,12 +1,22 @@
 package main
 
 import (
+	"embed"
+	"log"
 	"mask_api_gin/src"
 )
 
+//go:embed assets/*
+var assetsDir embed.FS
+
+//go:embed src/config/*.yaml
+var configDir embed.FS
+
 func main() {
-	src.ConfigurationInit()
+	src.ConfigurationInit(assetsDir, configDir)
+	defer src.ConfigurationClose()
+
 	if err := src.RunServer(); err != nil {
-		src.ConfigurationClose()
+		log.Fatalf("run server error: %v", err)
 	}
 }

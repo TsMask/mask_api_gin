@@ -83,7 +83,7 @@ func initDefeat(app *gin.Engine) {
 	app.NoRoute(func(c *gin.Context) {
 		c.JSON(404, gin.H{
 			"code": 404,
-			"msg":  fmt.Sprintf("%s Not Found", c.Request.RequestURI),
+			"msg":  fmt.Sprintf("Not Found %s %s", c.Request.Method, c.Request.RequestURI),
 		})
 	})
 }
