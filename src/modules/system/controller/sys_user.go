@@ -37,7 +37,7 @@ type SysUserController struct {
 	sysRoleService     service.ISysRoleService     // 角色服务
 	sysPostService     service.ISysPostService     // 岗位服务
 	sysDictTypeService service.ISysDictTypeService // 字典类型服务
-	sysConfigService   service.ISysConfigService   // 参数配置服务
+	sysConfigService   *service.SysConfig          // 参数配置服务
 }
 
 // List 用户信息列表

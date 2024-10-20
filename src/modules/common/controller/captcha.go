@@ -24,7 +24,7 @@ var NewCaptcha = &CaptchaController{
 //
 // PATH /
 type CaptchaController struct {
-	sysConfigService systemService.ISysConfigService // 参数配置服务
+	sysConfigService *systemService.SysConfig // 参数配置服务
 }
 
 // Image 获取验证码

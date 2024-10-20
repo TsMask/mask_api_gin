@@ -22,7 +22,7 @@ type SysUserService struct {
 	sysUserRoleRepository repository.ISysUserRoleRepository // 用户与角色服务
 	sysUserPostRepository repository.ISysUserPostRepository // 用户与岗位服务
 	sysDictDataService    ISysDictDataService               // 字典数据服务
-	sysConfigService      ISysConfigService                 // 参数配置服务
+	sysConfigService      *SysConfig                        // 参数配置服务
 }
 
 // FindByPage 分页查询列表数据

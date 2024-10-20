@@ -25,7 +25,7 @@ var NewSysConfig = &SysConfigController{
 //
 // PATH /system/config
 type SysConfigController struct {
-	sysConfigService service.ISysConfigService // 参数配置服务
+	sysConfigService *service.SysConfig // 参数配置服务
 }
 
 // List 参数配置列表
@@ -47,7 +47,7 @@ func (s *SysConfigController) Info(c *gin.Context) {
 		return
 	}
 	data := s.sysConfigService.FindById(configId)
-	if data.ConfigID == configId {
+	if data.ConfigId == configId {
 		c.JSON(200, result.OkData(data))
 		return
 	}
@@ -60,7 +60,7 @@ func (s *SysConfigController) Info(c *gin.Context) {
 func (s *SysConfigController) Add(c *gin.Context) {
 	var body model.SysConfig
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.ConfigID != "" {
+	if err != nil || body.ConfigId != "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
@@ -88,20 +88,20 @@ func (s *SysConfigController) Add(c *gin.Context) {
 func (s *SysConfigController) Edit(c *gin.Context) {
 	var body model.SysConfig
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.ConfigID == "" {
+	if err != nil || body.ConfigId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
 	// 检查是否存在
-	config := s.sysConfigService.FindById(body.ConfigID)
-	if config.ConfigID != body.ConfigID {
+	config := s.sysConfigService.FindById(body.ConfigId)
+	if config.ConfigId != body.ConfigId {
 		c.JSON(200, result.ErrMsg("没有权限访问参数配置数据！"))
 		return
 	}
 
 	// 检查属性值唯一
-	uniqueConfigKey := s.sysConfigService.CheckUniqueByKey(body.ConfigKey, body.ConfigID)
+	uniqueConfigKey := s.sysConfigService.CheckUniqueByKey(body.ConfigKey, body.ConfigId)
 	if !uniqueConfigKey {
 		msg := fmt.Sprintf("参数配置修改【%s】失败，参数键名已存在", body.ConfigKey)
 		c.JSON(200, result.ErrMsg(msg))
@@ -200,7 +200,7 @@ func (s *SysConfigController) Export(c *gin.Context) {
 			typeValue = "是"
 		}
 		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.ConfigID,
+			"A" + idx: row.ConfigId,
 			"B" + idx: row.ConfigName,
 			"C" + idx: row.ConfigKey,
 			"D" + idx: row.ConfigValue,

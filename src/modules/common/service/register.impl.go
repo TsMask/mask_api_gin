@@ -20,9 +20,9 @@ var NewRegisterService = &RegisterServiceImpl{
 
 // RegisterServiceImpl 账号注册操作 服务层处理
 type RegisterServiceImpl struct {
-	sysUserService   systemService.ISysUserService   // 用户信息服务
-	sysConfigService systemService.ISysConfigService // 参数配置服务
-	sysRoleService   systemService.ISysRoleService   // 角色服务
+	sysUserService   systemService.ISysUserService // 用户信息服务
+	sysConfigService *systemService.SysConfig      // 参数配置服务
+	sysRoleService   systemService.ISysRoleService // 角色服务
 }
 
 // ValidateCaptcha 校验验证码

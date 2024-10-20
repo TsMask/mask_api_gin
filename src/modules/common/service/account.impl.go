@@ -23,10 +23,10 @@ var NewAccountService = &AccountServiceImpl{
 
 // AccountServiceImpl 账号身份操作 服务层处理
 type AccountServiceImpl struct {
-	sysUserService   systemService.ISysUserService   // 用户信息服务
-	sysConfigService systemService.ISysConfigService // 参数配置服务
-	sysRoleService   systemService.ISysRoleService   // 角色服务
-	sysMenuService   systemService.ISysMenuService   // 菜单服务
+	sysUserService   systemService.ISysUserService // 用户信息服务
+	sysConfigService *systemService.SysConfig      // 参数配置服务
+	sysRoleService   systemService.ISysRoleService // 角色服务
+	sysMenuService   systemService.ISysMenuService // 菜单服务
 }
 
 // ValidateCaptcha 校验验证码
@@ -132,7 +132,7 @@ func (s *AccountServiceImpl) passwordRetryCount(username string) (string, int64,
 	retryCountInt64 := parse.Number(retryCount)
 	if retryCountInt64 >= int64(maxRetryCount) {
 		msg := fmt.Sprintf("密码输入错误 %d 次，帐户锁定 %d 分钟", maxRetryCount, lockTime)
-		return retryKey, retryCountInt64, time.Duration(lockTime) * time.Minute, fmt.Errorf(msg)
+		return retryKey, retryCountInt64, time.Duration(lockTime) * time.Minute, fmt.Errorf("%s", msg)
 	}
 	return retryKey, retryCountInt64, time.Duration(lockTime) * time.Minute, nil
 }
