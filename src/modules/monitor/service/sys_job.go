@@ -19,7 +19,7 @@ type SysJob struct {
 }
 
 // FindByPage 分页查询
-func (r *SysJob) FindByPage(query map[string]any) map[string]any {
+func (r *SysJob) FindByPage(query map[string]any) ([]model.SysJob, int64) {
 	return r.sysJobRepository.SelectByPage(query)
 }
 

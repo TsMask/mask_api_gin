@@ -37,8 +37,8 @@ type SysJobController struct {
 // GET /list
 func (s *SysJobController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
-	data := s.sysJobService.FindByPage(query)
-	c.JSON(200, result.Ok(data))
+	rows, total := s.sysJobService.FindByPage(query)
+	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Info 调度任务信息
@@ -256,12 +256,11 @@ func (s *SysJobController) Reset(c *gin.Context) {
 func (s *SysJobController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := ctx.BodyJSONMap(c)
-	data := s.sysJobService.FindByPage(query)
-	if parse.Number(data["total"]) == 0 {
+	rows, total := s.sysJobService.FindByPage(query)
+	if total == 0 {
 		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return
 	}
-	rows := data["rows"].([]model.SysJob)
 
 	// 导出文件名称
 	fileName := fmt.Sprintf("job_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())

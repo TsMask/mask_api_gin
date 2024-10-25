@@ -17,44 +17,15 @@ var NewSysConfig = &SysConfig{
 	config_id, config_name, config_key, config_value, config_type, 
 	create_by, create_time, update_by, update_time, remark 
 	from sys_config`,
-
-	resultMap: map[string]string{
-		"config_id":    "ConfigID",
-		"config_name":  "ConfigName",
-		"config_key":   "ConfigKey",
-		"config_value": "ConfigValue",
-		"config_type":  "ConfigType",
-		"remark":       "Remark",
-		"create_by":    "CreateBy",
-		"create_time":  "CreateTime",
-		"update_by":    "UpdateBy",
-		"update_time":  "UpdateTime",
-	},
 }
 
 // SysConfig 参数配置表 数据层处理
 type SysConfig struct {
-	selectSql string            // 查询视图对象SQL
-	resultMap map[string]string // 结果字段与实体映射
-}
-
-// convertResultRows 将结果记录转实体结果组
-func (r *SysConfig) convertResultRows(rows []map[string]any) []model.SysConfig {
-	arr := make([]model.SysConfig, 0)
-	for _, row := range rows {
-		sysConfig := model.SysConfig{}
-		for key, value := range row {
-			if keyMapper, ok := r.resultMap[key]; ok {
-				db.SetFieldValue(&sysConfig, keyMapper, value)
-			}
-		}
-		arr = append(arr, sysConfig)
-	}
-	return arr
+	selectSql string // 查询视图对象SQL
 }
 
 // SelectByPage 分页查询集合
-func (r *SysConfig) SelectByPage(query map[string]any) map[string]any {
+func (r SysConfig) SelectByPage(query map[string]any) ([]model.SysConfig, int64) {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -96,23 +67,19 @@ func (r *SysConfig) SelectByPage(query map[string]any) map[string]any {
 	}
 
 	// 查询结果
-	result := map[string]any{
-		"total": int64(0),
-		"rows":  []model.SysConfig{},
-	}
+	total := int64(0)
+	arr := []model.SysConfig{}
 
 	// 查询数量 长度为0直接返回
 	totalSql := "select count(1) as 'total' from sys_config"
 	totalRows, err := db.RawDB("", totalSql+whereSql, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
-		return result
+		return arr, total
 	}
-
-	if total := parse.Number(totalRows[0]["total"]); total > 0 {
-		return result
-	} else {
-		result["total"] = total
+	total = parse.Number(totalRows[0]["total"])
+	if total <= 0 {
+		return arr, total
 	}
 
 	// 分页
@@ -126,16 +93,18 @@ func (r *SysConfig) SelectByPage(query map[string]any) map[string]any {
 	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
-		return result
+		return arr, total
 	}
 
 	// 转换实体
-	result["rows"] = r.convertResultRows(rows)
-	return result
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("Unmarshal err => %v", err)
+	}
+	return arr, total
 }
 
 // Select 查询集合
-func (r *SysConfig) Select(sysConfig model.SysConfig) []model.SysConfig {
+func (r SysConfig) Select(sysConfig model.SysConfig) []model.SysConfig {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -171,11 +140,15 @@ func (r *SysConfig) Select(sysConfig model.SysConfig) []model.SysConfig {
 	}
 
 	// 转换实体
-	return r.convertResultRows(rows)
+	arr := []model.SysConfig{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("Unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // SelectByIds 通过ID查询信息
-func (r *SysConfig) SelectByIds(configIds []string) []model.SysConfig {
+func (r SysConfig) SelectByIds(configIds []string) []model.SysConfig {
 	placeholder := db.KeyPlaceholderByQuery(len(configIds))
 	querySql := r.selectSql + " where config_id in (" + placeholder + ")"
 	parameters := db.ConvertIdsSlice(configIds)
@@ -184,12 +157,17 @@ func (r *SysConfig) SelectByIds(configIds []string) []model.SysConfig {
 		logger.Errorf("query err => %v", err)
 		return []model.SysConfig{}
 	}
+
 	// 转换实体
-	return r.convertResultRows(rows)
+	arr := []model.SysConfig{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("Unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // Insert 新增信息
-func (r *SysConfig) Insert(sysConfig model.SysConfig) string {
+func (r SysConfig) Insert(sysConfig model.SysConfig) string {
 	// 参数拼接
 	params := make(map[string]any)
 	if sysConfig.ConfigName != "" {
@@ -235,7 +213,7 @@ func (r *SysConfig) Insert(sysConfig model.SysConfig) string {
 }
 
 // Update 修改信息
-func (r *SysConfig) Update(sysConfig model.SysConfig) int64 {
+func (r SysConfig) Update(sysConfig model.SysConfig) int64 {
 	// 参数拼接
 	params := make(map[string]any)
 	if sysConfig.ConfigName != "" {
@@ -271,7 +249,7 @@ func (r *SysConfig) Update(sysConfig model.SysConfig) int64 {
 }
 
 // DeleteByIds 批量删除信息
-func (r *SysConfig) DeleteByIds(configIds []string) int64 {
+func (r SysConfig) DeleteByIds(configIds []string) int64 {
 	placeholder := db.KeyPlaceholderByQuery(len(configIds))
 	sql := fmt.Sprintf("delete from sys_config where config_id in (%s)", placeholder)
 	parameters := db.ConvertIdsSlice(configIds)
@@ -284,7 +262,7 @@ func (r *SysConfig) DeleteByIds(configIds []string) int64 {
 }
 
 // CheckUnique 检查信息是否唯一
-func (r *SysConfig) CheckUnique(sysConfig model.SysConfig) string {
+func (r SysConfig) CheckUnique(sysConfig model.SysConfig) string {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -315,7 +293,7 @@ func (r *SysConfig) CheckUnique(sysConfig model.SysConfig) string {
 }
 
 // SelectValueByKey 通过Key查询Value
-func (r *SysConfig) SelectValueByKey(configKey string) string {
+func (r SysConfig) SelectValueByKey(configKey string) string {
 	querySql := "select config_value as 'str' from sys_config where config_key = ?"
 	results, err := db.RawDB("", querySql, []any{configKey})
 	if err != nil {

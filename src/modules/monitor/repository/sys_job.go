@@ -18,49 +18,15 @@ var NewSysJob = &SysJob{
 	misfire_policy, concurrent, status, 
 	save_log, create_by, create_time, remark 
 	from sys_job`,
-
-	resultMap: map[string]string{
-		"job_id":          "JobID",
-		"job_name":        "JobName",
-		"job_group":       "JobGroup",
-		"invoke_target":   "InvokeTarget",
-		"target_params":   "TargetParams",
-		"cron_expression": "CronExpression",
-		"misfire_policy":  "MisfirePolicy",
-		"concurrent":      "Concurrent",
-		"status":          "Status",
-		"save_log":        "SaveLog",
-		"create_by":       "CreateBy",
-		"create_time":     "CreateTime",
-		"update_by":       "UpdateBy",
-		"update_time":     "UpdateTime",
-		"remark":          "Remark",
-	},
 }
 
 // SysJob 调度任务 数据层处理
 type SysJob struct {
-	selectSql string            // 查询视图对象SQL
-	resultMap map[string]string // 结果字段与实体映射
-}
-
-// convertResultRows 将结果记录转实体结果组
-func (r *SysJob) convertResultRows(rows []map[string]any) []model.SysJob {
-	arr := make([]model.SysJob, 0)
-	for _, row := range rows {
-		sysJob := model.SysJob{}
-		for key, value := range row {
-			if keyMapper, ok := r.resultMap[key]; ok {
-				db.SetFieldValue(&sysJob, keyMapper, value)
-			}
-		}
-		arr = append(arr, sysJob)
-	}
-	return arr
+	selectSql string // 查询视图对象SQL
 }
 
 // SelectByPage 分页查询集合
-func (r *SysJob) SelectByPage(query map[string]any) map[string]any {
+func (r SysJob) SelectByPage(query map[string]any) ([]model.SysJob, int64) {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -88,22 +54,19 @@ func (r *SysJob) SelectByPage(query map[string]any) map[string]any {
 	}
 
 	// 查询结果
-	result := map[string]any{
-		"total": int64(0),
-		"rows":  []model.SysJob{},
-	}
+	total := int64(0)
+	arr := []model.SysJob{}
 
 	// 查询数量 长度为0直接返回
 	totalSql := "select count(1) as 'total' from sys_job"
 	totalRows, err := db.RawDB("", totalSql+whereSql, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
-		return result
+		return arr, total
 	}
-	if total := parse.Number(totalRows[0]["total"]); total > 0 {
-		result["total"] = total
-	} else {
-		return result
+	total = parse.Number(totalRows[0]["total"])
+	if total <= 0 {
+		return arr, total
 	}
 
 	// 分页
@@ -117,16 +80,18 @@ func (r *SysJob) SelectByPage(query map[string]any) map[string]any {
 	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
-		return result
+		return arr, total
 	}
 
 	// 转换实体
-	result["rows"] = r.convertResultRows(rows)
-	return result
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("Unmarshal err => %v", err)
+	}
+	return arr, total
 }
 
 // Select 查询集合
-func (r *SysJob) Select(sysJob model.SysJob) []model.SysJob {
+func (r SysJob) Select(sysJob model.SysJob) []model.SysJob {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -162,11 +127,15 @@ func (r *SysJob) Select(sysJob model.SysJob) []model.SysJob {
 	}
 
 	// 转换实体
-	return r.convertResultRows(rows)
+	arr := []model.SysJob{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("Unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // SelectByIds 通过ID查询信息
-func (r *SysJob) SelectByIds(jobIds []string) []model.SysJob {
+func (r SysJob) SelectByIds(jobIds []string) []model.SysJob {
 	placeholder := db.KeyPlaceholderByQuery(len(jobIds))
 	querySql := r.selectSql + " where job_id in (" + placeholder + ")"
 	parameters := db.ConvertIdsSlice(jobIds)
@@ -176,11 +145,15 @@ func (r *SysJob) SelectByIds(jobIds []string) []model.SysJob {
 		return []model.SysJob{}
 	}
 	// 转换实体
-	return r.convertResultRows(rows)
+	arr := []model.SysJob{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("Unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // Insert 新增信息
-func (r *SysJob) Insert(sysJob model.SysJob) string {
+func (r SysJob) Insert(sysJob model.SysJob) string {
 	// 参数拼接
 	params := make(map[string]any)
 	if sysJob.JobID != "" {
@@ -244,7 +217,7 @@ func (r *SysJob) Insert(sysJob model.SysJob) string {
 }
 
 // Update 修改信息
-func (r *SysJob) Update(sysJob model.SysJob) int64 {
+func (r SysJob) Update(sysJob model.SysJob) int64 {
 	// 参数拼接
 	params := make(map[string]any)
 	if sysJob.JobName != "" {
@@ -293,7 +266,7 @@ func (r *SysJob) Update(sysJob model.SysJob) int64 {
 }
 
 // DeleteByIds 批量删除信息
-func (r *SysJob) DeleteByIds(jobIds []string) int64 {
+func (r SysJob) DeleteByIds(jobIds []string) int64 {
 	placeholder := db.KeyPlaceholderByQuery(len(jobIds))
 	sql := fmt.Sprintf("delete from sys_job where job_id in (%s)", placeholder)
 	parameters := db.ConvertIdsSlice(jobIds)
@@ -306,7 +279,7 @@ func (r *SysJob) DeleteByIds(jobIds []string) int64 {
 }
 
 // CheckUniqueJob 校验信息是否唯一
-func (r *SysJob) CheckUniqueJob(sysJob model.SysJob) string {
+func (r SysJob) CheckUniqueJob(sysJob model.SysJob) string {
 	// 查询条件拼接
 	var conditions []string
 	var params []any

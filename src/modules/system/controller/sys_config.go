@@ -33,8 +33,8 @@ type SysConfigController struct {
 // GET /list
 func (s *SysConfigController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
-	data := s.sysConfigService.FindByPage(query)
-	c.JSON(200, result.Ok(data))
+	rows, total := s.sysConfigService.FindByPage(query)
+	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Info 参数配置信息
@@ -174,12 +174,11 @@ func (s *SysConfigController) ConfigKey(c *gin.Context) {
 func (s *SysConfigController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := ctx.BodyJSONMap(c)
-	data := s.sysConfigService.FindByPage(query)
-	if data["total"].(int64) == 0 {
+	rows, total := s.sysConfigService.FindByPage(query)
+	if total == 0 {
 		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return
 	}
-	rows := data["rows"].([]model.SysConfig)
 
 	// 导出文件名称
 	fileName := fmt.Sprintf("config_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
