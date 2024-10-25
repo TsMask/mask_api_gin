@@ -159,27 +159,83 @@ func ExecDB(source string, sql string, parameters []any) (int64, error) {
 // ConvertResultRows 将结果记录转实体结果组 db.ConvertResultRows[T](T{}, r.resultMap, rows)
 func ConvertResultRows[T any](resultType any, resultMap map[string]string, rows []map[string]any) []T {
 	arr := make([]T, 0, len(rows))
-	obj := reflect.TypeOf(resultType)
-	for _, row := range rows {
-		item := reflect.New(obj).Elem()
-		for key, value := range row {
-			if keyMapper, ok := resultMap[key]; ok {
-				SetFieldValue(item, keyMapper, value)
-			}
-		}
-		arr = append(arr, item.Interface().(T))
-	}
+	// obj := reflect.TypeOf(resultType)
+	// for _, row := range rows {
+	// 	item := reflect.New(obj).Elem()
+	// 	for key, value := range row {
+	// 		if keyMapper, ok := resultMap[key]; ok {
+	// 			// SetFieldValue(item, keyMapper, value)
+	// 		}
+	// 	}
+	// 	arr = append(arr, item.Interface().(T))
+	// }
 	return arr
 }
 
+// Unmarshal 将数据从 []map[string]any 反序列化到指定的结构体中
+func Unmarshal(data []map[string]any, v any) error {
+	// 获取目标结构体的反射值
+	val := reflect.ValueOf(v)
+	// 检查 v 是否为指针类型
+	if val.Kind() != reflect.Ptr || val.IsNil() {
+		return fmt.Errorf("v must be a non-nil pointer to a slice of structs")
+	}
+
+	// 获取指向的结构体值
+	elem := val.Elem()
+	// 检查指向的类型是否为切片
+	if elem.Kind() != reflect.Slice {
+		return fmt.Errorf("v must be a pointer to a slice")
+	}
+
+	// 遍历 data 中的每个 map
+	for _, item := range data {
+		// 为每个 map 创建一个新的实例
+		newElem := reflect.New(elem.Type().Elem()).Elem()
+
+		// 遍历结构体的字段
+		for i := 0; i < newElem.NumField(); i++ {
+			field := newElem.Type().Field(i)
+			fieldValue := newElem.Field(i)
+
+			// 获取 GORM column 标签
+			tagStr := field.Tag.Get("gorm")
+			columnName := extractColumnName(tagStr)
+			if columnName == "" {
+				continue
+			}
+
+			// 检查是否有对应的键值
+			if value, ok := item[columnName]; ok {
+				setFieldValue(fieldValue, value)
+			}
+		}
+
+		// 将新的实例添加到目标切片中
+		elem.Set(reflect.Append(elem, newElem))
+	}
+
+	return nil
+}
+
+// ExtractColumnName 提取以 "column:" 开头的字段名
+func extractColumnName(tag string) string {
+	if !strings.Contains(tag, "column:") {
+		return ""
+	}
+	// 使用分号分割标签
+	parts := strings.Split(tag, ";")
+	for _, part := range parts {
+		// 查找以 "column:" 开头的部分, 提取并返回字段名
+		if strings.HasPrefix(part, "column:") {
+			return strings.TrimPrefix(part, "column:")
+		}
+	}
+	return ""
+}
+
 // SetFieldValue 判断结构体内是否存在指定字段并设置值
-func SetFieldValue(obj any, fieldName string, value any) {
-	// 获取结构体的反射值
-	userValue := reflect.ValueOf(obj)
-
-	// 获取字段的反射值
-	fieldValue := userValue.Elem().FieldByName(fieldName)
-
+func setFieldValue(fieldValue reflect.Value, value any) {
 	// 检查字段是否存在
 	if fieldValue.IsValid() && fieldValue.CanSet() {
 		// 获取字段的类型
@@ -212,7 +268,7 @@ func SetFieldValue(obj any, fieldName string, value any) {
 			}
 			fieldValue.SetFloat(floatValue)
 		case reflect.Struct:
-			logger.Infof("%s 时间解析 %s %v \n", fieldName, fieldValue.Type(), value)
+			logger.Infof("%v 时间解析 %s %v \n", fieldValue, fieldValue.Type(), value)
 			if fieldValue.Type() == reflect.TypeOf(time.Time{}) && value != nil {
 				// 解析 value 并转换为 time.Time 类型
 				parsedTime, err := time.Parse("2006-01-02 15:04:05 +0800 CST", fmt.Sprintf("%v", value))
