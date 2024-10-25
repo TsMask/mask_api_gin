@@ -17,7 +17,7 @@ import (
 
 // NewAccount 实例化控制层
 var NewAccount = &AccountController{
-	accountService:     commonService.NewAccountService,
+	accountService:     commonService.NewAccount,
 	sysLogLoginService: systemService.NewSysLogLogin,
 }
 
@@ -25,14 +25,14 @@ var NewAccount = &AccountController{
 //
 // PATH /
 type AccountController struct {
-	accountService     commonService.IAccountService     // 账号身份操作服务
+	accountService     *commonService.Account            // 账号身份操作服务
 	sysLogLoginService systemService.ISysLogLoginService // 系统登录访问
 }
 
 // Login 系统登录
 //
 // POST /login
-func (s *AccountController) Login(c *gin.Context) {
+func (s AccountController) Login(c *gin.Context) {
 	var loginBody commonModel.LoginBody
 	if err := c.ShouldBindJSON(&loginBody); err != nil {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -84,7 +84,7 @@ func (s *AccountController) Login(c *gin.Context) {
 // Me 登录用户信息
 //
 // GET /me
-func (s *AccountController) Me(c *gin.Context) {
+func (s AccountController) Me(c *gin.Context) {
 	loginUser, err := ctxUtils.LoginUser(c)
 	if err != nil {
 		c.JSON(401, result.CodeMsg(401, err.Error()))
@@ -105,7 +105,7 @@ func (s *AccountController) Me(c *gin.Context) {
 // Router 登录用户路由信息
 //
 // GET /router
-func (s *AccountController) Router(c *gin.Context) {
+func (s AccountController) Router(c *gin.Context) {
 	userID := ctxUtils.LoginUserToUserID(c)
 
 	// 前端路由，系统管理员拥有所有
@@ -117,7 +117,7 @@ func (s *AccountController) Router(c *gin.Context) {
 // Logout 系统登出
 //
 // POST /logout
-func (s *AccountController) Logout(c *gin.Context) {
+func (s AccountController) Logout(c *gin.Context) {
 	tokenStr := ctxUtils.Authorization(c)
 	if tokenStr != "" {
 		// 存在token时记录退出信息

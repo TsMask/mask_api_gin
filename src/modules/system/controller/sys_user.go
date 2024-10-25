@@ -33,7 +33,7 @@ var NewSysUser = &SysUserController{
 //
 // PATH /system/user
 type SysUserController struct {
-	sysUserService     service.ISysUserService     // 用户服务
+	sysUserService     *service.SysUser            // 用户服务
 	sysRoleService     service.ISysRoleService     // 角色服务
 	sysPostService     service.ISysPostService     // 岗位服务
 	sysDictTypeService service.ISysDictTypeService // 字典类型服务
@@ -43,17 +43,17 @@ type SysUserController struct {
 // List 用户信息列表
 //
 // GET /list
-func (s *SysUserController) List(c *gin.Context) {
+func (s SysUserController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
-	data := s.sysUserService.FindByPage(query, dataScopeSQL)
-	c.JSON(200, result.Ok(data))
+	rows, total := s.sysUserService.FindByPage(query, dataScopeSQL)
+	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Info 用户信息详情
 //
 // GET /:userId
-func (s *SysUserController) Info(c *gin.Context) {
+func (s SysUserController) Info(c *gin.Context) {
 	userId := c.Param("userId")
 	if userId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -121,7 +121,7 @@ func (s *SysUserController) Info(c *gin.Context) {
 // Add 用户信息新增
 //
 // POST /
-func (s *SysUserController) Add(c *gin.Context) {
+func (s SysUserController) Add(c *gin.Context) {
 	var body model.SysUser
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.UserID != "" {
@@ -191,7 +191,7 @@ func (s *SysUserController) Add(c *gin.Context) {
 // Edit 用户信息修改
 //
 // POST /
-func (s *SysUserController) Edit(c *gin.Context) {
+func (s SysUserController) Edit(c *gin.Context) {
 	var body model.SysUser
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.UserID == "" {
@@ -268,7 +268,7 @@ func (s *SysUserController) Edit(c *gin.Context) {
 // Remove 用户信息删除
 //
 // DELETE /:userIds
-func (s *SysUserController) Remove(c *gin.Context) {
+func (s SysUserController) Remove(c *gin.Context) {
 	userIds := c.Param("userIds")
 	if userIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -307,7 +307,7 @@ func (s *SysUserController) Remove(c *gin.Context) {
 // ResetPwd 用户重置密码
 //
 // PUT /resetPwd
-func (s *SysUserController) ResetPwd(c *gin.Context) {
+func (s SysUserController) ResetPwd(c *gin.Context) {
 	var body struct {
 		UserID   string `json:"userId" binding:"required"`
 		Password string `json:"password" binding:"required"`
@@ -348,7 +348,7 @@ func (s *SysUserController) ResetPwd(c *gin.Context) {
 // Status 用户状态修改
 //
 // PUT /changeStatus
-func (s *SysUserController) Status(c *gin.Context) {
+func (s SysUserController) Status(c *gin.Context) {
 	var body struct {
 		UserID string `json:"userId" binding:"required"`
 		Status string `json:"status" binding:"required"`
@@ -390,16 +390,15 @@ func (s *SysUserController) Status(c *gin.Context) {
 // Export 用户信息列表导出
 //
 // POST /export
-func (s *SysUserController) Export(c *gin.Context) {
+func (s SysUserController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	queryMap := ctx.BodyJSONMap(c)
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
-	data := s.sysUserService.FindByPage(queryMap, dataScopeSQL)
-	if data["total"].(int64) == 0 {
+	rows, total := s.sysUserService.FindByPage(queryMap, dataScopeSQL)
+	if total == 0 {
 		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return
 	}
-	rows := data["rows"].([]model.SysUser)
 
 	// 导出文件名称
 	fileName := fmt.Sprintf("user_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
@@ -466,7 +465,7 @@ func (s *SysUserController) Export(c *gin.Context) {
 // Template 用户信息列表导入模板下载
 //
 // GET /importTemplate
-func (s *SysUserController) Template(c *gin.Context) {
+func (s SysUserController) Template(c *gin.Context) {
 	fileName := fmt.Sprintf("user_import_template_%d.xlsx", time.Now().UnixMilli())
 	asserPath := "assets/template/excel/user_import_template.xlsx"
 	c.FileAttachment(asserPath, fileName)
@@ -475,7 +474,7 @@ func (s *SysUserController) Template(c *gin.Context) {
 // ImportData 用户信息列表导入
 //
 // POST /importData
-func (s *SysUserController) ImportData(c *gin.Context) {
+func (s SysUserController) ImportData(c *gin.Context) {
 	// 允许进行更新
 	updateSupport := c.PostForm("updateSupport")
 	// 上传的文件

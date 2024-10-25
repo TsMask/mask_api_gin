@@ -91,7 +91,6 @@ func (r *SysDictTypeRepository) SelectByPage(query map[string]any) map[string]an
 		logger.Errorf("total err => %v", err)
 		return result
 	}
-
 	if total := parse.Number(totalRows[0]["total"]); total > 0 {
 		result["total"] = total
 	} else {

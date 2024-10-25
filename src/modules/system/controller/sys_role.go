@@ -29,13 +29,13 @@ var NewSysRole = &SysRoleController{
 // PATH /system/role
 type SysRoleController struct {
 	sysRoleService service.ISysRoleService // 角色服务
-	sysUserService service.ISysUserService // 用户服务
+	sysUserService *service.SysUser        // 用户服务
 }
 
 // List 角色列表
 //
 // GET /list
-func (s *SysRoleController) List(c *gin.Context) {
+func (s SysRoleController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")
 	data := s.sysRoleService.FindByPage(query, dataScopeSQL)
@@ -45,7 +45,7 @@ func (s *SysRoleController) List(c *gin.Context) {
 // Info 角色信息详情
 //
 // GET /:roleId
-func (s *SysRoleController) Info(c *gin.Context) {
+func (s SysRoleController) Info(c *gin.Context) {
 	roleId := c.Param("roleId")
 	if roleId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -62,7 +62,7 @@ func (s *SysRoleController) Info(c *gin.Context) {
 // Add 角色信息新增
 //
 // POST /
-func (s *SysRoleController) Add(c *gin.Context) {
+func (s SysRoleController) Add(c *gin.Context) {
 	var body model.SysRole
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.RoleID != "" {
@@ -98,7 +98,7 @@ func (s *SysRoleController) Add(c *gin.Context) {
 // Edit 角色信息修改
 //
 // PUT /
-func (s *SysRoleController) Edit(c *gin.Context) {
+func (s SysRoleController) Edit(c *gin.Context) {
 	var body model.SysRole
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.RoleID == "" {
@@ -147,7 +147,7 @@ func (s *SysRoleController) Edit(c *gin.Context) {
 // Remove 角色信息删除
 //
 // DELETE /:roleIds
-func (s *SysRoleController) Remove(c *gin.Context) {
+func (s SysRoleController) Remove(c *gin.Context) {
 	roleIds := c.Param("roleIds")
 	if roleIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -179,7 +179,7 @@ func (s *SysRoleController) Remove(c *gin.Context) {
 // Status 角色状态变更
 //
 // PUT /changeStatus
-func (s *SysRoleController) Status(c *gin.Context) {
+func (s SysRoleController) Status(c *gin.Context) {
 	var body struct {
 		RoleID string `json:"roleId" binding:"required"` // 角色ID
 		Status string `json:"status" binding:"required"` // 状态
@@ -223,7 +223,7 @@ func (s *SysRoleController) Status(c *gin.Context) {
 // DataScope 角色数据权限修改
 //
 // PUT /dataScope
-func (s *SysRoleController) DataScope(c *gin.Context) {
+func (s SysRoleController) DataScope(c *gin.Context) {
 	var body struct {
 		RoleID            string   `json:"roleId"`            // 角色ID
 		DeptIds           []string `json:"deptIds"`           // 部门组（数据权限）
@@ -269,7 +269,7 @@ func (s *SysRoleController) DataScope(c *gin.Context) {
 // AuthUserAllocatedList 角色分配用户列表
 //
 // GET /authUser/allocatedList
-func (s *SysRoleController) AuthUserAllocatedList(c *gin.Context) {
+func (s SysRoleController) AuthUserAllocatedList(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	roleId, ok := query["roleId"]
 	if !ok || roleId == "" {
@@ -285,14 +285,14 @@ func (s *SysRoleController) AuthUserAllocatedList(c *gin.Context) {
 	}
 
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
-	data := s.sysUserService.FindAllocatedPage(query, dataScopeSQL)
-	c.JSON(200, result.Ok(data))
+	rows, total := s.sysUserService.FindAllocatedPage(query, dataScopeSQL)
+	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // AuthUserChecked 角色分配选择授权
 //
 // PUT /authUser/checked
-func (s *SysRoleController) AuthUserChecked(c *gin.Context) {
+func (s SysRoleController) AuthUserChecked(c *gin.Context) {
 	var body struct {
 		// 角色ID
 		RoleID string `json:"roleId" binding:"required"`
@@ -338,7 +338,7 @@ func (s *SysRoleController) AuthUserChecked(c *gin.Context) {
 // Export 导出角色信息
 //
 // POST /export
-func (s *SysRoleController) Export(c *gin.Context) {
+func (s SysRoleController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := ctx.BodyJSONMap(c)
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")

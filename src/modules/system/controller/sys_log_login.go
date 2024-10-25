@@ -20,15 +20,15 @@ import (
 // NewSysLogLogin 实例化控制层
 var NewSysLogLogin = &SysLogLoginController{
 	sysLogLoginService: service.NewSysLogLogin,
-	accountService:     commonService.NewAccountService,
+	accountService:     commonService.NewAccount,
 }
 
 // SysLogLoginController 系统登录日志信息 控制层处理
 //
 // PATH /system/log/login
 type SysLogLoginController struct {
-	sysLogLoginService service.ISysLogLoginService   // 系统登录日志服务
-	accountService     commonService.IAccountService // 账号身份操作服务
+	sysLogLoginService service.ISysLogLoginService // 系统登录日志服务
+	accountService     *commonService.Account      // 账号身份操作服务
 }
 
 // List 系统登录日志列表

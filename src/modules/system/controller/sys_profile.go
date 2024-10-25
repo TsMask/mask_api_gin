@@ -29,7 +29,7 @@ var NewSysProfile = &SysProfileController{
 //
 // PATH /system/user/profile
 type SysProfileController struct {
-	sysUserService service.ISysUserService // 用户服务
+	sysUserService *service.SysUser        // 用户服务
 	sysRoleService service.ISysRoleService // 角色服务
 	sysPostService service.ISysPostService // 岗位服务
 	sysMenuService service.ISysMenuService // 菜单服务
@@ -38,7 +38,7 @@ type SysProfileController struct {
 // Info 个人信息
 //
 // GET /
-func (s *SysProfileController) Info(c *gin.Context) {
+func (s SysProfileController) Info(c *gin.Context) {
 	loginUser, err := ctx.LoginUser(c)
 	if err != nil {
 		c.JSON(401, result.CodeMsg(401, err.Error()))
@@ -72,7 +72,7 @@ func (s *SysProfileController) Info(c *gin.Context) {
 // UpdateProfile 个人信息修改
 //
 // PUT /
-func (s *SysProfileController) UpdateProfile(c *gin.Context) {
+func (s SysProfileController) UpdateProfile(c *gin.Context) {
 	var body struct {
 		NickName    string `json:"nickName" binding:"required"`        // 昵称
 		Sex         string `json:"sex" binding:"required,oneof=0 1 2"` // 性别
@@ -154,7 +154,7 @@ func (s *SysProfileController) UpdateProfile(c *gin.Context) {
 // UpdatePwd 个人重置密码
 //
 // PUT /updatePwd
-func (s *SysProfileController) UpdatePwd(c *gin.Context) {
+func (s SysProfileController) UpdatePwd(c *gin.Context) {
 	var body struct {
 		OldPassword string `json:"oldPassword" binding:"required"` // 旧密码
 		NewPassword string `json:"newPassword" binding:"required"` // 新密码
@@ -206,7 +206,7 @@ func (s *SysProfileController) UpdatePwd(c *gin.Context) {
 // Avatar 个人头像上传
 //
 // POST /avatar
-func (s *SysProfileController) Avatar(c *gin.Context) {
+func (s SysProfileController) Avatar(c *gin.Context) {
 	formFile, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
