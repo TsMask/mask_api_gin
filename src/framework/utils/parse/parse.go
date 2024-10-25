@@ -13,8 +13,8 @@ import (
 )
 
 // Number 解析数值型
-func Number(data any) int64 {
-	switch v := data.(type) {
+func Number(value any) int64 {
+	switch v := value.(type) {
 	case string:
 		if v == "" {
 			return 0
@@ -24,29 +24,36 @@ func Number(data any) int64 {
 			return 0
 		}
 		return num
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+	case int, int8, int16, int32, int64:
 		return reflect.ValueOf(v).Int()
+	case uint, uint8, uint16, uint32, uint64:
+		return int64(reflect.ValueOf(v).Uint())
 	case float32, float64:
 		return int64(reflect.ValueOf(v).Float())
+	case bool:
+		if v {
+			return 1
+		}
+		return 0
 	default:
 		return 0
 	}
 }
 
 // Boolean 解析布尔型
-func Boolean(data any) bool {
-	switch v := data.(type) {
+func Boolean(value any) bool {
+	switch v := value.(type) {
 	case string:
-		if v == "" || v == "false" || v == "0" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
 			return false
 		}
-		// 尝试将字符串解析为数字
-		if num, err := strconv.ParseFloat(v, 64); err == nil {
-			return num != 0
-		}
-		return true
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		return b
+	case int, int8, int16, int32, int64:
 		num := reflect.ValueOf(v).Int()
+		return num != 0
+	case uint, uint8, uint16, uint32, uint64:
+		num := int64(reflect.ValueOf(v).Uint())
 		return num != 0
 	case float32, float64:
 		num := reflect.ValueOf(v).Float()
@@ -80,31 +87,16 @@ func ConvertToCamelCase(str string) string {
 	return strings.Join(words, "")
 }
 
-// Bit 比特位为单位
+// Bit 比特位为单位 1023.00 B --> 1.00 KB
 func Bit(bit float64) string {
-	var GB, MB, KB string
-
-	if bit > float64(1<<30) {
-		GB = fmt.Sprintf("%0.2f", bit/(1<<30))
+	units := []string{"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
+	for i := 0; i < len(units); i++ {
+		if bit < 1024 || i == len(units)-1 {
+			return fmt.Sprintf("%.2f %s", bit, units[i])
+		}
+		bit /= 1024
 	}
-
-	if bit > float64(1<<20) && bit < (1<<30) {
-		MB = fmt.Sprintf("%.2f", bit/(1<<20))
-	}
-
-	if bit > float64(1<<10) && bit < (1<<20) {
-		KB = fmt.Sprintf("%.2f", bit/(1<<10))
-	}
-
-	if GB != "" {
-		return GB + "GB"
-	} else if MB != "" {
-		return MB + "MB"
-	} else if KB != "" {
-		return KB + "KB"
-	} else {
-		return fmt.Sprintf("%vB", bit)
-	}
+	return ""
 }
 
 // CronExpression 解析 Cron 表达式，返回下一次执行的时间戳（毫秒）
