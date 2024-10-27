@@ -19,8 +19,7 @@ type SysDept struct {
 
 	// ====== 非数据库字段属性 ======
 
-	Children   []SysDept `json:"children,omitempty" gorm:"-"`   // 子部门列表
-	ParentName string    `json:"parentName,omitempty" gorm:"-"` // 父部门名称
+	Children []SysDept `json:"children,omitempty" gorm:"-"` // 子部门列表
 }
 
 // TableName 表名称

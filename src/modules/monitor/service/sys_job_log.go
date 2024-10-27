@@ -16,7 +16,7 @@ type SysJobLog struct {
 }
 
 // FindByPage 分页查询
-func (s SysJobLog) FindByPage(query map[string]any) map[string]any {
+func (s SysJobLog) FindByPage(query map[string]any) ([]model.SysJobLog, int64) {
 	return s.sysJobLogRepository.SelectByPage(query)
 }
 

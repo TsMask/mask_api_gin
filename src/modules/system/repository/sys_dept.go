@@ -12,35 +12,16 @@ import (
 
 // NewSysDept 实例化数据层
 var NewSysDept = &SysDept{
-	selectSql: `select 
+	sql: `select 
 	d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, 
 	d.leader, d.phone, d.email, d.status, 
 	d.del_flag, d.create_by, d.create_time 
 	from sys_dept d`,
-
-	resultMap: map[string]string{
-		"dept_id":     "DeptID",
-		"parent_id":   "ParentID",
-		"ancestors":   "Ancestors",
-		"dept_name":   "DeptName",
-		"order_num":   "OrderNum",
-		"leader":      "Leader",
-		"phone":       "Phone",
-		"email":       "Email",
-		"status":      "Status",
-		"del_flag":    "DelFlag",
-		"create_by":   "CreateBy",
-		"create_time": "CreateTime",
-		"update_by":   "UpdateBy",
-		"update_time": "UpdateTime",
-		"parent_name": "ParentName",
-	},
 }
 
 // SysDept 部门表 数据层处理
 type SysDept struct {
-	selectSql string            // 查询视图对象SQL
-	resultMap map[string]string // 结果字段与实体映射
+	sql string // 查询视图对象SQL
 }
 
 // Select 查询集合
@@ -73,7 +54,7 @@ func (r SysDept) Select(sysDept model.SysDept, dataScopeSQL string) []model.SysD
 
 	// 查询数据
 	orderSql := " order by d.parent_id, d.order_num asc "
-	querySql := r.selectSql + whereSql + dataScopeSQL + orderSql
+	querySql := r.sql + whereSql + dataScopeSQL + orderSql
 	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -81,23 +62,27 @@ func (r SysDept) Select(sysDept model.SysDept, dataScopeSQL string) []model.SysD
 	}
 
 	// 转换实体
-	return db.ConvertResultRows[model.SysDept](model.SysDept{}, r.resultMap, rows)
+	arr := []model.SysDept{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // SelectById 通过ID查询信息
 func (r SysDept) SelectById(deptId string) model.SysDept {
-	querySql := `select d.dept_id, d.parent_id, d.ancestors,
-	d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status,
-	(select dept_name from sys_dept where dept_id = d.parent_id) parent_name
-	from sys_dept d where d.dept_id = ?`
-	rows, err := db.RawDB("", querySql, []any{deptId})
+	rows, err := db.RawDB("", r.sql+" where d.dept_id = ?", []any{deptId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return model.SysDept{}
 	}
 	// 转换实体
-	if v := db.ConvertResultRows[model.SysDept](model.SysDept{}, r.resultMap, rows); len(v) > 0 {
-		return v[0]
+	arr := []model.SysDept{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	if len(arr) > 0 {
+		return arr[0]
 	}
 	return model.SysDept{}
 }
@@ -312,7 +297,7 @@ func (r SysDept) SelectDeptIdsByRoleId(roleId string, deptCheckStrictly bool) []
 
 // SelectChildrenDeptById 根据ID查询所有子部门
 func (r SysDept) SelectChildrenDeptById(deptId string) []model.SysDept {
-	querySql := r.selectSql + " where find_in_set(?, d.ancestors)"
+	querySql := r.sql + " where find_in_set(?, d.ancestors)"
 	rows, err := db.RawDB("", querySql, []any{deptId})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -320,7 +305,11 @@ func (r SysDept) SelectChildrenDeptById(deptId string) []model.SysDept {
 	}
 
 	// 转换实体
-	return db.ConvertResultRows[model.SysDept](model.SysDept{}, r.resultMap, rows)
+	arr := []model.SysDept{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // UpdateDeptStatusNormal 修改所在部门正常状态

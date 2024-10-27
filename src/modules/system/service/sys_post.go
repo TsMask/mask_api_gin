@@ -14,12 +14,12 @@ var NewSysPost = &SysPost{
 
 // SysPostService 岗位表 服务层处理
 type SysPost struct {
-	sysPostRepository     repository.ISysPostRepository // 岗位服务
-	sysUserPostRepository *repository.SysUserPost       // 用户与岗位关联服务
+	sysPostRepository     *repository.SysPost     // 岗位服务
+	sysUserPostRepository *repository.SysUserPost // 用户与岗位关联服务
 }
 
 // FindByPage 分页查询列表数据
-func (s SysPost) FindByPage(query map[string]any) map[string]any {
+func (s SysPost) FindByPage(query map[string]any) ([]model.SysPost, int64) {
 	return s.sysPostRepository.SelectByPage(query)
 }
 

@@ -16,7 +16,7 @@ type SysLogLogin struct {
 }
 
 // FindByPage 分页查询列表数据
-func (s SysLogLogin) FindByPage(query map[string]any) map[string]any {
+func (s SysLogLogin) FindByPage(query map[string]any) ([]model.SysLogLogin, int64) {
 	return s.SysLogLogin.SelectByPage(query)
 }
 

@@ -7,7 +7,6 @@ import (
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo/result"
-	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/service"
 	systemService "mask_api_gin/src/modules/system/service"
 	"strconv"
@@ -44,8 +43,8 @@ func (s SysJobLogController) List(c *gin.Context) {
 		query["jobName"] = job.JobName
 		query["jobGroup"] = job.JobGroup
 	}
-	list := s.sysJobLogService.FindByPage(query)
-	c.JSON(200, result.Ok(list))
+	rows, total := s.sysJobLogService.FindByPage(query)
+	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Info 调度任务日志信息
@@ -109,12 +108,11 @@ func (s SysJobLogController) Clean(c *gin.Context) {
 func (s SysJobLogController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := ctx.BodyJSONMap(c)
-	data := s.sysJobLogService.FindByPage(query)
-	if parse.Number(data["total"]) == 0 {
+	rows, total := s.sysJobLogService.FindByPage(query)
+	if total == 0 {
 		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return
 	}
-	rows := data["rows"].([]model.SysJobLog)
 
 	// 导出文件名称
 	fileName := fmt.Sprintf("job_log_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())

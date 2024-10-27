@@ -40,7 +40,7 @@ type SysNotice struct {
 }
 
 // SelectByPage 分页查询集合
-func (r SysNotice) SelectByPage(query map[string]any) map[string]any {
+func (r SysNotice) SelectByPage(query map[string]any) ([]model.SysNotice, int64) {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -86,22 +86,19 @@ func (r SysNotice) SelectByPage(query map[string]any) map[string]any {
 	}
 
 	// 查询结果
-	result := map[string]any{
-		"total": int64(0),
-		"rows":  []model.SysNotice{},
-	}
+	total := int64(0)
+	arr := []model.SysNotice{}
 
 	// 查询数量 长度为0直接返回
 	totalSql := "select count(1) as 'total' from sys_notice"
 	totalRows, err := db.RawDB("", totalSql+whereSql, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
-		return result
+		return arr, total
 	}
-	if total := parse.Number(totalRows[0]["total"]); total > 0 {
-		result["total"] = total
-	} else {
-		return result
+	total = parse.Number(totalRows[0]["total"])
+	if total <= 0 {
+		return arr, total
 	}
 
 	// 分页
@@ -115,11 +112,14 @@ func (r SysNotice) SelectByPage(query map[string]any) map[string]any {
 	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
+		return arr, total
 	}
 
 	// 转换实体
-	result["rows"] = db.ConvertResultRows[model.SysNotice](model.SysNotice{}, r.resultMap, rows)
-	return result
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr, total
 }
 
 // Select 查询集合
@@ -159,7 +159,11 @@ func (r SysNotice) Select(sysNotice model.SysNotice) []model.SysNotice {
 	}
 
 	// 转换实体
-	return db.ConvertResultRows[model.SysNotice](model.SysNotice{}, r.resultMap, rows)
+	arr := []model.SysNotice{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // SelectByIds 通过ID查询信息
@@ -173,7 +177,11 @@ func (r SysNotice) SelectByIds(noticeIds []string) []model.SysNotice {
 		return []model.SysNotice{}
 	}
 	// 转换实体
-	return db.ConvertResultRows[model.SysNotice](model.SysNotice{}, r.resultMap, rows)
+	arr := []model.SysNotice{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // Insert 新增信息

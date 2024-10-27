@@ -7,7 +7,6 @@ import (
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo/result"
-	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 	"strconv"
 	"strings"
@@ -33,8 +32,8 @@ type SysLogOperateController struct {
 // GET /list
 func (s SysLogOperateController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
-	data := s.SysLogOperateService.FindByPage(query)
-	c.JSON(200, result.Ok(data))
+	rows, total := s.SysLogOperateService.FindByPage(query)
+	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Remove 操作日志删除
@@ -81,12 +80,11 @@ func (s SysLogOperateController) Clean(c *gin.Context) {
 func (s SysLogOperateController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := ctx.BodyJSONMap(c)
-	data := s.SysLogOperateService.FindByPage(query)
-	if data["total"].(int64) == 0 {
+	rows, total := s.SysLogOperateService.FindByPage(query)
+	if total == 0 {
 		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return
 	}
-	rows := data["rows"].([]model.SysLogOperate)
 
 	// 导出文件名称
 	fileName := fmt.Sprintf("sys_log_operate_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())

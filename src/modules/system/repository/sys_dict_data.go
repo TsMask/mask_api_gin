@@ -12,35 +12,18 @@ import (
 
 // NewSysDictData 实例化数据层
 var NewSysDictData = &SysDictData{
-	selectSql: `select 
+	sql: `select 
 	dict_code, dict_sort, dict_label, dict_value, dict_type, tag_class, tag_type, status, create_by, create_time, remark 
 	from sys_dict_data`,
-
-	resultMap: map[string]string{
-		"dict_code":   "DictCode",
-		"dict_sort":   "DictSort",
-		"dict_label":  "DictLabel",
-		"dict_value":  "DictValue",
-		"dict_type":   "DictType",
-		"tag_class":   "TagClass",
-		"tag_type":    "TagType",
-		"status":      "Status",
-		"remark":      "Remark",
-		"create_by":   "CreateBy",
-		"create_time": "CreateTime",
-		"update_by":   "UpdateBy",
-		"update_time": "UpdateTime",
-	},
 }
 
 // SysDictData 字典类型数据表 数据层处理
 type SysDictData struct {
-	selectSql string            // 查询视图对象SQL
-	resultMap map[string]string // 结果字段与实体映射
+	sql string // 查询视图对象SQL
 }
 
 // SelectByPage 分页查询集合
-func (r SysDictData) SelectByPage(query map[string]any) map[string]any {
+func (r SysDictData) SelectByPage(query map[string]any) ([]model.SysDictData, int64) {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -64,22 +47,19 @@ func (r SysDictData) SelectByPage(query map[string]any) map[string]any {
 	}
 
 	// 查询结果
-	result := map[string]any{
-		"total": int64(0),
-		"rows":  []model.SysDictData{},
-	}
+	total := int64(0)
+	arr := []model.SysDictData{}
 
 	// 查询数量 长度为0直接返回
 	totalSql := "select count(1) as 'total' from sys_dict_data"
 	totalRows, err := db.RawDB("", totalSql+whereSql, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
-		return result
+		return arr, total
 	}
-	if total := parse.Number(totalRows[0]["total"]); total > 0 {
-		result["total"] = total
-	} else {
-		return result
+	total = parse.Number(totalRows[0]["total"])
+	if total <= 0 {
+		return arr, total
 	}
 
 	// 分页
@@ -89,16 +69,18 @@ func (r SysDictData) SelectByPage(query map[string]any) map[string]any {
 	params = append(params, pageSize)
 
 	// 查询数据
-	querySql := r.selectSql + whereSql + pageSql
+	querySql := r.sql + whereSql + pageSql
 	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
-		return result
+		return arr, total
 	}
 
 	// 转换实体
-	result["rows"] = db.ConvertResultRows[model.SysDictData](model.SysDictData{}, r.resultMap, rows)
-	return result
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr, total
 }
 
 // Select 查询集合
@@ -127,7 +109,7 @@ func (r SysDictData) Select(sysDictData model.SysDictData) []model.SysDictData {
 
 	// 查询数据
 	orderSql := " order by dict_sort asc "
-	querySql := r.selectSql + whereSql + orderSql
+	querySql := r.sql + whereSql + orderSql
 	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -135,13 +117,17 @@ func (r SysDictData) Select(sysDictData model.SysDictData) []model.SysDictData {
 	}
 
 	// 转换实体
-	return db.ConvertResultRows[model.SysDictData](model.SysDictData{}, r.resultMap, rows)
+	arr := []model.SysDictData{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // SelectByCodes 通过Code查询信息
 func (r SysDictData) SelectByCodes(dictCodes []string) []model.SysDictData {
 	placeholder := db.KeyPlaceholderByQuery(len(dictCodes))
-	querySql := r.selectSql + " where dict_code in (" + placeholder + ")"
+	querySql := r.sql + " where dict_code in (" + placeholder + ")"
 	parameters := db.ConvertIdsSlice(dictCodes)
 	rows, err := db.RawDB("", querySql, parameters)
 	if err != nil {
@@ -149,7 +135,11 @@ func (r SysDictData) SelectByCodes(dictCodes []string) []model.SysDictData {
 		return []model.SysDictData{}
 	}
 	// 转换实体
-	return db.ConvertResultRows[model.SysDictData](model.SysDictData{}, r.resultMap, rows)
+	arr := []model.SysDictData{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // Insert 新增信息

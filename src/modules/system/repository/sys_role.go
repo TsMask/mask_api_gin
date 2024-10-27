@@ -44,7 +44,7 @@ type SysRole struct {
 }
 
 // SelectByPage 分页查询集合
-func (r SysRole) SelectByPage(query map[string]any, dataScopeSQL string) map[string]any {
+func (r SysRole) SelectByPage(query map[string]any, dataScopeSQL string) ([]model.SysRole, int64) {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -97,10 +97,8 @@ func (r SysRole) SelectByPage(query map[string]any, dataScopeSQL string) map[str
 	}
 
 	// 查询结果
-	result := map[string]any{
-		"total": int64(0),
-		"rows":  []model.SysRole{},
-	}
+	total := int64(0)
+	arr := []model.SysRole{}
 
 	// 查询数量 长度为0直接返回
 	totalSql := `select count(distinct r.role_id) as 'total' from sys_role r
@@ -110,12 +108,11 @@ func (r SysRole) SelectByPage(query map[string]any, dataScopeSQL string) map[str
 	totalRows, err := db.RawDB("", totalSql+whereSql+dataScopeSQL, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
-		return result
+		return arr, total
 	}
-	if total := parse.Number(totalRows[0]["total"]); total > 0 {
-		result["total"] = total
-	} else {
-		return result
+	total = parse.Number(totalRows[0]["total"])
+	if total <= 0 {
+		return arr, total
 	}
 
 	// 分页
@@ -129,12 +126,14 @@ func (r SysRole) SelectByPage(query map[string]any, dataScopeSQL string) map[str
 	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
-		return result
+		return arr, total
 	}
 
 	// 转换实体
-	result["rows"] = db.ConvertResultRows[model.SysRole](model.SysRole{}, r.resultMap, rows)
-	return result
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr, total
 }
 
 // Select 查询集合
@@ -173,7 +172,12 @@ func (r SysRole) Select(sysRole model.SysRole, dataScopeSQL string) []model.SysR
 		logger.Errorf("query err => %v", err)
 		return []model.SysRole{}
 	}
-	return db.ConvertResultRows[model.SysRole](model.SysRole{}, r.resultMap, rows)
+	// 转换实体
+	arr := []model.SysRole{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // SelectByIds 通过ID查询信息
@@ -187,7 +191,11 @@ func (r SysRole) SelectByIds(roleIds []string) []model.SysRole {
 		return []model.SysRole{}
 	}
 	// 转换实体
-	return db.ConvertResultRows[model.SysRole](model.SysRole{}, r.resultMap, rows)
+	arr := []model.SysRole{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // Update 修改信息

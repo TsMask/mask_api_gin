@@ -13,31 +13,18 @@ import (
 
 // NewSysDictType 实例化数据层
 var NewSysDictType = &SysDictType{
-	selectSql: `select 
+	sql: `select 
 	dict_id, dict_name, dict_type, status, create_by, create_time, remark 
 	from sys_dict_type`,
-
-	resultMap: map[string]string{
-		"dict_id":     "DictID",
-		"dict_name":   "DictName",
-		"dict_type":   "DictType",
-		"remark":      "Remark",
-		"status":      "Status",
-		"create_by":   "CreateBy",
-		"create_time": "CreateTime",
-		"update_by":   "UpdateBy",
-		"update_time": "UpdateTime",
-	},
 }
 
 // SysDictType 字典类型表 数据层处理
 type SysDictType struct {
-	selectSql string            // 查询视图对象SQL
-	resultMap map[string]string // 结果字段与实体映射
+	sql string // 查询视图对象SQL
 }
 
 // SelectByPage 分页查询集合
-func (r SysDictType) SelectByPage(query map[string]any) map[string]any {
+func (r SysDictType) SelectByPage(query map[string]any) ([]model.SysDictType, int64) {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -79,22 +66,19 @@ func (r SysDictType) SelectByPage(query map[string]any) map[string]any {
 	}
 
 	// 查询结果
-	result := map[string]any{
-		"total": int64(0),
-		"rows":  []model.SysDictType{},
-	}
+	total := int64(0)
+	arr := []model.SysDictType{}
 
 	// 查询数量 长度为0直接返回
 	totalSql := "select count(1) as 'total' from sys_dict_type"
 	totalRows, err := db.RawDB("", totalSql+whereSql, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
-		return result
+		return arr, total
 	}
-	if total := parse.Number(totalRows[0]["total"]); total > 0 {
-		result["total"] = total
-	} else {
-		return result
+	total = parse.Number(totalRows[0]["total"])
+	if total <= 0 {
+		return arr, total
 	}
 
 	// 分页
@@ -104,16 +88,18 @@ func (r SysDictType) SelectByPage(query map[string]any) map[string]any {
 	params = append(params, pageSize)
 
 	// 查询数据
-	querySql := r.selectSql + whereSql + pageSql
+	querySql := r.sql + whereSql + pageSql
 	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
-		return result
+		return arr, total
 	}
 
 	// 转换实体
-	result["rows"] = db.ConvertResultRows[model.SysDictType](model.SysDictType{}, r.resultMap, rows)
-	return result
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr, total
 }
 
 // Select 查询集合
@@ -141,7 +127,7 @@ func (r SysDictType) Select(sysDictType model.SysDictType) []model.SysDictType {
 	}
 
 	// 查询数据
-	querySql := r.selectSql + whereSql
+	querySql := r.sql + whereSql
 	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -149,13 +135,17 @@ func (r SysDictType) Select(sysDictType model.SysDictType) []model.SysDictType {
 	}
 
 	// 转换实体
-	return db.ConvertResultRows[model.SysDictType](model.SysDictType{}, r.resultMap, rows)
+	arr := []model.SysDictType{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // SelectByIds 通过ID查询信息
 func (r SysDictType) SelectByIds(dictIds []string) []model.SysDictType {
 	placeholder := db.KeyPlaceholderByQuery(len(dictIds))
-	querySql := r.selectSql + " where dict_id in (" + placeholder + ")"
+	querySql := r.sql + " where dict_id in (" + placeholder + ")"
 	parameters := db.ConvertIdsSlice(dictIds)
 	rows, err := db.RawDB("", querySql, parameters)
 	if err != nil {
@@ -163,7 +153,11 @@ func (r SysDictType) SelectByIds(dictIds []string) []model.SysDictType {
 		return []model.SysDictType{}
 	}
 	// 转换实体
-	return db.ConvertResultRows[model.SysDictType](model.SysDictType{}, r.resultMap, rows)
+	arr := []model.SysDictType{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // Insert 新增信息
@@ -292,15 +286,19 @@ func (r SysDictType) CheckUnique(sysDictType model.SysDictType) string {
 
 // SelectByType 通过字典类型查询信息
 func (r SysDictType) SelectByType(dictType string) model.SysDictType {
-	querySql := r.selectSql + " where dict_type = ?"
+	querySql := r.sql + " where dict_type = ?"
 	rows, err := db.RawDB("", querySql, []any{dictType})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
 		return model.SysDictType{}
 	}
 	// 转换实体
-	if v := db.ConvertResultRows[model.SysDictType](model.SysDictType{}, r.resultMap, rows); len(v) > 0 {
-		return v[0]
+	arr := []model.SysDictType{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	if len(arr) > 0 {
+		return arr[0]
 	}
 	return model.SysDictType{}
 }

@@ -42,7 +42,7 @@ type SysJobLog struct {
 }
 
 // SelectByPage 分页查询集合
-func (r SysJobLog) SelectByPage(query map[string]any) map[string]any {
+func (r SysJobLog) SelectByPage(query map[string]any) ([]model.SysJobLog, int64) {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -88,22 +88,19 @@ func (r SysJobLog) SelectByPage(query map[string]any) map[string]any {
 	}
 
 	// 查询结果
-	result := map[string]any{
-		"total": int64(0),
-		"rows":  []model.SysJobLog{},
-	}
+	total := int64(0)
+	arr := []model.SysJobLog{}
 
 	// 查询数量 长度为0直接返回
 	totalSql := "select count(1) as 'total' from sys_job_log"
 	totalRows, err := db.RawDB("", totalSql+whereSql, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
-		return result
+		return arr, total
 	}
-	if total := parse.Number(totalRows[0]["total"]); total > 0 {
-		result["total"] = total
-	} else {
-		return result
+	total = parse.Number(totalRows[0]["total"])
+	if total <= 0 {
+		return arr, total
 	}
 
 	// 分页
@@ -117,12 +114,14 @@ func (r SysJobLog) SelectByPage(query map[string]any) map[string]any {
 	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
-		return result
+		return arr, total
 	}
 
 	// 转换实体
-	result["rows"] = db.ConvertResultRows[model.SysJobLog](model.SysJobLog{}, r.resultMap, rows)
-	return result
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr, total
 }
 
 // Select 查询集合
@@ -162,7 +161,11 @@ func (r SysJobLog) Select(sysJobLog model.SysJobLog) []model.SysJobLog {
 	}
 
 	// 转换实体
-	return db.ConvertResultRows[model.SysJobLog](model.SysJobLog{}, r.resultMap, rows)
+	arr := []model.SysJobLog{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // SelectById 通过ID查询信息
@@ -174,8 +177,12 @@ func (r SysJobLog) SelectById(jobLogId string) model.SysJobLog {
 		return model.SysJobLog{}
 	}
 	// 转换实体
-	if v := db.ConvertResultRows[model.SysJobLog](model.SysJobLog{}, r.resultMap, rows); len(v) > 0 {
-		return v[0]
+	arr := []model.SysJobLog{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	if len(arr) > 0 {
+		return arr[0]
 	}
 	return model.SysJobLog{}
 }

@@ -38,8 +38,8 @@ type SysRoleController struct {
 func (s SysRoleController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")
-	data := s.sysRoleService.FindByPage(query, dataScopeSQL)
-	c.JSON(200, result.Ok(data))
+	rows, total := s.sysRoleService.FindByPage(query, dataScopeSQL)
+	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Info 角色信息详情
@@ -342,12 +342,11 @@ func (s SysRoleController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := ctx.BodyJSONMap(c)
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")
-	data := s.sysRoleService.FindByPage(query, dataScopeSQL)
-	if data["total"].(int64) == 0 {
+	rows, total := s.sysRoleService.FindByPage(query, dataScopeSQL)
+	if total == 0 {
 		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return
 	}
-	rows := data["rows"].([]model.SysRole)
 
 	// 导出文件名称
 	fileName := fmt.Sprintf("role_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())

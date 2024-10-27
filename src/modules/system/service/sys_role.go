@@ -24,7 +24,7 @@ type SysRole struct {
 }
 
 // FindByPage 分页查询列表数据
-func (r SysRole) FindByPage(query map[string]any, dataScopeSQL string) map[string]any {
+func (r SysRole) FindByPage(query map[string]any, dataScopeSQL string) ([]model.SysRole, int64) {
 	return r.sysRoleRepository.SelectByPage(query, dataScopeSQL)
 }
 

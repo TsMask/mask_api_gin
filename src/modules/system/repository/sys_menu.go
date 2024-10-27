@@ -101,7 +101,11 @@ func (r SysMenu) Select(sysMenu model.SysMenu, userId string) []model.SysMenu {
 	}
 
 	// 转换实体
-	return db.ConvertResultRows[model.SysMenu](model.SysMenu{}, r.resultMap, rows)
+	arr := []model.SysMenu{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // SelectByIds 通过ID查询信息
@@ -115,7 +119,11 @@ func (r SysMenu) SelectByIds(MenuIds []string) []model.SysMenu {
 		return []model.SysMenu{}
 	}
 	// 转换实体
-	return db.ConvertResultRows[model.SysMenu](model.SysMenu{}, r.resultMap, rows)
+	arr := []model.SysMenu{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // Insert 新增信息
@@ -448,5 +456,9 @@ func (r SysMenu) SelectTreeByUserId(userId string) []model.SysMenu {
 	}
 
 	// 转换实体
-	return db.ConvertResultRows[model.SysMenu](model.SysMenu{}, r.resultMap, rows)
+	arr := []model.SysMenu{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr
 }

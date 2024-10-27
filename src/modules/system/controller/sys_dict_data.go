@@ -35,8 +35,8 @@ type SysDictDataController struct {
 // GET /list
 func (s SysDictDataController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
-	data := s.sysDictDataService.FindByPage(query)
-	c.JSON(200, result.Ok(data))
+	rows, total := s.sysDictDataService.FindByPage(query)
+	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Info 字典数据详情
@@ -194,12 +194,11 @@ func (s SysDictDataController) DictType(c *gin.Context) {
 func (s SysDictDataController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := ctx.BodyJSONMap(c)
-	data := s.sysDictDataService.FindByPage(query)
-	if parse.Number(data["total"]) == 0 {
+	rows, total := s.sysDictDataService.FindByPage(query)
+	if total == 0 {
 		c.JSON(200, result.ErrMsg("导出数据记录为空"))
 		return
 	}
-	rows := data["rows"].([]model.SysDictData)
 
 	// 导出文件名称
 	fileName := fmt.Sprintf("dict_data_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())

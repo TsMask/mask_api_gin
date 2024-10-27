@@ -13,30 +13,19 @@ import (
 
 // NewSysLogLogin 实例化数据层
 var NewSysLogLogin = &SysLogLogin{
-	selectSql: `select login_id, user_name, ipaddr, login_location, 
-	browser, os, status, msg, login_time from sys_log_login`,
-
-	resultMap: map[string]string{
-		"login_id":       "LoginID",
-		"user_name":      "UserName",
-		"status":         "Status",
-		"ipaddr":         "IPAddr",
-		"login_location": "LoginLocation",
-		"browser":        "Browser",
-		"os":             "OS",
-		"msg":            "Msg",
-		"login_time":     "LoginTime",
-	},
+	sql: `select 
+	login_id, user_name, ipaddr, login_location, 
+	browser, os, status, msg, login_time 
+	from sys_log_login`,
 }
 
 // SysLogLoginRepository 系统登录访问表 数据层处理
 type SysLogLogin struct {
-	selectSql string            // 查询视图对象SQL
-	resultMap map[string]string // 结果字段与实体映射
+	sql string // 查询视图对象SQL
 }
 
 // SelectByPage 分页查询集合
-func (r SysLogLogin) SelectByPage(query map[string]any) map[string]any {
+func (r SysLogLogin) SelectByPage(query map[string]any) ([]model.SysLogLogin, int64) {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -78,22 +67,19 @@ func (r SysLogLogin) SelectByPage(query map[string]any) map[string]any {
 	}
 
 	// 查询结果
-	result := map[string]any{
-		"total": int64(0),
-		"rows":  []model.SysLogLogin{},
-	}
+	total := int64(0)
+	arr := []model.SysLogLogin{}
 
 	// 查询数量 长度为0直接返回
 	totalSql := "select count(1) as 'total' from sys_log_login"
 	totalRows, err := db.RawDB("", totalSql+whereSql, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
-		return result
+		return arr, total
 	}
-	if total := parse.Number(totalRows[0]["total"]); total > 0 {
-		result["total"] = total
-	} else {
-		return result
+	total = parse.Number(totalRows[0]["total"])
+	if total <= 0 {
+		return arr, total
 	}
 
 	// 分页
@@ -103,16 +89,18 @@ func (r SysLogLogin) SelectByPage(query map[string]any) map[string]any {
 	params = append(params, pageSize)
 
 	// 查询数据
-	querySql := r.selectSql + whereSql + pageSql
+	querySql := r.sql + whereSql + pageSql
 	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
-		return result
+		return arr, total
 	}
 
 	// 转换实体
-	result["rows"] = db.ConvertResultRows[model.SysLogLogin](model.SysLogLogin{}, r.resultMap, rows)
-	return result
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr, total
 }
 
 // Select 查询集合
@@ -140,7 +128,7 @@ func (r SysLogLogin) Select(SysLogLogin model.SysLogLogin) []model.SysLogLogin {
 	}
 
 	// 查询数据
-	querySql := r.selectSql + whereSql
+	querySql := r.sql + whereSql
 	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -148,7 +136,11 @@ func (r SysLogLogin) Select(SysLogLogin model.SysLogLogin) []model.SysLogLogin {
 	}
 
 	// 转换实体
-	return db.ConvertResultRows[model.SysLogLogin](model.SysLogLogin{}, r.resultMap, rows)
+	arr := []model.SysLogLogin{}
+	if err := db.Unmarshal(rows, &arr); err != nil {
+		logger.Errorf("unmarshal err => %v", err)
+	}
+	return arr
 }
 
 // Insert 新增信息

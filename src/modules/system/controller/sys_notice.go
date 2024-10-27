@@ -30,8 +30,8 @@ type SysNoticeController struct {
 // GET /list
 func (s SysNoticeController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
-	data := s.sysNoticeService.FindByPage(query)
-	c.JSON(200, result.Ok(data))
+	rows, total := s.sysNoticeService.FindByPage(query)
+	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Info 通知公告信息
