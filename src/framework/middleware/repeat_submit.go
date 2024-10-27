@@ -41,7 +41,7 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 
 		// 唯一标识（指定key + 客户端IP + 请求地址）
 		clientIP := ip2region.ClientIP(c.ClientIP())
-		repeatKey := constCacheKey.RepeatSubmitKey + clientIP + ":" + c.Request.RequestURI
+		repeatKey := constCacheKey.REPEAT_SUBMIT_KEY + clientIP + ":" + c.Request.RequestURI
 
 		// 在Redis查询并记录请求次数
 		repeatStr, _ := redis.Get("", repeatKey)

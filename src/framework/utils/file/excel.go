@@ -25,7 +25,7 @@ func TransferExcelUploadFile(file *multipart.FileHeader) (string, error) {
 	// 上传资源路径
 	_, dir := resourceUpload()
 	// 新文件名称并组装文件地址
-	filePath := filepath.Join(constUploadSubPath.Import, date.ParseDatePath(time.Now()))
+	filePath := filepath.Join(constUploadSubPath.IMPORT, date.ParseDatePath(time.Now()))
 	fileName := generateFileName(file.Filename)
 	writePathFile := filepath.Join(dir, filePath, fileName)
 	// 存入新文件路径
@@ -137,7 +137,7 @@ func WriteSheet(headerCells map[string]string, dataCells []map[string]any, fileN
 
 	// 上传资源路径
 	_, dir := resourceUpload()
-	filePath := filepath.Join(constUploadSubPath.Export, date.ParseDatePath(time.Now()))
+	filePath := filepath.Join(constUploadSubPath.EXPORT, date.ParseDatePath(time.Now()))
 	saveFilePath := filepath.Join(dir, filePath, fileName)
 
 	// 创建文件目录

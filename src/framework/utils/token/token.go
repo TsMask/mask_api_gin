@@ -23,13 +23,13 @@ func Remove(token string) string {
 		return ""
 	}
 	// 清除缓存KEY
-	uuid := claims[constToken.JwtUuid].(string)
-	tokenKey := constCacheKey.LoginTokenKey + uuid
+	uuid := claims[constToken.JWT_UUID].(string)
+	tokenKey := constCacheKey.LOGIN_TOKEN_KEY + uuid
 	hasKey, err := redis.Has("", tokenKey)
 	if hasKey > 0 && err == nil {
 		_ = redis.Del("", tokenKey)
 	}
-	return claims[constToken.JwtName].(string)
+	return claims[constToken.JWT_USER_NAME].(string)
 }
 
 // Create 令牌生成
@@ -44,7 +44,7 @@ func Create(loginUser *vo.LoginUser, ilobArr [4]string) string {
 	loginUser.Browser = ilobArr[3]
 
 	// 设置新登录IP和登录时间
-	loginUser.User.LoginIP = loginUser.IPAddr
+	loginUser.User.LoginIp = loginUser.IPAddr
 	loginUser.User.LoginDate = loginUser.LoginTime
 
 	// 设置用户令牌有效期并存入缓存
@@ -64,11 +64,11 @@ func Create(loginUser *vo.LoginUser, ilobArr [4]string) string {
 	}
 	// 生成令牌负荷绑定uuid标识
 	jwtToken := jwt.NewWithClaims(method, jwt.MapClaims{
-		constToken.JwtUuid: loginUser.UUID,
-		constToken.JwtKey:  loginUser.UserID,
-		constToken.JwtName: loginUser.User.UserName,
-		"exp":              loginUser.ExpireTime,
-		"ait":              loginUser.LoginTime,
+		constToken.JWT_UUID:      loginUser.UUID,
+		constToken.JWT_USER_ID:   loginUser.UserID,
+		constToken.JWT_USER_NAME: loginUser.User.UserName,
+		"exp":                    loginUser.ExpireTime,
+		"ait":                    loginUser.LoginTime,
 	})
 
 	// 生成令牌设置密钥
@@ -91,7 +91,7 @@ func Cache(loginUser *vo.LoginUser) {
 	loginUser.ExpireTime = iatTimestamp + expTimestamp.Milliseconds()
 	loginUser.User.Password = ""
 	// 根据登录标识将loginUser缓存
-	tokenKey := constCacheKey.LoginTokenKey + loginUser.UUID
+	tokenKey := constCacheKey.LOGIN_TOKEN_KEY + loginUser.UUID
 	jsonBytes, err := json.Marshal(loginUser)
 	if err != nil {
 		return
@@ -136,8 +136,8 @@ func Verify(token string) (jwt.MapClaims, error) {
 // LoginUser 缓存的登录用户信息
 func LoginUser(claims jwt.MapClaims) vo.LoginUser {
 	loginUser := vo.LoginUser{}
-	uuid := claims[constToken.JwtUuid].(string)
-	tokenKey := constCacheKey.LoginTokenKey + uuid
+	uuid := claims[constToken.JWT_UUID].(string)
+	tokenKey := constCacheKey.LOGIN_TOKEN_KEY + uuid
 	hasKey, err := redis.Has("", tokenKey)
 	if hasKey > 0 && err == nil {
 		loginUserStr, err := redis.Get("", tokenKey)

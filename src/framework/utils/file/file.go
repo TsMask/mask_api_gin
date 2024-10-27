@@ -231,7 +231,7 @@ func TransferChunkUploadFile(file *multipart.FileHeader, index, identifier strin
 	// 上传资源路径
 	prefix, dir := resourceUpload()
 	// 新文件名称并组装文件地址
-	filePath := filepath.Join(constUploadSubPath.Chunk, date.ParseDatePath(time.Now()), identifier)
+	filePath := filepath.Join(constUploadSubPath.CHUNK, date.ParseDatePath(time.Now()), identifier)
 	writePathFile := filepath.Join(dir, filePath, index)
 	// 存入新文件路径
 	err = transferToNewFile(file, writePathFile)
@@ -255,7 +255,7 @@ func ChunkCheckFile(identifier, originalFileName string) ([]string, error) {
 	}
 	// 上传资源路径
 	_, dir := resourceUpload()
-	dirPath := path.Join(constUploadSubPath.Chunk, date.ParseDatePath(time.Now()), identifier)
+	dirPath := path.Join(constUploadSubPath.CHUNK, date.ParseDatePath(time.Now()), identifier)
 	readPath := path.Join(dir, dirPath)
 	fileList, err := getDirFileNameList(readPath)
 	if err != nil {
@@ -280,7 +280,7 @@ func ChunkMergeFile(identifier, originalFileName, subPath string) (string, error
 	// 上传资源路径
 	prefix, dir := resourceUpload()
 	// 切片存放目录
-	dirPath := path.Join(constUploadSubPath.Chunk, date.ParseDatePath(time.Now()), identifier)
+	dirPath := path.Join(constUploadSubPath.CHUNK, date.ParseDatePath(time.Now()), identifier)
 	readPath := path.Join(dir, dirPath)
 	// 组合存放文件路径
 	fileName := generateFileName(originalFileName)

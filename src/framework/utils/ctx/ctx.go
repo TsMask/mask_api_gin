@@ -67,14 +67,14 @@ func IPAddrLocation(c *gin.Context) (string, string) {
 
 // Authorization 解析请求头
 func Authorization(c *gin.Context) string {
-	authHeader := c.GetHeader(constToken.HeaderKey)
+	authHeader := c.GetHeader(constToken.HEADER_KEY)
 	if authHeader == "" {
 		return ""
 	}
 	// 拆分 Authorization 请求头，提取 JWT 令牌部分
-	arr := strings.SplitN(authHeader, constToken.HeaderPrefix, 2)
-	if len(arr) == 2 {
-		return strings.TrimSpace(arr[1]) // 去除可能存在的空格
+	tokenStr := strings.TrimPrefix(authHeader, constToken.HEADER_PREFIX)
+	if len(tokenStr) > 99 {
+		return strings.TrimSpace(tokenStr) // 去除可能存在的空格
 	}
 	return ""
 }
@@ -101,7 +101,7 @@ func UaOsBrowser(c *gin.Context) (string, string) {
 
 // LoginUser 登录用户信息
 func LoginUser(c *gin.Context) (vo.LoginUser, error) {
-	value, exists := c.Get(constSystem.CtxLoginUser)
+	value, exists := c.Get(constSystem.CTX_LOGIN_USER)
 	if exists {
 		return value.(vo.LoginUser), nil
 	}
@@ -110,7 +110,7 @@ func LoginUser(c *gin.Context) (vo.LoginUser, error) {
 
 // LoginUserToUserID 登录用户信息-用户ID
 func LoginUserToUserID(c *gin.Context) string {
-	value, exists := c.Get(constSystem.CtxLoginUser)
+	value, exists := c.Get(constSystem.CTX_LOGIN_USER)
 	if exists {
 		loginUser := value.(vo.LoginUser)
 		return loginUser.UserID
@@ -120,7 +120,7 @@ func LoginUserToUserID(c *gin.Context) string {
 
 // LoginUserToUserName 登录用户信息-用户名称
 func LoginUserToUserName(c *gin.Context) string {
-	value, exists := c.Get(constSystem.CtxLoginUser)
+	value, exists := c.Get(constSystem.CTX_LOGIN_USER)
 	if exists {
 		loginUser := value.(vo.LoginUser)
 		return loginUser.User.UserName
@@ -130,7 +130,7 @@ func LoginUserToUserName(c *gin.Context) string {
 
 // LoginUserByContainRoles 登录用户信息-包含角色KEY
 func LoginUserByContainRoles(c *gin.Context, target string) bool {
-	value, exists := c.Get(constSystem.CtxLoginUser)
+	value, exists := c.Get(constSystem.CTX_LOGIN_USER)
 	if !exists {
 		return false
 	}
@@ -149,7 +149,7 @@ func LoginUserByContainRoles(c *gin.Context, target string) bool {
 
 // LoginUserByContainPerms 登录用户信息-包含权限标识
 func LoginUserByContainPerms(c *gin.Context, target string) bool {
-	value, exists := c.Get(constSystem.CtxLoginUser)
+	value, exists := c.Get(constSystem.CTX_LOGIN_USER)
 	if !exists {
 		return false
 	}
@@ -177,7 +177,7 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 	userInfo := loginUser.User
 
 	// 如果是系统管理员，则不过滤数据
-	if config.IsSysAdmin(userInfo.UserID) {
+	if config.IsSysAdmin(userInfo.UserId) {
 		return dataScopeSQL
 	}
 	// 无用户角色
@@ -191,11 +191,11 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 	for _, role := range userInfo.Roles {
 		dataScope := role.DataScope
 
-		if constRoleDataScope.All == dataScope {
+		if constRoleDataScope.ALL == dataScope {
 			break
 		}
 
-		if constRoleDataScope.Custom != dataScope {
+		if constRoleDataScope.CUSTOM != dataScope {
 			hasKey := false
 			for _, key := range scopeKeys {
 				if key == dataScope {
@@ -208,28 +208,28 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 			}
 		}
 
-		if constRoleDataScope.Custom == dataScope {
+		if constRoleDataScope.CUSTOM == dataScope {
 			sql := fmt.Sprintf(`%s.dept_id IN ( SELECT dept_id FROM sys_role_dept WHERE role_id = '%s' )`, deptAlias, role.RoleID)
 			conditions = append(conditions, sql)
 		}
 
-		if constRoleDataScope.Dept == dataScope {
-			sql := fmt.Sprintf("%s.dept_id = %s", deptAlias, userInfo.DeptID)
+		if constRoleDataScope.DEPT == dataScope {
+			sql := fmt.Sprintf("%s.dept_id = %s", deptAlias, userInfo.DeptId)
 			conditions = append(conditions, sql)
 		}
 
-		if constRoleDataScope.DeptChild == dataScope {
-			sql := fmt.Sprintf(`%s.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = '%s' or find_in_set('%s' , ancestors ) )`, deptAlias, userInfo.DeptID, userInfo.DeptID)
+		if constRoleDataScope.DEPT_CHILD == dataScope {
+			sql := fmt.Sprintf(`%s.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = '%s' or find_in_set('%s' , ancestors ) )`, deptAlias, userInfo.DeptId, userInfo.DeptId)
 			conditions = append(conditions, sql)
 		}
 
-		if constRoleDataScope.Self == dataScope {
+		if constRoleDataScope.SELF == dataScope {
 			// 数据权限为仅本人且没有userAlias别名不查询任何数据
 			if userAlias == "" {
 				sql := fmt.Sprintf(`%s.dept_id = '0'`, deptAlias)
 				conditions = append(conditions, sql)
 			} else {
-				sql := fmt.Sprintf(`%s.user_id = '%s'`, userAlias, userInfo.UserID)
+				sql := fmt.Sprintf(`%s.user_id = '%s'`, userAlias, userInfo.UserId)
 				conditions = append(conditions, sql)
 			}
 		}

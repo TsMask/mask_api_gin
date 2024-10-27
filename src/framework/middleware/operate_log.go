@@ -143,9 +143,9 @@ func OperateLog(options Options) gin.HandlerFunc {
 		// 响应状态
 		status := c.Writer.Status()
 		if status == 200 {
-			operaLog.Status = constSystem.StatusYes
+			operaLog.Status = constSystem.STATUS_YES
 		} else {
-			operaLog.Status = constSystem.StatusNo
+			operaLog.Status = constSystem.STATUS_NO
 		}
 
 		// 是否需要保存response，参数和值

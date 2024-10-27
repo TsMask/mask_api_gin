@@ -47,7 +47,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 
 		// 检查刷新有效期后存入上下文
 		token.RefreshIn(&loginUser)
-		c.Set(constSystem.CtxLoginUser, loginUser)
+		c.Set(constSystem.CTX_LOGIN_USER, loginUser)
 
 		// 登录用户角色权限校验
 		if options != nil {
@@ -79,7 +79,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 // options 参数
 func verifyRolePermission(roles, perms []string, options map[string][]string) bool {
 	// 直接放行 系统管理员角色或任意权限
-	if contains(roles, constSystem.RoleKey) || contains(perms, constSystem.Permission) {
+	if contains(roles, constSystem.ROLE_SYSTEM_KEY) || contains(perms, constSystem.PERMISSION_SYSTEM) {
 		return true
 	}
 	opts := make([]bool, 4)

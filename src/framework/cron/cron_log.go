@@ -37,7 +37,7 @@ func (clog) Error(err error, msg string, keysAndValues ...any) {
 				Data:      data,
 				Result:    err.Error(),
 			}
-			jobLog.SaveLog(constSystem.StatusNo)
+			jobLog.SaveLog(constSystem.STATUS_NO)
 		}
 	}
 }
@@ -60,7 +60,7 @@ func (clog) Completed(result any, msg string, keysAndValues ...any) {
 				Data:      data,
 				Result:    result,
 			}
-			jobLog.SaveLog(constSystem.StatusYes)
+			jobLog.SaveLog(constSystem.STATUS_YES)
 		}
 	}
 }
@@ -78,13 +78,13 @@ func (jl *jobLogData) SaveLog(status string) {
 	sysJob := jl.Data.SysJob
 
 	// 任务日志不需要记录
-	if sysJob.SaveLog == "" || sysJob.SaveLog == constSystem.StatusNo {
+	if sysJob.SaveLog == "" || sysJob.SaveLog == constSystem.STATUS_NO {
 		return
 	}
 
 	// 结果信息key的Name
 	resultName := "failed"
-	if status == constSystem.StatusYes {
+	if status == constSystem.STATUS_YES {
 		resultName = "completed"
 	}
 
