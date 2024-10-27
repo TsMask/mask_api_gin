@@ -28,14 +28,14 @@ var NewSysJob = &SysJobController{
 //
 // PATH /monitor/job
 type SysJobController struct {
-	sysJobService      *service.SysJob                   // 调度任务服务
-	sysDictTypeService systemService.ISysDictTypeService // 字典类型服务
+	sysJobService      *service.SysJob            // 调度任务服务
+	sysDictTypeService *systemService.SysDictType // 字典类型服务
 }
 
 // List 调度任务列表
 //
 // GET /list
-func (s *SysJobController) List(c *gin.Context) {
+func (s SysJobController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	rows, total := s.sysJobService.FindByPage(query)
 	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
@@ -44,7 +44,7 @@ func (s *SysJobController) List(c *gin.Context) {
 // Info 调度任务信息
 //
 // GET /?jobId=xxx
-func (s *SysJobController) Info(c *gin.Context) {
+func (s SysJobController) Info(c *gin.Context) {
 	id, idOk := c.GetQuery("jobId")
 	if id == "" || !idOk {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -62,7 +62,7 @@ func (s *SysJobController) Info(c *gin.Context) {
 // Add 调度任务新增
 //
 // POST /
-func (s *SysJobController) Add(c *gin.Context) {
+func (s SysJobController) Add(c *gin.Context) {
 	var body model.SysJob
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.JobID != "" {
@@ -110,7 +110,7 @@ func (s *SysJobController) Add(c *gin.Context) {
 // Edit 调度任务修改
 //
 // PUT /
-func (s *SysJobController) Edit(c *gin.Context) {
+func (s SysJobController) Edit(c *gin.Context) {
 	var body model.SysJob
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.JobID == "" {
@@ -158,7 +158,7 @@ func (s *SysJobController) Edit(c *gin.Context) {
 // Remove 调度任务删除
 //
 // DELETE /?jobId=xxx
-func (s *SysJobController) Remove(c *gin.Context) {
+func (s SysJobController) Remove(c *gin.Context) {
 	id, idOk := c.GetQuery("jobId")
 	if id == "" || !idOk {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -183,7 +183,7 @@ func (s *SysJobController) Remove(c *gin.Context) {
 // Status 调度任务修改状态
 //
 // PUT /changeStatus
-func (s *SysJobController) Status(c *gin.Context) {
+func (s SysJobController) Status(c *gin.Context) {
 	var body struct {
 		JobId  string `json:"jobId" binding:"required"`
 		Status string `json:"status" binding:"required"`
@@ -220,7 +220,7 @@ func (s *SysJobController) Status(c *gin.Context) {
 // Run 调度任务立即执行一次
 //
 // PUT /run/:jobId
-func (s *SysJobController) Run(c *gin.Context) {
+func (s SysJobController) Run(c *gin.Context) {
 	jobId := c.Param("jobId")
 	if jobId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -245,7 +245,7 @@ func (s *SysJobController) Run(c *gin.Context) {
 // Reset 调度任务重置刷新队列
 //
 // PUT /reset
-func (s *SysJobController) Reset(c *gin.Context) {
+func (s SysJobController) Reset(c *gin.Context) {
 	s.sysJobService.Reset()
 	c.JSON(200, result.Ok(nil))
 }
@@ -253,7 +253,7 @@ func (s *SysJobController) Reset(c *gin.Context) {
 // Export 导出调度任务信息
 //
 // POST /export
-func (s *SysJobController) Export(c *gin.Context) {
+func (s SysJobController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := ctx.BodyJSONMap(c)
 	rows, total := s.sysJobService.FindByPage(query)

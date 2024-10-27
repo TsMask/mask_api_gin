@@ -20,13 +20,13 @@ var NewSysUser = &SysUser{
 
 // SysUser 用户 服务层处理
 type SysUser struct {
-	sysUserRepository     *repository.SysUser               // 用户服务
-	sysRoleRepository     *repository.SysRole               // 角色服务
-	sysDeptRepository     *repository.SysDept               // 部门服务
-	sysUserRoleRepository *repository.SysUserRole           // 用户与角色服务
-	sysUserPostRepository repository.ISysUserPostRepository // 用户与岗位服务
-	sysDictDataService    ISysDictDataService               // 字典数据服务
-	sysConfigService      *SysConfig                        // 参数配置服务
+	sysUserRepository     *repository.SysUser     // 用户服务
+	sysRoleRepository     *repository.SysRole     // 角色服务
+	sysDeptRepository     *repository.SysDept     // 部门服务
+	sysUserRoleRepository *repository.SysUserRole // 用户与角色服务
+	sysUserPostRepository *repository.SysUserPost // 用户与岗位服务
+	sysDictDataService    *SysDictData            // 字典数据服务
+	sysConfigService      *SysConfig              // 参数配置服务
 }
 
 // FindByPage 分页查询列表数据

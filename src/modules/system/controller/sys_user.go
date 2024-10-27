@@ -33,11 +33,11 @@ var NewSysUser = &SysUserController{
 //
 // PATH /system/user
 type SysUserController struct {
-	sysUserService     *service.SysUser            // 用户服务
-	sysRoleService     *service.SysRole            // 角色服务
-	sysPostService     service.ISysPostService     // 岗位服务
-	sysDictTypeService service.ISysDictTypeService // 字典类型服务
-	sysConfigService   *service.SysConfig          // 参数配置服务
+	sysUserService     *service.SysUser     // 用户服务
+	sysRoleService     *service.SysRole     // 角色服务
+	sysPostService     *service.SysPost     // 岗位服务
+	sysDictTypeService *service.SysDictType // 字典类型服务
+	sysConfigService   *service.SysConfig   // 参数配置服务
 }
 
 // List 用户信息列表

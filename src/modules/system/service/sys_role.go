@@ -17,10 +17,10 @@ var NewSysRole = &SysRole{
 
 // SysRole 角色 服务层处理
 type SysRole struct {
-	sysRoleRepository     *repository.SysRole               // 角色服务
-	sysUserRoleRepository *repository.SysUserRole           // 用户与角色关联服务
-	sysRoleDeptRepository *repository.SysRoleDept           // 角色与部门关联服务
-	sysRoleMenuRepository repository.ISysRoleMenuRepository // 角色与菜单关联服务
+	sysRoleRepository     *repository.SysRole     // 角色服务
+	sysUserRoleRepository *repository.SysUserRole // 用户与角色关联服务
+	sysRoleDeptRepository *repository.SysRoleDept // 角色与部门关联服务
+	sysRoleMenuRepository *repository.SysRoleMenu // 角色与菜单关联服务
 }
 
 // FindByPage 分页查询列表数据

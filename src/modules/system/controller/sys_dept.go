@@ -28,7 +28,7 @@ type SysDeptController struct {
 // List 部门列表
 //
 // GET /list
-func (s *SysDeptController) List(c *gin.Context) {
+func (s SysDeptController) List(c *gin.Context) {
 	var query struct {
 		DeptID   string `form:"deptId"`   // 部门ID
 		ParentID string `form:"parentId"` // 父部门ID
@@ -54,7 +54,7 @@ func (s *SysDeptController) List(c *gin.Context) {
 // Info 部门信息
 //
 // GET /:deptId
-func (s *SysDeptController) Info(c *gin.Context) {
+func (s SysDeptController) Info(c *gin.Context) {
 	deptId := c.Param("deptId")
 	if deptId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -71,7 +71,7 @@ func (s *SysDeptController) Info(c *gin.Context) {
 // Add 部门新增
 //
 // POST /
-func (s *SysDeptController) Add(c *gin.Context) {
+func (s SysDeptController) Add(c *gin.Context) {
 	var body model.SysDept
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.DeptID != "" {
@@ -121,7 +121,7 @@ func (s *SysDeptController) Add(c *gin.Context) {
 // Edit 部门修改
 //
 // PUT /
-func (s *SysDeptController) Edit(c *gin.Context) {
+func (s SysDeptController) Edit(c *gin.Context) {
 	var body model.SysDept
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.DeptID == "" {
@@ -182,7 +182,7 @@ func (s *SysDeptController) Edit(c *gin.Context) {
 // Remove 部门删除
 //
 // DELETE /:deptId
-func (s *SysDeptController) Remove(c *gin.Context) {
+func (s SysDeptController) Remove(c *gin.Context) {
 	deptId := c.Param("deptId")
 	if deptId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -224,7 +224,7 @@ func (s *SysDeptController) Remove(c *gin.Context) {
 // ExcludeChild 部门列表（排除节点）
 //
 // GET /list/exclude/:deptId
-func (s *SysDeptController) ExcludeChild(c *gin.Context) {
+func (s SysDeptController) ExcludeChild(c *gin.Context) {
 	deptId := c.Param("deptId")
 	if deptId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -255,7 +255,7 @@ func (s *SysDeptController) ExcludeChild(c *gin.Context) {
 // TreeSelect 部门树结构列表
 //
 // GET /treeSelect
-func (s *SysDeptController) TreeSelect(c *gin.Context) {
+func (s SysDeptController) TreeSelect(c *gin.Context) {
 	var query struct {
 		DeptID   string `form:"deptId"`   // 部门ID
 		ParentID string `form:"parentId"` // 父部门ID
@@ -281,7 +281,7 @@ func (s *SysDeptController) TreeSelect(c *gin.Context) {
 // RoleDeptTreeSelect 部门树结构列表（指定角色）
 //
 // GET /roleDeptTreeSelect/:roleId
-func (s *SysDeptController) RoleDeptTreeSelect(c *gin.Context) {
+func (s SysDeptController) RoleDeptTreeSelect(c *gin.Context) {
 	roleId := c.Param("roleId")
 	if roleId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))

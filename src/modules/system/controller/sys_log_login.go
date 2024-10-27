@@ -27,14 +27,14 @@ var NewSysLogLogin = &SysLogLoginController{
 //
 // PATH /system/log/login
 type SysLogLoginController struct {
-	sysLogLoginService service.ISysLogLoginService // 系统登录日志服务
-	accountService     *commonService.Account      // 账号身份操作服务
+	sysLogLoginService *service.SysLogLogin   // 系统登录日志服务
+	accountService     *commonService.Account // 账号身份操作服务
 }
 
 // List 系统登录日志列表
 //
 // GET /list
-func (s *SysLogLoginController) List(c *gin.Context) {
+func (s SysLogLoginController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	data := s.sysLogLoginService.FindByPage(query)
 	c.JSON(200, result.Ok(data))
@@ -43,7 +43,7 @@ func (s *SysLogLoginController) List(c *gin.Context) {
 // Remove 系统登录日志删除
 //
 // DELETE /:infoIds
-func (s *SysLogLoginController) Remove(c *gin.Context) {
+func (s SysLogLoginController) Remove(c *gin.Context) {
 	infoIds := c.Param("infoIds")
 	if infoIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -69,7 +69,7 @@ func (s *SysLogLoginController) Remove(c *gin.Context) {
 // Clean 系统登录日志清空
 //
 // DELETE /clean
-func (s *SysLogLoginController) Clean(c *gin.Context) {
+func (s SysLogLoginController) Clean(c *gin.Context) {
 	err := s.sysLogLoginService.Clean()
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
@@ -81,7 +81,7 @@ func (s *SysLogLoginController) Clean(c *gin.Context) {
 // Unlock 系统登录日志账户解锁
 //
 // PUT /unlock/:userName
-func (s *SysLogLoginController) Unlock(c *gin.Context) {
+func (s SysLogLoginController) Unlock(c *gin.Context) {
 	userName := c.Param("userName")
 	if userName == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -98,7 +98,7 @@ func (s *SysLogLoginController) Unlock(c *gin.Context) {
 // Export 导出系统登录日志信息
 //
 // POST /export
-func (s *SysLogLoginController) Export(c *gin.Context) {
+func (s SysLogLoginController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := ctx.BodyJSONMap(c)
 	data := s.sysLogLoginService.FindByPage(query)

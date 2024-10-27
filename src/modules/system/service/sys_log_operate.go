@@ -1,24 +1,46 @@
 package service
 
-import "mask_api_gin/src/modules/system/model"
+import (
+	"mask_api_gin/src/modules/system/model"
+	"mask_api_gin/src/modules/system/repository"
+)
 
-// ISysLogOperateService 操作日志表 服务层接口
-type ISysLogOperateService interface {
-	// FindByPage 分页查询列表数据
-	FindByPage(query map[string]any) map[string]any
+// NewSysLogOperate 实例化服务层
+var NewSysLogOperate = &SysLogOperate{
+	SysLogOperate: repository.NewSysLogOperate,
+}
 
-	// Find 查询数据
-	Find(sysLogOperate model.SysLogOperate) []model.SysLogOperate
+// SysLogOperate 操作日志表 服务层处理
+type SysLogOperate struct {
+	SysLogOperate *repository.SysLogOperate // 操作日志信息
+}
 
-	// FindById 根据ID查询信息
-	FindById(operaId string) model.SysLogOperate
+// FindByPage 分页查询列表数据
+func (s SysLogOperate) FindByPage(query map[string]any) map[string]any {
+	return s.SysLogOperate.SelectByPage(query)
+}
 
-	// Insert 新增信息
-	Insert(sysLogOperate model.SysLogOperate) string
+// Find 查询数据
+func (s SysLogOperate) Find(SysLogOperate model.SysLogOperate) []model.SysLogOperate {
+	return s.SysLogOperate.Select(SysLogOperate)
+}
 
-	// DeleteById 删除信息
-	DeleteById(operaIds []string) int64
+// FindById 根据ID查询信息
+func (s SysLogOperate) FindById(operaId string) model.SysLogOperate {
+	return s.SysLogOperate.SelectById(operaId)
+}
 
-	// Clean 清空操作日志
-	Clean() error
+// Insert 新增信息
+func (s SysLogOperate) Insert(SysLogOperate model.SysLogOperate) string {
+	return s.SysLogOperate.Insert(SysLogOperate)
+}
+
+// DeleteById 删除信息
+func (s SysLogOperate) DeleteById(operaIds []string) int64 {
+	return s.SysLogOperate.DeleteByIds(operaIds)
+}
+
+// Clean 清空操作日志
+func (s SysLogOperate) Clean() error {
+	return s.SysLogOperate.Clean()
 }

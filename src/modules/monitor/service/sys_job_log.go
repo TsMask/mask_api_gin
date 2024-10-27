@@ -16,26 +16,26 @@ type SysJobLog struct {
 }
 
 // FindByPage 分页查询
-func (s *SysJobLog) FindByPage(query map[string]any) map[string]any {
+func (s SysJobLog) FindByPage(query map[string]any) map[string]any {
 	return s.sysJobLogRepository.SelectByPage(query)
 }
 
 // Find 查询
-func (s *SysJobLog) Find(sysJobLog model.SysJobLog) []model.SysJobLog {
+func (s SysJobLog) Find(sysJobLog model.SysJobLog) []model.SysJobLog {
 	return s.sysJobLogRepository.Select(sysJobLog)
 }
 
 // FindById 通过ID查询
-func (s *SysJobLog) FindById(jobLogId string) model.SysJobLog {
+func (s SysJobLog) FindById(jobLogId string) model.SysJobLog {
 	return s.sysJobLogRepository.SelectById(jobLogId)
 }
 
 // RemoveByIds 批量删除
-func (s *SysJobLog) RemoveByIds(jobLogIds []string) int64 {
+func (s SysJobLog) RemoveByIds(jobLogIds []string) int64 {
 	return s.sysJobLogRepository.DeleteByIds(jobLogIds)
 }
 
 // Clean 清空
-func (s *SysJobLog) Clean() error {
+func (s SysJobLog) Clean() error {
 	return s.sysJobLogRepository.Clean()
 }

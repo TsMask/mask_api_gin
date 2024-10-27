@@ -17,20 +17,20 @@ import (
 
 // NewSysUserOnline 实例化控制层 SysUserOnlineController 结构体
 var NewSysUserOnline = &SysUserOnlineController{
-	sysUserOnlineService: service.NewSysUserOnlineService,
+	sysUserOnlineService: service.NewSysUserOnline,
 }
 
 // SysUserOnlineController 在线用户信息 控制层处理
 //
 // PATH /monitor/online
 type SysUserOnlineController struct {
-	sysUserOnlineService service.ISysUserOnlineService // 在线用户服务
+	sysUserOnlineService *service.SysUserOnline // 在线用户服务
 }
 
 // List 在线用户列表
 //
 // GET /list
-func (s *SysUserOnlineController) List(c *gin.Context) {
+func (s SysUserOnlineController) List(c *gin.Context) {
 	ipaddr := c.Query("ipaddr")
 	userName := c.Query("userName")
 
@@ -108,7 +108,7 @@ func (s *SysUserOnlineController) List(c *gin.Context) {
 // Logout 在线用户强制退出
 //
 // DELETE /?tokenId=xxxxx
-func (s *SysUserOnlineController) Logout(c *gin.Context) {
+func (s SysUserOnlineController) Logout(c *gin.Context) {
 	tokenId, ok := c.GetQuery("tokenId")
 	if !ok || tokenId == "" || strings.Contains(tokenId, "*") {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))

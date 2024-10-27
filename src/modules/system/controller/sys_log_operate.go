@@ -25,13 +25,13 @@ var NewSysLogOperate = &SysLogOperateController{
 //
 // PATH /system/log/operate
 type SysLogOperateController struct {
-	SysLogOperateService service.ISysLogOperateService // 操作日志服务
+	SysLogOperateService *service.SysLogOperate // 操作日志服务
 }
 
 // List 操作日志列表
 //
 // GET /list
-func (s *SysLogOperateController) List(c *gin.Context) {
+func (s SysLogOperateController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	data := s.SysLogOperateService.FindByPage(query)
 	c.JSON(200, result.Ok(data))
@@ -40,7 +40,7 @@ func (s *SysLogOperateController) List(c *gin.Context) {
 // Remove 操作日志删除
 //
 // DELETE /:operaIds
-func (s *SysLogOperateController) Remove(c *gin.Context) {
+func (s SysLogOperateController) Remove(c *gin.Context) {
 	operaIds := c.Param("operaIds")
 	if operaIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -66,7 +66,7 @@ func (s *SysLogOperateController) Remove(c *gin.Context) {
 // Clean 操作日志清空
 //
 // DELETE /clean
-func (s *SysLogOperateController) Clean(c *gin.Context) {
+func (s SysLogOperateController) Clean(c *gin.Context) {
 	err := s.SysLogOperateService.Clean()
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
@@ -78,7 +78,7 @@ func (s *SysLogOperateController) Clean(c *gin.Context) {
 // Export 导出操作日志
 //
 // POST /export
-func (s *SysLogOperateController) Export(c *gin.Context) {
+func (s SysLogOperateController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := ctx.BodyJSONMap(c)
 	data := s.SysLogOperateService.FindByPage(query)

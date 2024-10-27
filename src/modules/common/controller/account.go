@@ -26,8 +26,8 @@ var NewAccount = &AccountController{
 //
 // PATH /
 type AccountController struct {
-	accountService     *commonService.Account            // 账号身份操作服务
-	sysLogLoginService systemService.ISysLogLoginService // 系统登录访问
+	accountService     *commonService.Account     // 账号身份操作服务
+	sysLogLoginService *systemService.SysLogLogin // 系统登录访问
 }
 
 // Login 系统登录

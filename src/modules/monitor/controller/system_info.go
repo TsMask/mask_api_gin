@@ -9,7 +9,7 @@ import (
 
 // NewSystemInfo 实例化控制层
 var NewSystemInfo = &SystemInfoController{
-	systemInfoService: service.NewSystemInfoService,
+	systemInfoService: service.NewSystemInfo,
 }
 
 // SystemInfoController 服务器监控信息 控制层处理
@@ -17,13 +17,13 @@ var NewSystemInfo = &SystemInfoController{
 // PATH /monitor/system-info
 type SystemInfoController struct {
 	// 服务器系统相关信息服务
-	systemInfoService service.ISystemInfoService
+	systemInfoService *service.SystemInfo
 }
 
 // Info 服务器信息
 //
 // GET /
-func (s *SystemInfoController) Info(c *gin.Context) {
+func (s SystemInfoController) Info(c *gin.Context) {
 	c.JSON(200, result.OkData(map[string]any{
 		"project": s.systemInfoService.ProjectInfo(),
 		"cpu":     s.systemInfoService.CPUInfo(),

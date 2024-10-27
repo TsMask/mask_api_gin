@@ -28,15 +28,15 @@ var NewSysJobLog = &SysJobLogController{
 //
 // PATH /monitor/jobLog
 type SysJobLogController struct {
-	sysJobService      *service.SysJob                   // 调度任务服务
-	sysJobLogService   *service.SysJobLog                // 调度任务日志服务
-	sysDictTypeService systemService.ISysDictTypeService // 字典类型服务
+	sysJobService      *service.SysJob            // 调度任务服务
+	sysJobLogService   *service.SysJobLog         // 调度任务日志服务
+	sysDictTypeService *systemService.SysDictType // 字典类型服务
 }
 
 // List 调度任务日志列表
 //
 // GET /list
-func (s *SysJobLogController) List(c *gin.Context) {
+func (s SysJobLogController) List(c *gin.Context) {
 	// 查询参数转换map
 	query := ctx.QueryMap(c)
 	if v, ok := query["jobId"]; ok && v != "" && v != "0" {
@@ -51,7 +51,7 @@ func (s *SysJobLogController) List(c *gin.Context) {
 // Info 调度任务日志信息
 //
 // GET /:jobLogId
-func (s *SysJobLogController) Info(c *gin.Context) {
+func (s SysJobLogController) Info(c *gin.Context) {
 	jobLogId := c.Param("jobLogId")
 	if jobLogId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -68,7 +68,7 @@ func (s *SysJobLogController) Info(c *gin.Context) {
 // Remove 调度任务日志删除
 //
 // DELETE /:jobLogIds
-func (s *SysJobLogController) Remove(c *gin.Context) {
+func (s SysJobLogController) Remove(c *gin.Context) {
 	jobLogIds := c.Param("jobLogIds")
 	if jobLogIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -94,7 +94,7 @@ func (s *SysJobLogController) Remove(c *gin.Context) {
 // Clean 调度任务日志清空
 //
 // DELETE /clean
-func (s *SysJobLogController) Clean(c *gin.Context) {
+func (s SysJobLogController) Clean(c *gin.Context) {
 	err := s.sysJobLogService.Clean()
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
@@ -106,7 +106,7 @@ func (s *SysJobLogController) Clean(c *gin.Context) {
 // Export 导出调度任务日志信息
 //
 // POST /export
-func (s *SysJobLogController) Export(c *gin.Context) {
+func (s SysJobLogController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := ctx.BodyJSONMap(c)
 	data := s.sysJobLogService.FindByPage(query)

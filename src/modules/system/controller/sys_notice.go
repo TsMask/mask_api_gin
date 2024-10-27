@@ -22,13 +22,13 @@ var NewSysNotice = &SysNoticeController{
 //
 // PATH /system/notice
 type SysNoticeController struct {
-	sysNoticeService service.ISysNoticeService // 公告服务
+	sysNoticeService *service.SysNotice // 公告服务
 }
 
 // List 通知公告列表
 //
 // GET /list
-func (s *SysNoticeController) List(c *gin.Context) {
+func (s SysNoticeController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	data := s.sysNoticeService.FindByPage(query)
 	c.JSON(200, result.Ok(data))
@@ -37,7 +37,7 @@ func (s *SysNoticeController) List(c *gin.Context) {
 // Info 通知公告信息
 //
 // GET /:noticeId
-func (s *SysNoticeController) Info(c *gin.Context) {
+func (s SysNoticeController) Info(c *gin.Context) {
 	noticeId := c.Param("noticeId")
 	if noticeId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -54,7 +54,7 @@ func (s *SysNoticeController) Info(c *gin.Context) {
 // Add 通知公告新增
 //
 // POST /
-func (s *SysNoticeController) Add(c *gin.Context) {
+func (s SysNoticeController) Add(c *gin.Context) {
 	var body model.SysNotice
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.NoticeID != "" {
@@ -74,7 +74,7 @@ func (s *SysNoticeController) Add(c *gin.Context) {
 // Edit 通知公告修改
 //
 // PUT /
-func (s *SysNoticeController) Edit(c *gin.Context) {
+func (s SysNoticeController) Edit(c *gin.Context) {
 	var body model.SysNotice
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.NoticeID == "" {
@@ -101,7 +101,7 @@ func (s *SysNoticeController) Edit(c *gin.Context) {
 // Remove 通知公告删除
 //
 // DELETE /:noticeIds
-func (s *SysNoticeController) Remove(c *gin.Context) {
+func (s SysNoticeController) Remove(c *gin.Context) {
 	noticeIds := c.Param("noticeIds")
 	if noticeIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))

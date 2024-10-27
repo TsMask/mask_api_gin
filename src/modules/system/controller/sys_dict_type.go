@@ -25,13 +25,13 @@ var NewSysDictType = &SysDictTypeController{
 //
 // PATH /system/dict/type
 type SysDictTypeController struct {
-	sysDictTypeService service.ISysDictTypeService // 字典类型服务
+	sysDictTypeService *service.SysDictType // 字典类型服务
 }
 
 // List 字典类型列表
 //
 // GET /list
-func (s *SysDictTypeController) List(c *gin.Context) {
+func (s SysDictTypeController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	data := s.sysDictTypeService.FindByPage(query)
 	c.JSON(200, result.Ok(data))
@@ -40,7 +40,7 @@ func (s *SysDictTypeController) List(c *gin.Context) {
 // Info 字典类型信息
 //
 // GET /:dictId
-func (s *SysDictTypeController) Info(c *gin.Context) {
+func (s SysDictTypeController) Info(c *gin.Context) {
 	dictId := c.Param("dictId")
 	if dictId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -57,7 +57,7 @@ func (s *SysDictTypeController) Info(c *gin.Context) {
 // Add 字典类型新增
 //
 // POST /
-func (s *SysDictTypeController) Add(c *gin.Context) {
+func (s SysDictTypeController) Add(c *gin.Context) {
 	var body model.SysDictType
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.DictID != "" {
@@ -93,7 +93,7 @@ func (s *SysDictTypeController) Add(c *gin.Context) {
 // Edit 字典类型修改
 //
 // PUT /
-func (s *SysDictTypeController) Edit(c *gin.Context) {
+func (s SysDictTypeController) Edit(c *gin.Context) {
 	var body model.SysDictType
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.DictID == "" {
@@ -136,7 +136,7 @@ func (s *SysDictTypeController) Edit(c *gin.Context) {
 // Remove 字典类型删除
 //
 // DELETE /:dictIds
-func (s *SysDictTypeController) Remove(c *gin.Context) {
+func (s SysDictTypeController) Remove(c *gin.Context) {
 	dictIds := c.Param("dictIds")
 	if dictIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -161,7 +161,7 @@ func (s *SysDictTypeController) Remove(c *gin.Context) {
 // RefreshCache 字典类型刷新缓存
 //
 // PUT /refreshCache
-func (s *SysDictTypeController) RefreshCache(c *gin.Context) {
+func (s SysDictTypeController) RefreshCache(c *gin.Context) {
 	s.sysDictTypeService.CacheClean("*")
 	s.sysDictTypeService.CacheLoad("*")
 	c.JSON(200, result.Ok(nil))
@@ -170,7 +170,7 @@ func (s *SysDictTypeController) RefreshCache(c *gin.Context) {
 // DictOptionSelect 字典类型选择框列表
 //
 // GET /getDictOptionSelect
-func (s *SysDictTypeController) DictOptionSelect(c *gin.Context) {
+func (s SysDictTypeController) DictOptionSelect(c *gin.Context) {
 	data := s.sysDictTypeService.Find(model.SysDictType{Status: "1"})
 
 	type labelValue struct {
@@ -192,7 +192,7 @@ func (s *SysDictTypeController) DictOptionSelect(c *gin.Context) {
 // Export 字典类型列表导出
 //
 // POST /export
-func (s *SysDictTypeController) Export(c *gin.Context) {
+func (s SysDictTypeController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := ctx.BodyJSONMap(c)
 	data := s.sysDictTypeService.FindByPage(query)

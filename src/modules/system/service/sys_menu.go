@@ -21,9 +21,9 @@ var NewSysMenu = &SysMenu{
 
 // SysMenu 菜单 服务层处理
 type SysMenu struct {
-	sysMenuRepository     repository.ISysMenuRepository     // 菜单服务
-	sysRoleMenuRepository repository.ISysRoleMenuRepository // 角色与菜单关联服务
-	sysRoleRepository     *repository.SysRole               // 角色服务
+	sysMenuRepository     *repository.SysMenu     // 菜单服务
+	sysRoleMenuRepository *repository.SysRoleMenu // 角色与菜单关联服务
+	sysRoleRepository     *repository.SysRole     // 角色服务
 }
 
 // Find 查询数据

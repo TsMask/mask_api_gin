@@ -31,7 +31,7 @@ type SysConfigController struct {
 // List 参数配置列表
 //
 // GET /list
-func (s *SysConfigController) List(c *gin.Context) {
+func (s SysConfigController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	rows, total := s.sysConfigService.FindByPage(query)
 	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
@@ -40,7 +40,7 @@ func (s *SysConfigController) List(c *gin.Context) {
 // Info 参数配置信息
 //
 // GET /:configId
-func (s *SysConfigController) Info(c *gin.Context) {
+func (s SysConfigController) Info(c *gin.Context) {
 	configId := c.Param("configId")
 	if configId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -57,7 +57,7 @@ func (s *SysConfigController) Info(c *gin.Context) {
 // Add 参数配置新增
 //
 // POST /
-func (s *SysConfigController) Add(c *gin.Context) {
+func (s SysConfigController) Add(c *gin.Context) {
 	var body model.SysConfig
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.ConfigId != "" {
@@ -85,7 +85,7 @@ func (s *SysConfigController) Add(c *gin.Context) {
 // Edit 参数配置修改
 //
 // PUT /
-func (s *SysConfigController) Edit(c *gin.Context) {
+func (s SysConfigController) Edit(c *gin.Context) {
 	var body model.SysConfig
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.ConfigId == "" {
@@ -120,7 +120,7 @@ func (s *SysConfigController) Edit(c *gin.Context) {
 // Remove 参数配置删除
 //
 // DELETE /:configIds
-func (s *SysConfigController) Remove(c *gin.Context) {
+func (s SysConfigController) Remove(c *gin.Context) {
 	configIds := c.Param("configIds")
 	if configIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -145,7 +145,7 @@ func (s *SysConfigController) Remove(c *gin.Context) {
 // RefreshCache 参数配置刷新缓存
 //
 // PUT /refreshCache
-func (s *SysConfigController) RefreshCache(c *gin.Context) {
+func (s SysConfigController) RefreshCache(c *gin.Context) {
 	s.sysConfigService.CacheClean("*")
 	s.sysConfigService.CacheLoad("*")
 	c.JSON(200, result.Ok(nil))
@@ -154,7 +154,7 @@ func (s *SysConfigController) RefreshCache(c *gin.Context) {
 // ConfigKey 参数配置根据参数键名
 //
 // GET /configKey/:configKey
-func (s *SysConfigController) ConfigKey(c *gin.Context) {
+func (s SysConfigController) ConfigKey(c *gin.Context) {
 	configKey := c.Param("configKey")
 	if configKey == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -171,7 +171,7 @@ func (s *SysConfigController) ConfigKey(c *gin.Context) {
 // Export 导出参数配置信息
 //
 // POST /export
-func (s *SysConfigController) Export(c *gin.Context) {
+func (s SysConfigController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := ctx.BodyJSONMap(c)
 	rows, total := s.sysConfigService.FindByPage(query)

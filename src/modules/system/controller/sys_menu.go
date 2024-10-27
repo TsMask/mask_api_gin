@@ -30,7 +30,7 @@ type SysMenuController struct {
 // List 菜单列表
 //
 // GET /list
-func (s *SysMenuController) List(c *gin.Context) {
+func (s SysMenuController) List(c *gin.Context) {
 	query := model.SysMenu{}
 	if v, ok := c.GetQuery("menuName"); ok {
 		query.MenuName = v
@@ -50,7 +50,7 @@ func (s *SysMenuController) List(c *gin.Context) {
 // Info 菜单信息
 //
 // GET /:menuId
-func (s *SysMenuController) Info(c *gin.Context) {
+func (s SysMenuController) Info(c *gin.Context) {
 	menuId := c.Param("menuId")
 	if menuId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -67,7 +67,7 @@ func (s *SysMenuController) Info(c *gin.Context) {
 // Add 菜单新增
 //
 // POST /
-func (s *SysMenuController) Add(c *gin.Context) {
+func (s SysMenuController) Add(c *gin.Context) {
 	var body model.SysMenu
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.MenuID != "" {
@@ -112,7 +112,7 @@ func (s *SysMenuController) Add(c *gin.Context) {
 // Edit 菜单修改
 //
 // PUT /
-func (s *SysMenuController) Edit(c *gin.Context) {
+func (s SysMenuController) Edit(c *gin.Context) {
 	var body model.SysMenu
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.MenuID == "" {
@@ -194,7 +194,7 @@ func (s *SysMenuController) Edit(c *gin.Context) {
 // Remove 菜单删除
 //
 // DELETE /:menuId
-func (s *SysMenuController) Remove(c *gin.Context) {
+func (s SysMenuController) Remove(c *gin.Context) {
 	menuId := c.Param("menuId")
 	if menuId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -236,7 +236,7 @@ func (s *SysMenuController) Remove(c *gin.Context) {
 // TreeSelect 菜单树结构列表
 //
 // GET /treeSelect
-func (s *SysMenuController) TreeSelect(c *gin.Context) {
+func (s SysMenuController) TreeSelect(c *gin.Context) {
 	query := model.SysMenu{}
 	if v, ok := c.GetQuery("menuName"); ok {
 		query.MenuName = v
@@ -257,7 +257,7 @@ func (s *SysMenuController) TreeSelect(c *gin.Context) {
 // RoleMenuTreeSelect 菜单树结构列表（指定角色）
 //
 // GET /roleMenuTreeSelect/:roleId
-func (s *SysMenuController) RoleMenuTreeSelect(c *gin.Context) {
+func (s SysMenuController) RoleMenuTreeSelect(c *gin.Context) {
 	roleId := c.Param("roleId")
 	if roleId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))

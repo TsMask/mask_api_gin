@@ -29,10 +29,10 @@ var NewSysProfile = &SysProfileController{
 //
 // PATH /system/user/profile
 type SysProfileController struct {
-	sysUserService *service.SysUser        // 用户服务
-	sysRoleService *service.SysRole        // 角色服务
-	sysPostService service.ISysPostService // 岗位服务
-	sysMenuService *service.SysMenu        // 菜单服务
+	sysUserService *service.SysUser // 用户服务
+	sysRoleService *service.SysRole // 角色服务
+	sysPostService *service.SysPost // 岗位服务
+	sysMenuService *service.SysMenu // 菜单服务
 }
 
 // Info 个人信息

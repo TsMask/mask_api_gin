@@ -22,8 +22,8 @@ var NewRegister = &RegisterController{
 //
 // PATH /
 type RegisterController struct {
-	registerService    commonService.IRegisterService    // 账号注册操作服务
-	sysLogLoginService systemService.ISysLogLoginService // 系统登录访问服务
+	registerService    commonService.IRegisterService // 账号注册操作服务
+	sysLogLoginService *systemService.SysLogLogin     // 系统登录访问服务
 }
 
 // Register 账号注册

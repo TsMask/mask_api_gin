@@ -26,14 +26,14 @@ var NewSysDictData = &SysDictDataController{
 //
 // PATH /system/dict/data
 type SysDictDataController struct {
-	sysDictDataService service.ISysDictDataService // 字典数据服务
-	sysDictTypeService service.ISysDictTypeService // 字典类型服务
+	sysDictDataService *service.SysDictData // 字典数据服务
+	sysDictTypeService *service.SysDictType // 字典类型服务
 }
 
 // List 字典数据列表
 //
 // GET /list
-func (s *SysDictDataController) List(c *gin.Context) {
+func (s SysDictDataController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	data := s.sysDictDataService.FindByPage(query)
 	c.JSON(200, result.Ok(data))
@@ -42,7 +42,7 @@ func (s *SysDictDataController) List(c *gin.Context) {
 // Info 字典数据详情
 //
 // GET /:dictCode
-func (s *SysDictDataController) Info(c *gin.Context) {
+func (s SysDictDataController) Info(c *gin.Context) {
 	dictCode := c.Param("dictCode")
 	if dictCode == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -59,7 +59,7 @@ func (s *SysDictDataController) Info(c *gin.Context) {
 // Add 字典数据新增
 //
 // POST /
-func (s *SysDictDataController) Add(c *gin.Context) {
+func (s SysDictDataController) Add(c *gin.Context) {
 	var body model.SysDictData
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.DictCode != "" {
@@ -102,7 +102,7 @@ func (s *SysDictDataController) Add(c *gin.Context) {
 // Edit 字典类型修改
 //
 // PUT /
-func (s *SysDictDataController) Edit(c *gin.Context) {
+func (s SysDictDataController) Edit(c *gin.Context) {
 	var body model.SysDictData
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.DictCode == "" {
@@ -152,7 +152,7 @@ func (s *SysDictDataController) Edit(c *gin.Context) {
 // Remove 字典数据删除
 //
 // DELETE /:dictCodes
-func (s *SysDictDataController) Remove(c *gin.Context) {
+func (s SysDictDataController) Remove(c *gin.Context) {
 	dictCodes := c.Param("dictCodes")
 	if dictCodes == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -177,7 +177,7 @@ func (s *SysDictDataController) Remove(c *gin.Context) {
 // DictType 字典数据列表（指定字典类型）
 //
 // GET /type/:dictType
-func (s *SysDictDataController) DictType(c *gin.Context) {
+func (s SysDictDataController) DictType(c *gin.Context) {
 	dictType := c.Param("dictType")
 	if dictType == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -191,7 +191,7 @@ func (s *SysDictDataController) DictType(c *gin.Context) {
 // Export 字典数据列表导出
 //
 // POST /export
-func (s *SysDictDataController) Export(c *gin.Context) {
+func (s SysDictDataController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := ctx.BodyJSONMap(c)
 	data := s.sysDictDataService.FindByPage(query)

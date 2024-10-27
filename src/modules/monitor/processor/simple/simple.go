@@ -5,12 +5,12 @@ import (
 	"mask_api_gin/src/framework/logger"
 )
 
-var NewProcessor = &simple{}
+var NewProcessor = &Processor{}
 
-// simple 队列任务处理
-type simple struct{}
+// Processor 队列任务处理
+type Processor struct{}
 
-func (s *simple) Execute(data any) (any, error) {
+func (p Processor) Execute(data any) (any, error) {
 	options := data.(cron.JobData)
 
 	sysJob := options.SysJob

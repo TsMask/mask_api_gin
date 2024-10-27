@@ -42,7 +42,7 @@ type SysJobLog struct {
 }
 
 // SelectByPage 分页查询集合
-func (r *SysJobLog) SelectByPage(query map[string]any) map[string]any {
+func (r SysJobLog) SelectByPage(query map[string]any) map[string]any {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -126,7 +126,7 @@ func (r *SysJobLog) SelectByPage(query map[string]any) map[string]any {
 }
 
 // Select 查询集合
-func (r *SysJobLog) Select(sysJobLog model.SysJobLog) []model.SysJobLog {
+func (r SysJobLog) Select(sysJobLog model.SysJobLog) []model.SysJobLog {
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -166,7 +166,7 @@ func (r *SysJobLog) Select(sysJobLog model.SysJobLog) []model.SysJobLog {
 }
 
 // SelectById 通过ID查询信息
-func (r *SysJobLog) SelectById(jobLogId string) model.SysJobLog {
+func (r SysJobLog) SelectById(jobLogId string) model.SysJobLog {
 	querySql := r.selectSql + " where job_log_id = ?"
 	rows, err := db.RawDB("", querySql, []any{jobLogId})
 	if err != nil {
@@ -181,7 +181,7 @@ func (r *SysJobLog) SelectById(jobLogId string) model.SysJobLog {
 }
 
 // Insert 新增信息
-func (r *SysJobLog) Insert(sysJobLog model.SysJobLog) string {
+func (r SysJobLog) Insert(sysJobLog model.SysJobLog) string {
 	// 参数拼接
 	params := make(map[string]any)
 	params["create_time"] = time.Now().UnixMilli()
@@ -233,7 +233,7 @@ func (r *SysJobLog) Insert(sysJobLog model.SysJobLog) string {
 }
 
 // DeleteByIds 批量删除信息
-func (r *SysJobLog) DeleteByIds(jobLogIds []string) int64 {
+func (r SysJobLog) DeleteByIds(jobLogIds []string) int64 {
 	placeholder := db.KeyPlaceholderByQuery(len(jobLogIds))
 	sql := fmt.Sprintf("delete from sys_job_log where job_log_id in (%s)", placeholder)
 	parameters := db.ConvertIdsSlice(jobLogIds)
@@ -246,7 +246,7 @@ func (r *SysJobLog) DeleteByIds(jobLogIds []string) int64 {
 }
 
 // Clean 清空集合数据
-func (r *SysJobLog) Clean() error {
+func (r SysJobLog) Clean() error {
 	sql := "truncate table sys_job_log"
 	_, err := db.ExecDB("", sql, nil)
 	return err

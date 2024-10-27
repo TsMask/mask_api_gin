@@ -25,13 +25,13 @@ var NewSysPost = &SysPostController{
 //
 // PATH /system/post
 type SysPostController struct {
-	sysPostService service.ISysPostService // 岗位服务
+	sysPostService *service.SysPost // 岗位服务
 }
 
 // List 岗位列表
 //
 // GET /list
-func (s *SysPostController) List(c *gin.Context) {
+func (s SysPostController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	data := s.sysPostService.FindByPage(query)
 	c.JSON(200, result.Ok(data))
@@ -40,7 +40,7 @@ func (s *SysPostController) List(c *gin.Context) {
 // Info 岗位信息
 //
 // GET /:postId
-func (s *SysPostController) Info(c *gin.Context) {
+func (s SysPostController) Info(c *gin.Context) {
 	postId := c.Param("postId")
 	if postId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -57,7 +57,7 @@ func (s *SysPostController) Info(c *gin.Context) {
 // Add 岗位新增
 //
 // POST /
-func (s *SysPostController) Add(c *gin.Context) {
+func (s SysPostController) Add(c *gin.Context) {
 	var body model.SysPost
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.PostID != "" {
@@ -93,7 +93,7 @@ func (s *SysPostController) Add(c *gin.Context) {
 // Edit 岗位修改
 //
 // PUT /
-func (s *SysPostController) Edit(c *gin.Context) {
+func (s SysPostController) Edit(c *gin.Context) {
 	var body model.SysPost
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
 	if err != nil || body.PostID == "" {
@@ -136,7 +136,7 @@ func (s *SysPostController) Edit(c *gin.Context) {
 // Remove 岗位删除
 //
 // DELETE /:postIds
-func (s *SysPostController) Remove(c *gin.Context) {
+func (s SysPostController) Remove(c *gin.Context) {
 	postIds := c.Param("postIds")
 	if postIds == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
@@ -161,7 +161,7 @@ func (s *SysPostController) Remove(c *gin.Context) {
 // Export 导出岗位信息
 //
 // POST /export
-func (s *SysPostController) Export(c *gin.Context) {
+func (s SysPostController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := ctx.BodyJSONMap(c)
 	data := s.sysPostService.FindByPage(query)

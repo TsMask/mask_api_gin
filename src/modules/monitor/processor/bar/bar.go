@@ -6,20 +6,20 @@ import (
 	"time"
 )
 
-var NewProcessor = &bar{
+var NewProcessor = &Processor{
 	progress: 0,
 	count:    0,
 }
 
-// bar 队列任务处理
-type bar struct {
+// Processor 队列任务处理
+type Processor struct {
 	progress int // 任务进度
 	count    int // 执行次数
 }
 
-func (s *bar) Execute(data any) (any, error) {
-	logger.Infof("执行 %d 次，上次进度： %d ", s.count, s.progress)
-	s.count++
+func (p *Processor) Execute(data any) (any, error) {
+	logger.Infof("执行 %d 次，上次进度： %d ", p.count, p.progress)
+	p.count++
 
 	options := data.(cron.JobData)
 	sysJob := options.SysJob
@@ -27,10 +27,10 @@ func (s *bar) Execute(data any) (any, error) {
 
 	// 实现任务处理逻辑
 	i := 0
-	s.progress = i
+	p.progress = i
 	for i < 5 {
 		// 获取任务进度
-		progress := s.progress
+		progress := p.progress
 		logger.Infof("jonId: %s => 任务进度：%d", sysJob.JobID, progress)
 		// 延迟响应
 		time.Sleep(time.Second * 2)
@@ -44,7 +44,7 @@ func (s *bar) Execute(data any) (any, error) {
 		}
 		i++
 		// 改变任务进度
-		s.progress = i
+		p.progress = i
 	}
 
 	// 返回结果，用于记录执行结果

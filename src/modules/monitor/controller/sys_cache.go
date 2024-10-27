@@ -20,7 +20,7 @@ type SysCacheController struct{}
 // Info Redis信息
 //
 // GET /
-func (s *SysCacheController) Info(c *gin.Context) {
+func (s SysCacheController) Info(c *gin.Context) {
 	c.JSON(200, result.OkData(map[string]any{
 		"info":         redis.Info(""),
 		"dbSize":       redis.KeySize(""),
@@ -31,7 +31,7 @@ func (s *SysCacheController) Info(c *gin.Context) {
 // Names 缓存名称列表
 //
 // GET /names
-func (s *SysCacheController) Names(c *gin.Context) {
+func (s SysCacheController) Names(c *gin.Context) {
 	caches := []model.SysCache{
 		model.NewSysCacheNames("用户信息", constCacheKey.LOGIN_TOKEN_KEY),
 		model.NewSysCacheNames("配置信息", constCacheKey.SYS_CONFIG_KEY),
@@ -47,7 +47,7 @@ func (s *SysCacheController) Names(c *gin.Context) {
 // Keys 缓存名称下键名列表
 //
 // GET /keys?cacheName=xxx
-func (s *SysCacheController) Keys(c *gin.Context) {
+func (s SysCacheController) Keys(c *gin.Context) {
 	var query struct {
 		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称
 	}
@@ -68,7 +68,7 @@ func (s *SysCacheController) Keys(c *gin.Context) {
 // Value 缓存内容信息
 //
 // GET /value?cacheName=xxx&cacheKey=xxx
-func (s *SysCacheController) Value(c *gin.Context) {
+func (s SysCacheController) Value(c *gin.Context) {
 	var query struct {
 		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称
 		CacheKey  string `form:"cacheKey" binding:"required"`  // 键名列表中得到的缓存键名
@@ -90,7 +90,7 @@ func (s *SysCacheController) Value(c *gin.Context) {
 // CleanNames 缓存名称列表安全删除
 //
 // DELETE /clean/names
-func (s *SysCacheController) CleanNames(c *gin.Context) {
+func (s SysCacheController) CleanNames(c *gin.Context) {
 	caches := []model.SysCache{
 		model.NewSysCacheNames("配置信息", constCacheKey.SYS_CONFIG_KEY),
 		model.NewSysCacheNames("数据字典", constCacheKey.SYS_DICT_KEY),
@@ -112,7 +112,7 @@ func (s *SysCacheController) CleanNames(c *gin.Context) {
 // CleanKeys 缓存名称下键名删除
 //
 // DELETE /clean/keys?cacheName=xxx
-func (s *SysCacheController) CleanKeys(c *gin.Context) {
+func (s SysCacheController) CleanKeys(c *gin.Context) {
 	var query struct {
 		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称
 	}
@@ -141,7 +141,7 @@ func (s *SysCacheController) CleanKeys(c *gin.Context) {
 // CleanValue 缓存内容删除
 //
 // DELETE /clean/value?cacheName=xxx&cacheKey=xxx
-func (s *SysCacheController) CleanValue(c *gin.Context) {
+func (s SysCacheController) CleanValue(c *gin.Context) {
 	var query struct {
 		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称
 		CacheKey  string `form:"cacheKey" binding:"required"`  // 键名列表中得到的缓存键名
