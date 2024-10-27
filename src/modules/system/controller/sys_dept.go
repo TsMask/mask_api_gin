@@ -22,7 +22,7 @@ var NewSysDept = &SysDeptController{
 //
 // PATH /system/dept
 type SysDeptController struct {
-	sysDeptService service.ISysDeptService // 部门服务
+	sysDeptService *service.SysDept // 部门服务
 }
 
 // List 部门列表
@@ -86,12 +86,12 @@ func (s *SysDeptController) Add(c *gin.Context) {
 			c.JSON(200, result.ErrMsg("没有权限访问部门数据！"))
 			return
 		}
-		if deptParent.Status == constSystem.StatusNo {
+		if deptParent.Status == constSystem.STATUS_NO {
 			msg := fmt.Sprintf("上级部门【%s】停用，不允许新增", deptParent.DeptName)
 			c.JSON(200, result.ErrMsg(msg))
 			return
 		}
-		if deptParent.DelFlag == constSystem.StatusYes {
+		if deptParent.DelFlag == constSystem.STATUS_YES {
 			msg := fmt.Sprintf("上级部门【%s】已删除，不允许新增", deptParent.DeptName)
 			c.JSON(200, result.ErrMsg(msg))
 			return
@@ -161,7 +161,7 @@ func (s *SysDeptController) Edit(c *gin.Context) {
 	}
 
 	// 上级停用需要检查下级是否有在使用
-	if body.Status == constSystem.StatusNo {
+	if body.Status == constSystem.STATUS_NO {
 		hasChild := s.sysDeptService.ExistChildrenByDeptId(body.DeptID)
 		if hasChild > 0 {
 			msg := fmt.Sprintf("该部门包含未停用的子部门数量：%d", hasChild)
