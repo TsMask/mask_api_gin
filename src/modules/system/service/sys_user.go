@@ -10,6 +10,8 @@ import (
 // NewSysUser 实例化服务层
 var NewSysUser = &SysUser{
 	sysUserRepository:     repository.NewSysUser,
+	sysRoleRepository:     repository.NewSysRole,
+	sysDeptRepository:     repository.NewSysDept,
 	sysUserRoleRepository: repository.NewSysUserRole,
 	sysUserPostRepository: repository.NewSysUserPost,
 	sysDictDataService:    NewSysDictData,
@@ -19,7 +21,9 @@ var NewSysUser = &SysUser{
 // SysUser 用户 服务层处理
 type SysUser struct {
 	sysUserRepository     *repository.SysUser               // 用户服务
-	sysUserRoleRepository repository.ISysUserRoleRepository // 用户与角色服务
+	sysRoleRepository     *repository.SysRole               // 角色服务
+	sysDeptRepository     *repository.SysDept               // 部门服务
+	sysUserRoleRepository *repository.SysUserRole           // 用户与角色服务
 	sysUserPostRepository repository.ISysUserPostRepository // 用户与岗位服务
 	sysDictDataService    ISysDictDataService               // 字典数据服务
 	sysConfigService      *SysConfig                        // 参数配置服务
@@ -52,8 +56,8 @@ func (s SysUser) Insert(sysUser model.SysUser) string {
 	// 新增用户信息
 	insertId := s.sysUserRepository.Insert(sysUser)
 	if insertId != "" {
-		s.insertUserRole(insertId, sysUser.RoleIDs) // 新增用户角色信息
-		s.insertUserPost(insertId, sysUser.PostIDs) // 新增用户岗位信息
+		s.insertUserRole(insertId, sysUser.RoleIds) // 新增用户角色信息
+		s.insertUserPost(insertId, sysUser.PostIds) // 新增用户岗位信息
 	}
 	return insertId
 }
@@ -67,7 +71,7 @@ func (s SysUser) insertUserRole(userId string, roleIds []string) int64 {
 	var arr []model.SysUserRole
 	for _, roleId := range roleIds {
 		// 系统管理员角色禁止操作，只能通过配置指定用户ID分配
-		if roleId == "" || roleId == constSystem.RoleId {
+		if roleId == "" || roleId == constSystem.ROLE_SYSTEM_ID {
 			continue
 		}
 		arr = append(arr, model.SysUserRole{
@@ -105,13 +109,13 @@ func (s SysUser) Update(sysUser model.SysUser) int64 {
 // UpdateUserAndRolePost 修改用户信息同时更新角色和岗位
 func (s SysUser) UpdateUserAndRolePost(sysUser model.SysUser) int64 {
 	// 删除用户与角色关联
-	s.sysUserRoleRepository.DeleteByUserIds([]string{sysUser.UserID})
+	s.sysUserRoleRepository.DeleteByUserIds([]string{sysUser.UserId})
 	// 新增用户角色信息
-	s.insertUserRole(sysUser.UserID, sysUser.RoleIDs)
+	s.insertUserRole(sysUser.UserId, sysUser.RoleIds)
 	// 删除用户与岗位关联
-	s.sysUserPostRepository.DeleteByUserIds([]string{sysUser.UserID})
+	s.sysUserPostRepository.DeleteByUserIds([]string{sysUser.UserId})
 	// 新增用户岗位信息
-	s.insertUserPost(sysUser.UserID, sysUser.PostIDs)
+	s.insertUserPost(sysUser.UserId, sysUser.PostIds)
 	return s.sysUserRepository.Update(sysUser)
 }
 
@@ -165,7 +169,18 @@ func (s SysUser) CheckUniqueByEmail(email, userId string) bool {
 
 // FindByUserName 通过用户名查询用户信息
 func (s SysUser) FindByUserName(userName string) model.SysUser {
-	return s.sysUserRepository.SelectByUserName(userName)
+	userinfo := s.sysUserRepository.SelectByUserName(userName)
+	if userinfo.UserName == userName {
+		userinfo.Dept = s.sysDeptRepository.SelectById(userinfo.DeptId)
+		roles := s.sysRoleRepository.SelectByUserId(userinfo.UserId)
+		roleIds := make([]string, 0)
+		for _, role := range roles {
+			roleIds = append(roleIds, role.RoleKey)
+		}
+		userinfo.Roles = roles
+		userinfo.RoleIds = roleIds
+	}
+	return userinfo
 }
 
 // FindAllocatedPage 根据条件分页查询分配用户角色列表

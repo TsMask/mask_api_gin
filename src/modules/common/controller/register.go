@@ -49,7 +49,7 @@ func (s *RegisterController) Register(c *gin.Context) {
 	if err != nil {
 		msg := err.Error() + " " + registerBody.Code
 		s.sysLogLoginService.Insert(
-			registerBody.Username, constSystem.StatusNo, msg,
+			registerBody.Username, constSystem.STATUS_NO, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
 		c.JSON(200, result.ErrMsg(err.Error()))
@@ -74,7 +74,7 @@ func (s *RegisterController) Register(c *gin.Context) {
 	if err == nil {
 		msg := registerBody.Username + " 注册成功 " + userID
 		s.sysLogLoginService.Insert(
-			registerBody.Username, constSystem.StatusYes, msg,
+			registerBody.Username, constSystem.STATUS_YES, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
 		c.JSON(200, result.OkMsg("注册成功"))

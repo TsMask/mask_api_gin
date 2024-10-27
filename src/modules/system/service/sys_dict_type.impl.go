@@ -120,14 +120,14 @@ func (r *SysDictTypeService) CheckUniqueByType(dictType, dictId string) bool {
 
 // getCacheKey 组装缓存key
 func (r *SysDictTypeService) getCacheKey(dictType string) string {
-	return constCacheKey.SysDictKey + dictType
+	return constCacheKey.SYS_DICT_KEY + dictType
 }
 
 // CacheLoad 加载字典缓存数据 传入*查询全部
 func (r *SysDictTypeService) CacheLoad(dictType string) {
 	sysDictData := model.SysDictData{
 		DictType: dictType,
-		Status:   constSystem.StatusYes,
+		Status:   constSystem.STATUS_YES,
 	}
 
 	// 指定字典类型
@@ -181,7 +181,7 @@ func (r *SysDictTypeService) FindDataByType(dictType string) []model.SysDictData
 		}
 	} else {
 		data = r.sysDictDataRepository.Select(model.SysDictData{
-			Status:   constSystem.StatusYes,
+			Status:   constSystem.STATUS_YES,
 			DictType: dictType,
 		})
 		if len(data) > 0 {

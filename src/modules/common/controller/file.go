@@ -79,7 +79,7 @@ func (s *FileController) Upload(c *gin.Context) {
 		return
 	}
 	if subPath == "" {
-		subPath = constUploadSubPath.Common
+		subPath = constUploadSubPath.COMMON
 	}
 
 	// 上传文件转存
@@ -139,7 +139,7 @@ func (s *FileController) ChunkMerge(c *gin.Context) {
 		return
 	}
 	if body.SubPath == "" {
-		body.SubPath = constUploadSubPath.Common
+		body.SubPath = constUploadSubPath.COMMON
 	}
 
 	// 切片文件合并

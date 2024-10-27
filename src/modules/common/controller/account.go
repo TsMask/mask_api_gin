@@ -11,6 +11,7 @@ import (
 	commonModel "mask_api_gin/src/modules/common/model"
 	commonService "mask_api_gin/src/modules/common/service"
 	systemService "mask_api_gin/src/modules/system/service"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,7 +36,7 @@ type AccountController struct {
 func (s AccountController) Login(c *gin.Context) {
 	var loginBody commonModel.LoginBody
 	if err := c.ShouldBindJSON(&loginBody); err != nil {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+		c.JSON(400, result.CodeMsg(40010, "参数错误"))
 		return
 	}
 
@@ -43,41 +44,42 @@ func (s AccountController) Login(c *gin.Context) {
 	ipaddr, location := ctxUtils.IPAddrLocation(c)
 	os, browser := ctxUtils.UaOsBrowser(c)
 
-	// 校验验证码
-	err := s.accountService.ValidateCaptcha(loginBody.Code, loginBody.UUID)
-	// 根据错误信息，创建系统访问记录
-	if err != nil {
+	// 校验验证码 根据错误信息，创建系统访问记录
+	if err := s.accountService.ValidateCaptcha(loginBody.Code, loginBody.UUID); err != nil {
 		msg := fmt.Sprintf("%s code: %s", err.Error(), loginBody.Code)
 		s.sysLogLoginService.Insert(
-			loginBody.Username, constSystem.StatusNo, msg,
+			loginBody.Username, constSystem.STATUS_NO, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(400, result.CodeMsg(40012, err.Error()))
 		return
 	}
 
 	// 登录用户信息
 	loginUser, err := s.accountService.ByUsername(loginBody.Username, loginBody.Password)
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(400, result.CodeMsg(40014, err.Error()))
 		return
 	}
 
 	// 生成令牌，创建系统访问记录
 	tokenStr := tokenUtils.Create(&loginUser, [4]string{ipaddr, location, os, browser})
 	if tokenStr == "" {
-		c.JSON(200, result.Err(nil))
+		c.JSON(400, result.CodeMsg(40001, "生成token失败"))
 		return
 	} else {
 		s.accountService.UpdateLoginDateAndIP(&loginUser)
 		s.sysLogLoginService.Insert(
-			loginBody.Username, constSystem.StatusYes, "登录成功",
+			loginBody.Username, constSystem.STATUS_YES, "登录成功",
 			[4]string{ipaddr, location, os, browser},
 		)
 	}
 
 	c.JSON(200, result.OkData(map[string]any{
-		constToken.ResponseField: tokenStr,
+		"access_token": tokenStr,
+		"token_type":   strings.TrimRight(constToken.HEADER_PREFIX, " "),
+		"expires_in":   (loginUser.ExpireTime - loginUser.LoginTime) / 1000,
+		"user_id":      loginUser.UserID,
 	}))
 }
 
@@ -128,7 +130,7 @@ func (s AccountController) Logout(c *gin.Context) {
 			os, browser := ctxUtils.UaOsBrowser(c)
 			// 创建系统访问记录
 			s.sysLogLoginService.Insert(
-				userName, constSystem.StatusYes, "退出成功",
+				userName, constSystem.STATUS_YES, "退出成功",
 				[4]string{ipaddr, location, os, browser},
 			)
 		}

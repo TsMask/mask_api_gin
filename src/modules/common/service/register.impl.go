@@ -20,9 +20,9 @@ var NewRegisterService = &RegisterServiceImpl{
 
 // RegisterServiceImpl 账号注册操作 服务层处理
 type RegisterServiceImpl struct {
-	sysUserService   *systemService.SysUser        // 用户信息服务
-	sysConfigService *systemService.SysConfig      // 参数配置服务
-	sysRoleService   systemService.ISysRoleService // 角色服务
+	sysUserService   *systemService.SysUser   // 用户信息服务
+	sysConfigService *systemService.SysConfig // 参数配置服务
+	sysRoleService   *systemService.SysRole   // 角色服务
 }
 
 // ValidateCaptcha 校验验证码
@@ -35,7 +35,7 @@ func (s *RegisterServiceImpl) ValidateCaptcha(code, uuid string) error {
 	if code == "" || uuid == "" {
 		return errors.New("验证码信息错误")
 	}
-	verifyKey := constCacheKey.CaptchaCodeKey + uuid
+	verifyKey := constCacheKey.CAPTCHA_CODE_KEY + uuid
 	captcha, err := redis.Get("", verifyKey)
 	if captcha == "" || err != nil {
 		return errors.New("验证码已失效")
@@ -64,20 +64,20 @@ func (s *RegisterServiceImpl) ByUserName(username, password, userType string) (s
 
 	sysUser := systemModel.SysUser{
 		UserName: username,
-		NickName: username,              // 昵称使用名称账号
-		Password: password,              // 原始密码
-		Status:   constSystem.StatusYes, // 账号状态激活
-		DeptID:   "100",                 // 归属部门为根节点
-		CreateBy: "注册",                  // 创建来源
+		NickName: username,               // 昵称使用名称账号
+		Password: password,               // 原始密码
+		Status:   constSystem.STATUS_YES, // 账号状态激活
+		DeptId:   "100",                  // 归属部门为根节点
+		CreateBy: "注册",                   // 创建来源
 	}
 	// 标记用户类型
 	if userType == "" {
 		sysUser.UserType = "sys"
 	}
 	// 新增用户的角色管理
-	sysUser.RoleIDs = s.registerRoleInit(userType)
+	sysUser.RoleIds = s.registerRoleInit(userType)
 	// 新增用户的岗位管理
-	sysUser.PostIDs = s.registerPostInit(userType)
+	sysUser.PostIds = s.registerPostInit(userType)
 
 	insertId := s.sysUserService.Insert(sysUser)
 	if insertId != "" {

@@ -28,8 +28,8 @@ var NewSysRole = &SysRoleController{
 //
 // PATH /system/role
 type SysRoleController struct {
-	sysRoleService service.ISysRoleService // 角色服务
-	sysUserService *service.SysUser        // 用户服务
+	sysRoleService *service.SysRole // 角色服务
+	sysUserService *service.SysUser // 用户服务
 }
 
 // List 角色列表
@@ -107,7 +107,7 @@ func (s SysRoleController) Edit(c *gin.Context) {
 	}
 
 	// 检查是否系统管理员角色
-	if body.RoleID == constSystem.RoleId {
+	if body.RoleID == constSystem.ROLE_SYSTEM_ID {
 		c.JSON(200, result.ErrMsg("不允许操作系统管理员角色"))
 		return
 	}
@@ -162,7 +162,7 @@ func (s SysRoleController) Remove(c *gin.Context) {
 	}
 	// 检查是否系统管理员角色
 	for _, id := range uniqueIDs {
-		if id == constSystem.RoleId {
+		if id == constSystem.ROLE_SYSTEM_ID {
 			c.JSON(200, result.ErrMsg("不允许操作系统管理员角色"))
 			return
 		}
@@ -191,7 +191,7 @@ func (s SysRoleController) Status(c *gin.Context) {
 	}
 
 	// 检查是否系统管理员角色
-	if body.RoleID == constSystem.RoleId {
+	if body.RoleID == constSystem.ROLE_SYSTEM_ID {
 		c.JSON(200, result.ErrMsg("不允许操作系统管理员角色"))
 		return
 	}
@@ -237,7 +237,7 @@ func (s SysRoleController) DataScope(c *gin.Context) {
 	}
 
 	// 检查是否系统管理员角色
-	if body.RoleID == constSystem.RoleId {
+	if body.RoleID == constSystem.ROLE_SYSTEM_ID {
 		c.JSON(200, result.ErrMsg("不允许操作系统管理员角色"))
 		return
 	}

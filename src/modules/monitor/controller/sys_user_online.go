@@ -35,7 +35,7 @@ func (s *SysUserOnlineController) List(c *gin.Context) {
 	userName := c.Query("userName")
 
 	// 获取所有在线用户key
-	keys, _ := redis.GetKeys("", constCacheKey.LoginTokenKey+"*")
+	keys, _ := redis.GetKeys("", constCacheKey.LOGIN_TOKEN_KEY+"*")
 
 	// 分批获取
 	arr := make([]string, 0)
@@ -124,7 +124,7 @@ func (s *SysUserOnlineController) Logout(c *gin.Context) {
 	}
 	// 批量删除token
 	for _, v := range uniqueIDs {
-		key := constCacheKey.LoginTokenKey + v
+		key := constCacheKey.LOGIN_TOKEN_KEY + v
 		if err := redis.Del("", key); err != nil {
 			c.JSON(200, result.ErrMsg(err.Error()))
 			return

@@ -24,7 +24,7 @@ var NewSysMenu = &SysMenuController{
 //
 // PATH /system/menu
 type SysMenuController struct {
-	sysMenuService service.ISysMenuService // 菜单服务
+	sysMenuService *service.SysMenu // 菜单服务
 }
 
 // List 菜单列表
@@ -76,7 +76,7 @@ func (s *SysMenuController) Add(c *gin.Context) {
 	}
 
 	// 目录和菜单检查地址唯一
-	if constMenu.TypeDir == body.MenuType || constMenu.TypeMenu == body.MenuType {
+	if constMenu.TYPE_DIR == body.MenuType || constMenu.TYPE_MENU == body.MenuType {
 		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentID, body.Path, "")
 		if !uniqueMenuPath {
 			msg := fmt.Sprintf("菜单新增【%s】失败，菜单路由地址已存在", body.MenuName)
@@ -94,7 +94,7 @@ func (s *SysMenuController) Add(c *gin.Context) {
 	}
 
 	// 外链菜单需要符合网站http(s)开头
-	if body.IsFrame == constSystem.StatusNo && !regular.ValidHttp(body.Path) {
+	if body.IsFrame == constSystem.STATUS_NO && !regular.ValidHttp(body.Path) {
 		msg := fmt.Sprintf("菜单新增【%s】失败，非内部地址必须以http(s)://开头", body.MenuName)
 		c.JSON(200, result.ErrMsg(msg))
 		return
@@ -141,14 +141,14 @@ func (s *SysMenuController) Edit(c *gin.Context) {
 			return
 		}
 		// 禁用菜单时检查父菜单是否使用
-		if body.Status == constSystem.StatusYes && menuParent.Status == constSystem.StatusNo {
+		if body.Status == constSystem.STATUS_YES && menuParent.Status == constSystem.STATUS_NO {
 			c.JSON(200, result.ErrMsg("上级菜单未启用！"))
 			return
 		}
 	}
 
 	// 目录和菜单检查地址唯一
-	if constMenu.TypeDir == body.MenuType || constMenu.TypeMenu == body.MenuType {
+	if constMenu.TYPE_DIR == body.MenuType || constMenu.TYPE_MENU == body.MenuType {
 		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentID, body.Path, body.MenuID)
 		if !uniqueMenuPath {
 			msg := fmt.Sprintf("菜单修改【%s】失败，菜单路由地址已存在", body.MenuName)
@@ -166,15 +166,15 @@ func (s *SysMenuController) Edit(c *gin.Context) {
 	}
 
 	// 外链菜单需要符合网站http(s)开头
-	if body.IsFrame == constSystem.StatusNo && !regular.ValidHttp(body.Path) {
+	if body.IsFrame == constSystem.STATUS_NO && !regular.ValidHttp(body.Path) {
 		msg := fmt.Sprintf("菜单修改【%s】失败，非内部地址必须以http(s)://开头", body.MenuName)
 		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
 	// 禁用菜单时检查子菜单是否使用
-	if body.Status == constSystem.StatusNo {
-		hasStatus := s.sysMenuService.ExistChildrenByMenuIdAndStatus(body.MenuID, constSystem.StatusYes)
+	if body.Status == constSystem.STATUS_NO {
+		hasStatus := s.sysMenuService.ExistChildrenByMenuIdAndStatus(body.MenuID, constSystem.STATUS_YES)
 		if hasStatus > 0 {
 			msg := fmt.Sprintf("不允许禁用，存在使用子菜单数：%d", hasStatus)
 			c.JSON(200, result.ErrMsg(msg))

@@ -20,8 +20,6 @@ type IndexController struct{}
 //
 // GET /
 func (s *IndexController) Handler(c *gin.Context) {
-	name := config.Get("framework.name").(string)
-	version := config.Get("framework.version").(string)
 	str := "欢迎使用%s后台管理框架，当前版本：%s，请通过前端管理地址访问。"
-	c.JSON(200, result.OkMsg(fmt.Sprintf(str, name, version)))
+	c.JSON(200, result.OkMsg(fmt.Sprintf(str, config.Name, config.Version)))
 }

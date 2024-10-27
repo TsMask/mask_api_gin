@@ -98,7 +98,7 @@ func (r SysConfig) SelectByPage(query map[string]any) ([]model.SysConfig, int64)
 
 	// 转换实体
 	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("Unmarshal err => %v", err)
+		logger.Errorf("unmarshal err => %v", err)
 	}
 	return arr, total
 }
@@ -142,7 +142,7 @@ func (r SysConfig) Select(sysConfig model.SysConfig) []model.SysConfig {
 	// 转换实体
 	arr := []model.SysConfig{}
 	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("Unmarshal err => %v", err)
+		logger.Errorf("unmarshal err => %v", err)
 	}
 	return arr
 }
@@ -161,7 +161,7 @@ func (r SysConfig) SelectByIds(configIds []string) []model.SysConfig {
 	// 转换实体
 	arr := []model.SysConfig{}
 	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("Unmarshal err => %v", err)
+		logger.Errorf("unmarshal err => %v", err)
 	}
 	return arr
 }

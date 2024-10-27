@@ -172,7 +172,7 @@ func (r *SysMenuRepository) Insert(sysMenu model.SysMenu) string {
 	}
 
 	// 根据菜单类型重置参数
-	if sysMenu.MenuType == constMenu.TypeButton {
+	if sysMenu.MenuType == constMenu.TYPE_BUTTON {
 		params["component"] = ""
 		params["path"] = ""
 		params["icon"] = "#"
@@ -180,7 +180,7 @@ func (r *SysMenuRepository) Insert(sysMenu model.SysMenu) string {
 		params["is_frame"] = "1"
 		params["visible"] = "1"
 		params["status"] = "1"
-	} else if sysMenu.MenuType == constMenu.TypeDir {
+	} else if sysMenu.MenuType == constMenu.TYPE_DIR {
 		params["component"] = ""
 		params["perms"] = ""
 	}
@@ -259,7 +259,7 @@ func (r *SysMenuRepository) Update(sysMenu model.SysMenu) int64 {
 	}
 
 	// 根据菜单类型重置参数
-	if sysMenu.MenuType == constMenu.TypeButton {
+	if sysMenu.MenuType == constMenu.TYPE_BUTTON {
 		params["component"] = ""
 		params["path"] = ""
 		params["icon"] = "#"
@@ -267,7 +267,7 @@ func (r *SysMenuRepository) Update(sysMenu model.SysMenu) int64 {
 		params["is_frame"] = "1"
 		params["visible"] = "1"
 		params["status"] = "1"
-	} else if sysMenu.MenuType == constMenu.TypeDir {
+	} else if sysMenu.MenuType == constMenu.TYPE_DIR {
 		params["component"] = ""
 		params["perms"] = ""
 	}
@@ -306,8 +306,8 @@ func (r *SysMenuRepository) ExistChildrenByMenuIdAndStatus(menuId, status string
 	if status != "" {
 		querySql += " and status = ? and menu_type in (?, ?) "
 		params = append(params, status)
-		params = append(params, constMenu.TypeDir)
-		params = append(params, constMenu.TypeMenu)
+		params = append(params, constMenu.TYPE_DIR)
+		params = append(params, constMenu.TYPE_MENU)
 	}
 
 	results, err := db.RawDB("", querySql, params)
@@ -427,16 +427,16 @@ func (r *SysMenuRepository) SelectTreeByUserId(userId string) []model.SysMenu {
 		querySql = r.selectSql + ` where 
 		m.menu_type in (?,?) and m.status = '1'
 		order by m.parent_id, m.menu_sort`
-		params = append(params, constMenu.TypeDir)
-		params = append(params, constMenu.TypeMenu)
+		params = append(params, constMenu.TYPE_DIR)
+		params = append(params, constMenu.TYPE_MENU)
 	} else {
 		// 用户ID权限
 		querySql = r.selectSqlByUser + ` where 
 		m.menu_type in (?, ?) and m.status = '1'
 		and ur.user_id = ? and ro.status = '1'
 		order by m.parent_id, m.menu_sort`
-		params = append(params, constMenu.TypeDir)
-		params = append(params, constMenu.TypeMenu)
+		params = append(params, constMenu.TYPE_DIR)
+		params = append(params, constMenu.TYPE_MENU)
 		params = append(params, userId)
 	}
 

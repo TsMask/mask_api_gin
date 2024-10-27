@@ -30,9 +30,9 @@ var NewSysProfile = &SysProfileController{
 // PATH /system/user/profile
 type SysProfileController struct {
 	sysUserService *service.SysUser        // 用户服务
-	sysRoleService service.ISysRoleService // 角色服务
+	sysRoleService *service.SysRole        // 角色服务
 	sysPostService service.ISysPostService // 岗位服务
-	sysMenuService service.ISysMenuService // 菜单服务
+	sysMenuService *service.SysMenu        // 菜单服务
 }
 
 // Info 个人信息
@@ -127,7 +127,7 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 
 	// 查询当前登录用户信息
 	user := s.sysUserService.FindById(userId)
-	if user.UserID != userId {
+	if user.UserId != userId {
 		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
@@ -174,28 +174,28 @@ func (s SysProfileController) UpdatePwd(c *gin.Context) {
 	userName := loginUser.User.UserName
 
 	// 查询当前登录用户信息得到密码值
-	user := s.sysUserService.FindById(userId)
-	if user.UserID != userId {
+	userInfo := s.sysUserService.FindById(userId)
+	if userInfo.UserId != userId {
 		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
 
 	// 检查匹配用户密码
-	oldCompare := crypto.BcryptCompare(body.OldPassword, user.Password)
+	oldCompare := crypto.BcryptCompare(body.OldPassword, userInfo.Password)
 	if !oldCompare {
 		c.JSON(200, result.ErrMsg("修改密码失败，旧密码错误"))
 		return
 	}
-	newCompare := crypto.BcryptCompare(body.NewPassword, user.Password)
+	newCompare := crypto.BcryptCompare(body.NewPassword, userInfo.Password)
 	if newCompare {
 		c.JSON(200, result.ErrMsg("新密码不能与旧密码相同"))
 		return
 	}
 
 	// 修改新密码
-	user.UpdateBy = userName
-	user.Password = body.NewPassword
-	rows := s.sysUserService.Update(user)
+	userInfo.UpdateBy = userName
+	userInfo.Password = body.NewPassword
+	rows := s.sysUserService.Update(userInfo)
 	if rows > 0 {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -214,7 +214,7 @@ func (s SysProfileController) Avatar(c *gin.Context) {
 	}
 
 	// 上传文件转存
-	filePath, err := file.TransferUploadFile(formFile, constUploadSubPath.Avatar, []string{".jpg", ".jpeg", ".png"})
+	filePath, err := file.TransferUploadFile(formFile, constUploadSubPath.AVATAR, []string{".jpg", ".jpeg", ".png"})
 	if err != nil {
 		c.JSON(200, result.ErrMsg(err.Error()))
 		return
@@ -230,19 +230,19 @@ func (s SysProfileController) Avatar(c *gin.Context) {
 	userName := loginUser.User.UserName
 
 	// 查询当前登录用户信息
-	user := s.sysUserService.FindById(userId)
-	if user.UserID != userId {
+	userInfo := s.sysUserService.FindById(userId)
+	if userInfo.UserId != userId {
 		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
 
 	// 更新头像地址
-	user.Avatar = filePath
-	user.UpdateBy = userName
-	rows := s.sysUserService.Update(user)
+	userInfo.Avatar = filePath
+	userInfo.UpdateBy = userName
+	rows := s.sysUserService.Update(userInfo)
 	if rows > 0 {
 		// 更新缓存用户信息
-		loginUser.User = user
+		loginUser.User = userInfo
 		// 刷新令牌信息
 		token.Cache(&loginUser)
 

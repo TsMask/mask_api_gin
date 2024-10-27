@@ -35,8 +35,8 @@ func (s *CaptchaController) Image(c *gin.Context) {
 	captchaEnabledStr := s.sysConfigService.FindValueByKey("sys.account.captchaEnabled")
 	captchaEnabled := parse.Boolean(captchaEnabledStr)
 	if !captchaEnabled {
-		c.JSON(200, result.Ok(map[string]any{
-			"captchaEnabled": captchaEnabled,
+		c.JSON(200, result.OkData(map[string]any{
+			"enabled": captchaEnabled,
 		}))
 		return
 	}
@@ -44,14 +44,14 @@ func (s *CaptchaController) Image(c *gin.Context) {
 	// 生成唯一标识
 	verifyKey := ""
 	data := map[string]any{
-		"captchaEnabled": captchaEnabled,
-		"uuid":           "",
-		"img":            "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+		"enabled": captchaEnabled,
+		"uuid":    "",
+		"img":     "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
 	}
 
 	// 从数据库配置获取验证码类型 math 数值计算 char 字符验证
 	captchaType := s.sysConfigService.FindValueByKey("sys.account.captchaType")
-	if captchaType == constCaptcha.TypeMath {
+	if captchaType == constCaptcha.TYPE_MATH {
 		math := config.Get("mathCaptcha").(map[string]any)
 		driverCaptcha := &base64Captcha.DriverMath{
 			//Height png height in pixel.
@@ -76,12 +76,12 @@ func (s *CaptchaController) Image(c *gin.Context) {
 		} else {
 			data["uuid"] = id
 			data["img"] = item.EncodeB64string()
-			expiration := constCaptcha.Expiration * time.Second
-			verifyKey = constCachekey.CaptchaCodeKey + id
+			expiration := constCaptcha.EXPIRATION * time.Second
+			verifyKey = constCachekey.CAPTCHA_CODE_KEY + id
 			_ = redis.SetByExpire("", verifyKey, answer, expiration)
 		}
 	}
-	if captchaType == constCaptcha.TypeChar {
+	if captchaType == constCaptcha.TYPE_CHAR {
 		char := config.Get("charCaptcha").(map[string]any)
 		driverCaptcha := &base64Captcha.DriverString{
 			//Height png height in pixel.
@@ -110,8 +110,8 @@ func (s *CaptchaController) Image(c *gin.Context) {
 		} else {
 			data["uuid"] = id
 			data["img"] = item.EncodeB64string()
-			expiration := constCaptcha.Expiration * time.Second
-			verifyKey = constCachekey.CaptchaCodeKey + id
+			expiration := constCaptcha.EXPIRATION * time.Second
+			verifyKey = constCachekey.CAPTCHA_CODE_KEY + id
 			_ = redis.SetByExpire("", verifyKey, answer, expiration)
 		}
 	}
@@ -120,8 +120,8 @@ func (s *CaptchaController) Image(c *gin.Context) {
 	if config.Env() == "local" {
 		text, _ := redis.Get("", verifyKey)
 		data["text"] = text
-		c.JSON(200, result.Ok(data))
+		c.JSON(200, result.OkData(data))
 		return
 	}
-	c.JSON(200, result.Ok(data))
+	c.JSON(200, result.OkData(data))
 }

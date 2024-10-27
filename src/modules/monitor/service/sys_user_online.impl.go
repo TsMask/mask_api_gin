@@ -26,7 +26,7 @@ func (r *SysUserOnlineServiceImpl) LoginUserToUserOnline(loginUser vo.LoginUser)
 		OS:            loginUser.OS,
 		LoginTime:     loginUser.LoginTime,
 	}
-	if loginUser.User.DeptID != "" {
+	if loginUser.User.DeptId != "" {
 		sysUserOnline.DeptName = loginUser.User.Dept.DeptName
 	}
 	return sysUserOnline

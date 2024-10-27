@@ -100,7 +100,7 @@ func (s SysConfig) CheckUniqueByKey(configKey, configId string) bool {
 
 // getCacheKey 组装缓存key
 func (s SysConfig) getCacheKey(configKey string) string {
-	return constCacheKey.SysConfigKey + configKey
+	return constCacheKey.SYS_CONFIG_KEY + configKey
 }
 
 // CacheLoad 加载参数缓存数据 传入*查询全部

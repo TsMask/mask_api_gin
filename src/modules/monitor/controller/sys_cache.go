@@ -33,13 +33,13 @@ func (s *SysCacheController) Info(c *gin.Context) {
 // GET /names
 func (s *SysCacheController) Names(c *gin.Context) {
 	caches := []model.SysCache{
-		model.NewSysCacheNames("用户信息", constCacheKey.LoginTokenKey),
-		model.NewSysCacheNames("配置信息", constCacheKey.SysConfigKey),
-		model.NewSysCacheNames("数据字典", constCacheKey.SysDictKey),
-		model.NewSysCacheNames("验证码", constCacheKey.CaptchaCodeKey),
-		model.NewSysCacheNames("防重提交", constCacheKey.RepeatSubmitKey),
-		model.NewSysCacheNames("限流处理", constCacheKey.RateLimitKey),
-		model.NewSysCacheNames("密码错误次数", constCacheKey.PwdErrCntKey),
+		model.NewSysCacheNames("用户信息", constCacheKey.LOGIN_TOKEN_KEY),
+		model.NewSysCacheNames("配置信息", constCacheKey.SYS_CONFIG_KEY),
+		model.NewSysCacheNames("数据字典", constCacheKey.SYS_DICT_KEY),
+		model.NewSysCacheNames("验证码", constCacheKey.CAPTCHA_CODE_KEY),
+		model.NewSysCacheNames("防重提交", constCacheKey.REPEAT_SUBMIT_KEY),
+		model.NewSysCacheNames("限流处理", constCacheKey.RATE_LIMIT_KEY),
+		model.NewSysCacheNames("密码错误次数", constCacheKey.PWD_ERR_COUNT_KEY),
 	}
 	c.JSON(200, result.OkData(caches))
 }
@@ -92,12 +92,12 @@ func (s *SysCacheController) Value(c *gin.Context) {
 // DELETE /clean/names
 func (s *SysCacheController) CleanNames(c *gin.Context) {
 	caches := []model.SysCache{
-		model.NewSysCacheNames("配置信息", constCacheKey.SysConfigKey),
-		model.NewSysCacheNames("数据字典", constCacheKey.SysDictKey),
-		model.NewSysCacheNames("验证码", constCacheKey.CaptchaCodeKey),
-		model.NewSysCacheNames("防重提交", constCacheKey.RepeatSubmitKey),
-		model.NewSysCacheNames("限流处理", constCacheKey.RateLimitKey),
-		model.NewSysCacheNames("密码错误次数", constCacheKey.PwdErrCntKey),
+		model.NewSysCacheNames("配置信息", constCacheKey.SYS_CONFIG_KEY),
+		model.NewSysCacheNames("数据字典", constCacheKey.SYS_DICT_KEY),
+		model.NewSysCacheNames("验证码", constCacheKey.CAPTCHA_CODE_KEY),
+		model.NewSysCacheNames("防重提交", constCacheKey.REPEAT_SUBMIT_KEY),
+		model.NewSysCacheNames("限流处理", constCacheKey.RATE_LIMIT_KEY),
+		model.NewSysCacheNames("密码错误次数", constCacheKey.PWD_ERR_COUNT_KEY),
 	}
 	for _, v := range caches {
 		cacheKeys, err := redis.GetKeys("", v.CacheName+":*")
@@ -120,7 +120,7 @@ func (s *SysCacheController) CleanKeys(c *gin.Context) {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
-	if constCacheKey.LoginTokenKey == query.CacheName {
+	if constCacheKey.LOGIN_TOKEN_KEY == query.CacheName {
 		c.JSON(200, result.ErrMsg("不能删除用户信息缓存"))
 		return
 	}

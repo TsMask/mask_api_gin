@@ -14,30 +14,20 @@ import (
 
 // NewSysUser 实例化数据层
 var NewSysUser = &SysUser{
-	selectSql: `select 
-	u.user_id, u.dept_id, u.user_name, u.nick_name, u.user_type, u.email, u.avatar, u.phone, u.password, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time, u.remark, 
-	d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, d.leader, d.status as dept_status,
-	r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, r.status as role_status
-	from sys_user u
-	left join sys_dept d on u.dept_id = d.dept_id
-	left join sys_user_role ur on u.user_id = ur.user_id
-	left join sys_role r on r.role_id = ur.role_id`,
+	sql: `select 
+	u.user_id, u.dept_id, u.user_name, u.nick_name, u.user_type, u.email, u.avatar, 
+	u.phone, u.password, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, 
+	u.create_by, u.create_time, u.remark
+	from sys_user u`,
 }
 
 // SysUser 用户表 数据层处理
 type SysUser struct {
-	selectSql string // 查询视图对象SQL
+	sql string // 查询视图对象SQL
 }
 
 // SelectByPage 分页查询集合
 func (r SysUser) SelectByPage(queryMap map[string]any, dataScopeSQL string) ([]model.SysUser, int64) {
-	selectUserSql := `select 
-    u.user_id, u.dept_id, u.nick_name, u.user_name, u.email, u.avatar, u.phone, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time, u.remark, d.dept_name, d.leader 
-    from sys_user u 
-	left join sys_dept d on u.dept_id = d.dept_id`
-	selectUserTotalSql := `select count(distinct u.user_id) as 'total'
-    from sys_user u left join sys_dept d on u.dept_id = d.dept_id`
-
 	// 查询条件拼接
 	var conditions []string
 	var params []any
@@ -92,7 +82,7 @@ func (r SysUser) SelectByPage(queryMap map[string]any, dataScopeSQL string) ([]m
 	arr := []model.SysUser{}
 
 	// 查询数量 长度为0直接返回
-	totalSql := selectUserTotalSql + whereSql + dataScopeSQL
+	totalSql := "select count(u.user_id) as 'total' from sys_user u " + whereSql + dataScopeSQL
 	totalRows, err := db.RawDB("", totalSql, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
@@ -110,7 +100,7 @@ func (r SysUser) SelectByPage(queryMap map[string]any, dataScopeSQL string) ([]m
 	params = append(params, pageSize)
 
 	// 查询数据
-	querySql := selectUserSql + whereSql + dataScopeSQL + pageSql
+	querySql := r.sql + whereSql + dataScopeSQL + pageSql
 	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -119,26 +109,19 @@ func (r SysUser) SelectByPage(queryMap map[string]any, dataScopeSQL string) ([]m
 
 	// 转换实体
 	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("Unmarshal err => %v", err)
+		logger.Errorf("unmarshal err => %v", err)
 	}
 	return arr, total
 }
 
 // Select 查询集合
 func (r SysUser) Select(sysUser model.SysUser, dataScopeSQL string) []model.SysUser {
-	selectUserSql := `select 
-    u.user_id, u.dept_id, u.nick_name, u.user_name, u.email, u.avatar, u.phone, u.sex, u.status, 
-    u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time, u.remark, 
-    d.dept_name, d.leader 
-    from sys_user u
-	left join sys_dept d on u.dept_id = d.dept_id`
-
 	// 查询条件拼接
 	var conditions []string
 	var params []any
-	if sysUser.UserID != "" {
+	if sysUser.UserId != "" {
 		conditions = append(conditions, "u.user_id = ?")
-		params = append(params, sysUser.UserID)
+		params = append(params, sysUser.UserId)
 	}
 	if sysUser.UserName != "" {
 		conditions = append(conditions, "u.user_name like concat(?, '%')")
@@ -160,7 +143,7 @@ func (r SysUser) Select(sysUser model.SysUser, dataScopeSQL string) []model.SysU
 	}
 
 	// 查询数据
-	querySql := selectUserSql + whereSql + dataScopeSQL
+	querySql := r.sql + whereSql + dataScopeSQL
 	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -170,7 +153,7 @@ func (r SysUser) Select(sysUser model.SysUser, dataScopeSQL string) []model.SysU
 	// 转换实体
 	arr := []model.SysUser{}
 	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("Unmarshal err => %v", err)
+		logger.Errorf("unmarshal err => %v", err)
 	}
 	return arr
 }
@@ -178,7 +161,7 @@ func (r SysUser) Select(sysUser model.SysUser, dataScopeSQL string) []model.SysU
 // SelectByIds 通过ID查询信息
 func (r SysUser) SelectByIds(userIds []string) []model.SysUser {
 	placeholder := db.KeyPlaceholderByQuery(len(userIds))
-	querySql := r.selectSql + " where u.del_flag = '0' and u.user_id in (" + placeholder + ")"
+	querySql := r.sql + " where u.del_flag = '0' and u.user_id in (" + placeholder + ")"
 	parameters := db.ConvertIdsSlice(userIds)
 	rows, err := db.RawDB("", querySql, parameters)
 	if err != nil {
@@ -188,7 +171,7 @@ func (r SysUser) SelectByIds(userIds []string) []model.SysUser {
 	// 转换实体
 	arr := []model.SysUser{}
 	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("Unmarshal err => %v", err)
+		logger.Errorf("unmarshal err => %v", err)
 	}
 	return arr
 }
@@ -197,11 +180,11 @@ func (r SysUser) SelectByIds(userIds []string) []model.SysUser {
 func (r SysUser) Insert(sysUser model.SysUser) string {
 	// 参数拼接
 	params := make(map[string]any)
-	if sysUser.UserID != "" {
-		params["user_id"] = sysUser.UserID
+	if sysUser.UserId != "" {
+		params["user_id"] = sysUser.UserId
 	}
-	if sysUser.DeptID != "" {
-		params["dept_id"] = sysUser.DeptID
+	if sysUser.DeptId != "" {
+		params["dept_id"] = sysUser.DeptId
 	}
 	if sysUser.UserName != "" {
 		params["user_name"] = sysUser.UserName
@@ -263,8 +246,8 @@ func (r SysUser) Insert(sysUser model.SysUser) string {
 func (r SysUser) Update(sysUser model.SysUser) int64 {
 	// 参数拼接
 	params := make(map[string]any)
-	if sysUser.DeptID != "" {
-		params["dept_id"] = sysUser.DeptID
+	if sysUser.DeptId != "" {
+		params["dept_id"] = sysUser.DeptId
 	}
 	if sysUser.UserName != "" {
 		params["user_name"] = sysUser.UserName
@@ -290,15 +273,13 @@ func (r SysUser) Update(sysUser model.SysUser) int64 {
 	if sysUser.Status != "" {
 		params["status"] = sysUser.Status
 	}
-	if sysUser.Remark != "" {
-		params["remark"] = sysUser.Remark
-	}
+	params["remark"] = sysUser.Remark
 	if sysUser.UpdateBy != "" {
 		params["update_by"] = sysUser.UpdateBy
 		params["update_time"] = time.Now().UnixMilli()
 	}
-	if sysUser.LoginIP != "" {
-		params["login_ip"] = sysUser.LoginIP
+	if sysUser.LoginIp != "" {
+		params["login_ip"] = sysUser.LoginIp
 	}
 	if sysUser.LoginDate > 0 {
 		params["login_date"] = sysUser.LoginDate
@@ -309,7 +290,7 @@ func (r SysUser) Update(sysUser model.SysUser) int64 {
 	sql := fmt.Sprintf("update sys_user set %s where user_id = ?", keys)
 
 	// 执行更新
-	values = append(values, sysUser.UserID)
+	values = append(values, sysUser.UserId)
 	rows, err := db.ExecDB("", sql, values)
 	if err != nil {
 		logger.Errorf("update row : %v", err.Error())
@@ -321,7 +302,10 @@ func (r SysUser) Update(sysUser model.SysUser) int64 {
 // DeleteByIds 批量删除信息
 func (r SysUser) DeleteByIds(userIds []string) int64 {
 	placeholder := db.KeyPlaceholderByQuery(len(userIds))
-	sql := "update sys_user user_name = concat(user_name, '_del'), set del_flag = '1' where user_id in (" + placeholder + ")"
+	username := "CASE WHEN user_name = '' THEN user_name WHEN LENGTH(user_name) >= 36 THEN CONCAT('del_', SUBSTRING(user_name, 5, 36)) ELSE CONCAT('del_', user_name) END"
+	email := "CASE WHEN email = '' THEN email WHEN LENGTH(email) >= 64 THEN CONCAT('del_', SUBSTRING(email, 5, 64)) ELSE CONCAT('del_', email) END"
+	phonenumber := "CASE WHEN phonenumber = '' THEN phonenumber WHEN LENGTH(phonenumber) >= 16 THEN CONCAT('del_', SUBSTRING(phonenumber, 5, 16)) ELSE CONCAT('del_', phonenumber) END"
+	sql := fmt.Sprintf("update sys_user set del_flag = '1', user_name = %s, email = %s, phonenumber = %s where user_id in (%s)", username, email, phonenumber, placeholder)
 	parameters := db.ConvertIdsSlice(userIds)
 	results, err := db.ExecDB("", sql, parameters)
 	if err != nil {
@@ -354,7 +338,7 @@ func (r SysUser) CheckUnique(sysUser model.SysUser) string {
 	if len(conditions) > 0 {
 		whereSql += " where " + strings.Join(conditions, " and ")
 	} else {
-		return "-"
+		return ""
 	}
 
 	// 查询数据
@@ -362,7 +346,7 @@ func (r SysUser) CheckUnique(sysUser model.SysUser) string {
 	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err %v", err)
-		return "-"
+		return ""
 	}
 	if len(rows) > 0 {
 		return fmt.Sprint(rows[0]["str"])
@@ -372,7 +356,7 @@ func (r SysUser) CheckUnique(sysUser model.SysUser) string {
 
 // SelectByUserName 通过登录账号查询信息
 func (r SysUser) SelectByUserName(userName string) model.SysUser {
-	querySql := r.selectSql + " where u.del_flag = '0' and u.user_name = ?"
+	querySql := r.sql + " where u.del_flag = '0' and u.user_name = ?"
 	rows, err := db.RawDB("", querySql, []any{userName})
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -381,7 +365,7 @@ func (r SysUser) SelectByUserName(userName string) model.SysUser {
 	// 转换实体
 	arr := []model.SysUser{}
 	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("Unmarshal err => %v", err)
+		logger.Errorf("unmarshal err => %v", err)
 	}
 	if len(arr) > 0 {
 		return arr[0]
@@ -406,23 +390,23 @@ func (r SysUser) SelectAllocatedByPage(query map[string]any, dataScopeSQL string
 		conditions = append(conditions, "u.status = ?")
 		params = append(params, v)
 	}
-	// 分配角色用户
+	// 分配角色的用户
 	if allocated, ok := query["allocated"]; ok && allocated != "" {
 		if roleId, ok := query["roleId"]; ok && roleId != "" {
 			if parse.Boolean(allocated) {
-				conditions = append(conditions, "r.role_id = ?")
-				params = append(params, roleId)
-			} else {
-				conditions = append(conditions, `(r.role_id != ? or r.role_id IS NULL) 
-				and u.user_id not in (
-					select u.user_id from sys_user u 
+				conditions = append(conditions, `u.user_id in (
+					select distinct u.user_id from sys_user u 
 					inner join sys_user_role ur on u.user_id = ur.user_id 
 					and ur.role_id = ?
 				)`)
-				params = append(params, roleId)
-				params = append(params, roleId)
+			} else {
+				conditions = append(conditions, `u.user_id not in (
+					select distinct u.user_id from sys_user u 
+					inner join sys_user_role ur on u.user_id = ur.user_id 
+					and ur.role_id = ?
+				)`)
 			}
-
+			params = append(params, roleId)
 		}
 	}
 
@@ -437,10 +421,7 @@ func (r SysUser) SelectAllocatedByPage(query map[string]any, dataScopeSQL string
 	arr := []model.SysUser{}
 
 	// 查询数量 长度为0直接返回
-	totalSql := `select count(distinct u.user_id) as 'total' from sys_user u
-    left join sys_dept d on u.dept_id = d.dept_id
-    left join sys_user_role ur on u.user_id = ur.user_id
-    left join sys_role r on r.role_id = ur.role_id`
+	totalSql := `select count(u.user_id) as 'total' from sys_user u `
 	totalRows, err := db.RawDB("", totalSql+whereSql+dataScopeSQL, params)
 	if err != nil {
 		logger.Errorf("total err => %v", err)
@@ -458,14 +439,7 @@ func (r SysUser) SelectAllocatedByPage(query map[string]any, dataScopeSQL string
 	params = append(params, pageSize)
 
 	// 查询数据
-	querySql := `select distinct 
-    u.user_id, u.dept_id, u.user_name, u.nick_name, u.email, 
-    u.phone, u.status, u.create_time, d.dept_name
-    from sys_user u
-    left join sys_dept d on u.dept_id = d.dept_id
-    left join sys_user_role ur on u.user_id = ur.user_id
-    left join sys_role r on r.role_id = ur.role_id`
-	querySql = querySql + whereSql + dataScopeSQL + pageSql
+	querySql := r.sql + whereSql + dataScopeSQL + pageSql
 	rows, err := db.RawDB("", querySql, params)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -474,7 +448,7 @@ func (r SysUser) SelectAllocatedByPage(query map[string]any, dataScopeSQL string
 
 	// 转换实体
 	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("Unmarshal err => %v", err)
+		logger.Errorf("unmarshal err => %v", err)
 	}
 	return arr, total
 }

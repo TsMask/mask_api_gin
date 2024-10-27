@@ -85,7 +85,7 @@ func (r SysJob) SelectByPage(query map[string]any) ([]model.SysJob, int64) {
 
 	// 转换实体
 	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("Unmarshal err => %v", err)
+		logger.Errorf("unmarshal err => %v", err)
 	}
 	return arr, total
 }
@@ -129,7 +129,7 @@ func (r SysJob) Select(sysJob model.SysJob) []model.SysJob {
 	// 转换实体
 	arr := []model.SysJob{}
 	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("Unmarshal err => %v", err)
+		logger.Errorf("unmarshal err => %v", err)
 	}
 	return arr
 }
@@ -147,7 +147,7 @@ func (r SysJob) SelectByIds(jobIds []string) []model.SysJob {
 	// 转换实体
 	arr := []model.SysJob{}
 	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("Unmarshal err => %v", err)
+		logger.Errorf("unmarshal err => %v", err)
 	}
 	return arr
 }

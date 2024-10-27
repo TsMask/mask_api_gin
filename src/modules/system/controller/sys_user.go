@@ -34,7 +34,7 @@ var NewSysUser = &SysUserController{
 // PATH /system/user
 type SysUserController struct {
 	sysUserService     *service.SysUser            // 用户服务
-	sysRoleService     service.ISysRoleService     // 角色服务
+	sysRoleService     *service.SysRole            // 角色服务
 	sysPostService     service.ISysPostService     // 岗位服务
 	sysDictTypeService service.ISysDictTypeService // 字典类型服务
 	sysConfigService   *service.SysConfig          // 参数配置服务
@@ -67,7 +67,7 @@ func (s SysUserController) Info(c *gin.Context) {
 	if !config.IsSysAdmin(userId) {
 		rolesFilter := make([]model.SysRole, 0)
 		for _, r := range roles {
-			if r.RoleID != constSystem.RoleId {
+			if r.RoleID != constSystem.ROLE_SYSTEM_ID {
 				rolesFilter = append(rolesFilter, r)
 			}
 		}
@@ -90,15 +90,15 @@ func (s SysUserController) Info(c *gin.Context) {
 	}
 
 	// 检查用户是否存在
-	user := s.sysUserService.FindById(userId)
-	if user.UserID != userId {
+	userInfo := s.sysUserService.FindById(userId)
+	if userInfo.UserId != userId {
 		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
 
 	// 角色ID组
 	roleIds := make([]string, 0)
-	for _, r := range user.Roles {
+	for _, r := range userInfo.Roles {
 		roleIds = append(roleIds, r.RoleID)
 	}
 
@@ -110,11 +110,11 @@ func (s SysUserController) Info(c *gin.Context) {
 	}
 
 	c.JSON(200, result.OkData(map[string]any{
-		"user":    user,
-		"roleIds": roleIds,
-		"postIds": postIds,
-		"roles":   roles,
-		"posts":   posts,
+		"user":     userInfo,
+		"role_ids": roleIds,
+		"post_ids": postIds,
+		"roles":    roles,
+		"posts":    posts,
 	}))
 }
 
@@ -124,7 +124,7 @@ func (s SysUserController) Info(c *gin.Context) {
 func (s SysUserController) Add(c *gin.Context) {
 	var body model.SysUser
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.UserID != "" {
+	if err != nil || body.UserId != "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
@@ -194,26 +194,26 @@ func (s SysUserController) Add(c *gin.Context) {
 func (s SysUserController) Edit(c *gin.Context) {
 	var body model.SysUser
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.UserID == "" {
+	if err != nil || body.UserId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
 	// 检查是否系统管理员用户
-	if config.IsSysAdmin(body.UserID) {
+	if config.IsSysAdmin(body.UserId) {
 		c.JSON(200, result.ErrMsg("不允许操作系统管理员用户"))
 		return
 	}
 
 	// 检查是否存在
-	user := s.sysUserService.FindById(body.UserID)
-	if user.UserID != body.UserID {
+	user := s.sysUserService.FindById(body.UserId)
+	if user.UserId != body.UserId {
 		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
 
 	// 检查用户登录账号是否唯一
-	uniqueUserName := s.sysUserService.CheckUniqueByUserName(body.UserName, body.UserID)
+	uniqueUserName := s.sysUserService.CheckUniqueByUserName(body.UserName, body.UserId)
 	if !uniqueUserName {
 		msg := fmt.Sprintf("修改用户【%s】失败，登录账号已存在", body.UserName)
 		c.JSON(200, result.ErrMsg(msg))
@@ -223,7 +223,7 @@ func (s SysUserController) Edit(c *gin.Context) {
 	// 检查手机号码格式并判断是否唯一
 	if body.Phone != "" {
 		if regular.ValidMobile(body.Phone) {
-			uniquePhone := s.sysUserService.CheckUniqueByPhone(body.Phone, body.UserID)
+			uniquePhone := s.sysUserService.CheckUniqueByPhone(body.Phone, body.UserId)
 			if !uniquePhone {
 				msg := fmt.Sprintf("修改用户【%s】失败，手机号码已存在", body.UserName)
 				c.JSON(200, result.ErrMsg(msg))
@@ -239,7 +239,7 @@ func (s SysUserController) Edit(c *gin.Context) {
 	// 检查邮箱格式并判断是否唯一
 	if body.Email != "" {
 		if regular.ValidEmail(body.Email) {
-			uniqueEmail := s.sysUserService.CheckUniqueByEmail(body.Email, body.UserID)
+			uniqueEmail := s.sysUserService.CheckUniqueByEmail(body.Email, body.UserId)
 			if !uniqueEmail {
 				msg := fmt.Sprintf("修改用户【%s】失败，邮箱已存在", body.UserName)
 				c.JSON(200, result.ErrMsg(msg))
@@ -254,7 +254,7 @@ func (s SysUserController) Edit(c *gin.Context) {
 
 	body.UserName = "" // 忽略修改登录用户名称
 	body.Password = "" // 忽略修改密码
-	body.LoginIP = ""  // 忽略登录IP
+	body.LoginIp = ""  // 忽略登录IP
 	body.LoginDate = 0 // 忽略登录时间
 	body.UpdateBy = ctx.LoginUserToUserName(c)
 	rows := s.sysUserService.UpdateUserAndRolePost(body)
@@ -325,7 +325,7 @@ func (s SysUserController) ResetPwd(c *gin.Context) {
 
 	// 检查是否存在
 	user := s.sysUserService.FindById(body.UserID)
-	if user.UserID != body.UserID {
+	if user.UserId != body.UserID {
 		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
@@ -366,7 +366,7 @@ func (s SysUserController) Status(c *gin.Context) {
 
 	// 检查是否存在
 	user := s.sysUserService.FindById(body.UserID)
-	if user.UserID != body.UserID {
+	if user.UserId != body.UserID {
 		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
@@ -437,7 +437,7 @@ func (s SysUserController) Export(c *gin.Context) {
 			statusValue = "正常"
 		}
 		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.UserID,
+			"A" + idx: row.UserId,
 			"B" + idx: row.UserName,
 			"C" + idx: row.NickName,
 			"D" + idx: row.Email,
@@ -447,7 +447,7 @@ func (s SysUserController) Export(c *gin.Context) {
 			"H" + idx: row.Dept.DeptID,
 			"I" + idx: row.Dept.DeptName,
 			"J" + idx: row.Dept.Leader,
-			"K" + idx: row.LoginIP,
+			"K" + idx: row.LoginIp,
 			"L" + idx: date.ParseDateToStr(row.LoginDate, date.YYYY_MM_DD_HH_MM_SS),
 		})
 	}
@@ -538,16 +538,16 @@ func (s SysUserController) ImportData(c *gin.Context) {
 				break
 			}
 		}
-		sysUserStatus := constSystem.StatusNo
+		sysUserStatus := constSystem.STATUS_NO
 		if row["G"] == "正常" {
-			sysUserStatus = constSystem.StatusYes
+			sysUserStatus = constSystem.STATUS_YES
 		}
 
 		// 验证是否存在这个用户
 		newSysUser := s.sysUserService.FindByUserName(row["B"])
 		newSysUser.UserType = "sys"
 		newSysUser.Password = initPassword
-		newSysUser.DeptID = row["H"]
+		newSysUser.DeptId = row["H"]
 		newSysUser.UserName = row["B"]
 		newSysUser.NickName = row["C"]
 		newSysUser.Phone = row["E"]
@@ -594,7 +594,7 @@ func (s SysUserController) ImportData(c *gin.Context) {
 			}
 		}
 
-		if newSysUser.UserID == "" {
+		if newSysUser.UserId == "" {
 			newSysUser.CreateBy = operaName
 			insertId := s.sysUserService.Insert(newSysUser)
 			if insertId != "" {
@@ -610,7 +610,7 @@ func (s SysUserController) ImportData(c *gin.Context) {
 		}
 
 		// 如果用户已存在 同时 是否更新支持
-		if newSysUser.UserID != "" && isUpdateSupport {
+		if newSysUser.UserId != "" && isUpdateSupport {
 			newSysUser.UpdateBy = operaName
 			rows := s.sysUserService.Update(newSysUser)
 			if rows > 0 {

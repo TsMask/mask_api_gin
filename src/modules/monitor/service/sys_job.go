@@ -42,7 +42,7 @@ func (r *SysJob) FindById(jobId string) model.SysJob {
 // Insert 新增调度任务信息
 func (r *SysJob) Insert(sysJob model.SysJob) string {
 	insertId := r.sysJobRepository.Insert(sysJob)
-	if insertId == "" && sysJob.Status == constSystem.StatusYes {
+	if insertId == "" && sysJob.Status == constSystem.STATUS_YES {
 		sysJob.JobID = insertId
 		r.insertQueueJob(sysJob, true)
 	}
@@ -54,11 +54,11 @@ func (r *SysJob) Update(sysJob model.SysJob) int64 {
 	rows := r.sysJobRepository.Update(sysJob)
 	if rows > 0 {
 		//状态正常添加队列任务
-		if sysJob.Status == constSystem.StatusYes {
+		if sysJob.Status == constSystem.STATUS_YES {
 			r.insertQueueJob(sysJob, true)
 		}
 		// 状态禁用删除队列任务
-		if sysJob.Status == constSystem.StatusNo {
+		if sysJob.Status == constSystem.STATUS_NO {
 			r.deleteQueueJob(sysJob)
 		}
 	}
@@ -150,7 +150,7 @@ func (r *SysJob) Reset() {
 	}
 	// 查询系统中定义状态为正常启用的任务
 	sysJobs := r.sysJobRepository.Select(model.SysJob{
-		Status: constSystem.StatusYes,
+		Status: constSystem.STATUS_YES,
 	})
 	for _, sysJob := range sysJobs {
 		for _, name := range queueNames {
