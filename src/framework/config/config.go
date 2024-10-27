@@ -27,7 +27,7 @@ var (
 var conf *viper.Viper
 
 // InitConfig 初始化程序配置
-func InitConfig(configDir embed.FS) {
+func InitConfig(configDir *embed.FS) {
 	conf = viper.New()
 	initFlag()
 	initViper(configDir)
@@ -61,7 +61,7 @@ func initFlag() {
 }
 
 // 配置文件读取
-func initViper(configDir embed.FS) {
+func initViper(configDir *embed.FS) {
 	// 如果配置文件名中没有扩展名，则需要设置Type
 	conf.SetConfigType("yaml")
 	// 读取默认配置文件
@@ -120,11 +120,11 @@ func Get(key string) any {
 
 // GetAssetsDirFS 访问程序内全局资源访问
 func GetAssetsDirFS() embed.FS {
-	return conf.Get("AssetsDir").(embed.FS)
+	return *conf.Get("AssetsDir").(*embed.FS)
 }
 
 // SetAssetsDirFS 设置程序内全局资源访问
-func SetAssetsDirFS(assetsDir embed.FS) {
+func SetAssetsDirFS(assetsDir *embed.FS) {
 	conf.Set("AssetsDir", assetsDir)
 }
 

@@ -13,7 +13,7 @@ var assetsDir embed.FS
 var configDir embed.FS
 
 func main() {
-	src.ConfigurationInit(assetsDir, configDir)
+	src.ConfigurationInit(&assetsDir, &configDir)
 	defer src.ConfigurationClose()
 
 	if err := src.RunServer(); err != nil {

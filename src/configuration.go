@@ -10,7 +10,7 @@ import (
 )
 
 // ConfigurationInit 配置中心初始加载
-func ConfigurationInit(assetsDir, configDir embed.FS) {
+func ConfigurationInit(assetsDir, configDir *embed.FS) {
 	// 初始配置参数
 	config.InitConfig(configDir)
 	config.SetAssetsDirFS(assetsDir)
