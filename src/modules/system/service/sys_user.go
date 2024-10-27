@@ -75,7 +75,7 @@ func (s SysUser) insertUserRole(userId string, roleIds []string) int64 {
 			continue
 		}
 		arr = append(arr, model.SysUserRole{
-			UserID: userId, RoleID: roleId,
+			UserId: userId, RoleId: roleId,
 		})
 	}
 
@@ -94,7 +94,7 @@ func (s SysUser) insertUserPost(userId string, postIds []string) int64 {
 			continue
 		}
 		arr = append(arr, model.SysUserPost{
-			UserID: userId, PostID: postId,
+			UserId: userId, PostId: postId,
 		})
 	}
 

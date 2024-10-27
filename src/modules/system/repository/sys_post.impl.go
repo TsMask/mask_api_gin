@@ -174,7 +174,7 @@ func (r *SysPostRepository) Update(sysPost model.SysPost) int64 {
 	sql := fmt.Sprintf("update sys_post set %s where post_id = ?", keys)
 
 	// 执行更新
-	values = append(values, sysPost.PostID)
+	values = append(values, sysPost.PostId)
 	rows, err := db.ExecDB("", sql, values)
 	if err != nil {
 		logger.Errorf("update row : %v", err.Error())
@@ -187,8 +187,8 @@ func (r *SysPostRepository) Update(sysPost model.SysPost) int64 {
 func (r *SysPostRepository) Insert(sysPost model.SysPost) string {
 	// 参数拼接
 	params := make(map[string]any)
-	if sysPost.PostID != "" {
-		params["post_id"] = sysPost.PostID
+	if sysPost.PostId != "" {
+		params["post_id"] = sysPost.PostId
 	}
 	if sysPost.PostCode != "" {
 		params["post_code"] = sysPost.PostCode

@@ -39,16 +39,16 @@ func (s SysDept) Insert(sysDept model.SysDept) string {
 
 // Update 修改信息
 func (s SysDept) Update(sysDept model.SysDept) int64 {
-	dept := s.sysDeptRepository.SelectById(sysDept.DeptID)
-	parentDept := s.sysDeptRepository.SelectById(sysDept.ParentID)
+	dept := s.sysDeptRepository.SelectById(sysDept.DeptId)
+	parentDept := s.sysDeptRepository.SelectById(sysDept.ParentId)
 	// 上级与当前部门祖级列表更新
-	if parentDept.DeptID == sysDept.ParentID && dept.DeptID == sysDept.DeptID {
-		newAncestors := parentDept.Ancestors + "," + parentDept.DeptID
+	if parentDept.DeptId == sysDept.ParentId && dept.DeptId == sysDept.DeptId {
+		newAncestors := parentDept.Ancestors + "," + parentDept.DeptId
 		oldAncestors := dept.Ancestors
 		// 祖级列表不一致时更新
 		if newAncestors != oldAncestors {
 			dept.Ancestors = newAncestors
-			s.updateDeptChildren(dept.DeptID, newAncestors, oldAncestors)
+			s.updateDeptChildren(dept.DeptId, newAncestors, oldAncestors)
 		}
 	}
 	// 如果该部门是启用状态，则启用该部门的所有上级部门
@@ -95,11 +95,11 @@ func (s SysDept) FindDeptIdsByRoleId(roleId string) []string {
 		return []string{}
 	}
 	role := roles[0]
-	if role.RoleID != roleId {
+	if role.RoleId != roleId {
 		return []string{}
 	}
 	return s.sysDeptRepository.SelectDeptIdsByRoleId(
-		role.RoleID,
+		role.RoleId,
 		role.DeptCheckStrictly == "1",
 	)
 }
@@ -118,7 +118,7 @@ func (s SysDept) ExistUserByDeptId(deptId string) int64 {
 func (s SysDept) CheckUniqueParentIdByDeptName(parentId, deptName, deptId string) bool {
 	uniqueId := s.sysDeptRepository.CheckUnique(model.SysDept{
 		DeptName: deptName,
-		ParentID: parentId,
+		ParentId: parentId,
 	})
 	if uniqueId == deptId {
 		return true
@@ -147,7 +147,7 @@ func (s SysDept) parseDataToTree(arr []model.SysDept) []model.SysDept {
 	tree := make([]model.SysDept, 0)
 
 	for _, item := range arr {
-		parentID := item.ParentID
+		parentID := item.ParentId
 		// 分组
 		mapItem, ok := nodesMap[parentID]
 		if !ok {
@@ -156,7 +156,7 @@ func (s SysDept) parseDataToTree(arr []model.SysDept) []model.SysDept {
 		mapItem = append(mapItem, item)
 		nodesMap[parentID] = mapItem
 		// 记录节点ID
-		treeIds = append(treeIds, item.DeptID)
+		treeIds = append(treeIds, item.DeptId)
 	}
 
 	for key, value := range nodesMap {
@@ -183,7 +183,7 @@ func (s SysDept) parseDataToTree(arr []model.SysDept) []model.SysDept {
 
 // parseDataToTreeComponent 递归函数处理子节点
 func (s SysDept) parseDataToTreeComponent(node model.SysDept, nodesMap *map[string][]model.SysDept) model.SysDept {
-	id := node.DeptID
+	id := node.DeptId
 	children, ok := (*nodesMap)[id]
 	if ok {
 		node.Children = children

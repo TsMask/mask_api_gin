@@ -52,7 +52,7 @@ func (s SysRoleController) Info(c *gin.Context) {
 		return
 	}
 	data := s.sysRoleService.FindById(roleId)
-	if data.RoleID == roleId {
+	if data.RoleId == roleId {
 		c.JSON(200, result.OkData(data))
 		return
 	}
@@ -65,7 +65,7 @@ func (s SysRoleController) Info(c *gin.Context) {
 func (s SysRoleController) Add(c *gin.Context) {
 	var body model.SysRole
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.RoleID != "" {
+	if err != nil || body.RoleId != "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
@@ -101,26 +101,26 @@ func (s SysRoleController) Add(c *gin.Context) {
 func (s SysRoleController) Edit(c *gin.Context) {
 	var body model.SysRole
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.RoleID == "" {
+	if err != nil || body.RoleId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
 	// 检查是否系统管理员角色
-	if body.RoleID == constSystem.ROLE_SYSTEM_ID {
+	if body.RoleId == constSystem.ROLE_SYSTEM_ID {
 		c.JSON(200, result.ErrMsg("不允许操作系统管理员角色"))
 		return
 	}
 
 	// 检查是否存在
-	role := s.sysRoleService.FindById(body.RoleID)
-	if role.RoleID != body.RoleID {
+	role := s.sysRoleService.FindById(body.RoleId)
+	if role.RoleId != body.RoleId {
 		c.JSON(200, result.ErrMsg("没有权限访问角色数据！"))
 		return
 	}
 
 	// 判断角色名称是否唯一
-	uniqueRoleName := s.sysRoleService.CheckUniqueByName(body.RoleName, body.RoleID)
+	uniqueRoleName := s.sysRoleService.CheckUniqueByName(body.RoleName, body.RoleId)
 	if !uniqueRoleName {
 		msg := fmt.Sprintf("角色修改【%s】失败，角色名称已存在", body.RoleName)
 		c.JSON(200, result.ErrMsg(msg))
@@ -128,7 +128,7 @@ func (s SysRoleController) Edit(c *gin.Context) {
 	}
 
 	// 判断角色键值是否唯一
-	uniqueRoleKey := s.sysRoleService.CheckUniqueByKey(body.RoleKey, body.RoleID)
+	uniqueRoleKey := s.sysRoleService.CheckUniqueByKey(body.RoleKey, body.RoleId)
 	if !uniqueRoleKey {
 		msg := fmt.Sprintf("角色修改【%s】失败，角色键值已存在", body.RoleName)
 		c.JSON(200, result.ErrMsg(msg))
@@ -198,7 +198,7 @@ func (s SysRoleController) Status(c *gin.Context) {
 
 	// 检查是否存在
 	role := s.sysRoleService.FindById(body.RoleID)
-	if role.RoleID != body.RoleID {
+	if role.RoleId != body.RoleID {
 		c.JSON(200, result.ErrMsg("没有权限访问角色数据！"))
 		return
 	}
@@ -225,7 +225,7 @@ func (s SysRoleController) Status(c *gin.Context) {
 // PUT /dataScope
 func (s SysRoleController) DataScope(c *gin.Context) {
 	var body struct {
-		RoleID            string   `json:"roleId"`            // 角色ID
+		RoleId            string   `json:"roleId"`            // 角色ID
 		DeptIds           []string `json:"deptIds"`           // 部门组（数据权限）
 		DataScope         string   `json:"dataScope"`         // 数据范围（1：全部数据权限 2：自定数据权限 3：本部门数据权限 4：本部门及以下数据权限 5：仅本人数据权限）
 		DeptCheckStrictly string   `json:"deptCheckStrictly"` // 部门树选择项是否关联显示（0：父子不互相关联显示 1：父子互相关联显示）
@@ -237,28 +237,28 @@ func (s SysRoleController) DataScope(c *gin.Context) {
 	}
 
 	// 检查是否系统管理员角色
-	if body.RoleID == constSystem.ROLE_SYSTEM_ID {
+	if body.RoleId == constSystem.ROLE_SYSTEM_ID {
 		c.JSON(200, result.ErrMsg("不允许操作系统管理员角色"))
 		return
 	}
 
 	// 检查是否存在
-	role := s.sysRoleService.FindById(body.RoleID)
-	if role.RoleID != body.RoleID {
+	role := s.sysRoleService.FindById(body.RoleId)
+	if role.RoleId != body.RoleId {
 		c.JSON(200, result.ErrMsg("没有权限访问角色数据！"))
 		return
 	}
 
 	// 更新数据权限
 	userName := ctx.LoginUserToUserName(c)
-	SysRoleController := model.SysRole{
-		RoleID:            body.RoleID,
+	sysRole := model.SysRole{
+		RoleId:            body.RoleId,
 		DeptIds:           body.DeptIds,
 		DataScope:         body.DataScope,
 		DeptCheckStrictly: body.DeptCheckStrictly,
 		UpdateBy:          userName,
 	}
-	rows := s.sysRoleService.UpdateAndDataScope(SysRoleController)
+	rows := s.sysRoleService.UpdateAndDataScope(sysRole)
 	if rows > 0 {
 		c.JSON(200, result.Ok(nil))
 		return
@@ -279,7 +279,7 @@ func (s SysRoleController) AuthUserAllocatedList(c *gin.Context) {
 
 	// 检查是否存在
 	role := s.sysRoleService.FindById(roleId.(string))
-	if role.RoleID != roleId {
+	if role.RoleId != roleId {
 		c.JSON(200, result.ErrMsg("没有权限访问角色数据！"))
 		return
 	}
@@ -317,7 +317,7 @@ func (s SysRoleController) AuthUserChecked(c *gin.Context) {
 
 	// 检查是否存在
 	role := s.sysRoleService.FindById(body.RoleID)
-	if role.RoleID != body.RoleID {
+	if role.RoleId != body.RoleID {
 		c.JSON(200, result.ErrMsg("没有权限访问角色数据！"))
 		return
 	}
@@ -375,7 +375,7 @@ func (s SysRoleController) Export(c *gin.Context) {
 			statusValue = "正常"
 		}
 		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.RoleID,
+			"A" + idx: row.RoleId,
 			"B" + idx: row.RoleName,
 			"C" + idx: row.RoleKey,
 			"D" + idx: row.RoleSort,

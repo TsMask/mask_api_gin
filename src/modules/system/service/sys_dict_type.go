@@ -60,7 +60,7 @@ func (s SysDictType) Insert(sysDictType model.SysDictType) string {
 
 // Update 修改信息
 func (s SysDictType) Update(sysDictType model.SysDictType) int64 {
-	arr := s.sysDictTypeRepository.SelectByIds([]string{sysDictType.DictID})
+	arr := s.sysDictTypeRepository.SelectByIds([]string{sysDictType.DictId})
 	if len(arr) == 0 {
 		return 0
 	}

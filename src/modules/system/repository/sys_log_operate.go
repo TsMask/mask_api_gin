@@ -214,11 +214,11 @@ func (r SysLogOperate) Insert(SysLogOperate model.SysLogOperate) string {
 	if SysLogOperate.OperaName != "" {
 		params["opera_name"] = SysLogOperate.OperaName
 	}
-	if SysLogOperate.OperaURL != "" {
-		params["opera_url"] = SysLogOperate.OperaURL
+	if SysLogOperate.OperaUrl != "" {
+		params["opera_url"] = SysLogOperate.OperaUrl
 	}
-	if SysLogOperate.OperaIP != "" {
-		params["opera_ip"] = SysLogOperate.OperaIP
+	if SysLogOperate.OperaIp != "" {
+		params["opera_ip"] = SysLogOperate.OperaIp
 	}
 	if SysLogOperate.OperaLocation != "" {
 		params["opera_location"] = SysLogOperate.OperaLocation

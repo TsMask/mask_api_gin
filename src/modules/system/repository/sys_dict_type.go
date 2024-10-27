@@ -233,7 +233,7 @@ func (r SysDictType) Update(sysDictType model.SysDictType) int64 {
 	sql := fmt.Sprintf("update sys_dict_type set %s where dict_id = ?", keys)
 
 	// 执行更新
-	values = append(values, sysDictType.DictID)
+	values = append(values, sysDictType.DictId)
 	rows, err := db.ExecDB("", sql, values)
 	if err != nil {
 		logger.Errorf("update row : %v", err.Error())

@@ -185,8 +185,8 @@ func (r SysJobLog) Insert(sysJobLog model.SysJobLog) string {
 	// 参数拼接
 	params := make(map[string]any)
 	params["create_time"] = time.Now().UnixMilli()
-	if sysJobLog.JobLogID != "" {
-		params["job_log_id"] = sysJobLog.JobLogID
+	if sysJobLog.JobLogId != "" {
+		params["job_log_id"] = sysJobLog.JobLogId
 	}
 	if sysJobLog.JobName != "" {
 		params["job_name"] = sysJobLog.JobName

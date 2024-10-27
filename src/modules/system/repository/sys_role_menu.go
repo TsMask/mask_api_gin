@@ -56,7 +56,7 @@ func (r SysRoleMenu) DeleteByMenuIds(menuIds []string) int64 {
 func (r SysRoleMenu) BatchInsert(arr []model.SysRoleMenu) int64 {
 	rm := make([]string, 0)
 	for _, item := range arr {
-		rm = append(rm, fmt.Sprintf("(%s,%s)", item.RoleID, item.MenuID))
+		rm = append(rm, fmt.Sprintf("(%s,%s)", item.RoleId, item.MenuId))
 	}
 	sql := fmt.Sprintf("insert into sys_role_menu(role_id, menu_id) values %s", strings.Join(rm, ","))
 	results, err := db.ExecDB("", sql, nil)

@@ -44,7 +44,7 @@ func (r SysRoleDept) DeleteByDeptIds(deptIds []string) int64 {
 func (r SysRoleDept) BatchInsert(arr []model.SysRoleDept) int64 {
 	rd := make([]string, 0)
 	for _, item := range arr {
-		rd = append(rd, fmt.Sprintf("(%s,%s)", item.RoleID, item.DeptID))
+		rd = append(rd, fmt.Sprintf("(%s,%s)", item.RoleId, item.DeptId))
 	}
 	sql := fmt.Sprintf("insert into sys_role_dept(role_id, dept_id) values %s", strings.Join(rd, ","))
 	results, err := db.ExecDB("", sql, nil)

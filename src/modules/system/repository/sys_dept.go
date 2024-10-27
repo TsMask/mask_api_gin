@@ -48,13 +48,13 @@ func (r SysDept) Select(sysDept model.SysDept, dataScopeSQL string) []model.SysD
 	// 查询条件拼接
 	var conditions []string
 	var params []any
-	if sysDept.DeptID != "" {
+	if sysDept.DeptId != "" {
 		conditions = append(conditions, "dept_id = ?")
-		params = append(params, sysDept.DeptID)
+		params = append(params, sysDept.DeptId)
 	}
-	if sysDept.ParentID != "" {
+	if sysDept.ParentId != "" {
 		conditions = append(conditions, "parent_id = ?")
-		params = append(params, sysDept.ParentID)
+		params = append(params, sysDept.ParentId)
 	}
 	if sysDept.DeptName != "" {
 		conditions = append(conditions, "dept_name like concat(?, '%')")
@@ -106,11 +106,11 @@ func (r SysDept) SelectById(deptId string) model.SysDept {
 func (r SysDept) Insert(sysDept model.SysDept) string {
 	// 参数拼接
 	params := make(map[string]any)
-	if sysDept.DeptID != "" {
-		params["dept_id"] = sysDept.DeptID
+	if sysDept.DeptId != "" {
+		params["dept_id"] = sysDept.DeptId
 	}
-	if sysDept.ParentID != "" {
-		params["parent_id"] = sysDept.ParentID
+	if sysDept.ParentId != "" {
+		params["parent_id"] = sysDept.ParentId
 	}
 	if sysDept.DeptName != "" {
 		params["dept_name"] = sysDept.DeptName
@@ -164,8 +164,8 @@ func (r SysDept) Insert(sysDept model.SysDept) string {
 func (r SysDept) Update(sysDept model.SysDept) int64 {
 	// 参数拼接
 	params := make(map[string]any)
-	if sysDept.ParentID != "" {
-		params["parent_id"] = sysDept.ParentID
+	if sysDept.ParentId != "" {
+		params["parent_id"] = sysDept.ParentId
 	}
 	if sysDept.DeptName != "" {
 		params["dept_name"] = sysDept.DeptName
@@ -192,7 +192,7 @@ func (r SysDept) Update(sysDept model.SysDept) int64 {
 	sql := fmt.Sprintf("update sys_dept set %s where dept_id = ?", keys)
 
 	// 执行更新
-	values = append(values, sysDept.DeptID)
+	values = append(values, sysDept.DeptId)
 	rows, err := db.ExecDB("", sql, values)
 	if err != nil {
 		logger.Errorf("update row : %v", err.Error())
@@ -221,9 +221,9 @@ func (r SysDept) CheckUnique(sysDept model.SysDept) string {
 		conditions = append(conditions, "dept_name = ?")
 		params = append(params, sysDept.DeptName)
 	}
-	if sysDept.ParentID != "" {
+	if sysDept.ParentId != "" {
 		conditions = append(conditions, "parent_id = ?")
-		params = append(params, sysDept.ParentID)
+		params = append(params, sysDept.ParentId)
 	}
 
 	// 构建查询条件语句
@@ -347,9 +347,9 @@ func (r SysDept) UpdateDeptChildren(arr []model.SysDept) int64 {
 	var conditions []string
 	var params []any
 	for _, dept := range arr {
-		caseSql := fmt.Sprintf("WHEN dept_id = '%s' THEN '%s'", dept.DeptID, dept.Ancestors)
+		caseSql := fmt.Sprintf("WHEN dept_id = '%s' THEN '%s'", dept.DeptId, dept.Ancestors)
 		conditions = append(conditions, caseSql)
-		params = append(params, dept.DeptID)
+		params = append(params, dept.DeptId)
 	}
 
 	cases := strings.Join(conditions, " ")

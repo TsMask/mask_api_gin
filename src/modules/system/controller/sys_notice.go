@@ -44,7 +44,7 @@ func (s SysNoticeController) Info(c *gin.Context) {
 		return
 	}
 	data := s.sysNoticeService.FindById(noticeId)
-	if data.NoticeID == noticeId {
+	if data.NoticeId == noticeId {
 		c.JSON(200, result.OkData(data))
 		return
 	}
@@ -57,7 +57,7 @@ func (s SysNoticeController) Info(c *gin.Context) {
 func (s SysNoticeController) Add(c *gin.Context) {
 	var body model.SysNotice
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.NoticeID != "" {
+	if err != nil || body.NoticeId != "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
@@ -77,14 +77,14 @@ func (s SysNoticeController) Add(c *gin.Context) {
 func (s SysNoticeController) Edit(c *gin.Context) {
 	var body model.SysNotice
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.NoticeID == "" {
+	if err != nil || body.NoticeId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
 	// 检查是否存在
-	notice := s.sysNoticeService.FindById(body.NoticeID)
-	if notice.NoticeID != body.NoticeID {
+	notice := s.sysNoticeService.FindById(body.NoticeId)
+	if notice.NoticeId != body.NoticeId {
 		c.JSON(200, result.ErrMsg("没有权限访问公告信息数据！"))
 		return
 	}

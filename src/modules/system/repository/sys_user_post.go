@@ -43,7 +43,7 @@ func (r SysUserPost) DeleteByUserIds(userIds []string) int64 {
 func (r SysUserPost) BatchInsert(sysUserPosts []model.SysUserPost) int64 {
 	up := make([]string, 0)
 	for _, item := range sysUserPosts {
-		up = append(up, fmt.Sprintf("(%s,%s)", item.UserID, item.PostID))
+		up = append(up, fmt.Sprintf("(%s,%s)", item.UserId, item.PostId))
 	}
 	sql := fmt.Sprintf("insert into db(user_id, post_id) values %s", strings.Join(up, ","))
 	results, err := db.ExecDB("", sql, nil)

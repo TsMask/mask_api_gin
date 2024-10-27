@@ -156,8 +156,8 @@ func (r SysJob) SelectByIds(jobIds []string) []model.SysJob {
 func (r SysJob) Insert(sysJob model.SysJob) string {
 	// 参数拼接
 	params := make(map[string]any)
-	if sysJob.JobID != "" {
-		params["job_id"] = sysJob.JobID
+	if sysJob.JobId != "" {
+		params["job_id"] = sysJob.JobId
 	}
 	if sysJob.JobName != "" {
 		params["job_name"] = sysJob.JobName
@@ -256,7 +256,7 @@ func (r SysJob) Update(sysJob model.SysJob) int64 {
 	sql := fmt.Sprintf("update sys_job set %s where job_id = ?", keys)
 
 	// 执行更新
-	values = append(values, sysJob.JobID)
+	values = append(values, sysJob.JobId)
 	rows, err := db.ExecDB("", sql, values)
 	if err != nil {
 		logger.Errorf("update row : %v", err.Error())

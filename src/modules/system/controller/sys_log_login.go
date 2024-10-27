@@ -132,7 +132,7 @@ func (s SysLogLoginController) Export(c *gin.Context) {
 			statusValue = "成功"
 		}
 		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.LoginID,
+			"A" + idx: row.LoginId,
 			"B" + idx: row.UserName,
 			"C" + idx: statusValue,
 			"D" + idx: row.IPAddr,

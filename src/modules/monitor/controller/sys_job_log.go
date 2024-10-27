@@ -58,7 +58,7 @@ func (s SysJobLogController) Info(c *gin.Context) {
 		return
 	}
 	data := s.sysJobLogService.FindById(jobLogId)
-	if data.JobLogID == jobLogId {
+	if data.JobLogId == jobLogId {
 		c.JSON(200, result.OkData(data))
 		return
 	}
@@ -149,7 +149,7 @@ func (s SysJobLogController) Export(c *gin.Context) {
 			statusValue = "成功"
 		}
 		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.JobLogID,
+			"A" + idx: row.JobLogId,
 			"B" + idx: row.JobName,
 			"C" + idx: sysJobGroup,
 			"D" + idx: row.InvokeTarget,

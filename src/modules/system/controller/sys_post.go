@@ -47,7 +47,7 @@ func (s SysPostController) Info(c *gin.Context) {
 		return
 	}
 	data := s.sysPostService.FindById(postId)
-	if data.PostID == postId {
+	if data.PostId == postId {
 		c.JSON(200, result.OkData(data))
 		return
 	}
@@ -60,7 +60,7 @@ func (s SysPostController) Info(c *gin.Context) {
 func (s SysPostController) Add(c *gin.Context) {
 	var body model.SysPost
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.PostID != "" {
+	if err != nil || body.PostId != "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
@@ -96,20 +96,20 @@ func (s SysPostController) Add(c *gin.Context) {
 func (s SysPostController) Edit(c *gin.Context) {
 	var body model.SysPost
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.PostID == "" {
+	if err != nil || body.PostId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
 	// 检查是否存在
-	post := s.sysPostService.FindById(body.PostID)
-	if post.PostID != body.PostID {
+	post := s.sysPostService.FindById(body.PostId)
+	if post.PostId != body.PostId {
 		c.JSON(200, result.ErrMsg("没有权限访问岗位数据！"))
 		return
 	}
 
 	// 检查名称唯一
-	uniquePostName := s.sysPostService.CheckUniqueByName(body.PostName, body.PostID)
+	uniquePostName := s.sysPostService.CheckUniqueByName(body.PostName, body.PostId)
 	if !uniquePostName {
 		msg := fmt.Sprintf("岗位修改【%s】失败，岗位名称已存在", body.PostName)
 		c.JSON(200, result.ErrMsg(msg))
@@ -117,7 +117,7 @@ func (s SysPostController) Edit(c *gin.Context) {
 	}
 
 	// 检查编码属性值唯一
-	uniquePostCode := s.sysPostService.CheckUniqueByCode(body.PostCode, body.PostID)
+	uniquePostCode := s.sysPostService.CheckUniqueByCode(body.PostCode, body.PostId)
 	if !uniquePostCode {
 		msg := fmt.Sprintf("岗位修改【%s】失败，岗位编码已存在", body.PostCode)
 		c.JSON(200, result.ErrMsg(msg))
@@ -190,7 +190,7 @@ func (s SysPostController) Export(c *gin.Context) {
 			statusValue = "正常"
 		}
 		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.PostID,
+			"A" + idx: row.PostId,
 			"B" + idx: row.PostCode,
 			"C" + idx: row.PostName,
 			"D" + idx: row.PostSort,

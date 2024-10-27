@@ -58,7 +58,7 @@ func (s SysPost) DeleteByIds(postIds []string) (int64, error) {
 		return 0, fmt.Errorf("没有权限访问岗位数据！")
 	}
 	for _, post := range posts {
-		if useCount := s.sysUserPostRepository.ExistUserByPostId(post.PostID); useCount > 0 {
+		if useCount := s.sysUserPostRepository.ExistUserByPostId(post.PostId); useCount > 0 {
 			return 0, fmt.Errorf("【%s】已分配给用户,不能删除", post.PostName)
 		}
 	}

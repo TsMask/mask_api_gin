@@ -142,9 +142,9 @@ func (r SysRole) Select(sysRole model.SysRole, dataScopeSQL string) []model.SysR
 	// 查询条件拼接
 	var conditions []string
 	var params []any
-	if sysRole.RoleID != "" {
+	if sysRole.RoleId != "" {
 		conditions = append(conditions, "r.role_id = ?")
-		params = append(params, sysRole.RoleID)
+		params = append(params, sysRole.RoleId)
 	}
 	if sysRole.RoleKey != "" {
 		conditions = append(conditions, "r.role_key like concat(?, '%')")
@@ -226,7 +226,7 @@ func (r SysRole) Update(sysRole model.SysRole) int64 {
 	sql := fmt.Sprintf("update sys_role set %s where role_id = ?", keys)
 
 	// 执行更新
-	values = append(values, sysRole.RoleID)
+	values = append(values, sysRole.RoleId)
 	rows, err := db.ExecDB("", sql, values)
 	if err != nil {
 		logger.Errorf("update row : %v", err.Error())
@@ -239,8 +239,8 @@ func (r SysRole) Update(sysRole model.SysRole) int64 {
 func (r SysRole) Insert(sysRole model.SysRole) string {
 	// 参数拼接
 	params := make(map[string]any)
-	if sysRole.RoleID != "" {
-		params["role_id"] = sysRole.RoleID
+	if sysRole.RoleId != "" {
+		params["role_id"] = sysRole.RoleId
 	}
 	if sysRole.RoleName != "" {
 		params["role_name"] = sysRole.RoleName

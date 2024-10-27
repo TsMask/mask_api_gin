@@ -1,6 +1,6 @@
 package model
 
-// SysUser 用户对象 sys_user
+// SysUser 用户信息表
 type SysUser struct {
 	UserId     string `json:"user_id" gorm:"column:user_id;primary_key"`            // 用户ID
 	DeptId     string `json:"dept_id" gorm:"column:dept_id"`                        // 部门ID

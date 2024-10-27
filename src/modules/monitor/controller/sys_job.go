@@ -52,7 +52,7 @@ func (s SysJobController) Info(c *gin.Context) {
 	}
 
 	data := s.sysJobService.FindById(id)
-	if data.JobID == id {
+	if data.JobId == id {
 		c.JSON(200, result.OkData(data))
 		return
 	}
@@ -65,7 +65,7 @@ func (s SysJobController) Info(c *gin.Context) {
 func (s SysJobController) Add(c *gin.Context) {
 	var body model.SysJob
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.JobID != "" {
+	if err != nil || body.JobId != "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
@@ -113,7 +113,7 @@ func (s SysJobController) Add(c *gin.Context) {
 func (s SysJobController) Edit(c *gin.Context) {
 	var body model.SysJob
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.JobID == "" {
+	if err != nil || body.JobId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
@@ -139,7 +139,7 @@ func (s SysJobController) Edit(c *gin.Context) {
 	}
 
 	// 检查属性值唯一
-	uniqueJob := s.sysJobService.CheckUniqueByJobName(body.JobName, body.JobGroup, body.JobID)
+	uniqueJob := s.sysJobService.CheckUniqueByJobName(body.JobName, body.JobGroup, body.JobId)
 	if !uniqueJob {
 		msg := fmt.Sprintf("调度任务修改【%s】失败，同任务组内有相同任务名称", body.JobName)
 		c.JSON(200, result.ErrMsg(msg))
@@ -195,7 +195,7 @@ func (s SysJobController) Status(c *gin.Context) {
 
 	// 检查是否存在
 	job := s.sysJobService.FindById(body.JobId)
-	if job.JobID != body.JobId {
+	if job.JobId != body.JobId {
 		c.JSON(200, result.ErrMsg("没有权限访问调度任务数据！"))
 		return
 	}
@@ -229,7 +229,7 @@ func (s SysJobController) Run(c *gin.Context) {
 
 	// 检查是否存在
 	job := s.sysJobService.FindById(jobId)
-	if job.JobID != jobId {
+	if job.JobId != jobId {
 		c.JSON(200, result.ErrMsg("没有权限访问调度任务数据！"))
 		return
 	}
@@ -307,7 +307,7 @@ func (s SysJobController) Export(c *gin.Context) {
 			statusValue = "成功"
 		}
 		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.JobID,
+			"A" + idx: row.JobId,
 			"B" + idx: row.JobName,
 			"C" + idx: sysJobGroup,
 			"D" + idx: row.InvokeTarget,

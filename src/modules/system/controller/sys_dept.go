@@ -30,8 +30,8 @@ type SysDeptController struct {
 // GET /list
 func (s SysDeptController) List(c *gin.Context) {
 	var query struct {
-		DeptID   string `form:"deptId"`   // 部门ID
-		ParentID string `form:"parentId"` // 父部门ID
+		DeptId   string `form:"deptId"`   // 部门ID
+		ParentId string `form:"parentId"` // 父部门ID
 		DeptName string `form:"deptName"` // 部门名称
 		Status   string `form:"status"`   // 部门状态（0正常 1停用）
 	}
@@ -41,8 +41,8 @@ func (s SysDeptController) List(c *gin.Context) {
 	}
 
 	SysDeptController := model.SysDept{
-		DeptID:   query.DeptID,
-		ParentID: query.ParentID,
+		DeptId:   query.DeptId,
+		ParentId: query.ParentId,
 		DeptName: query.DeptName,
 		Status:   query.Status,
 	}
@@ -61,7 +61,7 @@ func (s SysDeptController) Info(c *gin.Context) {
 		return
 	}
 	data := s.sysDeptService.FindById(deptId)
-	if data.DeptID == deptId {
+	if data.DeptId == deptId {
 		c.JSON(200, result.OkData(data))
 		return
 	}
@@ -74,15 +74,15 @@ func (s SysDeptController) Info(c *gin.Context) {
 func (s SysDeptController) Add(c *gin.Context) {
 	var body model.SysDept
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.DeptID != "" {
+	if err != nil || body.DeptId != "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
 	// 父级ID不为0是要检查
-	if body.ParentID != "0" {
-		deptParent := s.sysDeptService.FindById(body.ParentID)
-		if deptParent.DeptID != body.ParentID {
+	if body.ParentId != "0" {
+		deptParent := s.sysDeptService.FindById(body.ParentId)
+		if deptParent.DeptId != body.ParentId {
 			c.JSON(200, result.ErrMsg("没有权限访问部门数据！"))
 			return
 		}
@@ -96,13 +96,13 @@ func (s SysDeptController) Add(c *gin.Context) {
 			c.JSON(200, result.ErrMsg(msg))
 			return
 		}
-		body.Ancestors = deptParent.Ancestors + "," + body.ParentID
+		body.Ancestors = deptParent.Ancestors + "," + body.ParentId
 	} else {
 		body.Ancestors = "0"
 	}
 
 	// 检查同级下名称唯一
-	uniqueDeptName := s.sysDeptService.CheckUniqueParentIdByDeptName(body.ParentID, body.DeptName, "")
+	uniqueDeptName := s.sysDeptService.CheckUniqueParentIdByDeptName(body.ParentId, body.DeptName, "")
 	if !uniqueDeptName {
 		msg := fmt.Sprintf("部门新增【%s】失败，部门名称已存在", body.DeptName)
 		c.JSON(200, result.ErrMsg(msg))
@@ -124,36 +124,36 @@ func (s SysDeptController) Add(c *gin.Context) {
 func (s SysDeptController) Edit(c *gin.Context) {
 	var body model.SysDept
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.DeptID == "" {
+	if err != nil || body.DeptId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
 	// 上级部门不能选自己
-	if body.DeptID == body.ParentID {
+	if body.DeptId == body.ParentId {
 		msg := fmt.Sprintf("部门修改【%s】失败，上级部门不能是自己", body.DeptName)
 		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
 	// 检查数据是否存在
-	deptInfo := s.sysDeptService.FindById(body.DeptID)
-	if deptInfo.DeptID != body.DeptID {
+	deptInfo := s.sysDeptService.FindById(body.DeptId)
+	if deptInfo.DeptId != body.DeptId {
 		c.JSON(200, result.ErrMsg("没有权限访问部门数据！"))
 		return
 	}
 
 	// 父级ID不为0是要检查
-	if body.ParentID != "0" {
-		deptParent := s.sysDeptService.FindById(body.ParentID)
-		if deptParent.DeptID != body.ParentID {
+	if body.ParentId != "0" {
+		deptParent := s.sysDeptService.FindById(body.ParentId)
+		if deptParent.DeptId != body.ParentId {
 			c.JSON(200, result.ErrMsg("没有权限访问部门数据！"))
 			return
 		}
 	}
 
 	// 检查同级下名称唯一
-	uniqueDeptName := s.sysDeptService.CheckUniqueParentIdByDeptName(body.ParentID, body.DeptName, body.DeptID)
+	uniqueDeptName := s.sysDeptService.CheckUniqueParentIdByDeptName(body.ParentId, body.DeptName, body.DeptId)
 	if !uniqueDeptName {
 		msg := fmt.Sprintf("部门修改【%s】失败，部门名称已存在", body.DeptName)
 		c.JSON(200, result.ErrMsg(msg))
@@ -162,7 +162,7 @@ func (s SysDeptController) Edit(c *gin.Context) {
 
 	// 上级停用需要检查下级是否有在使用
 	if body.Status == constSystem.STATUS_NO {
-		hasChild := s.sysDeptService.ExistChildrenByDeptId(body.DeptID)
+		hasChild := s.sysDeptService.ExistChildrenByDeptId(body.DeptId)
 		if hasChild > 0 {
 			msg := fmt.Sprintf("该部门包含未停用的子部门数量：%d", hasChild)
 			c.JSON(200, result.ErrMsg(msg))
@@ -191,7 +191,7 @@ func (s SysDeptController) Remove(c *gin.Context) {
 
 	// 检查数据是否存在
 	dept := s.sysDeptService.FindById(deptId)
-	if dept.DeptID != deptId {
+	if dept.DeptId != deptId {
 		c.JSON(200, result.ErrMsg("没有权限访问部门数据！"))
 		return
 	}
@@ -245,7 +245,7 @@ func (s SysDeptController) ExcludeChild(c *gin.Context) {
 				break
 			}
 		}
-		if !(dept.DeptID == deptId || hasAncestor) {
+		if !(dept.DeptId == deptId || hasAncestor) {
 			filtered = append(filtered, dept)
 		}
 	}
@@ -257,8 +257,8 @@ func (s SysDeptController) ExcludeChild(c *gin.Context) {
 // GET /treeSelect
 func (s SysDeptController) TreeSelect(c *gin.Context) {
 	var query struct {
-		DeptID   string `form:"deptId"`   // 部门ID
-		ParentID string `form:"parentId"` // 父部门ID
+		DeptId   string `form:"deptId"`   // 部门ID
+		ParentId string `form:"parentId"` // 父部门ID
 		DeptName string `form:"deptName"` // 部门名称
 		Status   string `form:"status"`   // 部门状态（0正常 1停用）
 	}
@@ -268,8 +268,8 @@ func (s SysDeptController) TreeSelect(c *gin.Context) {
 	}
 
 	sysDept := model.SysDept{
-		DeptID:   query.DeptID,
-		ParentID: query.ParentID,
+		DeptId:   query.DeptId,
+		ParentId: query.ParentId,
 		DeptName: query.DeptName,
 		Status:   query.Status,
 	}

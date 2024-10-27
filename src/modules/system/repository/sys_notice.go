@@ -249,7 +249,7 @@ func (r SysNotice) Update(sysNotice model.SysNotice) int64 {
 	sql := fmt.Sprintf("update sys_notice set %s where notice_id = ?", keys)
 
 	// 执行更新
-	values = append(values, sysNotice.NoticeID)
+	values = append(values, sysNotice.NoticeId)
 	rows, err := db.ExecDB("", sql, values)
 	if err != nil {
 		logger.Errorf("update row : %v", err.Error())

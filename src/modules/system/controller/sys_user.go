@@ -67,7 +67,7 @@ func (s SysUserController) Info(c *gin.Context) {
 	if !config.IsSysAdmin(userId) {
 		rolesFilter := make([]model.SysRole, 0)
 		for _, r := range roles {
-			if r.RoleID != constSystem.ROLE_SYSTEM_ID {
+			if r.RoleId != constSystem.ROLE_SYSTEM_ID {
 				rolesFilter = append(rolesFilter, r)
 			}
 		}
@@ -99,14 +99,14 @@ func (s SysUserController) Info(c *gin.Context) {
 	// 角色ID组
 	roleIds := make([]string, 0)
 	for _, r := range userInfo.Roles {
-		roleIds = append(roleIds, r.RoleID)
+		roleIds = append(roleIds, r.RoleId)
 	}
 
 	// 岗位ID组
 	postIds := make([]string, 0)
 	userPosts := s.sysPostService.FindByUserId(userId)
 	for _, p := range userPosts {
-		postIds = append(postIds, p.PostID)
+		postIds = append(postIds, p.PostId)
 	}
 
 	c.JSON(200, result.OkData(map[string]any{
@@ -444,7 +444,7 @@ func (s SysUserController) Export(c *gin.Context) {
 			"E" + idx: row.Phone,
 			"F" + idx: sysUserSex,
 			"G" + idx: statusValue,
-			"H" + idx: row.Dept.DeptID,
+			"H" + idx: row.Dept.DeptId,
 			"I" + idx: row.Dept.DeptName,
 			"J" + idx: row.Dept.Leader,
 			"K" + idx: row.LoginIp,

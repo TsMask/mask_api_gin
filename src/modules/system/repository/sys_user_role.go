@@ -57,7 +57,7 @@ func (r SysUserRole) DeleteByRoleId(roleId string, userIds []string) int64 {
 func (r SysUserRole) BatchInsert(arr []model.SysUserRole) int64 {
 	ur := make([]string, 0)
 	for _, item := range arr {
-		ur = append(ur, fmt.Sprintf("(%s,%s)", item.UserID, item.RoleID))
+		ur = append(ur, fmt.Sprintf("(%s,%s)", item.UserId, item.RoleId))
 	}
 	sql := fmt.Sprintf("insert into sys_user_role(user_id, role_id) values %s", strings.Join(ur, ","))
 	results, err := db.ExecDB("", sql, nil)

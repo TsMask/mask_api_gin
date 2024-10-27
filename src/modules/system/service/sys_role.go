@@ -65,7 +65,7 @@ func (r SysRole) insertRoleMenu(roleId string, menuIds []string) int64 {
 			continue
 		}
 		sysRoleMenus = append(sysRoleMenus, model.SysRoleMenu{
-			RoleID: roleId, MenuID: menuId,
+			RoleId: roleId, MenuId: menuId,
 		})
 	}
 	return r.sysRoleMenuRepository.BatchInsert(sysRoleMenus)
@@ -76,8 +76,8 @@ func (r SysRole) Update(sysRole model.SysRole) int64 {
 	rows := r.sysRoleRepository.Update(sysRole)
 	if rows > 0 && len(sysRole.MenuIds) > 0 {
 		// 删除角色与菜单关联
-		r.sysRoleMenuRepository.DeleteByRoleIds([]string{sysRole.RoleID})
-		r.insertRoleMenu(sysRole.RoleID, sysRole.MenuIds)
+		r.sysRoleMenuRepository.DeleteByRoleIds([]string{sysRole.RoleId})
+		r.insertRoleMenu(sysRole.RoleId, sysRole.MenuIds)
 	}
 	return rows
 }
@@ -92,10 +92,10 @@ func (r SysRole) DeleteByIds(roleIds []string) (int64, error) {
 	for _, role := range roles {
 		// 检查是否为已删除
 		if role.DelFlag == "1" {
-			return 0, fmt.Errorf("%s 角色信息已经删除！", role.RoleID)
+			return 0, fmt.Errorf("%s 角色信息已经删除！", role.RoleId)
 		}
 		// 检查分配用户
-		if useCount := r.sysUserRoleRepository.ExistUserByRoleId(role.RoleID); useCount > 0 {
+		if useCount := r.sysUserRoleRepository.ExistUserByRoleId(role.RoleId); useCount > 0 {
 			return 0, fmt.Errorf("【%s】已分配给用户,不能删除", role.RoleName)
 		}
 	}
@@ -140,7 +140,7 @@ func (r SysRole) UpdateAndDataScope(sysRole model.SysRole) int64 {
 	rows := r.sysRoleRepository.Update(sysRole)
 	if rows > 0 {
 		// 删除角色与部门关联
-		r.sysRoleDeptRepository.DeleteByRoleIds([]string{sysRole.RoleID})
+		r.sysRoleDeptRepository.DeleteByRoleIds([]string{sysRole.RoleId})
 		// 新增角色和部门信息
 		if sysRole.DataScope == constRoleDataScope.CUSTOM && len(sysRole.DeptIds) > 0 {
 			arr := make([]model.SysRoleDept, 0)
@@ -149,7 +149,7 @@ func (r SysRole) UpdateAndDataScope(sysRole model.SysRole) int64 {
 					continue
 				}
 				arr = append(arr, model.SysRoleDept{
-					RoleID: sysRole.RoleID, DeptID: deptId,
+					RoleId: sysRole.RoleId, DeptId: deptId,
 				})
 			}
 			r.sysRoleDeptRepository.BatchInsert(arr)
@@ -169,7 +169,7 @@ func (r SysRole) InsertAuthUsers(roleId string, userIds []string) int64 {
 			continue
 		}
 		sysUserRoles = append(sysUserRoles, model.SysUserRole{
-			RoleID: roleId, UserID: userId,
+			UserId: userId, RoleId: roleId,
 		})
 	}
 	return r.sysUserRoleRepository.BatchInsert(sysUserRoles)

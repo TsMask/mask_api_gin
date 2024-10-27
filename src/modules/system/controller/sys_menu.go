@@ -49,15 +49,15 @@ func (s SysMenuController) List(c *gin.Context) {
 
 // Info 菜单信息
 //
-// GET /:menuId
+// GET /:MenuId
 func (s SysMenuController) Info(c *gin.Context) {
-	menuId := c.Param("menuId")
-	if menuId == "" {
+	MenuId := c.Param("MenuId")
+	if MenuId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
-	data := s.sysMenuService.FindById(menuId)
-	if data.MenuID == menuId {
+	data := s.sysMenuService.FindById(MenuId)
+	if data.MenuId == MenuId {
 		c.JSON(200, result.OkData(data))
 		return
 	}
@@ -70,14 +70,14 @@ func (s SysMenuController) Info(c *gin.Context) {
 func (s SysMenuController) Add(c *gin.Context) {
 	var body model.SysMenu
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.MenuID != "" {
+	if err != nil || body.MenuId != "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
 	// 目录和菜单检查地址唯一
 	if constMenu.TYPE_DIR == body.MenuType || constMenu.TYPE_MENU == body.MenuType {
-		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentID, body.Path, "")
+		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentId, body.Path, "")
 		if !uniqueMenuPath {
 			msg := fmt.Sprintf("菜单新增【%s】失败，菜单路由地址已存在", body.MenuName)
 			c.JSON(200, result.ErrMsg(msg))
@@ -86,7 +86,7 @@ func (s SysMenuController) Add(c *gin.Context) {
 	}
 
 	// 检查名称唯一
-	uniqueMenuName := s.sysMenuService.CheckUniqueParentIdByMenuName(body.ParentID, body.MenuName, "")
+	uniqueMenuName := s.sysMenuService.CheckUniqueParentIdByMenuName(body.ParentId, body.MenuName, "")
 	if !uniqueMenuName {
 		msg := fmt.Sprintf("菜单新增【%s】失败，菜单名称已存在", body.MenuName)
 		c.JSON(200, result.ErrMsg(msg))
@@ -115,28 +115,28 @@ func (s SysMenuController) Add(c *gin.Context) {
 func (s SysMenuController) Edit(c *gin.Context) {
 	var body model.SysMenu
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.MenuID == "" {
+	if err != nil || body.MenuId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
 	// 上级菜单不能选自己
-	if body.MenuID == body.ParentID {
+	if body.MenuId == body.ParentId {
 		msg := fmt.Sprintf("菜单修改【%s】失败，上级菜单不能选择自己", body.MenuName)
 		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
 	// 检查数据是否存在
-	menuInfo := s.sysMenuService.FindById(body.MenuID)
-	if menuInfo.MenuID != body.MenuID {
+	menuInfo := s.sysMenuService.FindById(body.MenuId)
+	if menuInfo.MenuId != body.MenuId {
 		c.JSON(200, result.ErrMsg("没有权限访问菜单数据"))
 		return
 	}
 	// 父级ID不为0是要检查
-	if body.ParentID != "0" {
-		menuParent := s.sysMenuService.FindById(body.ParentID)
-		if menuParent.MenuID != body.ParentID {
+	if body.ParentId != "0" {
+		menuParent := s.sysMenuService.FindById(body.ParentId)
+		if menuParent.MenuId != body.ParentId {
 			c.JSON(200, result.ErrMsg("没有权限访问菜单数据"))
 			return
 		}
@@ -149,7 +149,7 @@ func (s SysMenuController) Edit(c *gin.Context) {
 
 	// 目录和菜单检查地址唯一
 	if constMenu.TYPE_DIR == body.MenuType || constMenu.TYPE_MENU == body.MenuType {
-		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentID, body.Path, body.MenuID)
+		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentId, body.Path, body.MenuId)
 		if !uniqueMenuPath {
 			msg := fmt.Sprintf("菜单修改【%s】失败，菜单路由地址已存在", body.MenuName)
 			c.JSON(200, result.ErrMsg(msg))
@@ -158,7 +158,7 @@ func (s SysMenuController) Edit(c *gin.Context) {
 	}
 
 	// 检查名称唯一
-	uniqueMenuName := s.sysMenuService.CheckUniqueParentIdByMenuName(body.ParentID, body.MenuName, body.MenuID)
+	uniqueMenuName := s.sysMenuService.CheckUniqueParentIdByMenuName(body.ParentId, body.MenuName, body.MenuId)
 	if !uniqueMenuName {
 		msg := fmt.Sprintf("菜单修改【%s】失败，菜单名称已存在", body.MenuName)
 		c.JSON(200, result.ErrMsg(msg))
@@ -174,7 +174,7 @@ func (s SysMenuController) Edit(c *gin.Context) {
 
 	// 禁用菜单时检查子菜单是否使用
 	if body.Status == constSystem.STATUS_NO {
-		hasStatus := s.sysMenuService.ExistChildrenByMenuIdAndStatus(body.MenuID, constSystem.STATUS_YES)
+		hasStatus := s.sysMenuService.ExistChildrenByMenuIdAndStatus(body.MenuId, constSystem.STATUS_YES)
 		if hasStatus > 0 {
 			msg := fmt.Sprintf("不允许禁用，存在使用子菜单数：%d", hasStatus)
 			c.JSON(200, result.ErrMsg(msg))
@@ -193,23 +193,23 @@ func (s SysMenuController) Edit(c *gin.Context) {
 
 // Remove 菜单删除
 //
-// DELETE /:menuId
+// DELETE /:MenuId
 func (s SysMenuController) Remove(c *gin.Context) {
-	menuId := c.Param("menuId")
-	if menuId == "" {
+	MenuId := c.Param("MenuId")
+	if MenuId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
 	// 检查数据是否存在
-	menu := s.sysMenuService.FindById(menuId)
-	if menu.MenuID != menuId {
+	menu := s.sysMenuService.FindById(MenuId)
+	if menu.MenuId != MenuId {
 		c.JSON(200, result.ErrMsg("没有权限访问菜单数据！"))
 		return
 	}
 
 	// 检查是否存在子菜单
-	hasChild := s.sysMenuService.ExistChildrenByMenuIdAndStatus(menuId, "")
+	hasChild := s.sysMenuService.ExistChildrenByMenuIdAndStatus(MenuId, "")
 	if hasChild > 0 {
 		msg := fmt.Sprintf("不允许删除，存在子菜单数：%d", hasChild)
 		c.JSON(200, result.ErrMsg(msg))
@@ -217,14 +217,14 @@ func (s SysMenuController) Remove(c *gin.Context) {
 	}
 
 	// 检查是否分配给角色
-	existRole := s.sysMenuService.ExistRoleByMenuId(menuId)
+	existRole := s.sysMenuService.ExistRoleByMenuId(MenuId)
 	if existRole > 0 {
 		msg := fmt.Sprintf("不允许删除，菜单已分配给角色数：%d", existRole)
 		c.JSON(200, result.ErrMsg(msg))
 		return
 	}
 
-	rows := s.sysMenuService.DeleteById(menuId)
+	rows := s.sysMenuService.DeleteById(MenuId)
 	if rows > 0 {
 		msg := fmt.Sprintf("删除成功：%d", rows)
 		c.JSON(200, result.OkMsg(msg))

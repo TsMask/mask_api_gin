@@ -123,7 +123,7 @@ func (s SysLogOperateController) Export(c *gin.Context) {
 			statusValue = "成功"
 		}
 		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.OperaID,
+			"A" + idx: row.OperaId,
 			"B" + idx: row.Title,
 			"C" + idx: businessType,
 			"D" + idx: row.Method,
@@ -131,8 +131,8 @@ func (s SysLogOperateController) Export(c *gin.Context) {
 			"F" + idx: operatorType,
 			"G" + idx: row.OperaName,
 			"H" + idx: row.DeptName,
-			"I" + idx: row.OperaURL,
-			"J" + idx: row.OperaIP,
+			"I" + idx: row.OperaUrl,
+			"J" + idx: row.OperaIp,
 			"K" + idx: row.OperaLocation,
 			"L" + idx: row.OperaParam,
 			"M" + idx: row.OperaMsg,

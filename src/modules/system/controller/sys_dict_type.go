@@ -47,7 +47,7 @@ func (s SysDictTypeController) Info(c *gin.Context) {
 		return
 	}
 	data := s.sysDictTypeService.FindById(dictId)
-	if data.DictID == dictId {
+	if data.DictId == dictId {
 		c.JSON(200, result.OkData(data))
 		return
 	}
@@ -60,7 +60,7 @@ func (s SysDictTypeController) Info(c *gin.Context) {
 func (s SysDictTypeController) Add(c *gin.Context) {
 	var body model.SysDictType
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.DictID != "" {
+	if err != nil || body.DictId != "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
@@ -96,20 +96,20 @@ func (s SysDictTypeController) Add(c *gin.Context) {
 func (s SysDictTypeController) Edit(c *gin.Context) {
 	var body model.SysDictType
 	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.DictID == "" {
+	if err != nil || body.DictId == "" {
 		c.JSON(400, result.CodeMsg(400, "参数错误"))
 		return
 	}
 
 	// 检查数据是否存在
-	dictInfo := s.sysDictTypeService.FindById(body.DictID)
-	if dictInfo.DictID != body.DictID {
+	dictInfo := s.sysDictTypeService.FindById(body.DictId)
+	if dictInfo.DictId != body.DictId {
 		c.JSON(200, result.ErrMsg("没有权限访问字典类型数据！"))
 		return
 	}
 
 	// 检查字典名称唯一
-	uniqueDictName := s.sysDictTypeService.CheckUniqueByName(body.DictName, body.DictID)
+	uniqueDictName := s.sysDictTypeService.CheckUniqueByName(body.DictName, body.DictId)
 	if !uniqueDictName {
 		msg := fmt.Sprintf("字典修改【%s】失败，字典名称已存在", body.DictName)
 		c.JSON(200, result.ErrMsg(msg))
@@ -117,7 +117,7 @@ func (s SysDictTypeController) Edit(c *gin.Context) {
 	}
 
 	// 检查字典类型唯一
-	uniqueDictType := s.sysDictTypeService.CheckUniqueByType(body.DictType, body.DictID)
+	uniqueDictType := s.sysDictTypeService.CheckUniqueByType(body.DictType, body.DictId)
 	if !uniqueDictType {
 		msg := fmt.Sprintf("字典修改【%s】失败，字典类型已存在", body.DictType)
 		c.JSON(200, result.ErrMsg(msg))
@@ -220,7 +220,7 @@ func (s SysDictTypeController) Export(c *gin.Context) {
 			statusValue = "正常"
 		}
 		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.DictID,
+			"A" + idx: row.DictId,
 			"B" + idx: row.DictName,
 			"C" + idx: row.DictType,
 			"D" + idx: statusValue,

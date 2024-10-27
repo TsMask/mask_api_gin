@@ -29,10 +29,10 @@ var NewSysMenu = &SysMenu{
 	left join sys_role ro on ur.role_id = ro.role_id`,
 
 	resultMap: map[string]string{
-		"menu_id":     "MenuID",
+		"menu_id":     "MenuId",
 		"menu_name":   "MenuName",
 		"parent_name": "ParentName",
-		"parent_id":   "ParentID",
+		"parent_id":   "ParentId",
 		"path":        "Path",
 		"menu_sort":   "MenuSort",
 		"component":   "Component",
@@ -105,10 +105,10 @@ func (r SysMenu) Select(sysMenu model.SysMenu, userId string) []model.SysMenu {
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysMenu) SelectByIds(menuIds []string) []model.SysMenu {
-	placeholder := db.KeyPlaceholderByQuery(len(menuIds))
+func (r SysMenu) SelectByIds(MenuIds []string) []model.SysMenu {
+	placeholder := db.KeyPlaceholderByQuery(len(MenuIds))
 	querySql := r.selectSql + " where m.menu_id in (" + placeholder + ")"
-	parameters := db.ConvertIdsSlice(menuIds)
+	parameters := db.ConvertIdsSlice(MenuIds)
 	rows, err := db.RawDB("", querySql, parameters)
 	if err != nil {
 		logger.Errorf("query err => %v", err)
@@ -122,11 +122,11 @@ func (r SysMenu) SelectByIds(menuIds []string) []model.SysMenu {
 func (r SysMenu) Insert(sysMenu model.SysMenu) string {
 	// 参数拼接
 	params := make(map[string]any)
-	if sysMenu.MenuID != "" {
-		params["menu_id"] = sysMenu.MenuID
+	if sysMenu.MenuId != "" {
+		params["menu_id"] = sysMenu.MenuId
 	}
-	if sysMenu.ParentID != "" {
-		params["parent_id"] = sysMenu.ParentID
+	if sysMenu.ParentId != "" {
+		params["parent_id"] = sysMenu.ParentId
 	}
 	if sysMenu.MenuName != "" {
 		params["menu_name"] = sysMenu.MenuName
@@ -211,11 +211,11 @@ func (r SysMenu) Insert(sysMenu model.SysMenu) string {
 func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
 	// 参数拼接
 	params := make(map[string]any)
-	if sysMenu.MenuID != "" {
-		params["menu_id"] = sysMenu.MenuID
+	if sysMenu.MenuId != "" {
+		params["menu_id"] = sysMenu.MenuId
 	}
-	if sysMenu.ParentID != "" {
-		params["parent_id"] = sysMenu.ParentID
+	if sysMenu.ParentId != "" {
+		params["parent_id"] = sysMenu.ParentId
 	}
 	if sysMenu.MenuName != "" {
 		params["menu_name"] = sysMenu.MenuName
@@ -277,7 +277,7 @@ func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
 	sql := fmt.Sprintf("update sys_menu set %s where menu_id = ?", keys)
 
 	// 执行更新
-	values = append(values, sysMenu.MenuID)
+	values = append(values, sysMenu.MenuId)
 	rows, err := db.ExecDB("", sql, values)
 	if err != nil {
 		logger.Errorf("update row : %v", err.Error())
@@ -287,9 +287,9 @@ func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
 }
 
 // DeleteById 删除信息
-func (r SysMenu) DeleteById(menuId string) int64 {
+func (r SysMenu) DeleteById(MenuId string) int64 {
 	sql := "delete from sys_menu where menu_id = ?"
-	results, err := db.ExecDB("", sql, []any{menuId})
+	results, err := db.ExecDB("", sql, []any{MenuId})
 	if err != nil {
 		logger.Errorf("delete err => %v", err)
 		return 0
@@ -298,9 +298,9 @@ func (r SysMenu) DeleteById(menuId string) int64 {
 }
 
 // ExistChildrenByMenuIdAndStatus 菜单下同状态存在子节点数量
-func (r SysMenu) ExistChildrenByMenuIdAndStatus(menuId, status string) int64 {
+func (r SysMenu) ExistChildrenByMenuIdAndStatus(MenuId, status string) int64 {
 	querySql := "select count(1) as 'total' from sys_menu where parent_id = ?"
-	params := []any{menuId}
+	params := []any{MenuId}
 
 	// 菜单状态
 	if status != "" {
@@ -330,9 +330,9 @@ func (r SysMenu) CheckUnique(sysMenu model.SysMenu) string {
 		conditions = append(conditions, "menu_name = ?")
 		params = append(params, sysMenu.MenuName)
 	}
-	if sysMenu.ParentID != "" {
+	if sysMenu.ParentId != "" {
 		conditions = append(conditions, "parent_id = ?")
-		params = append(params, sysMenu.ParentID)
+		params = append(params, sysMenu.ParentId)
 	}
 	if sysMenu.Path != "" {
 		conditions = append(conditions, "path = ?")
