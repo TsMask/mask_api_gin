@@ -3,35 +3,35 @@ package upload_sub_path
 // 文件上传-子路径类型常量
 
 const (
-	// Default 默认
-	Default = "default"
+	// DEFAULT 默认
+	DEFAULT = "default"
 
-	// Avatar 头像
-	Avatar = "avatar"
+	// AVATAR 头像
+	AVATAR = "avatar"
 
-	//Import 导入
-	Import = "import"
+	//IMPORT 导入
+	IMPORT = "import"
 
-	// Export 导出
-	Export = "export"
+	// EXPORT 导出
+	EXPORT = "export"
 
 	// Common 通用上传
-	Common = "common"
+	COMMON = "common"
 
-	// Download 下载
-	Download = "download"
+	// DOWNLOAD 下载
+	DOWNLOAD = "download"
 
-	// Chunk 切片
-	Chunk = "chunk"
+	// CHUNK 切片
+	CHUNK = "chunk"
 )
 
 // UploadSubPath 子路径类型映射
 var UploadSubPath = map[string]string{
-	Default:  "默认",
-	Avatar:   "头像",
-	Import:   "导入",
-	Export:   "导出",
-	Common:   "通用上传",
-	Download: "下载",
-	Chunk:    "切片",
+	DEFAULT:  "默认",
+	AVATAR:   "头像",
+	IMPORT:   "导入",
+	EXPORT:   "导出",
+	COMMON:   "通用上传",
+	DOWNLOAD: "下载",
+	CHUNK:    "切片",
 }

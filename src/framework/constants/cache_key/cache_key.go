@@ -2,23 +2,23 @@ package cache_key
 
 // 缓存的key常量
 
-// LoginTokenKey 登录用户
-const LoginTokenKey = "login_tokens:"
+// LOGIN_TOKEN_KEY 登录用户
+const LOGIN_TOKEN_KEY = "login_tokens:"
 
-// CaptchaCodeKey 验证码
-const CaptchaCodeKey = "captcha_codes:"
+// CAPTCHA_CODE_KEY 验证码
+const CAPTCHA_CODE_KEY = "captcha_codes:"
 
-// SysConfigKey 参数管理
-const SysConfigKey = "sys_config:"
+// SYS_CONFIG_KEY 参数管理
+const SYS_CONFIG_KEY = "sys_config:"
 
-// SysDictKey 字典管理
-const SysDictKey = "sys_dict:"
+// SYS_DICT_KEY 字典管理
+const SYS_DICT_KEY = "sys_dict:"
 
-// RepeatSubmitKey 防重提交
-const RepeatSubmitKey = "repeat_submit:"
+// REPEAT_SUBMIT_KEY 防重提交
+const REPEAT_SUBMIT_KEY = "repeat_submit:"
 
-// RateLimitKey 限流
-const RateLimitKey = "rate_limit:"
+// RATE_LIMIT_KEY 限流
+const RATE_LIMIT_KEY = "rate_limit:"
 
-// PwdErrCntKey 登录账户密码错误次数
-const PwdErrCntKey = "pwd_err_cnt:"
+// PWD_ERR_COUNT_KEY 登录账户密码错误次数
+const PWD_ERR_COUNT_KEY = "pwd_err_count:"

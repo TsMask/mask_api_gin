@@ -2,20 +2,20 @@ package system
 
 // 系统常量信息
 
-// RoleId 系统管理员-系统指定角色ID
-const RoleId = "1"
+// ROLE_SYSTEM_ID 系统管理员-系统指定角色ID
+const ROLE_SYSTEM_ID = "1"
 
-// RoleKey 系统管理员-系统指定角色KEY
-const RoleKey = "system"
+// ROLE_SYSTEM_KEY 系统管理员-系统指定角色KEY
+const ROLE_SYSTEM_KEY = "system"
 
-// Permission 系统管理员-系统指定权限
-const Permission = "*:*:*"
+// PERMISSION_SYSTEM 系统管理员-系统指定权限
+const PERMISSION_SYSTEM = "*:*:*"
 
-// StatusYes 通用状态标识-正常/成功/是
-const StatusYes = "1"
+// STATUS_YES 通用状态标识-正常/成功/是
+const STATUS_YES = "1"
 
-// StatusNo 通用状态标识-停用/失败/否
-const StatusNo = "0"
+// STATUS_NO 通用状态标识-停用/失败/否
+const STATUS_NO = "0"
 
-// CtxLoginUser 上下文信息-登录用户
-const CtxLoginUser = "login_user"
+// CTX_LOGIN_USER 上下文信息-登录用户
+const CTX_LOGIN_USER = "ctx:login_user"

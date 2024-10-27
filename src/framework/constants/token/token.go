@@ -2,20 +2,17 @@ package token
 
 // 令牌常量信息
 
-// ResponseField 令牌-数据响应字段
-const ResponseField = "access_token"
+// HEADER_PREFIX 令牌-请求头标识前缀
+const HEADER_PREFIX = "Bearer "
 
-// HeaderPrefix 令牌-请求头标识前缀
-const HeaderPrefix = "Bearer "
+// HEADER_KEY 令牌-请求头标识
+const HEADER_KEY = "Authorization"
 
-// HeaderKey 令牌-请求头标识
-const HeaderKey = "Authorization"
+// JWT_UUID 令牌-JWT唯一标识字段
+const JWT_UUID = "uuid"
 
-// JwtUuid 令牌-JWT唯一标识字段
-const JwtUuid = "login_key"
+// JWT_USER_ID 令牌-JWT标识用户主键字段
+const JWT_USER_ID = "user_id"
 
-// JwtKey 令牌-JWT标识用户主键字段
-const JwtKey = "user_id"
-
-// JwtName 令牌-JWT标识用户登录账号字段
-const JwtName = "user_name"
+// JWT_USER_NAME 令牌-JWT标识用户登录账号字段
+const JWT_USER_NAME = "user_name"
