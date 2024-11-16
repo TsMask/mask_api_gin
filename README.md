@@ -2,7 +2,7 @@
 
 [![star](https://gitee.com/TsMask/mask_api_gin/badge/star.svg?theme=dark)](https://gitee.com/TsMask/mask_api_gin/stargazers)
 ![Build Gin](https://img.shields.io/badge/Build-Gin-green.svg)
-![Release V0.2.6](https://img.shields.io/badge/Release-V0.2.6-orange.svg)
+![Release V0.4.0](https://img.shields.io/badge/Release-V0.4.0-orange.svg)
 ![License MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
 ## 介绍
@@ -48,9 +48,9 @@
 
 ```text
 mask_api_gin
-├── assets                      目录-程序内部静态资源文件
 ├── script                      目录-程序可用脚本
 ├── src                         目录-源代码
+├   ├── assets                  目录-程序内部静态资源文件
 ├   ├── config                  目录-程序相关运行参数配置
 ├   ├── framework               目录-程序核心通用代码
 ├   ├── modules                 目录-业务模块
@@ -79,7 +79,7 @@ mask_api_gin
 
 | 技术 | 说明 | 版本 |
 | ---- | ---- | ---- |
-| Go | go项目的运行环境 | 1.20+ |
+| Go | go项目的运行环境 | 1.21+ |
 | Redis | 缓存存储程序 | 6+ |
 | Mysql | 数据存储程序 | 8+ |
 
@@ -103,18 +103,8 @@ go run main.go --env prod    # 生产模式启动项目
 ```bash
 # 修改配置参数 /src/connfig/config.prod.yaml
 go mod download             # 下载项目所需依赖
-go build -ldflags="-s -w"   # 构建项目二进制文件
-./xxx --env prod            # 二进制文件启动时指定生产模式
-```
-
-部署目录结构，可以将[资源文件内嵌到可执行文件中](https://juejin.cn/post/7288963080855568421)
-
-```text
-dir
-├── assets                      目录-程序内部静态资源文件
-├── config                      目录-程序相关运行参数配置
-├── go.mod                      文件-程序模块依赖
-└── xxx                         文件-可执行程序
+go build -o api -ldflags="-s -w"   # 构建项目二进制文件
+./api --env prod            # 二进制文件启动时指定生产模式
 ```
 
 > 有任何问题或者建议，可以在 [_Issues_](https://gitee.com/TsMask/mask_api_gin/issues) 或通过QQ群：[_57242844_](https://jq.qq.com/?_wv=1027&k=z6Y4YQcB) 提出想法。  
