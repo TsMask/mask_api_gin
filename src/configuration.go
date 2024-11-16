@@ -4,9 +4,10 @@ import (
 	"embed"
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/cron"
-	db "mask_api_gin/src/framework/data_source"
+	"mask_api_gin/src/framework/database/db"
+	"mask_api_gin/src/framework/database/redis"
+	"mask_api_gin/src/framework/ip2region"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/redis"
 )
 
 // ConfigurationInit 配置中心初始加载
@@ -14,6 +15,7 @@ func ConfigurationInit(assetsDir, configDir *embed.FS) {
 	// 初始配置参数
 	config.InitConfig(configDir)
 	config.SetAssetsDirFS(assetsDir)
+	ip2region.InitSearcher(assetsDir)
 	// 初始程序日志
 	logger.InitLogger()
 	// 连接数据库实例

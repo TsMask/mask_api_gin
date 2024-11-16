@@ -6,7 +6,7 @@ import (
 	"mask_api_gin/src"
 )
 
-//go:embed assets/*
+//go:embed src/assets/**
 var assetsDir embed.FS
 
 //go:embed src/config/*.yaml
