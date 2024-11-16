@@ -3,10 +3,10 @@ package controller
 import (
 	"encoding/json"
 	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
-	"mask_api_gin/src/framework/redis"
+	"mask_api_gin/src/framework/database/redis"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo"
-	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/service"
 	"sort"
@@ -22,7 +22,7 @@ var NewSysUserOnline = &SysUserOnlineController{
 
 // SysUserOnlineController 在线用户信息 控制层处理
 //
-// PATH /monitor/online
+// PATH /monitor/user-online
 type SysUserOnlineController struct {
 	sysUserOnlineService *service.SysUserOnline // 在线用户服务
 }
@@ -74,13 +74,13 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 	filteredUserOnline := make([]model.SysUserOnline, 0)
 	if ipaddr != "" && userName != "" {
 		for _, o := range userOnline {
-			if strings.Contains(o.IPAddr, ipaddr) && strings.Contains(o.UserName, userName) {
+			if strings.Contains(o.LoginIp, ipaddr) && strings.Contains(o.UserName, userName) {
 				filteredUserOnline = append(filteredUserOnline, o)
 			}
 		}
 	} else if ipaddr != "" {
 		for _, o := range userOnline {
-			if strings.Contains(o.IPAddr, ipaddr) {
+			if strings.Contains(o.LoginIp, ipaddr) {
 				filteredUserOnline = append(filteredUserOnline, o)
 			}
 		}
@@ -99,7 +99,7 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 		return filteredUserOnline[j].LoginTime > filteredUserOnline[i].LoginTime
 	})
 
-	c.JSON(200, result.Ok(map[string]any{
+	c.JSON(200, response.OkData(map[string]any{
 		"total": len(filteredUserOnline),
 		"rows":  filteredUserOnline,
 	}))
@@ -107,29 +107,24 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 
 // Logout 在线用户强制退出
 //
-// DELETE /?tokenId=xxxxx
+// DELETE /logout/:tokenId
 func (s SysUserOnlineController) Logout(c *gin.Context) {
-	tokenId, ok := c.GetQuery("tokenId")
-	if !ok || tokenId == "" || strings.Contains(tokenId, "*") {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	tokenIdStr := c.Param("tokenId")
+	if tokenIdStr == "" || strings.Contains(tokenIdStr, "*") {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 处理字符转id数组后去重
-	ids := strings.Split(tokenId, ",")
+	ids := strings.Split(tokenIdStr, ",")
 	uniqueIDs := parse.RemoveDuplicates(ids)
-	if len(uniqueIDs) <= 0 {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
-		return
-	}
-	// 批量删除token
 	for _, v := range uniqueIDs {
 		key := constCacheKey.LOGIN_TOKEN_KEY + v
 		if err := redis.Del("", key); err != nil {
-			c.JSON(200, result.ErrMsg(err.Error()))
+			c.JSON(200, response.ErrMsg(err.Error()))
 			return
 		}
 	}
 
-	c.JSON(200, result.Ok(nil))
+	c.JSON(200, response.Ok(nil))
 }

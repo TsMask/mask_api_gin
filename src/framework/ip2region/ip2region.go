@@ -1,6 +1,7 @@
 package ip2region
 
 import (
+	"embed"
 	"mask_api_gin/src/framework/logger"
 	"strings"
 	"time"
@@ -12,25 +13,23 @@ const LocalHost = "127.0.0.1"
 // 全局查询对象
 var searcher *Searcher
 
-func init() {
-	dbPath := "assets/ip2region.xdb"
+// InitSearcher 初始化查询对象
+func InitSearcher(assetsDir *embed.FS) {
+	if searcher != nil {
+		return
+	}
 
-	// 从 dbPath 加载整个 xdb 到内存
-	cBuff, err := LoadContentFromFile(dbPath)
+	// 从 embed.FS 中读取内嵌文件
+	fileBuff, err := assetsDir.ReadFile("src/assets/ip2region.xdb")
 	if err != nil {
 		logger.Fatalf("failed error load xdb from : %s\n", err)
 		return
 	}
-
-	// 用全局的 cBuff 创建完全基于内存的查询对象。
-	base, err := NewWithBuffer(cBuff)
-	if err != nil {
+	// 用全局的 fileBuff 创建完全基于内存的查询对象。
+	if searcher, err = NewWithBuffer(fileBuff); err != nil {
 		logger.Errorf("failed error create searcher with content: %s\n", err)
 		return
 	}
-
-	// 赋值到全局查询对象
-	searcher = base
 }
 
 // RegionSearchByIp 查询IP所在地

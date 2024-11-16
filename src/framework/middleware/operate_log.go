@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	constSystem "mask_api_gin/src/framework/constants/system"
-	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 	"reflect"
@@ -18,50 +17,38 @@ import (
 )
 
 const (
-	// BusinessTypeOther 业务操作类型-其它
-	BusinessTypeOther = "0"
+	// BUSINESS_TYPE_OTHER 业务操作类型-其它
+	BUSINESS_TYPE_OTHER = "0"
 
-	// BusinessTypeInsert 业务操作类型-新增
-	BusinessTypeInsert = "1"
+	// BUSINESS_TYPE_INSERT 业务操作类型-新增
+	BUSINESS_TYPE_INSERT = "1"
 
-	// BusinessTypeUpdate 业务操作类型-修改
-	BusinessTypeUpdate = "2"
+	// BUSINESS_TYPE_UPDATE 业务操作类型-修改
+	BUSINESS_TYPE_UPDATE = "2"
 
-	// BusinessTypeDelete 业务操作类型-删除
-	BusinessTypeDelete = "3"
+	// BUSINESS_TYPE_DELETE 业务操作类型-删除
+	BUSINESS_TYPE_DELETE = "3"
 
-	// BusinessTypeGrant 业务操作类型-授权
-	BusinessTypeGrant = "4"
+	// BUSINESS_TYPE_GRANT 业务操作类型-授权
+	BUSINESS_TYPE_GRANT = "4"
 
-	// BusinessTypeExport 业务操作类型-导出
-	BusinessTypeExport = "5"
+	// BUSINESS_TYPE_EXPORT 业务操作类型-导出
+	BUSINESS_TYPE_EXPORT = "5"
 
-	// BusinessTypeImport 业务操作类型-导入
-	BusinessTypeImport = "6"
+	// BUSINESS_TYPE_IMPORT 业务操作类型-导入
+	BUSINESS_TYPE_IMPORT = "6"
 
-	// BusinessTypeForce 业务操作类型-强退
-	BusinessTypeForce = "7"
+	// BUSINESS_TYPE_FORCE 业务操作类型-强退
+	BUSINESS_TYPE_FORCE = "7"
 
-	// BusinessTypeClean 业务操作类型-清空数据
-	BusinessTypeClean = "8"
-)
-
-const (
-	// OperatorTypeOther 操作人类别-其它
-	OperatorTypeOther = "0"
-
-	// OperatorTypeManage 操作人类别-后台用户
-	OperatorTypeManage = "1"
-
-	// OperatorTypeMobile 操作人类别-手机端用户
-	OperatorTypeMobile = "2"
+	// BUSINESS_TYPE_CLEAN 业务操作类型-清空数据
+	BUSINESS_TYPE_CLEAN = "8"
 )
 
 // Options Option 操作日志参数
 type Options struct {
 	Title              string `json:"title"`              // 标题
 	BusinessType       string `json:"businessType"`       // 类型，默认常量 BUSINESS_TYPE_OTHER
-	OperatorType       string `json:"operatorType"`       // 操作人类别，默认常量 OPERATOR_TYPE_OTHER
 	IsSaveRequestData  bool   `json:"isSaveRequestData"`  // 是否保存请求的参数
 	IsSaveResponseData bool   `json:"isSaveResponseData"` // 是否保存响应的参数
 }
@@ -72,12 +59,11 @@ type Options struct {
 //
 // 类型 "businessType": BUSINESS_TYPE_OTHER
 //
-// 注意之后JSON反序列使用：c.ShouldBindBodyWith(&params, binding.JSON)
+// 注意之后JSON反序列使用：c.ShouldBindBodyWithJSON(&params)
 func OptionNew(title, businessType string) Options {
 	return Options{
 		Title:              title,
 		BusinessType:       businessType,
-		OperatorType:       OperatorTypeOther,
 		IsSaveRequestData:  true,
 		IsSaveResponseData: true,
 	}
@@ -101,27 +87,21 @@ func OperateLog(options Options) gin.HandlerFunc {
 		// 获取登录用户信息
 		loginUser, err := ctx.LoginUser(c)
 		if err != nil {
-			c.JSON(401, result.CodeMsg(401, "无效身份授权"))
+			c.JSON(401, response.CodeMsg(401, "无效身份授权"))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
 
 		// 操作日志记录
 		operaLog := model.SysLogOperate{
-			Title:         options.Title,
-			BusinessType:  options.BusinessType,
-			OperatorType:  options.OperatorType,
-			Method:        funcName,
-			OperaUrl:      c.Request.RequestURI,
-			RequestMethod: c.Request.Method,
-			OperaIp:       ipaddr,
-			OperaLocation: location,
-			OperaName:     loginUser.User.UserName,
-			DeptName:      loginUser.User.Dept.DeptName,
-		}
-
-		if loginUser.User.UserType == "sys" {
-			operaLog.OperatorType = OperatorTypeManage
+			Title:          options.Title,
+			BusinessType:   options.BusinessType,
+			OperaMethod:    funcName,
+			OperaUrl:       c.Request.RequestURI,
+			OperaUrlMethod: c.Request.Method,
+			OperaIp:        ipaddr,
+			OperaLocation:  location,
+			OperaBy:        loginUser.User.UserName,
 		}
 
 		// 是否需要保存request，参数和值
@@ -143,9 +123,9 @@ func OperateLog(options Options) gin.HandlerFunc {
 		// 响应状态
 		status := c.Writer.Status()
 		if status == 200 {
-			operaLog.Status = constSystem.STATUS_YES
+			operaLog.StatusFlag = constSystem.STATUS_YES
 		} else {
-			operaLog.Status = constSystem.STATUS_NO
+			operaLog.StatusFlag = constSystem.STATUS_NO
 		}
 
 		// 是否需要保存response，参数和值
@@ -169,6 +149,7 @@ func OperateLog(options Options) gin.HandlerFunc {
 
 // 敏感属性字段进行掩码
 var maskProperties = []string{
+	"passwd",
 	"password",
 	"oldPassword",
 	"newPassword",
@@ -208,7 +189,7 @@ func processSensitiveFields(obj interface{}) {
 		for i := 0; i < val.Len(); i++ {
 			processSensitiveFields(val.Index(i).Interface())
 		}
-	default:
-		logger.Errorf("processSensitiveFields unhandled case %v", val.Kind())
+		// default:
+		// 	logger.Infof("processSensitiveFields unhandled case %v", val.Kind())
 	}
 }

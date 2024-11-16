@@ -31,7 +31,7 @@ func TestSimple(t *testing.T) {
 		"ok":   "ok",
 		"data": "data",
 	}, JobOptions{
-		JobId: "101",
+		JobId: 101,
 	})
 
 	simpleC := CreateQueue("simple", NewSimple)
@@ -39,7 +39,7 @@ func TestSimple(t *testing.T) {
 		"corn": "*/5 * * * * *",
 		"id":   "102",
 	}, JobOptions{
-		JobId: "102",
+		JobId: 102,
 		Cron:  "*/5 * * * * *",
 	})
 
@@ -93,14 +93,14 @@ func TestFoo(t *testing.T) {
 	foo.RunJob(map[string]string{
 		"data": "2",
 	}, JobOptions{
-		JobId: "2",
+		JobId: 2,
 	})
 
 	fooC := CreateQueue("foo", NewFooProcessor)
 	fooC.RunJob(map[string]string{
 		"corn": "*/5 * * * * *",
 	}, JobOptions{
-		JobId: "3",
+		JobId: 3,
 		Cron:  "*/5 * * * * *",
 	})
 
@@ -153,14 +153,14 @@ func TestBar(t *testing.T) {
 	bar.RunJob(map[string]string{
 		"data": "wdf",
 	}, JobOptions{
-		JobId: "81923",
+		JobId: 81923,
 	})
 
 	barC := CreateQueue("bar", NewBarProcessor)
 	barC.RunJob(map[string]string{
 		"corn": "*/5 * * * * *",
 	}, JobOptions{
-		JobId: "789",
+		JobId: 857,
 		Cron:  "*/5 * * * * *",
 	})
 

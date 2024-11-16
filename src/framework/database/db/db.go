@@ -1,4 +1,4 @@
-package data_source
+package db
 
 import (
 	"fmt"
@@ -156,20 +156,20 @@ func ExecDB(source string, sql string, parameters []any) (int64, error) {
 	return res.RowsAffected, nil
 }
 
-// ConvertResultRows 将结果记录转实体结果组 db.ConvertResultRows[T](T{}, r.resultMap, rows)
-func ConvertResultRows[T any](resultType any, resultMap map[string]string, rows []map[string]any) []T {
-	arr := make([]T, 0, len(rows))
-	// obj := reflect.TypeOf(resultType)
-	// for _, row := range rows {
-	// 	item := reflect.New(obj).Elem()
-	// 	for key, value := range row {
-	// 		if keyMapper, ok := resultMap[key]; ok {
-	// 			// SetFieldValue(item, keyMapper, value)
-	// 		}
-	// 	}
-	// 	arr = append(arr, item.Interface().(T))
-	// }
-	return arr
+// PageNumSize 分页页码记录数
+func PageNumSize(pageNum, pageSize any) (int, int) {
+	// 记录起始索引
+	num := parse.Number(pageNum)
+	if num < 1 {
+		num = 1
+	}
+
+	// 显示记录数
+	size := parse.Number(pageSize)
+	if size < 0 {
+		size = 10
+	}
+	return int(num - 1), int(size)
 }
 
 // Unmarshal 将数据从 []map[string]any 反序列化到指定的结构体中
@@ -218,7 +218,7 @@ func Unmarshal(data []map[string]any, v any) error {
 	return nil
 }
 
-// ExtractColumnName 提取以 "column:" 开头的字段名
+// extractColumnName 提取以 "column:" 开头的字段名
 func extractColumnName(tag string) string {
 	if !strings.Contains(tag, "column:") {
 		return ""
@@ -234,7 +234,7 @@ func extractColumnName(tag string) string {
 	return ""
 }
 
-// SetFieldValue 判断结构体内是否存在指定字段并设置值
+// setFieldValue 判断结构体内是否存在指定字段并设置值
 func setFieldValue(fieldValue reflect.Value, value any) {
 	// 检查字段是否存在
 	if fieldValue.IsValid() && fieldValue.CanSet() {
@@ -287,29 +287,13 @@ func setFieldValue(fieldValue reflect.Value, value any) {
 }
 
 // ConvertIdsSlice 将 []string 转换为 []any
-func ConvertIdsSlice(ids []string) []any {
+func ConvertIdsSlice(ids []int64) []any {
 	// 将 []string 转换为 []any
 	arr := make([]any, len(ids))
 	for i, v := range ids {
 		arr[i] = v
 	}
 	return arr
-}
-
-// PageNumSize 分页页码记录数
-func PageNumSize(pageNum, pageSize any) (int64, int64) {
-	// 记录起始索引
-	num := parse.Number(pageNum)
-	if num < 1 {
-		num = 1
-	}
-
-	// 显示记录数
-	size := parse.Number(pageSize)
-	if size < 0 {
-		size = 10
-	}
-	return num - 1, size
 }
 
 // KeyPlaceholderByQuery 查询-参数值的占位符

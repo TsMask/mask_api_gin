@@ -2,15 +2,14 @@ package controller
 
 import (
 	"fmt"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/monitor/service"
 	systemService "mask_api_gin/src/modules/system/service"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +24,7 @@ var NewSysJobLog = &SysJobLogController{
 
 // SysJobLogController 调度任务日志信息 控制层处理
 //
-// PATH /monitor/jobLog
+// PATH /monitor/job-log
 type SysJobLogController struct {
 	sysJobService      *service.SysJob            // 调度任务服务
 	sysJobLogService   *service.SysJobLog         // 调度任务日志服务
@@ -39,55 +38,51 @@ func (s SysJobLogController) List(c *gin.Context) {
 	// 查询参数转换map
 	query := ctx.QueryMap(c)
 	if v, ok := query["jobId"]; ok && v != "" && v != "0" {
-		job := s.sysJobLogService.FindById(v.(string))
+		job := s.sysJobLogService.FindById(parse.Number(v))
 		query["jobName"] = job.JobName
 		query["jobGroup"] = job.JobGroup
 	}
 	rows, total := s.sysJobLogService.FindByPage(query)
-	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
+	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Info 调度任务日志信息
 //
-// GET /:jobLogId
+// GET /:logId
 func (s SysJobLogController) Info(c *gin.Context) {
-	jobLogId := c.Param("jobLogId")
-	if jobLogId == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	logIdStr := c.Param("logId")
+	logId := parse.Number(logIdStr)
+	if logIdStr == "" || logId == 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
-	data := s.sysJobLogService.FindById(jobLogId)
-	if data.JobLogId == jobLogId {
-		c.JSON(200, result.OkData(data))
+
+	jobLogInfo := s.sysJobLogService.FindById(logId)
+	if jobLogInfo.LogId == logId {
+		c.JSON(200, response.OkData(jobLogInfo))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Remove 调度任务日志删除
 //
-// DELETE /:jobLogIds
+// DELETE /:logId
 func (s SysJobLogController) Remove(c *gin.Context) {
-	jobLogIds := c.Param("jobLogIds")
-	if jobLogIds == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	logIdStr := c.Param("logId")
+	logIds := parse.RemoveDuplicatesToNumber(logIdStr, ",")
+	if logIdStr == "" || len(logIds) == 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
-	// 处理字符转id数组后去重
-	ids := strings.Split(jobLogIds, ",")
-	uniqueIDs := parse.RemoveDuplicates(ids)
-	if len(uniqueIDs) <= 0 {
-		c.JSON(200, result.Err(nil))
-		return
-	}
-	rows := s.sysJobLogService.RemoveByIds(uniqueIDs)
+	rows := s.sysJobLogService.RemoveByIds(logIds)
 	if rows > 0 {
 		msg := fmt.Sprintf("删除成功：%d", rows)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, response.OkMsg(msg))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Clean 调度任务日志清空
@@ -96,21 +91,21 @@ func (s SysJobLogController) Remove(c *gin.Context) {
 func (s SysJobLogController) Clean(c *gin.Context) {
 	err := s.sysJobLogService.Clean()
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
-	c.JSON(200, result.Ok(nil))
+	c.JSON(200, response.Ok(nil))
 }
 
 // Export 导出调度任务日志信息
 //
-// POST /export
+// GET /export
 func (s SysJobLogController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	query := ctx.BodyJSONMap(c)
+	query := ctx.QueryMap(c)
 	rows, total := s.sysJobLogService.FindByPage(query)
 	if total == 0 {
-		c.JSON(200, result.ErrMsg("导出数据记录为空"))
+		c.JSON(200, response.CodeMsg(40016, "export data record as empty"))
 		return
 	}
 
@@ -136,18 +131,18 @@ func (s SysJobLogController) Export(c *gin.Context) {
 		// 任务组名
 		sysJobGroup := ""
 		for _, v := range dictSysJobGroup {
-			if row.JobGroup == v.DictValue {
-				sysJobGroup = v.DictLabel
+			if row.JobGroup == v.DataValue {
+				sysJobGroup = v.DataLabel
 				break
 			}
 		}
 		// 状态
 		statusValue := "失败"
-		if row.Status == "1" {
+		if row.StatusFlag == "1" {
 			statusValue = "成功"
 		}
 		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.JobLogId,
+			"A" + idx: row.LogId,
 			"B" + idx: row.JobName,
 			"C" + idx: sysJobGroup,
 			"D" + idx: row.InvokeTarget,
@@ -161,7 +156,7 @@ func (s SysJobLogController) Export(c *gin.Context) {
 	// 导出数据表格
 	saveFilePath, err := file.WriteSheet(headerCells, dataCells, fileName, "")
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
 

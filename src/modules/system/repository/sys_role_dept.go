@@ -1,11 +1,9 @@
 package repository
 
 import (
-	"fmt"
-	db "mask_api_gin/src/framework/data_source"
+	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
-	"strings"
 )
 
 // NewSysRoleDept 实例化数据层
@@ -15,42 +13,43 @@ var NewSysRoleDept = &SysRoleDept{}
 type SysRoleDept struct{}
 
 // DeleteByRoleIds 批量删除信息By角色
-func (r SysRoleDept) DeleteByRoleIds(roleIds []string) int64 {
-	placeholder := db.KeyPlaceholderByQuery(len(roleIds))
-	sql := fmt.Sprintf("delete from sys_role_dept where role_id in (%s)", placeholder)
-	parameters := db.ConvertIdsSlice(roleIds)
-	results, err := db.ExecDB("", sql, parameters)
-	if err != nil {
-		logger.Errorf("delete err => %v", err)
+func (r SysRoleDept) DeleteByRoleIds(roleIds []int64) int64 {
+	if len(roleIds) <= 0 {
 		return 0
 	}
-	return results
+	tx := db.DB("").Where("role_id in ?", roleIds)
+	// 执行删除
+	if err := tx.Delete(&model.SysRoleDept{}).Error; err != nil {
+		logger.Errorf("delete err => %v", err.Error())
+		return 0
+	}
+	return tx.RowsAffected
 }
 
 // DeleteByDeptIds 批量删除信息By部门
-func (r SysRoleDept) DeleteByDeptIds(deptIds []string) int64 {
-	placeholder := db.KeyPlaceholderByQuery(len(deptIds))
-	sql := fmt.Sprintf("delete from sys_role_dept where dept_id in (%s)", placeholder)
-	parameters := db.ConvertIdsSlice(deptIds)
-	results, err := db.ExecDB("", sql, parameters)
-	if err != nil {
-		logger.Errorf("delete err => %v", err)
+func (r SysRoleDept) DeleteByDeptIds(deptIds []int64) int64 {
+	if len(deptIds) <= 0 {
 		return 0
 	}
-	return results
+	tx := db.DB("").Where("dept_id in ?", deptIds)
+	// 执行删除
+	if err := tx.Delete(&model.SysRoleDept{}).Error; err != nil {
+		logger.Errorf("delete err => %v", err.Error())
+		return 0
+	}
+	return tx.RowsAffected
 }
 
 // BatchInsert 批量新增信息
-func (r SysRoleDept) BatchInsert(arr []model.SysRoleDept) int64 {
-	rd := make([]string, 0)
-	for _, item := range arr {
-		rd = append(rd, fmt.Sprintf("(%s,%s)", item.RoleId, item.DeptId))
-	}
-	sql := fmt.Sprintf("insert into sys_role_dept(role_id, dept_id) values %s", strings.Join(rd, ","))
-	results, err := db.ExecDB("", sql, nil)
-	if err != nil {
-		logger.Errorf("delete err => %v", err)
+func (r SysRoleDept) BatchInsert(roleDepts []model.SysRoleDept) int64 {
+	if len(roleDepts) <= 0 {
 		return 0
 	}
-	return results
+	// 执行批量删除
+	tx := db.DB("").CreateInBatches(roleDepts, 500)
+	if err := tx.Error; err != nil {
+		logger.Errorf("delete batch err => %v", err.Error())
+		return 0
+	}
+	return tx.RowsAffected
 }

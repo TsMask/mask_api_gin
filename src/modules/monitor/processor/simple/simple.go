@@ -14,7 +14,7 @@ func (p Processor) Execute(data any) (any, error) {
 	options := data.(cron.JobData)
 
 	sysJob := options.SysJob
-	logger.Infof("重复 %v 任务ID %s", options.Repeat, sysJob.JobId)
+	logger.Infof("重复 %v 任务ID %d", options.Repeat, sysJob.JobId)
 
 	// 返回结果，用于记录执行结果
 	result := map[string]any{

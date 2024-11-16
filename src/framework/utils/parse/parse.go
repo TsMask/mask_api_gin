@@ -127,11 +127,11 @@ func SafeContent(value string) string {
 }
 
 // RemoveDuplicates 数组内字符串去重
-func RemoveDuplicates(ids []string) []string {
+func RemoveDuplicates(arr []string) []string {
 	uniqueIDs := make(map[string]bool)
 	uniqueIDSlice := make([]string, 0)
 
-	for _, id := range ids {
+	for _, id := range arr {
 		_, ok := uniqueIDs[id]
 		if !ok && id != "" {
 			uniqueIDs[id] = true
@@ -140,6 +140,35 @@ func RemoveDuplicates(ids []string) []string {
 	}
 
 	return uniqueIDSlice
+}
+
+// RemoveDuplicatesToNumber 数组内字符串分隔去重转为整型数组
+func RemoveDuplicatesToNumber(keyStr, sep string) []int64 {
+	arr := make([]int64, 0)
+	if keyStr == "" {
+		return arr
+	}
+	if strings.Contains(keyStr, sep) {
+		// 处理字符转数组后去重
+		strArr := strings.Split(keyStr, sep)
+		uniqueKeys := make(map[string]bool)
+		for _, str := range strArr {
+			_, ok := uniqueKeys[str]
+			if !ok && str != "" {
+				uniqueKeys[str] = true
+				val := Number(str)
+				if val != 0 {
+					arr = append(arr, val)
+				}
+			}
+		}
+	} else {
+		val := Number(keyStr)
+		if val != 0 {
+			arr = append(arr, val)
+		}
+	}
+	return arr
 }
 
 // Color 解析颜色 #fafafa

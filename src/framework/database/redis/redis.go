@@ -316,8 +316,7 @@ func Del(source string, key string) error {
 	}
 
 	ctx := context.Background()
-	err := rdb.Del(ctx, key).Err()
-	if err != nil {
+	if err := rdb.Del(ctx, key).Err(); err != nil {
 		logger.Errorf("redis Del err %v", err)
 		return err
 	}
@@ -337,8 +336,7 @@ func DelKeys(source string, keys []string) error {
 	}
 
 	ctx := context.Background()
-	err := rdb.Del(ctx, keys...).Err()
-	if err != nil {
+	if err := rdb.Del(ctx, keys...).Err(); err != nil {
 		logger.Errorf("redis DelKeys err %v", err)
 		return err
 	}

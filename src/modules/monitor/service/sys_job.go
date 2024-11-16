@@ -29,20 +29,20 @@ func (s SysJob) Find(sysJob model.SysJob) []model.SysJob {
 }
 
 // FindById 通过ID查询
-func (s SysJob) FindById(jobId string) model.SysJob {
-	if jobId == "" {
+func (s SysJob) FindById(jobId int64) model.SysJob {
+	if jobId == 0 {
 		return model.SysJob{}
 	}
-	if jobs := s.sysJobRepository.SelectByIds([]string{jobId}); len(jobs) > 0 {
+	if jobs := s.sysJobRepository.SelectByIds([]int64{jobId}); len(jobs) > 0 {
 		return jobs[0]
 	}
 	return model.SysJob{}
 }
 
 // Insert 新增调度任务信息
-func (s SysJob) Insert(sysJob model.SysJob) string {
+func (s SysJob) Insert(sysJob model.SysJob) int64 {
 	insertId := s.sysJobRepository.Insert(sysJob)
-	if insertId == "" && sysJob.Status == constSystem.STATUS_YES {
+	if insertId == 0 && sysJob.StatusFlag == constSystem.STATUS_YES {
 		sysJob.JobId = insertId
 		s.insertQueueJob(sysJob, true)
 	}
@@ -54,11 +54,11 @@ func (s SysJob) Update(sysJob model.SysJob) int64 {
 	rows := s.sysJobRepository.Update(sysJob)
 	if rows > 0 {
 		//状态正常添加队列任务
-		if sysJob.Status == constSystem.STATUS_YES {
+		if sysJob.StatusFlag == constSystem.STATUS_YES {
 			s.insertQueueJob(sysJob, true)
 		}
 		// 状态禁用删除队列任务
-		if sysJob.Status == constSystem.STATUS_NO {
+		if sysJob.StatusFlag == constSystem.STATUS_NO {
 			s.deleteQueueJob(sysJob)
 		}
 	}
@@ -66,7 +66,7 @@ func (s SysJob) Update(sysJob model.SysJob) int64 {
 }
 
 // DeleteByIds 批量删除
-func (s SysJob) DeleteByIds(jobIds []string) (int64, error) {
+func (s SysJob) DeleteByIds(jobIds []int64) (int64, error) {
 	// 检查是否存在
 	jobs := s.sysJobRepository.SelectByIds(jobIds)
 	if len(jobs) <= 0 {
@@ -83,7 +83,7 @@ func (s SysJob) DeleteByIds(jobIds []string) (int64, error) {
 }
 
 // CheckUniqueByJobName 校验调度任务名称和组是否唯一
-func (s SysJob) CheckUniqueByJobName(jobName, jobGroup, jobId string) bool {
+func (s SysJob) CheckUniqueByJobName(jobName, jobGroup string, jobId int64) bool {
 	uniqueId := s.sysJobRepository.CheckUniqueJob(model.SysJob{
 		JobName:  jobName,
 		JobGroup: jobGroup,
@@ -91,7 +91,7 @@ func (s SysJob) CheckUniqueByJobName(jobName, jobGroup, jobId string) bool {
 	if uniqueId == jobId {
 		return true
 	}
-	return uniqueId == ""
+	return uniqueId == 0
 }
 
 // Run 立即运行一次调度任务
@@ -150,7 +150,7 @@ func (s SysJob) Reset() {
 	}
 	// 查询系统中定义状态为正常启用的任务
 	sysJobs := s.sysJobRepository.Select(model.SysJob{
-		Status: constSystem.STATUS_YES,
+		StatusFlag: constSystem.STATUS_YES,
 	})
 	for _, sysJob := range sysJobs {
 		for _, name := range queueNames {

@@ -1,304 +1,174 @@
 package repository
 
 import (
-	"fmt"
-	db "mask_api_gin/src/framework/data_source"
+	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/date"
-	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
-	"strings"
 	"time"
 )
 
 // NewSysDictType 实例化数据层
-var NewSysDictType = &SysDictType{
-	sql: `select 
-	dict_id, dict_name, dict_type, status, create_by, create_time, remark 
-	from sys_dict_type`,
-}
+var NewSysDictType = &SysDictType{}
 
 // SysDictType 字典类型表 数据层处理
-type SysDictType struct {
-	sql string // 查询视图对象SQL
-}
+type SysDictType struct{}
 
 // SelectByPage 分页查询集合
 func (r SysDictType) SelectByPage(query map[string]any) ([]model.SysDictType, int64) {
+	tx := db.DB("").Model(&model.SysDictType{})
+	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
-	var conditions []string
-	var params []any
 	if v, ok := query["dictName"]; ok && v != "" {
-		conditions = append(conditions, "dict_name like concat(?, '%')")
-		params = append(params, v)
+		tx = tx.Where("dict_name like concat(?, '%')", v)
 	}
 	if v, ok := query["dictType"]; ok && v != "" {
-		conditions = append(conditions, "dict_type like concat(?, '%')")
-		params = append(params, v)
+		tx = tx.Where("dict_type like concat(?, '%')", v)
 	}
-	if v, ok := query["status"]; ok && v != "" {
-		conditions = append(conditions, "status = ?")
-		params = append(params, v)
-	}
-	beginTime, ok := query["beginTime"]
-	if !ok {
-		beginTime, ok = query["params[beginTime]"]
-	}
-	if ok && beginTime != "" {
-		conditions = append(conditions, "create_time >= ?")
-		beginDate := date.ParseStrToDate(beginTime.(string), date.YYYY_MM_DD)
-		params = append(params, beginDate.UnixMilli())
-	}
-	endTime, ok := query["endTime"]
-	if !ok {
-		endTime, ok = query["params[endTime]"]
-	}
-	if ok && endTime != "" {
-		conditions = append(conditions, "create_time <= ?")
-		endDate := date.ParseStrToDate(endTime.(string), date.YYYY_MM_DD)
-		params = append(params, endDate.UnixMilli())
-	}
-
-	// 构建查询条件语句
-	whereSql := ""
-	if len(conditions) > 0 {
-		whereSql += " where " + strings.Join(conditions, " and ")
+	if v, ok := query["statusFlag"]; ok && v != "" {
+		tx = tx.Where("status_flag = ?", v)
 	}
 
 	// 查询结果
-	total := int64(0)
-	arr := []model.SysDictType{}
+	var total int64 = 0
+	rows := []model.SysDictType{}
 
-	// 查询数量 长度为0直接返回
-	totalSql := "select count(1) as 'total' from sys_dict_type"
-	totalRows, err := db.RawDB("", totalSql+whereSql, params)
-	if err != nil {
-		logger.Errorf("total err => %v", err)
-		return arr, total
-	}
-	total = parse.Number(totalRows[0]["total"])
-	if total <= 0 {
-		return arr, total
+	// 查询数量为0直接返回
+	if err := tx.Count(&total).Error; err != nil || total <= 0 {
+		return rows, total
 	}
 
-	// 分页
+	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
-	pageSql := " limit ?,? "
-	params = append(params, pageNum*pageSize)
-	params = append(params, pageSize)
-
-	// 查询数据
-	querySql := r.sql + whereSql + pageSql
-	rows, err := db.RawDB("", querySql, params)
+	err := tx.Limit(pageSize).Offset(pageSize * pageNum).Find(&rows).Error
 	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return arr, total
+		logger.Errorf("query find err => %v", err.Error())
+		return rows, total
 	}
-
-	// 转换实体
-	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("unmarshal err => %v", err)
-	}
-	return arr, total
+	return rows, total
 }
 
 // Select 查询集合
 func (r SysDictType) Select(sysDictType model.SysDictType) []model.SysDictType {
+	tx := db.DB("").Model(&model.SysDictType{})
+	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
-	var conditions []string
-	var params []any
 	if sysDictType.DictName != "" {
-		conditions = append(conditions, "dict_name like concat(?, '%')")
-		params = append(params, sysDictType.DictName)
+		tx = tx.Where("dict_name like concat(?, '%')", sysDictType.DictName)
 	}
 	if sysDictType.DictType != "" {
-		conditions = append(conditions, "dict_type like concat(?, '%')")
-		params = append(params, sysDictType.DictType)
+		tx = tx.Where("dict_type like concat(?, '%')", sysDictType.DictType)
 	}
-	if sysDictType.Status != "" {
-		conditions = append(conditions, "status = ?")
-		params = append(params, sysDictType.Status)
-	}
-
-	// 构建查询条件语句
-	whereSql := ""
-	if len(conditions) > 0 {
-		whereSql += " where " + strings.Join(conditions, " and ")
+	if sysDictType.StatusFlag != "" {
+		tx = tx.Where("status_flag = ?", sysDictType.StatusFlag)
 	}
 
 	// 查询数据
-	querySql := r.sql + whereSql
-	rows, err := db.RawDB("", querySql, params)
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return []model.SysDictType{}
-	}
-
-	// 转换实体
-	arr := []model.SysDictType{}
-	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("unmarshal err => %v", err)
-	}
-	return arr
-}
-
-// SelectByIds 通过ID查询信息
-func (r SysDictType) SelectByIds(dictIds []string) []model.SysDictType {
-	placeholder := db.KeyPlaceholderByQuery(len(dictIds))
-	querySql := r.sql + " where dict_id in (" + placeholder + ")"
-	parameters := db.ConvertIdsSlice(dictIds)
-	rows, err := db.RawDB("", querySql, parameters)
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return []model.SysDictType{}
-	}
-	// 转换实体
-	arr := []model.SysDictType{}
-	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("unmarshal err => %v", err)
-	}
-	return arr
-}
-
-// Insert 新增信息
-func (r SysDictType) Insert(sysDictType model.SysDictType) string {
-	// 参数拼接
-	params := make(map[string]any)
-	if sysDictType.DictName != "" {
-		params["dict_name"] = sysDictType.DictName
-	}
-	if sysDictType.DictType != "" {
-		params["dict_type"] = sysDictType.DictType
-	}
-	if sysDictType.Status != "" {
-		params["status"] = sysDictType.Status
-	}
-	if sysDictType.Remark != "" {
-		params["remark"] = sysDictType.Remark
-	}
-	if sysDictType.CreateBy != "" {
-		params["create_by"] = sysDictType.CreateBy
-		params["create_time"] = time.Now().UnixMilli()
-	}
-
-	// 构建执行语句
-	keys, values, placeholder := db.KeyValuePlaceholderByInsert(params)
-	sql := "insert into sys_dict_type (" + keys + ")values(" + placeholder + ")"
-
-	tx := db.DB("").Begin() // 开启事务
-	// 执行插入
-	if err := tx.Exec(sql, values...).Error; err != nil {
-		logger.Errorf("insert row : %v", err.Error())
-		tx.Rollback()
-		return ""
-	}
-	// 获取生成的自增 ID
-	var insertedID string
-	if err := tx.Raw("select last_insert_id()").Row().Scan(&insertedID); err != nil {
-		logger.Errorf("insert last id : %v", err.Error())
-		tx.Rollback()
-		return ""
-	}
-	tx.Commit() // 提交事务
-	return insertedID
-}
-
-// Update 修改信息
-func (r SysDictType) Update(sysDictType model.SysDictType) int64 {
-	// 参数拼接
-	params := make(map[string]any)
-	if sysDictType.DictName != "" {
-		params["dict_name"] = sysDictType.DictName
-	}
-	if sysDictType.DictType != "" {
-		params["dict_type"] = sysDictType.DictType
-	}
-	if sysDictType.Status != "" {
-		params["status"] = sysDictType.Status
-	}
-	params["remark"] = sysDictType.Remark
-	if sysDictType.UpdateBy != "" {
-		params["update_by"] = sysDictType.UpdateBy
-		params["update_time"] = time.Now().UnixMilli()
-	}
-
-	// 构建执行语句
-	keys, values := db.KeyValueByUpdate(params)
-	sql := fmt.Sprintf("update sys_dict_type set %s where dict_id = ?", keys)
-
-	// 执行更新
-	values = append(values, sysDictType.DictId)
-	rows, err := db.ExecDB("", sql, values)
-	if err != nil {
-		logger.Errorf("update row : %v", err.Error())
-		return 0
+	rows := []model.SysDictType{}
+	if err := tx.Find(&rows).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return rows
 	}
 	return rows
 }
 
-// DeleteByIds 批量删除信息
-func (r SysDictType) DeleteByIds(dictIds []string) int64 {
-	placeholder := db.KeyPlaceholderByQuery(len(dictIds))
-	sql := fmt.Sprintf("delete from sys_dict_type where dict_id in (%s)", placeholder)
-	parameters := db.ConvertIdsSlice(dictIds)
-	results, err := db.ExecDB("", sql, parameters)
-	if err != nil {
-		logger.Errorf("delete err => %v", err)
-		return 0
+// SelectByIds 通过ID查询信息
+func (r SysDictType) SelectByIds(dictIds []int64) []model.SysDictType {
+	rows := []model.SysDictType{}
+	if len(dictIds) <= 0 {
+		return rows
 	}
-	return results
+	tx := db.DB("").Model(&model.SysDictType{})
+	// 构建查询条件
+	tx = tx.Where("dict_id in ? and del_flag = '0'", dictIds)
+	// 查询数据
+	if err := tx.Find(&rows).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return rows
+	}
+	return rows
 }
 
-// CheckUnique 检查信息是否唯一
-func (r SysDictType) CheckUnique(sysDictType model.SysDictType) string {
+// Insert 新增信息 返回新增数据ID
+func (r SysDictType) Insert(sysDictType model.SysDictType) int64 {
+	sysDictType.DelFlag = "0"
+	if sysDictType.CreateBy != "" {
+		sysDictType.CreateTime = time.Now().UnixMilli()
+	}
+	// 执行插入
+	if err := db.DB("").Create(&sysDictType).Error; err != nil {
+		logger.Errorf("insert err => %v", err.Error())
+		return 0
+	}
+	return sysDictType.DictId
+}
+
+// Update 修改信息 返回受影响的行数
+func (r SysDictType) Update(sysDictType model.SysDictType) int64 {
+	if sysDictType.DictId <= 0 {
+		return 0
+	}
+	if sysDictType.UpdateBy != "" {
+		sysDictType.UpdateTime = time.Now().UnixMilli()
+	}
+	tx := db.DB("").Model(&model.SysDictType{})
+	// 构建查询条件
+	tx = tx.Where("dict_id = ?", sysDictType.DictId)
+	// 执行更新
+	if err := tx.Updates(sysDictType).Error; err != nil {
+		logger.Errorf("update err => %v", err.Error())
+		return 0
+	}
+	return tx.RowsAffected
+}
+
+// DeleteByIds 批量删除信息 返回受影响的行数
+func (r SysDictType) DeleteByIds(dictIds []int64) int64 {
+	if len(dictIds) <= 0 {
+		return 0
+	}
+	tx := db.DB("").Model(&model.SysDictType{})
+	// 构建查询条件
+	tx = tx.Where("dict_id in ?", dictIds)
+	// 执行更新删除标记
+	if err := tx.Update("del_flag", "1").Error; err != nil {
+		logger.Errorf("update err => %v", err.Error())
+		return 0
+	}
+	return tx.RowsAffected
+}
+
+// CheckUnique 检查信息是否唯一 返回数据ID
+func (r SysDictType) CheckUnique(sysDictType model.SysDictType) int64 {
+	tx := db.DB("").Model(&model.SysDictType{})
+	tx = tx.Where("del_flag = 0")
 	// 查询条件拼接
-	var conditions []string
-	var params []any
 	if sysDictType.DictName != "" {
-		conditions = append(conditions, "dict_name = ?")
-		params = append(params, sysDictType.DictName)
+		tx = tx.Where("dict_name = ?", sysDictType.DictName)
 	}
 	if sysDictType.DictType != "" {
-		conditions = append(conditions, "dict_type = ?")
-		params = append(params, sysDictType.DictType)
+		tx = tx.Where("dict_type = ?", sysDictType.DictType)
 	}
-
-	// 构建查询条件语句
-	whereSql := ""
-	if len(conditions) > 0 {
-		whereSql += " where " + strings.Join(conditions, " and ")
-	} else {
-		return "-"
-	}
-
 	// 查询数据
-	querySql := fmt.Sprintf("select dict_id as 'str' from sys_dict_type %s limit 1", whereSql)
-	results, err := db.RawDB("", querySql, params)
-	if err != nil {
-		logger.Errorf("query err %v", err)
-		return "-"
+	var id int64 = 0
+	if err := tx.Select("dict_id").Limit(1).Find(&id).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return id
 	}
-	if len(results) > 0 {
-		return fmt.Sprint(results[0]["str"])
-	}
-	return ""
+	return id
 }
 
 // SelectByType 通过字典类型查询信息
 func (r SysDictType) SelectByType(dictType string) model.SysDictType {
-	querySql := r.sql + " where dict_type = ?"
-	rows, err := db.RawDB("", querySql, []any{dictType})
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return model.SysDictType{}
+	item := model.SysDictType{}
+	if dictType == "" {
+		return item
 	}
-	// 转换实体
-	arr := []model.SysDictType{}
-	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("unmarshal err => %v", err)
+	tx := db.DB("").Model(&model.SysDictType{})
+	tx.Where("dict_type = ? and del_flag = '0'", dictType)
+	// 查询数据
+	if err := tx.Limit(1).Find(&item).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return item
 	}
-	if len(arr) > 0 {
-		return arr[0]
-	}
-	return model.SysDictType{}
+	return item
 }

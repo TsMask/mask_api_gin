@@ -27,11 +27,11 @@ func (s SysNotice) Find(sysNotice model.SysNotice) []model.SysNotice {
 }
 
 // FindById 通过ID查询信息
-func (s SysNotice) FindById(noticeId string) model.SysNotice {
-	if noticeId == "" {
+func (s SysNotice) FindById(noticeId int64) model.SysNotice {
+	if noticeId == 0 {
 		return model.SysNotice{}
 	}
-	configs := s.sysNoticeRepository.SelectByIds([]string{noticeId})
+	configs := s.sysNoticeRepository.SelectByIds([]int64{noticeId})
 	if len(configs) > 0 {
 		return configs[0]
 	}
@@ -39,7 +39,7 @@ func (s SysNotice) FindById(noticeId string) model.SysNotice {
 }
 
 // Insert 新增信息
-func (s SysNotice) Insert(sysNotice model.SysNotice) string {
+func (s SysNotice) Insert(sysNotice model.SysNotice) int64 {
 	return s.sysNoticeRepository.Insert(sysNotice)
 }
 
@@ -49,7 +49,7 @@ func (s SysNotice) Update(sysNotice model.SysNotice) int64 {
 }
 
 // DeleteByIds 批量删除信息
-func (s SysNotice) DeleteByIds(noticeIds []string) (int64, error) {
+func (s SysNotice) DeleteByIds(noticeIds []int64) (int64, error) {
 	// 检查是否存在
 	notices := s.sysNoticeRepository.SelectByIds(noticeIds)
 	if len(notices) <= 0 {
@@ -58,7 +58,7 @@ func (s SysNotice) DeleteByIds(noticeIds []string) (int64, error) {
 	for _, notice := range notices {
 		// 检查是否为已删除
 		if notice.DelFlag == "1" {
-			return 0, fmt.Errorf(notice.NoticeId + " 公告信息已经删除！")
+			return 0, fmt.Errorf("%d 公告信息已经删除！", notice.NoticeId)
 		}
 	}
 	if len(notices) == len(noticeIds) {

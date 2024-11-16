@@ -7,5 +7,4 @@ type RegisterBody struct {
 	ConfirmPassword string `json:"confirmPassword" binding:"required"` // 用户确认密码
 	Code            string `json:"code"`                               // 验证码
 	UUID            string `json:"uuid"`                               // 验证码唯一标识
-	UserType        string `json:"userType"`                           // 标记用户类型
 }

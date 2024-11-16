@@ -13,20 +13,20 @@ type SysUserOnline struct{}
 
 // LoginUserToUserOnline 在线用户信息
 func (s SysUserOnline) LoginUserToUserOnline(loginUser vo.LoginUser) model.SysUserOnline {
-	if loginUser.UserID == "" {
+	if loginUser.UserId == 0 {
 		return model.SysUserOnline{}
 	}
 
 	sysUserOnline := model.SysUserOnline{
 		TokenID:       loginUser.UUID,
 		UserName:      loginUser.User.UserName,
-		IPAddr:        loginUser.IPAddr,
+		LoginIp:       loginUser.LoginIp,
 		LoginLocation: loginUser.LoginLocation,
 		Browser:       loginUser.Browser,
 		OS:            loginUser.OS,
 		LoginTime:     loginUser.LoginTime,
 	}
-	if loginUser.User.DeptId != "" {
+	if loginUser.User.DeptId != 0 {
 		sysUserOnline.DeptName = loginUser.User.Dept.DeptName
 	}
 	return sysUserOnline

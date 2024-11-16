@@ -2,15 +2,14 @@ package controller
 
 import (
 	"fmt"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/vo/result"
 	commonService "mask_api_gin/src/modules/common/service"
 	"mask_api_gin/src/modules/system/service"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -36,33 +35,7 @@ type SysLogLoginController struct {
 func (s SysLogLoginController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	rows, total := s.sysLogLoginService.FindByPage(query)
-	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
-}
-
-// Remove 系统登录日志删除
-//
-// DELETE /:infoIds
-func (s SysLogLoginController) Remove(c *gin.Context) {
-	infoIds := c.Param("infoIds")
-	if infoIds == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
-		return
-	}
-
-	// 处理字符转id数组后去重
-	ids := strings.Split(infoIds, ",")
-	uniqueIDs := parse.RemoveDuplicates(ids)
-	if len(uniqueIDs) <= 0 {
-		c.JSON(200, result.Err(nil))
-		return
-	}
-	rows := s.sysLogLoginService.DeleteByIds(uniqueIDs)
-	if rows > 0 {
-		msg := fmt.Sprintf("删除成功：%d", rows)
-		c.JSON(200, result.OkMsg(msg))
-		return
-	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Clean 系统登录日志清空
@@ -71,38 +44,40 @@ func (s SysLogLoginController) Remove(c *gin.Context) {
 func (s SysLogLoginController) Clean(c *gin.Context) {
 	err := s.sysLogLoginService.Clean()
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
-	c.JSON(200, result.Ok(nil))
+	c.JSON(200, response.Ok(nil))
 }
 
 // Unlock 系统登录日志账户解锁
 //
-// PUT /unlock/:userName
+// PUT /unlock/:userId
 func (s SysLogLoginController) Unlock(c *gin.Context) {
-	userName := c.Param("userName")
-	if userName == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	userIdStr := c.Param("userId")
+	userId := parse.Number(userIdStr)
+	if userIdStr == "" || userId <= 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
-	ok := s.accountService.CleanLoginRecordCache(userName)
+
+	ok := s.accountService.CleanLoginRecordCache(userId)
 	if ok {
-		c.JSON(200, result.Ok(nil))
+		c.JSON(200, response.Ok(nil))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Export 导出系统登录日志信息
 //
-// POST /export
+// GET /export
 func (s SysLogLoginController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	query := ctx.BodyJSONMap(c)
+	query := ctx.QueryMap(c)
 	rows, total := s.sysLogLoginService.FindByPage(query)
 	if total == 0 {
-		c.JSON(200, result.ErrMsg("导出数据记录为空"))
+		c.JSON(200, response.CodeMsg(40016, "export data record as empty"))
 		return
 	}
 
@@ -126,14 +101,14 @@ func (s SysLogLoginController) Export(c *gin.Context) {
 		idx := strconv.Itoa(i + 2)
 		// 状态
 		statusValue := "失败"
-		if row.Status == "1" {
+		if row.StatusFlag == "1" {
 			statusValue = "成功"
 		}
 		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.LoginId,
+			"A" + idx: row.ID,
 			"B" + idx: row.UserName,
 			"C" + idx: statusValue,
-			"D" + idx: row.IPAddr,
+			"D" + idx: row.LoginIp,
 			"E" + idx: row.LoginLocation,
 			"F" + idx: row.Browser,
 			"G" + idx: row.OS,
@@ -145,7 +120,7 @@ func (s SysLogLoginController) Export(c *gin.Context) {
 	// 导出数据表格
 	saveFilePath, err := file.WriteSheet(headerCells, dataCells, fileName, "")
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
 

@@ -20,24 +20,9 @@ func (s SysLogOperate) FindByPage(query map[string]any) ([]model.SysLogOperate, 
 	return s.SysLogOperate.SelectByPage(query)
 }
 
-// Find 查询数据
-func (s SysLogOperate) Find(SysLogOperate model.SysLogOperate) []model.SysLogOperate {
-	return s.SysLogOperate.Select(SysLogOperate)
-}
-
-// FindById 根据ID查询信息
-func (s SysLogOperate) FindById(operaId string) model.SysLogOperate {
-	return s.SysLogOperate.SelectById(operaId)
-}
-
 // Insert 新增信息
-func (s SysLogOperate) Insert(SysLogOperate model.SysLogOperate) string {
+func (s SysLogOperate) Insert(SysLogOperate model.SysLogOperate) int64 {
 	return s.SysLogOperate.Insert(SysLogOperate)
-}
-
-// DeleteById 删除信息
-func (s SysLogOperate) DeleteById(operaIds []string) int64 {
-	return s.SysLogOperate.DeleteByIds(operaIds)
 }
 
 // Clean 清空操作日志

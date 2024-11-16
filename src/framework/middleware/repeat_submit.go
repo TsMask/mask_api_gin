@@ -3,11 +3,11 @@ package middleware
 import (
 	"encoding/json"
 	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
+	"mask_api_gin/src/framework/database/redis"
+	"mask_api_gin/src/framework/ip2region"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/redis"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
-	"mask_api_gin/src/framework/utils/ip2region"
-	"mask_api_gin/src/framework/vo/result"
 	"strconv"
 	"time"
 
@@ -24,7 +24,7 @@ type repeatParam struct {
 //
 // 间隔时间(单位秒) 默认:5
 //
-// 注意之后JSON反序列使用：c.ShouldBindBodyWith(&params, binding.JSON)
+// 注意之后JSON反序列使用：c.ShouldBindBodyWithJSON(&params)
 func RepeatSubmit(interval int64) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if interval < 5 {
@@ -59,7 +59,7 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 
 			// 小于间隔时间且参数内容一致
 			if compareTime < interval && compareParams {
-				c.JSON(200, result.ErrMsg("不允许重复提交，请稍候再试"))
+				c.JSON(200, response.ErrMsg("不允许重复提交，请稍候再试"))
 				c.Abort()
 				return
 			}

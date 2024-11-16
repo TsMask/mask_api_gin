@@ -16,10 +16,10 @@ func Setup(router *gin.Engine) {
 	{
 		ormGroup.GET("/list", controller.NewDemoORM.List)
 		ormGroup.GET("/all", controller.NewDemoORM.All)
-		ormGroup.GET("", controller.NewDemoORM.Info)
+		ormGroup.GET("/:id", controller.NewDemoORM.Info)
 		ormGroup.POST("", controller.NewDemoORM.Add)
 		ormGroup.PUT("", controller.NewDemoORM.Edit)
-		ormGroup.DELETE("", controller.NewDemoORM.Remove)
+		ormGroup.DELETE("/:id", controller.NewDemoORM.Remove)
 		ormGroup.DELETE("/clean", controller.NewDemoORM.Clean)
 	}
 }

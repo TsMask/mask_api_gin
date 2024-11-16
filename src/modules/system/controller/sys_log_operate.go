@@ -2,14 +2,12 @@ package controller
 
 import (
 	"fmt"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
-	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/system/service"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -33,33 +31,7 @@ type SysLogOperateController struct {
 func (s SysLogOperateController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	rows, total := s.SysLogOperateService.FindByPage(query)
-	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
-}
-
-// Remove 操作日志删除
-//
-// DELETE /:operaIds
-func (s SysLogOperateController) Remove(c *gin.Context) {
-	operaIds := c.Param("operaIds")
-	if operaIds == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
-		return
-	}
-
-	// 处理字符转id数组后去重
-	ids := strings.Split(operaIds, ",")
-	uniqueIDs := parse.RemoveDuplicates(ids)
-	if len(uniqueIDs) <= 0 {
-		c.JSON(200, result.Err(nil))
-		return
-	}
-	rows := s.SysLogOperateService.DeleteById(uniqueIDs)
-	if rows > 0 {
-		msg := fmt.Sprintf("删除成功：%d", rows)
-		c.JSON(200, result.OkMsg(msg))
-		return
-	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Clean 操作日志清空
@@ -68,21 +40,21 @@ func (s SysLogOperateController) Remove(c *gin.Context) {
 func (s SysLogOperateController) Clean(c *gin.Context) {
 	err := s.SysLogOperateService.Clean()
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
-	c.JSON(200, result.Ok(nil))
+	c.JSON(200, response.Ok(nil))
 }
 
 // Export 导出操作日志
 //
-// POST /export
+// GET /export
 func (s SysLogOperateController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	query := ctx.BodyJSONMap(c)
+	query := ctx.QueryMap(c)
 	rows, total := s.SysLogOperateService.FindByPage(query)
 	if total == 0 {
-		c.JSON(200, result.ErrMsg("导出数据记录为空"))
+		c.JSON(200, response.CodeMsg(40016, "export data record as empty"))
 		return
 	}
 
@@ -117,18 +89,17 @@ func (s SysLogOperateController) Export(c *gin.Context) {
 		operatorType := ""
 		// 状态
 		statusValue := "失败"
-		if row.Status == "1" {
+		if row.StatusFlag == "1" {
 			statusValue = "成功"
 		}
 		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.OperaId,
+			"A" + idx: row.ID,
 			"B" + idx: row.Title,
 			"C" + idx: businessType,
-			"D" + idx: row.Method,
-			"E" + idx: row.RequestMethod,
+			"D" + idx: row.OperaMethod,
+			"E" + idx: row.OperaUrlMethod,
 			"F" + idx: operatorType,
-			"G" + idx: row.OperaName,
-			"H" + idx: row.DeptName,
+			"G" + idx: row.OperaBy,
 			"I" + idx: row.OperaUrl,
 			"J" + idx: row.OperaIp,
 			"K" + idx: row.OperaLocation,
@@ -143,7 +114,7 @@ func (s SysLogOperateController) Export(c *gin.Context) {
 	// 导出数据表格
 	saveFilePath, err := file.WriteSheet(headerCells, dataCells, fileName, "")
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
 

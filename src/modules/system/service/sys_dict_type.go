@@ -5,7 +5,7 @@ import (
 	"fmt"
 	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
 	constSystem "mask_api_gin/src/framework/constants/system"
-	"mask_api_gin/src/framework/redis"
+	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )
@@ -33,11 +33,11 @@ func (s SysDictType) Find(sysDictType model.SysDictType) []model.SysDictType {
 }
 
 // FindById 通过ID查询信息
-func (s SysDictType) FindById(dictId string) model.SysDictType {
-	if dictId == "" {
+func (s SysDictType) FindById(dictId int64) model.SysDictType {
+	if dictId == 0 {
 		return model.SysDictType{}
 	}
-	dictTypes := s.sysDictTypeRepository.SelectByIds([]string{dictId})
+	dictTypes := s.sysDictTypeRepository.SelectByIds([]int64{dictId})
 	if len(dictTypes) > 0 {
 		return dictTypes[0]
 	}
@@ -50,9 +50,9 @@ func (s SysDictType) FindByType(dictType string) model.SysDictType {
 }
 
 // Insert 新增信息
-func (s SysDictType) Insert(sysDictType model.SysDictType) string {
+func (s SysDictType) Insert(sysDictType model.SysDictType) int64 {
 	insertId := s.sysDictTypeRepository.Insert(sysDictType)
-	if insertId != "" {
+	if insertId > 0 {
 		s.CacheLoad(sysDictType.DictType)
 	}
 	return insertId
@@ -60,7 +60,7 @@ func (s SysDictType) Insert(sysDictType model.SysDictType) string {
 
 // Update 修改信息
 func (s SysDictType) Update(sysDictType model.SysDictType) int64 {
-	arr := s.sysDictTypeRepository.SelectByIds([]string{sysDictType.DictId})
+	arr := s.sysDictTypeRepository.SelectByIds([]int64{sysDictType.DictId})
 	if len(arr) == 0 {
 		return 0
 	}
@@ -76,7 +76,7 @@ func (s SysDictType) Update(sysDictType model.SysDictType) int64 {
 }
 
 // DeleteByIds 批量删除信息
-func (s SysDictType) DeleteByIds(dictIds []string) (int64, error) {
+func (s SysDictType) DeleteByIds(dictIds []int64) (int64, error) {
 	// 检查是否存在
 	arr := s.sysDictTypeRepository.SelectByIds(dictIds)
 	if len(arr) <= 0 {
@@ -97,25 +97,25 @@ func (s SysDictType) DeleteByIds(dictIds []string) (int64, error) {
 }
 
 // CheckUniqueByName 检查字典名称是否唯一
-func (s SysDictType) CheckUniqueByName(dictName, dictId string) bool {
+func (s SysDictType) CheckUniqueByName(dictName string, dictId int64) bool {
 	uniqueId := s.sysDictTypeRepository.CheckUnique(model.SysDictType{
 		DictName: dictName,
 	})
 	if uniqueId == dictId {
 		return true
 	}
-	return uniqueId == ""
+	return uniqueId == 0
 }
 
 // CheckUniqueByType 检查字典类型是否唯一
-func (s SysDictType) CheckUniqueByType(dictType, dictId string) bool {
+func (s SysDictType) CheckUniqueByType(dictType string, dictId int64) bool {
 	uniqueId := s.sysDictTypeRepository.CheckUnique(model.SysDictType{
 		DictType: dictType,
 	})
 	if uniqueId == dictId {
 		return true
 	}
-	return uniqueId == ""
+	return uniqueId == 0
 }
 
 // getCacheKey 组装缓存key
@@ -126,8 +126,8 @@ func (s SysDictType) getCacheKey(dictType string) string {
 // CacheLoad 加载字典缓存数据 传入*查询全部
 func (s SysDictType) CacheLoad(dictType string) {
 	sysDictData := model.SysDictData{
-		DictType: dictType,
-		Status:   constSystem.STATUS_YES,
+		DictType:   dictType,
+		StatusFlag: constSystem.STATUS_YES,
 	}
 
 	// 指定字典类型
@@ -181,8 +181,8 @@ func (s SysDictType) FindDataByType(dictType string) []model.SysDictData {
 		}
 	} else {
 		data = s.sysDictDataRepository.Select(model.SysDictData{
-			Status:   constSystem.STATUS_YES,
-			DictType: dictType,
+			StatusFlag: constSystem.STATUS_YES,
+			DictType:   dictType,
 		})
 		if len(data) > 0 {
 			_ = redis.Del("", key)

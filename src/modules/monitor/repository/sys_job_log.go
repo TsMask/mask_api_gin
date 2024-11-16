@@ -2,254 +2,133 @@ package repository
 
 import (
 	"fmt"
-	db "mask_api_gin/src/framework/data_source"
+	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
-	"mask_api_gin/src/framework/utils/parse"
 
 	"mask_api_gin/src/modules/monitor/model"
-	"strings"
-	"time"
 )
 
 // NewSysJobLog 实例化数据层
-var NewSysJobLog = &SysJobLog{
-	selectSql: `select 
-    job_log_id, job_name, job_group, 
-    invoke_target, target_params, job_msg, 
-    status, create_time, cost_time 
-	from sys_job_log`,
-
-	resultMap: map[string]string{
-		"job_log_id":    "JobLogID",
-		"job_name":      "JobName",
-		"job_group":     "JobGroup",
-		"invoke_target": "InvokeTarget",
-		"target_params": "TargetParams",
-		"job_msg":       "JobMsg",
-		"status":        "Status",
-		"create_time":   "CreateTime",
-		"cost_time":     "CostTime",
-	},
-}
+var NewSysJobLog = &SysJobLog{}
 
 // SysJobLog 调度任务日志表 数据层处理
-type SysJobLog struct {
-	// 查询视图对象SQL
-	selectSql string
-	// 结果字段与实体映射
-	resultMap map[string]string
-}
+type SysJobLog struct{}
 
 // SelectByPage 分页查询集合
 func (r SysJobLog) SelectByPage(query map[string]any) ([]model.SysJobLog, int64) {
+	tx := db.DB("").Model(&model.SysJobLog{})
 	// 查询条件拼接
-	var conditions []string
-	var params []any
 	if v, ok := query["jobName"]; ok && v != "" {
-		conditions = append(conditions, "job_name = ?")
-		params = append(params, v)
+		tx = tx.Where("job_name = ?", v)
 	}
 	if v, ok := query["jobGroup"]; ok && v != "" {
-		conditions = append(conditions, "job_group = ?")
-		params = append(params, v)
+		tx = tx.Where("job_group = ?", v)
 	}
-	if v, ok := query["status"]; ok && v != "" {
-		conditions = append(conditions, "status = ?")
-		params = append(params, v)
+	if v, ok := query["statusFlag"]; ok && v != "" {
+		tx = tx.Where("status_flag = ?", v)
 	}
 	if v, ok := query["invokeTarget"]; ok && v != "" {
-		conditions = append(conditions, "invoke_target like concat(?, '%')")
-		params = append(params, v)
+		tx = tx.Where("invoke_target like concat(?, '%')", v)
 	}
-	beginTime, ok := query["beginTime"]
-	if !ok {
-		beginTime, ok = query["params[beginTime]"]
+	if v, ok := query["beginTime"]; ok && v != "" {
+		tx = tx.Where("create_time >= ?", v)
 	}
-	if ok && beginTime != "" {
-		conditions = append(conditions, "create_time >= ?")
-		beginDate := date.ParseStrToDate(beginTime.(string), date.YYYY_MM_DD)
-		params = append(params, beginDate.UnixMilli())
+	if v, ok := query["endTime"]; ok && v != "" {
+		tx = tx.Where("create_time <= ?", v)
 	}
-	endTime, ok := query["endTime"]
-	if !ok {
-		endTime, ok = query["params[endTime]"]
+	if v, ok := query["params[beginTime]"]; ok && v != "" {
+		beginDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
+		tx = tx.Where("create_time >= ?", beginDate.UnixMilli())
 	}
-	if ok && endTime != "" {
-		conditions = append(conditions, "create_time <= ?")
-		endDate := date.ParseStrToDate(endTime.(string), date.YYYY_MM_DD)
-		params = append(params, endDate.UnixMilli())
-	}
-
-	// 构建查询条件语句
-	whereSql := ""
-	if len(conditions) > 0 {
-		whereSql += " where " + strings.Join(conditions, " and ")
+	if v, ok := query["params[endTime]"]; ok && v != "" {
+		endDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
+		tx = tx.Where("create_time <= ?", endDate.UnixMilli())
 	}
 
 	// 查询结果
-	total := int64(0)
-	arr := []model.SysJobLog{}
+	var total int64 = 0
+	rows := []model.SysJobLog{}
 
-	// 查询数量 长度为0直接返回
-	totalSql := "select count(1) as 'total' from sys_job_log"
-	totalRows, err := db.RawDB("", totalSql+whereSql, params)
-	if err != nil {
-		logger.Errorf("total err => %v", err)
-		return arr, total
-	}
-	total = parse.Number(totalRows[0]["total"])
-	if total <= 0 {
-		return arr, total
+	// 查询数量为0直接返回
+	if err := tx.Count(&total).Error; err != nil || total <= 0 {
+		return rows, total
 	}
 
-	// 分页
+	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
-	pageSql := " order by job_log_id desc limit ?,? "
-	params = append(params, pageNum*pageSize)
-	params = append(params, pageSize)
-
-	// 查询数据
-	querySql := r.selectSql + whereSql + pageSql
-	rows, err := db.RawDB("", querySql, params)
+	err := tx.Limit(pageSize).Offset(pageSize * pageNum).Find(&rows).Error
 	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return arr, total
+		logger.Errorf("query find err => %v", err.Error())
+		return rows, total
 	}
-
-	// 转换实体
-	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("unmarshal err => %v", err)
-	}
-	return arr, total
+	return rows, total
 }
 
 // Select 查询集合
 func (r SysJobLog) Select(sysJobLog model.SysJobLog) []model.SysJobLog {
+	tx := db.DB("").Model(&model.SysJobLog{})
 	// 查询条件拼接
-	var conditions []string
-	var params []any
 	if sysJobLog.JobName != "" {
-		conditions = append(conditions, "job_name like concat(?, '%')")
-		params = append(params, sysJobLog.JobName)
+		tx = tx.Where("job_name like concat(?, '%')", sysJobLog.JobName)
 	}
 	if sysJobLog.JobGroup != "" {
-		conditions = append(conditions, "job_group = ?")
-		params = append(params, sysJobLog.JobGroup)
+		tx = tx.Where("job_group = ?", sysJobLog.JobGroup)
 	}
-	if sysJobLog.Status != "" {
-		conditions = append(conditions, "status = ?")
-		params = append(params, sysJobLog.Status)
+	if sysJobLog.StatusFlag != "" {
+		tx = tx.Where("status_flag = ?", sysJobLog.StatusFlag)
 	}
 	if sysJobLog.InvokeTarget != "" {
-		conditions = append(conditions, "invoke_target like concat(?, '%')")
-		params = append(params, sysJobLog.InvokeTarget)
-	}
-
-	// 构建查询条件语句
-	whereSql := ""
-	if len(conditions) > 0 {
-		whereSql += " where " + strings.Join(conditions, " and ")
+		tx = tx.Where("invoke_target like concat(?, '%')", sysJobLog.InvokeTarget)
 	}
 
 	// 查询数据
-	querySql := r.selectSql + whereSql
-	rows, err := db.RawDB("", querySql, params)
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return []model.SysJobLog{}
+	rows := []model.SysJobLog{}
+	if err := tx.Find(&rows).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return rows
 	}
-
-	// 转换实体
-	arr := []model.SysJobLog{}
-	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("unmarshal err => %v", err)
-	}
-	return arr
+	return rows
 }
 
 // SelectById 通过ID查询信息
-func (r SysJobLog) SelectById(jobLogId string) model.SysJobLog {
-	querySql := r.selectSql + " where job_log_id = ?"
-	rows, err := db.RawDB("", querySql, []any{jobLogId})
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return model.SysJobLog{}
+func (r SysJobLog) SelectById(jobLogId int64) model.SysJobLog {
+	item := model.SysJobLog{}
+	if jobLogId <= 0 {
+		return item
 	}
-	// 转换实体
-	arr := []model.SysJobLog{}
-	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("unmarshal err => %v", err)
+	tx := db.DB("").Model(&model.SysJobLog{})
+	// 构建查询条件
+	tx = tx.Where("log_id = ?", jobLogId)
+	// 查询数据
+	if err := tx.Limit(1).Find(&item).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return item
 	}
-	if len(arr) > 0 {
-		return arr[0]
-	}
-	return model.SysJobLog{}
+	return item
 }
 
 // Insert 新增信息
-func (r SysJobLog) Insert(sysJobLog model.SysJobLog) string {
-	// 参数拼接
-	params := make(map[string]any)
-	params["create_time"] = time.Now().UnixMilli()
-	if sysJobLog.JobLogId != "" {
-		params["job_log_id"] = sysJobLog.JobLogId
-	}
-	if sysJobLog.JobName != "" {
-		params["job_name"] = sysJobLog.JobName
-	}
-	if sysJobLog.JobGroup != "" {
-		params["job_group"] = sysJobLog.JobGroup
-	}
-	if sysJobLog.InvokeTarget != "" {
-		params["invoke_target"] = sysJobLog.InvokeTarget
-	}
-	if sysJobLog.TargetParams != "" {
-		params["target_params"] = sysJobLog.TargetParams
-	}
-	if sysJobLog.JobMsg != "" {
-		params["job_msg"] = sysJobLog.JobMsg
-	}
-	if sysJobLog.Status != "" {
-		params["status"] = sysJobLog.Status
-	}
-	if sysJobLog.CostTime > 0 {
-		params["cost_time"] = sysJobLog.CostTime
-	}
-
-	// 构建执行语句
-	keys, values, placeholder := db.KeyValuePlaceholderByInsert(params)
-	sql := fmt.Sprintf("insert into sys_job_log (%s)values(%s)", keys, placeholder)
-
-	tx := db.DB("").Begin() // 开启事务
+func (r SysJobLog) Insert(sysJobLog model.SysJobLog) int64 {
 	// 执行插入
-	if err := tx.Exec(sql, values...).Error; err != nil {
-		logger.Errorf("insert row : %v", err.Error())
-		tx.Rollback()
-		return ""
+	if err := db.DB("").Create(&sysJobLog).Error; err != nil {
+		logger.Errorf("insert err => %v", err.Error())
+		return 0
 	}
-	// 获取生成的自增 ID
-	var insertedID string
-	if err := tx.Raw("select last_insert_id()").Row().Scan(&insertedID); err != nil {
-		logger.Errorf("insert last id : %v", err.Error())
-		tx.Rollback()
-		return ""
-	}
-	tx.Commit() // 提交事务
-	return insertedID
+	return sysJobLog.LogId
 }
 
 // DeleteByIds 批量删除信息
-func (r SysJobLog) DeleteByIds(jobLogIds []string) int64 {
-	placeholder := db.KeyPlaceholderByQuery(len(jobLogIds))
-	sql := fmt.Sprintf("delete from sys_job_log where job_log_id in (%s)", placeholder)
-	parameters := db.ConvertIdsSlice(jobLogIds)
-	results, err := db.ExecDB("", sql, parameters)
-	if err != nil {
-		logger.Errorf("delete err => %v", err)
+func (r SysJobLog) DeleteByIds(logIds []int64) int64 {
+	if len(logIds) <= 0 {
 		return 0
 	}
-	return results
+	tx := db.DB("").Where("log_id in ?", logIds)
+	if err := tx.Delete(&model.SysJobLog{}).Error; err != nil {
+		logger.Errorf("delete err => %v", err.Error())
+		return 0
+	}
+	return tx.RowsAffected
 }
 
 // Clean 清空集合数据

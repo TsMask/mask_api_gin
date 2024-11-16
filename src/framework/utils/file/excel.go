@@ -5,36 +5,12 @@ import (
 	constUploadSubPath "mask_api_gin/src/framework/constants/upload_sub_path"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
-	"mime/multipart"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/xuri/excelize/v2"
 )
-
-// TransferExcelUploadFile 表格文件上传保存
-//
-// file 上传文件对象
-func TransferExcelUploadFile(file *multipart.FileHeader) (string, error) {
-	// 上传文件检查
-	err := isAllowWrite(file.Filename, []string{".xls", ".xlsx"}, file.Size)
-	if err != nil {
-		return "", err
-	}
-	// 上传资源路径
-	_, dir := resourceUpload()
-	// 新文件名称并组装文件地址
-	filePath := filepath.Join(constUploadSubPath.IMPORT, date.ParseDatePath(time.Now()))
-	fileName := generateFileName(file.Filename)
-	writePathFile := filepath.Join(dir, filePath, fileName)
-	// 存入新文件路径
-	err = transferToNewFile(file, writePathFile)
-	if err != nil {
-		return "", err
-	}
-	return filepath.ToSlash(writePathFile), nil
-}
 
 // ReadSheet 表格读取数据
 //

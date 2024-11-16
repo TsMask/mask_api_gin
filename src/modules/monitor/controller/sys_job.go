@@ -3,19 +3,17 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/service"
 	systemService "mask_api_gin/src/modules/system/service"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 )
 
 // NewSysJob 实例化控制层
@@ -38,25 +36,26 @@ type SysJobController struct {
 func (s SysJobController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	rows, total := s.sysJobService.FindByPage(query)
-	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
+	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Info 调度任务信息
 //
-// GET /?jobId=xxx
+// GET /:jobId
 func (s SysJobController) Info(c *gin.Context) {
-	id, idOk := c.GetQuery("jobId")
-	if id == "" || !idOk {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	jobIdStr := c.Param("jobId")
+	jobId := parse.Number(jobIdStr)
+	if jobIdStr == "" || jobId == 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
-	data := s.sysJobService.FindById(id)
-	if data.JobId == id {
-		c.JSON(200, result.OkData(data))
+	jobInfo := s.sysJobService.FindById(jobId)
+	if jobInfo.JobId == jobId {
+		c.JSON(200, response.OkData(jobInfo))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Add 调度任务新增
@@ -64,16 +63,15 @@ func (s SysJobController) Info(c *gin.Context) {
 // POST /
 func (s SysJobController) Add(c *gin.Context) {
 	var body model.SysJob
-	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.JobId != "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.JobId != 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 检查cron表达式格式
 	if parse.CronExpression(body.CronExpression) == 0 {
 		msg := fmt.Sprintf("调度任务新增【%s】失败，Cron表达式不正确", body.JobName)
-		c.JSON(200, result.ErrMsg(msg))
+		c.JSON(200, response.ErrMsg(msg))
 		return
 	}
 
@@ -81,30 +79,30 @@ func (s SysJobController) Add(c *gin.Context) {
 	if body.TargetParams != "" {
 		msg := fmt.Sprintf("调度任务新增【%s】失败，任务传入参数json字符串不正确", body.JobName)
 		if len(body.TargetParams) < 7 {
-			c.JSON(200, result.ErrMsg(msg))
+			c.JSON(200, response.ErrMsg(msg))
 			return
 		}
 		if !json.Valid([]byte(body.TargetParams)) {
-			c.JSON(200, result.ErrMsg(msg))
+			c.JSON(200, response.ErrMsg(msg))
 			return
 		}
 	}
 
 	// 检查属性值唯一
-	uniqueJob := s.sysJobService.CheckUniqueByJobName(body.JobName, body.JobGroup, "")
+	uniqueJob := s.sysJobService.CheckUniqueByJobName(body.JobName, body.JobGroup, 0)
 	if !uniqueJob {
 		msg := fmt.Sprintf("调度任务新增【%s】失败，同任务组内有相同任务名称", body.JobName)
-		c.JSON(200, result.ErrMsg(msg))
+		c.JSON(200, response.ErrMsg(msg))
 		return
 	}
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
 	insertId := s.sysJobService.Insert(body)
-	if insertId != "" {
-		c.JSON(200, result.Ok(nil))
+	if insertId != 0 {
+		c.JSON(200, response.OkData(insertId))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Edit 调度任务修改
@@ -112,16 +110,15 @@ func (s SysJobController) Add(c *gin.Context) {
 // PUT /
 func (s SysJobController) Edit(c *gin.Context) {
 	var body model.SysJob
-	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.JobId == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.JobId == 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 检查cron表达式格式
 	if parse.CronExpression(body.CronExpression) == 0 {
 		msg := fmt.Sprintf("调度任务修改【%s】失败，Cron表达式不正确", body.JobName)
-		c.JSON(200, result.ErrMsg(msg))
+		c.JSON(200, response.ErrMsg(msg))
 		return
 	}
 
@@ -129,11 +126,11 @@ func (s SysJobController) Edit(c *gin.Context) {
 	if body.TargetParams != "" {
 		msg := fmt.Sprintf("调度任务修改【%s】失败，任务传入参数json字符串不正确", body.JobName)
 		if len(body.TargetParams) < 7 {
-			c.JSON(200, result.ErrMsg(msg))
+			c.JSON(200, response.ErrMsg(msg))
 			return
 		}
 		if !json.Valid([]byte(body.TargetParams)) {
-			c.JSON(200, result.ErrMsg(msg))
+			c.JSON(200, response.ErrMsg(msg))
 			return
 		}
 	}
@@ -142,104 +139,117 @@ func (s SysJobController) Edit(c *gin.Context) {
 	uniqueJob := s.sysJobService.CheckUniqueByJobName(body.JobName, body.JobGroup, body.JobId)
 	if !uniqueJob {
 		msg := fmt.Sprintf("调度任务修改【%s】失败，同任务组内有相同任务名称", body.JobName)
-		c.JSON(200, result.ErrMsg(msg))
-		return
-	}
-
-	body.UpdateBy = ctx.LoginUserToUserName(c)
-	rows := s.sysJobService.Update(body)
-	if rows > 0 {
-		c.JSON(200, result.Ok(nil))
-		return
-	}
-	c.JSON(200, result.Err(nil))
-}
-
-// Remove 调度任务删除
-//
-// DELETE /?jobId=xxx
-func (s SysJobController) Remove(c *gin.Context) {
-	id, idOk := c.GetQuery("jobId")
-	if id == "" || !idOk {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
-		return
-	}
-	// 处理字符转id数组后去重
-	ids := strings.Split(id, ",")
-	uniqueIDs := parse.RemoveDuplicates(ids)
-	if len(uniqueIDs) <= 0 {
-		c.JSON(200, result.Err(nil))
-		return
-	}
-	rows, err := s.sysJobService.DeleteByIds(uniqueIDs)
-	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
-		return
-	}
-	msg := fmt.Sprintf("删除成功：%d", rows)
-	c.JSON(200, result.OkMsg(msg))
-}
-
-// Status 调度任务修改状态
-//
-// PUT /changeStatus
-func (s SysJobController) Status(c *gin.Context) {
-	var body struct {
-		JobId  string `json:"jobId" binding:"required"`
-		Status string `json:"status" binding:"required"`
-	}
-	if err := c.ShouldBindBodyWith(&body, binding.JSON); err != nil {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+		c.JSON(200, response.ErrMsg(msg))
 		return
 	}
 
 	// 检查是否存在
-	job := s.sysJobService.FindById(body.JobId)
-	if job.JobId != body.JobId {
-		c.JSON(200, result.ErrMsg("没有权限访问调度任务数据！"))
+	jobInfo := s.sysJobService.FindById(body.JobId)
+	if jobInfo.JobId != body.JobId {
+		c.JSON(200, response.ErrMsg("没有权限访问调度任务数据！"))
+		return
+	}
+
+	jobInfo.JobName = body.JobName
+	jobInfo.JobGroup = body.JobGroup
+	jobInfo.InvokeTarget = body.InvokeTarget
+	jobInfo.TargetParams = body.TargetParams
+	jobInfo.CronExpression = body.CronExpression
+	jobInfo.MisfirePolicy = body.MisfirePolicy
+	jobInfo.Concurrent = body.Concurrent
+	jobInfo.StatusFlag = body.StatusFlag
+	jobInfo.SaveLog = body.SaveLog
+	jobInfo.Remark = body.Remark
+	jobInfo.UpdateBy = ctx.LoginUserToUserName(c)
+	rows := s.sysJobService.Update(jobInfo)
+	if rows > 0 {
+		c.JSON(200, response.Ok(nil))
+		return
+	}
+	c.JSON(200, response.Err(nil))
+}
+
+// Remove 调度任务删除
+//
+// DELETE /:jobId
+func (s SysJobController) Remove(c *gin.Context) {
+	jobIdStr := c.Param("jobId")
+	jobIds := parse.RemoveDuplicatesToNumber(jobIdStr, ",")
+	if jobIdStr == "" || len(jobIds) == 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
+		return
+	}
+
+	rows, err := s.sysJobService.DeleteByIds(jobIds)
+	if err != nil {
+		c.JSON(200, response.ErrMsg(err.Error()))
+		return
+	}
+	msg := fmt.Sprintf("删除成功：%d", rows)
+	c.JSON(200, response.OkMsg(msg))
+}
+
+// Status 调度任务修改状态
+//
+// POST /status
+func (s SysJobController) Status(c *gin.Context) {
+	var body struct {
+		JobId      int64  `json:"jobId" binding:"required"`
+		StatusFlag string `json:"statusFlag" binding:"required"`
+	}
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
+		return
+	}
+
+	// 检查是否存在
+	jobInfo := s.sysJobService.FindById(body.JobId)
+	if jobInfo.JobId != body.JobId {
+		c.JSON(200, response.ErrMsg("没有权限访问调度任务数据！"))
 		return
 	}
 
 	// 与旧值相等不变更
-	if job.Status == body.Status {
-		c.JSON(200, result.ErrMsg("变更状态与旧值相等！"))
+	if jobInfo.StatusFlag == body.StatusFlag {
+		c.JSON(200, response.ErrMsg("变更状态与旧值相等！"))
 		return
 	}
 
 	// 更新状态
-	job.Status = body.Status
-	job.UpdateBy = ctx.LoginUserToUserName(c)
-	rows := s.sysJobService.Update(job)
+	jobInfo.StatusFlag = body.StatusFlag
+	jobInfo.UpdateBy = ctx.LoginUserToUserName(c)
+	rows := s.sysJobService.Update(jobInfo)
 	if rows > 0 {
-		c.JSON(200, result.Ok(nil))
+		c.JSON(200, response.Ok(nil))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Run 调度任务立即执行一次
 //
 // PUT /run/:jobId
 func (s SysJobController) Run(c *gin.Context) {
-	jobId := c.Param("jobId")
-	if jobId == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	jobIdStr := c.Param("jobId")
+	jobId := parse.Number(jobIdStr)
+	if jobIdStr == "" || jobId == 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 检查是否存在
-	job := s.sysJobService.FindById(jobId)
-	if job.JobId != jobId {
-		c.JSON(200, result.ErrMsg("没有权限访问调度任务数据！"))
+	jobInfo := s.sysJobService.FindById(jobId)
+	if jobInfo.JobId != jobId {
+		c.JSON(200, response.ErrMsg("没有权限访问调度任务数据！"))
 		return
 	}
 
-	ok := s.sysJobService.Run(job)
+	ok := s.sysJobService.Run(jobInfo)
 	if ok {
-		c.JSON(200, result.Ok(nil))
+		c.JSON(200, response.Ok(nil))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Reset 调度任务重置刷新队列
@@ -247,18 +257,18 @@ func (s SysJobController) Run(c *gin.Context) {
 // PUT /reset
 func (s SysJobController) Reset(c *gin.Context) {
 	s.sysJobService.Reset()
-	c.JSON(200, result.Ok(nil))
+	c.JSON(200, response.Ok(nil))
 }
 
 // Export 导出调度任务信息
 //
-// POST /export
+// GET /export
 func (s SysJobController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	query := ctx.BodyJSONMap(c)
+	query := ctx.QueryMap(c)
 	rows, total := s.sysJobService.FindByPage(query)
 	if total == 0 {
-		c.JSON(200, result.ErrMsg("导出数据记录为空"))
+		c.JSON(200, response.CodeMsg(40016, "export data record as empty"))
 		return
 	}
 
@@ -286,8 +296,8 @@ func (s SysJobController) Export(c *gin.Context) {
 		// 任务组名
 		sysJobGroup := ""
 		for _, v := range dictSysJobGroup {
-			if row.JobGroup == v.DictValue {
-				sysJobGroup = v.DictLabel
+			if row.JobGroup == v.DataValue {
+				sysJobGroup = v.DataLabel
 				break
 			}
 		}
@@ -303,7 +313,7 @@ func (s SysJobController) Export(c *gin.Context) {
 		}
 		// 状态
 		statusValue := "失败"
-		if row.Status == "1" {
+		if row.StatusFlag == "1" {
 			statusValue = "成功"
 		}
 		dataCells = append(dataCells, map[string]any{
@@ -323,7 +333,7 @@ func (s SysJobController) Export(c *gin.Context) {
 	// 导出数据表格
 	saveFilePath, err := file.WriteSheet(headerCells, dataCells, fileName, "")
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
 

@@ -2,306 +2,192 @@ package repository
 
 import (
 	"fmt"
-	db "mask_api_gin/src/framework/data_source"
+	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
-	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
-	"strings"
 	"time"
 )
 
 // NewSysConfig 实例化数据层
-var NewSysConfig = &SysConfig{
-	selectSql: `select
-	config_id, config_name, config_key, config_value, config_type, 
-	create_by, create_time, update_by, update_time, remark 
-	from sys_config`,
-}
+var NewSysConfig = &SysConfig{}
 
 // SysConfig 参数配置表 数据层处理
-type SysConfig struct {
-	selectSql string // 查询视图对象SQL
-}
+type SysConfig struct{}
 
 // SelectByPage 分页查询集合
 func (r SysConfig) SelectByPage(query map[string]any) ([]model.SysConfig, int64) {
+	tx := db.DB("").Model(&model.SysConfig{})
+	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
-	var conditions []string
-	var params []any
 	if v, ok := query["configName"]; ok && v != "" {
-		conditions = append(conditions, "config_name like concat(?, '%')")
-		params = append(params, v)
+		tx = tx.Where("config_name like concat(?, '%')", v)
 	}
 	if v, ok := query["configType"]; ok && v != "" {
-		conditions = append(conditions, "config_type = ?")
-		params = append(params, v)
+		tx = tx.Where("config_type = ?", v)
 	}
 	if v, ok := query["configKey"]; ok && v != "" {
-		conditions = append(conditions, "config_key like concat(?, '%')")
-		params = append(params, v)
+		tx = tx.Where("config_key like concat(?, '%')", v)
 	}
-	beginTime, ok := query["beginTime"]
-	if !ok {
-		beginTime, ok = query["params[beginTime]"]
+	if v, ok := query["beginTime"]; ok && v != "" {
+		tx = tx.Where("create_time >= ?", v)
 	}
-	if ok && beginTime != "" {
-		conditions = append(conditions, "create_time >= ?")
-		beginDate := date.ParseStrToDate(beginTime.(string), date.YYYY_MM_DD)
-		params = append(params, beginDate.UnixMilli())
+	if v, ok := query["endTime"]; ok && v != "" {
+		tx = tx.Where("create_time <= ?", v)
 	}
-	endTime, ok := query["endTime"]
-	if !ok {
-		endTime, ok = query["params[endTime]"]
+	if v, ok := query["params[beginTime]"]; ok && v != "" {
+		beginDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
+		tx = tx.Where("create_time >= ?", beginDate.UnixMilli())
 	}
-	if ok && endTime != "" {
-		conditions = append(conditions, "create_time <= ?")
-		endDate := date.ParseStrToDate(endTime.(string), date.YYYY_MM_DD)
-		params = append(params, endDate.UnixMilli())
-	}
-
-	// 构建查询条件语句
-	whereSql := ""
-	if len(conditions) > 0 {
-		whereSql += " where " + strings.Join(conditions, " and ")
+	if v, ok := query["params[endTime]"]; ok && v != "" {
+		endDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
+		tx = tx.Where("create_time <= ?", endDate.UnixMilli())
 	}
 
 	// 查询结果
-	total := int64(0)
-	arr := []model.SysConfig{}
+	var total int64 = 0
+	rows := []model.SysConfig{}
 
-	// 查询数量 长度为0直接返回
-	totalSql := "select count(1) as 'total' from sys_config"
-	totalRows, err := db.RawDB("", totalSql+whereSql, params)
-	if err != nil {
-		logger.Errorf("total err => %v", err)
-		return arr, total
-	}
-	total = parse.Number(totalRows[0]["total"])
-	if total <= 0 {
-		return arr, total
+	// 查询数量为0直接返回
+	if err := tx.Count(&total).Error; err != nil || total <= 0 {
+		return rows, total
 	}
 
-	// 分页
+	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
-	pageSql := " limit ?,? "
-	params = append(params, pageNum*pageSize)
-	params = append(params, pageSize)
-
-	// 查询数据
-	querySql := r.selectSql + whereSql + pageSql
-	rows, err := db.RawDB("", querySql, params)
+	err := tx.Limit(pageSize).Offset(pageSize * pageNum).Find(&rows).Error
 	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return arr, total
+		logger.Errorf("query find err => %v", err.Error())
+		return rows, total
 	}
-
-	// 转换实体
-	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("unmarshal err => %v", err)
-	}
-	return arr, total
+	return rows, total
 }
 
 // Select 查询集合
 func (r SysConfig) Select(sysConfig model.SysConfig) []model.SysConfig {
+	tx := db.DB("").Model(&model.SysConfig{})
+	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
-	var conditions []string
-	var params []any
 	if sysConfig.ConfigName != "" {
-		conditions = append(conditions, "config_name like concat(?, '%')")
-		params = append(params, sysConfig.ConfigName)
+		tx = tx.Where("config_name like concat(?, '%')", sysConfig.ConfigName)
 	}
 	if sysConfig.ConfigType != "" {
-		conditions = append(conditions, "config_type = ?")
-		params = append(params, sysConfig.ConfigType)
+		tx = tx.Where("config_type = ?", sysConfig.ConfigType)
 	}
 	if sysConfig.ConfigKey != "" {
-		conditions = append(conditions, "config_key like concat(?, '%')")
-		params = append(params, sysConfig.ConfigKey)
+		tx = tx.Where("config_key like concat(?, '%')", sysConfig.ConfigKey)
 	}
 	if sysConfig.CreateTime > 0 {
-		conditions = append(conditions, "create_time >= ?")
-		params = append(params, sysConfig.CreateTime)
-	}
-
-	// 构建查询条件语句
-	whereSql := ""
-	if len(conditions) > 0 {
-		whereSql += " where " + strings.Join(conditions, " and ")
+		tx = tx.Where("create_time >= ?", sysConfig.CreateTime)
 	}
 
 	// 查询数据
-	querySql := r.selectSql + whereSql
-	rows, err := db.RawDB("", querySql, params)
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return []model.SysConfig{}
-	}
-
-	// 转换实体
-	arr := []model.SysConfig{}
-	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("unmarshal err => %v", err)
-	}
-	return arr
-}
-
-// SelectByIds 通过ID查询信息
-func (r SysConfig) SelectByIds(configIds []string) []model.SysConfig {
-	placeholder := db.KeyPlaceholderByQuery(len(configIds))
-	querySql := r.selectSql + " where config_id in (" + placeholder + ")"
-	parameters := db.ConvertIdsSlice(configIds)
-	rows, err := db.RawDB("", querySql, parameters)
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return []model.SysConfig{}
-	}
-
-	// 转换实体
-	arr := []model.SysConfig{}
-	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("unmarshal err => %v", err)
-	}
-	return arr
-}
-
-// Insert 新增信息
-func (r SysConfig) Insert(sysConfig model.SysConfig) string {
-	// 参数拼接
-	params := make(map[string]any)
-	if sysConfig.ConfigName != "" {
-		params["config_name"] = sysConfig.ConfigName
-	}
-	if sysConfig.ConfigKey != "" {
-		params["config_key"] = sysConfig.ConfigKey
-	}
-	if sysConfig.ConfigValue != "" {
-		params["config_value"] = sysConfig.ConfigValue
-	}
-	if sysConfig.ConfigType != "" {
-		params["config_type"] = sysConfig.ConfigType
-	}
-	if sysConfig.Remark != "" {
-		params["remark"] = sysConfig.Remark
-	}
-	if sysConfig.CreateBy != "" {
-		params["create_by"] = sysConfig.CreateBy
-		params["create_time"] = time.Now().UnixMilli()
-	}
-
-	// 构建执行语句
-	keys, values, placeholder := db.KeyValuePlaceholderByInsert(params)
-	sql := fmt.Sprintf("insert into sys_config (%s)values(%s)", keys, placeholder)
-
-	tx := db.DB("").Begin() // 开启事务
-	// 执行插入
-	if err := tx.Exec(sql, values...).Error; err != nil {
-		logger.Errorf("insert row : %v", err.Error())
-		tx.Rollback()
-		return ""
-	}
-	// 获取生成的自增 ID
-	var insertedID string
-	if err := tx.Raw("select last_insert_id()").Row().Scan(&insertedID); err != nil {
-		logger.Errorf("insert last id : %v", err.Error())
-		tx.Rollback()
-		return ""
-	}
-	tx.Commit() // 提交事务
-	return insertedID
-}
-
-// Update 修改信息
-func (r SysConfig) Update(sysConfig model.SysConfig) int64 {
-	// 参数拼接
-	params := make(map[string]any)
-	if sysConfig.ConfigName != "" {
-		params["config_name"] = sysConfig.ConfigName
-	}
-	if sysConfig.ConfigKey != "" {
-		params["config_key"] = sysConfig.ConfigKey
-	}
-	if sysConfig.ConfigValue != "" {
-		params["config_value"] = sysConfig.ConfigValue
-	}
-	if sysConfig.ConfigType != "" {
-		params["config_type"] = sysConfig.ConfigType
-	}
-	params["remark"] = sysConfig.Remark
-	if sysConfig.UpdateBy != "" {
-		params["update_by"] = sysConfig.UpdateBy
-		params["update_time"] = time.Now().UnixMilli()
-	}
-
-	// 构建执行语句
-	keys, values := db.KeyValueByUpdate(params)
-	sql := fmt.Sprintf("update sys_config set %s where config_id = ?", keys)
-
-	// 执行更新
-	values = append(values, sysConfig.ConfigId)
-	rows, err := db.ExecDB("", sql, values)
-	if err != nil {
-		logger.Errorf("update row : %v", err.Error())
-		return 0
+	rows := []model.SysConfig{}
+	if err := tx.Find(&rows).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return rows
 	}
 	return rows
 }
 
-// DeleteByIds 批量删除信息
-func (r SysConfig) DeleteByIds(configIds []string) int64 {
-	placeholder := db.KeyPlaceholderByQuery(len(configIds))
-	sql := fmt.Sprintf("delete from sys_config where config_id in (%s)", placeholder)
-	parameters := db.ConvertIdsSlice(configIds)
-	results, err := db.ExecDB("", sql, parameters)
-	if err != nil {
-		logger.Errorf("delete err => %v", err)
-		return 0
+// SelectByIds 通过ID查询信息
+func (r SysConfig) SelectByIds(configIds []int64) []model.SysConfig {
+	rows := []model.SysConfig{}
+	if len(configIds) <= 0 {
+		return rows
 	}
-	return results
+	tx := db.DB("").Model(&model.SysConfig{})
+	// 构建查询条件
+	tx = tx.Where("config_id in ? and del_flag = '0'", configIds)
+	// 查询数据
+	if err := tx.Find(&rows).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return rows
+	}
+	return rows
 }
 
-// CheckUnique 检查信息是否唯一
-func (r SysConfig) CheckUnique(sysConfig model.SysConfig) string {
+// Insert 新增信息 返回新增数据ID
+func (r SysConfig) Insert(sysConfig model.SysConfig) int64 {
+	sysConfig.DelFlag = "0"
+	if sysConfig.CreateBy != "" {
+		sysConfig.CreateTime = time.Now().UnixMilli()
+	}
+	// 执行插入
+	if err := db.DB("").Create(&sysConfig).Error; err != nil {
+		logger.Errorf("insert err => %v", err.Error())
+		return 0
+	}
+	return sysConfig.ConfigId
+}
+
+// Update 修改信息 返回受影响行数
+func (r SysConfig) Update(sysConfig model.SysConfig) int64 {
+	if sysConfig.ConfigId <= 0 {
+		return 0
+	}
+	if sysConfig.UpdateBy != "" {
+		sysConfig.UpdateTime = time.Now().UnixMilli()
+	}
+	tx := db.DB("").Model(&model.SysConfig{})
+	// 构建查询条件
+	tx = tx.Where("config_id = ?", sysConfig.ConfigId)
+	// 执行更新
+	if err := tx.Updates(sysConfig).Error; err != nil {
+		logger.Errorf("update err => %v", err.Error())
+		return 0
+	}
+	return tx.RowsAffected
+}
+
+// DeleteByIds 批量删除信息 返回受影响行数
+func (r SysConfig) DeleteByIds(configIds []int64) int64 {
+	if len(configIds) <= 0 {
+		return 0
+	}
+	tx := db.DB("").Model(&model.SysConfig{})
+	// 构建查询条件
+	tx = tx.Where("config_id in ?", configIds)
+	// 执行更新删除标记
+	if err := tx.Update("del_flag", "1").Error; err != nil {
+		logger.Errorf("update err => %v", err.Error())
+		return 0
+	}
+	return tx.RowsAffected
+}
+
+// CheckUnique 检查信息是否唯一 返回数据ID
+func (r SysConfig) CheckUnique(sysConfig model.SysConfig) int64 {
+	tx := db.DB("").Model(&model.SysConfig{})
+	tx = tx.Where("del_flag = 0")
 	// 查询条件拼接
-	var conditions []string
-	var params []any
+	if sysConfig.ConfigType != "" {
+		tx = tx.Where("config_type = ?", sysConfig.ConfigType)
+	}
 	if sysConfig.ConfigKey != "" {
-		conditions = append(conditions, "config_key = ?")
-		params = append(params, sysConfig.ConfigKey)
+		tx = tx.Where("config_key = ?", sysConfig.ConfigKey)
 	}
-
-	// 构建查询条件语句
-	whereSql := ""
-	if len(conditions) > 0 {
-		whereSql += " where " + strings.Join(conditions, " and ")
-	} else {
-		return "-"
-	}
-
 	// 查询数据
-	querySql := fmt.Sprintf("select config_id as 'str' from sys_config %s limit 1", whereSql)
-	results, err := db.RawDB("", querySql, params)
-	if err != nil {
-		logger.Errorf("query err %v", err)
-		return "-"
+	var id int64 = 0
+	if err := tx.Select("config_id").Limit(1).Find(&id).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return id
 	}
-	if len(results) > 0 {
-		return fmt.Sprint(results[0]["str"])
-	}
-	return ""
+	return id
 }
 
 // SelectValueByKey 通过Key查询Value
 func (r SysConfig) SelectValueByKey(configKey string) string {
-	querySql := "select config_value as 'str' from sys_config where config_key = ?"
-	results, err := db.RawDB("", querySql, []any{configKey})
-	if err != nil {
-		logger.Errorf("query err => %v", err)
+	if configKey == "" {
 		return ""
 	}
-	if len(results) > 0 {
-		return fmt.Sprint(results[0]["str"])
+	tx := db.DB("").Model(&model.SysConfig{})
+	tx.Where("config_key = ? and del_flag = '0'", configKey)
+	// 查询数据
+	var configValue string = ""
+	if err := tx.Select("config_value").Limit(1).Find(&configValue).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return configValue
 	}
-	return ""
+	return configValue
 }

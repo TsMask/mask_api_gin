@@ -1,8 +1,8 @@
-package result
+package response
 
 const (
 	// CODE_ERROOR 响应-code错误失败
-	CODE_ERROOR = -1
+	CODE_ERROOR = 400
 	// MSG_ERROR 响应-msg错误失败
 	MSG_ERROR = "失败"
 

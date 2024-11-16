@@ -3,9 +3,9 @@ package middleware
 import (
 	"fmt"
 	constSystem "mask_api_gin/src/framework/constants/system"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/token"
-	"mask_api_gin/src/framework/vo/result"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,7 +24,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 		// 获取请求头标识信息
 		tokenStr := ctx.Authorization(c)
 		if tokenStr == "" {
-			c.JSON(401, result.CodeMsg(401, "无效身份授权"))
+			c.JSON(401, response.CodeMsg(401, "无效身份授权"))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
@@ -32,15 +32,15 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 		// 验证令牌
 		claims, err := token.Verify(tokenStr)
 		if err != nil {
-			c.JSON(401, result.CodeMsg(401, err.Error()))
+			c.JSON(401, response.CodeMsg(40003, err.Error()))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
 
 		// 获取缓存的用户信息
 		loginUser := token.LoginUser(claims)
-		if loginUser.UserID == "" {
-			c.JSON(401, result.CodeMsg(401, "无效身份授权"))
+		if loginUser.UserId <= 0 {
+			c.JSON(401, response.CodeMsg(401, "无效身份授权"))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
@@ -59,7 +59,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 			verifyOk := verifyRolePermission(roles, perms, options)
 			if !verifyOk {
 				msg := fmt.Sprintf("无权访问 %s %s", c.Request.Method, c.Request.RequestURI)
-				c.JSON(403, result.CodeMsg(403, msg))
+				c.JSON(403, response.CodeMsg(403, msg))
 				c.Abort() // 停止执行后续的处理函数
 				return
 			}

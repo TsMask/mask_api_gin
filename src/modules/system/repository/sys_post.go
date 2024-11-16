@@ -1,311 +1,177 @@
 package repository
 
 import (
-	"fmt"
-	db "mask_api_gin/src/framework/data_source"
+	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
-	"strings"
 	"time"
 )
 
 // NewSysPost 实例化数据层
-var NewSysPost = &SysPost{
-	selectSql: `select 
-	post_id, post_code, post_name, post_sort, status, create_by, create_time, remark 
-	from sys_post`,
-
-	resultMap: map[string]string{
-		"post_id":     "PostID",
-		"post_code":   "PostCode",
-		"post_name":   "PostName",
-		"post_sort":   "PostSort",
-		"status":      "Status",
-		"create_by":   "CreateBy",
-		"create_time": "CreateTime",
-		"update_by":   "UpdateBy",
-		"update_time": "UpdateTime",
-		"remark":      "Remark",
-	},
-}
+var NewSysPost = &SysPost{}
 
 // SysPost 岗位表 数据层处理
-type SysPost struct {
-	selectSql string            // 查询视图对象SQL
-	resultMap map[string]string // 结果字段与实体映射
-}
+type SysPost struct{}
 
 // SelectByPage 分页查询集合
 func (r SysPost) SelectByPage(query map[string]any) ([]model.SysPost, int64) {
+	tx := db.DB("").Model(&model.SysPost{})
+	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
-	var conditions []string
-	var params []any
 	if v, ok := query["postCode"]; ok && v != "" {
-		conditions = append(conditions, "post_code like concat(?, '%')")
-		params = append(params, v)
+		tx = tx.Where("post_code like concat(?, '%')", v)
 	}
 	if v, ok := query["postName"]; ok && v != "" {
-		conditions = append(conditions, "post_name like concat(?, '%')")
-		params = append(params, v)
+		tx = tx.Where("post_name like concat(?, '%')", v)
 	}
-	if v, ok := query["status"]; ok && v != "" {
-		conditions = append(conditions, "status = ?")
-		params = append(params, v)
-	}
-
-	// 构建查询条件语句
-	whereSql := ""
-	if len(conditions) > 0 {
-		whereSql += " where " + strings.Join(conditions, " and ")
+	if v, ok := query["statusFlag"]; ok && v != "" {
+		tx = tx.Where("status_flag = ?", v)
 	}
 
 	// 查询结果
-	total := int64(0)
-	arr := []model.SysPost{}
+	var total int64 = 0
+	rows := []model.SysPost{}
 
-	// 查询数量 长度为0直接返回
-	totalSql := "select count(1) as 'total' from sys_post"
-	totalRows, err := db.RawDB("", totalSql+whereSql, params)
-	if err != nil {
-		logger.Errorf("total err => %v", err)
-		return arr, total
-	}
-	total = parse.Number(totalRows[0]["total"])
-	if total <= 0 {
-		return arr, total
+	// 查询数量为0直接返回
+	if err := tx.Count(&total).Error; err != nil || total <= 0 {
+		return rows, total
 	}
 
-	// 分页
+	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
-	pageSql := " order by post_sort limit ?,? "
-	params = append(params, pageNum*pageSize)
-	params = append(params, pageSize)
-
-	// 查询数据
-	querySql := r.selectSql + whereSql + pageSql
-	rows, err := db.RawDB("", querySql, params)
+	err := tx.Limit(pageSize).Offset(pageSize * pageNum).Find(&rows).Error
 	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return arr, total
+		logger.Errorf("query find err => %v", err.Error())
+		return rows, total
 	}
-
-	// 转换实体
-	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("unmarshal err => %v", err)
-	}
-	return arr, total
+	return rows, total
 }
 
 // Select 查询集合
 func (r SysPost) Select(sysPost model.SysPost) []model.SysPost {
+	tx := db.DB("").Model(&model.SysPost{})
+	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
-	var conditions []string
-	var params []any
 	if sysPost.PostCode != "" {
-		conditions = append(conditions, "post_code like concat(?, '%')")
-		params = append(params, sysPost.PostCode)
+		tx = tx.Where("post_code like concat(?, '%')", sysPost.PostCode)
 	}
 	if sysPost.PostName != "" {
-		conditions = append(conditions, "post_name like concat(?, '%')")
-		params = append(params, sysPost.PostName)
+		tx = tx.Where("post_name like concat(?, '%')", sysPost.PostName)
 	}
-	if sysPost.Status != "" {
-		conditions = append(conditions, "status = ?")
-		params = append(params, sysPost.Status)
-	}
-
-	// 构建查询条件语句
-	whereSql := ""
-	if len(conditions) > 0 {
-		whereSql += " where " + strings.Join(conditions, " and ")
+	if sysPost.StatusFlag != "" {
+		tx = tx.Where("status_flag = ?", sysPost.StatusFlag)
 	}
 
 	// 查询数据
-	orderSql := " order by post_sort"
-	querySql := r.selectSql + whereSql + orderSql
-	rows, err := db.RawDB("", querySql, params)
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return []model.SysPost{}
-	}
-	// 转换实体
-	arr := []model.SysPost{}
-	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("unmarshal err => %v", err)
-	}
-	return arr
-}
-
-// SelectByIds 通过ID查询信息
-func (r SysPost) SelectByIds(postIds []string) []model.SysPost {
-	placeholder := db.KeyPlaceholderByQuery(len(postIds))
-	querySql := r.selectSql + " where post_id in (" + placeholder + ")"
-	parameters := db.ConvertIdsSlice(postIds)
-	rows, err := db.RawDB("", querySql, parameters)
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return []model.SysPost{}
-	}
-	// 转换实体
-	arr := []model.SysPost{}
-	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("unmarshal err => %v", err)
-	}
-	return arr
-}
-
-// Update 修改信息
-func (r SysPost) Update(sysPost model.SysPost) int64 {
-	// 参数拼接
-	params := make(map[string]any)
-	if sysPost.PostCode != "" {
-		params["post_code"] = sysPost.PostCode
-	}
-	if sysPost.PostName != "" {
-		params["post_name"] = sysPost.PostName
-	}
-	if sysPost.PostSort >= 0 {
-		params["post_sort"] = sysPost.PostSort
-	}
-	if sysPost.Status != "" {
-		params["status"] = sysPost.Status
-	}
-	params["remark"] = sysPost.Remark
-	if sysPost.UpdateBy != "" {
-		params["update_by"] = sysPost.UpdateBy
-		params["update_time"] = time.Now().UnixMilli()
-	}
-
-	// 构建执行语句
-	keys, values := db.KeyValueByUpdate(params)
-	sql := fmt.Sprintf("update sys_post set %s where post_id = ?", keys)
-
-	// 执行更新
-	values = append(values, sysPost.PostId)
-	rows, err := db.ExecDB("", sql, values)
-	if err != nil {
-		logger.Errorf("update row : %v", err.Error())
-		return 0
+	rows := []model.SysPost{}
+	if err := tx.Order("post_sort asc").Find(&rows).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return rows
 	}
 	return rows
 }
 
-// Insert 新增信息
-func (r SysPost) Insert(sysPost model.SysPost) string {
-	// 参数拼接
-	params := make(map[string]any)
-	if sysPost.PostId != "" {
-		params["post_id"] = sysPost.PostId
+// SelectByIds 通过ID查询信息
+func (r SysPost) SelectByIds(postIds []int64) []model.SysPost {
+	rows := []model.SysPost{}
+	if len(postIds) <= 0 {
+		return rows
 	}
-	if sysPost.PostCode != "" {
-		params["post_code"] = sysPost.PostCode
+	tx := db.DB("").Model(&model.SysPost{})
+	// 构建查询条件
+	tx = tx.Where("post_id in ? and del_flag = '0'", postIds)
+	// 查询数据
+	if err := tx.Find(&rows).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return rows
 	}
-	if sysPost.PostName != "" {
-		params["post_name"] = sysPost.PostName
-	}
-	if sysPost.PostSort > 0 {
-		params["post_sort"] = sysPost.PostSort
-	}
-	if sysPost.Status != "" {
-		params["status"] = sysPost.Status
-	}
-	if sysPost.Remark != "" {
-		params["remark"] = sysPost.Remark
-	}
-	if sysPost.CreateBy != "" {
-		params["create_by"] = sysPost.CreateBy
-		params["create_time"] = time.Now().UnixMilli()
-	}
-
-	// 构建执行语句
-	keys, values, placeholder := db.KeyValuePlaceholderByInsert(params)
-	sql := fmt.Sprintf("insert into sys_post (%s)values(%s)", keys, placeholder)
-
-	tx := db.DB("").Begin() // 开启事务
-	// 执行插入
-	if err := tx.Exec(sql, values...).Error; err != nil {
-		logger.Errorf("insert row : %v", err.Error())
-		tx.Rollback()
-		return ""
-	}
-	// 获取生成的自增 ID
-	var insertedID string
-	if err := tx.Raw("select last_insert_id()").Row().Scan(&insertedID); err != nil {
-		logger.Errorf("insert last id : %v", err.Error())
-		tx.Rollback()
-		return ""
-	}
-	tx.Commit() // 提交事务
-	return insertedID
+	return rows
 }
 
-// DeleteByIds 批量删除信息
-func (r SysPost) DeleteByIds(postIds []string) int64 {
-	placeholder := db.KeyPlaceholderByQuery(len(postIds))
-	sql := fmt.Sprintf("delete from sys_post where post_id in (%s)", placeholder)
-	parameters := db.ConvertIdsSlice(postIds)
-	results, err := db.ExecDB("", sql, parameters)
-	if err != nil {
-		logger.Errorf("delete err => %v", err)
+// Insert 新增信息 返回新增数据ID
+func (r SysPost) Insert(sysPost model.SysPost) int64 {
+	sysPost.DelFlag = "0"
+	if sysPost.CreateBy != "" {
+		sysPost.CreateTime = time.Now().UnixMilli()
+	}
+	// 执行插入
+	if err := db.DB("").Create(&sysPost).Error; err != nil {
+		logger.Errorf("insert err => %v", err.Error())
 		return 0
 	}
-	return results
+	return sysPost.PostId
+}
+
+// Update 修改信息 返回受影响行数
+func (r SysPost) Update(sysPost model.SysPost) int64 {
+	if sysPost.PostId <= 0 {
+		return 0
+	}
+	if sysPost.UpdateBy != "" {
+		sysPost.UpdateTime = time.Now().UnixMilli()
+	}
+	tx := db.DB("").Model(&model.SysPost{})
+	// 构建查询条件
+	tx = tx.Where("post_id = ?", sysPost.PostId)
+	// 执行更新
+	if err := tx.Updates(sysPost).Error; err != nil {
+		logger.Errorf("update err => %v", err.Error())
+		return 0
+	}
+	return tx.RowsAffected
+}
+
+// DeleteByIds 批量删除信息 返回受影响行数
+func (r SysPost) DeleteByIds(postIds []int64) int64 {
+	if len(postIds) <= 0 {
+		return 0
+	}
+	tx := db.DB("").Model(&model.SysPost{})
+	// 构建查询条件
+	tx = tx.Where("post_id in ?", postIds)
+	// 执行更新删除标记
+	if err := tx.Update("del_flag", "1").Error; err != nil {
+		logger.Errorf("update err => %v", err.Error())
+		return 0
+	}
+	return tx.RowsAffected
 }
 
 // SelectByUserId 根据用户ID获取岗位选择框列表
-func (r SysPost) SelectByUserId(userId string) []model.SysPost {
+func (r SysPost) SelectByUserId(userId int64) []model.SysPost {
+	rows := []model.SysPost{}
+	if userId <= 0 {
+		return rows
+	}
+	tx := db.DB("").Model(&model.SysPost{})
+	// 构建查询条件
+	tx = tx.Where("post_id in (select post_id from sys_user_post  where user_id = ?)", userId)
+
 	// 查询数据
-	querySql := `select distinct 
-	p.post_id, p.post_name, p.post_code 
-	from sys_post p 
-    left join sys_user_post up on up.post_id = p.post_id 
-    left join sys_user u on u.user_id = up.user_id 
-    where u.user_id = ? order by p.post_id`
-	rows, err := db.RawDB("", querySql, []any{userId})
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return []model.SysPost{}
+	if err := tx.Order("post_id").Find(&rows).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return rows
 	}
-	// 转换实体
-	arr := []model.SysPost{}
-	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("unmarshal err => %v", err)
-	}
-	return arr
+	return rows
 }
 
 // CheckUnique 检查信息是否唯一
-func (r SysPost) CheckUnique(sysPost model.SysPost) string {
+func (r SysPost) CheckUnique(sysPost model.SysPost) int64 {
+	tx := db.DB("").Model(&model.SysPost{})
+	tx = tx.Where("del_flag = 0")
 	// 查询条件拼接
-	var conditions []string
-	var params []any
 	if sysPost.PostName != "" {
-		conditions = append(conditions, "post_name= ?")
-		params = append(params, sysPost.PostName)
+		tx = tx.Where("post_name= ?", sysPost.PostName)
 	}
 	if sysPost.PostCode != "" {
-		conditions = append(conditions, "post_code = ?")
-		params = append(params, sysPost.PostCode)
-	}
-
-	// 构建查询条件语句
-	whereSql := ""
-	if len(conditions) > 0 {
-		whereSql += " where " + strings.Join(conditions, " and ")
-	} else {
-		return "-"
+		tx = tx.Where("post_code = ?", sysPost.PostCode)
 	}
 
 	// 查询数据
-	querySql := fmt.Sprintf("select post_id as 'str' from sys_post %s limit 1", whereSql)
-	results, err := db.RawDB("", querySql, params)
-	if err != nil {
-		logger.Errorf("query err %v", err)
-		return "-"
+	var id int64 = 0
+	if err := tx.Select("post_id").Limit(1).Find(&id).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return id
 	}
-	if len(results) > 0 {
-		return fmt.Sprint(results[0]["str"])
-	}
-	return ""
+	return id
 }

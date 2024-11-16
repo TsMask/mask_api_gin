@@ -4,20 +4,18 @@ import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
 	constSystem "mask_api_gin/src/framework/constants/system"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
-	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 )
 
 // NewSysUser 实例化控制层
@@ -47,39 +45,29 @@ func (s SysUserController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
 	rows, total := s.sysUserService.FindByPage(query, dataScopeSQL)
-	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
+	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Info 用户信息详情
 //
 // GET /:userId
 func (s SysUserController) Info(c *gin.Context) {
-	userId := c.Param("userId")
-	if userId == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	userIdStr := c.Param("userId")
+	userId := parse.Number(userIdStr)
+	if userIdStr == "" || userId < 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
+
 	// 查询系统角色列表
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
 	roles := s.sysRoleService.Find(model.SysRole{}, dataScopeSQL)
-
-	// 不是系统指定系统管理员需要排除其角色
-	if !config.IsSysAdmin(userId) {
-		rolesFilter := make([]model.SysRole, 0)
-		for _, r := range roles {
-			if r.RoleId != constSystem.ROLE_SYSTEM_ID {
-				rolesFilter = append(rolesFilter, r)
-			}
-		}
-		roles = rolesFilter
-	}
-
 	// 查询系统岗位列表
 	posts := s.sysPostService.Find(model.SysPost{})
 
 	// 新增用户时，用户ID为0
-	if userId == "0" {
-		c.JSON(200, result.OkData(map[string]any{
+	if userId == 0 {
+		c.JSON(200, response.OkData(map[string]any{
 			"user":    map[string]any{},
 			"roleIds": []string{},
 			"postIds": []string{},
@@ -92,29 +80,29 @@ func (s SysUserController) Info(c *gin.Context) {
 	// 检查用户是否存在
 	userInfo := s.sysUserService.FindById(userId)
 	if userInfo.UserId != userId {
-		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
+		c.JSON(200, response.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
 
 	// 角色ID组
-	roleIds := make([]string, 0)
+	roleIds := make([]int64, 0)
 	for _, r := range userInfo.Roles {
 		roleIds = append(roleIds, r.RoleId)
 	}
 
 	// 岗位ID组
-	postIds := make([]string, 0)
+	postIds := make([]int64, 0)
 	userPosts := s.sysPostService.FindByUserId(userId)
 	for _, p := range userPosts {
 		postIds = append(postIds, p.PostId)
 	}
 
-	c.JSON(200, result.OkData(map[string]any{
-		"user":     userInfo,
-		"role_ids": roleIds,
-		"post_ids": postIds,
-		"roles":    roles,
-		"posts":    posts,
+	c.JSON(200, response.OkData(map[string]any{
+		"user":    userInfo,
+		"roleIds": roleIds,
+		"postIds": postIds,
+		"roles":   roles,
+		"posts":   posts,
 	}))
 }
 
@@ -123,42 +111,42 @@ func (s SysUserController) Info(c *gin.Context) {
 // POST /
 func (s SysUserController) Add(c *gin.Context) {
 	var body model.SysUser
-	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.UserId != "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.UserId != 0 {
+		fmt.Println(err)
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 密码单独取，避免序列化输出
-	var bodyPassword struct {
-		Password string `json:"password" binding:"required"`
+	var bodyPasswd struct {
+		Passwd string `json:"passwd" binding:"required"`
 	}
-	if err := c.ShouldBindBodyWith(&bodyPassword, binding.JSON); err != nil {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	if err := c.ShouldBindBodyWithJSON(&bodyPasswd); err != nil {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
-	body.Password = bodyPassword.Password
+	body.Passwd = bodyPasswd.Passwd
 
 	// 检查用户登录账号是否唯一
-	uniqueUserName := s.sysUserService.CheckUniqueByUserName(body.UserName, "")
+	uniqueUserName := s.sysUserService.CheckUniqueByUserName(body.UserName, 0)
 	if !uniqueUserName {
 		msg := fmt.Sprintf("新增用户【%s】失败，登录账号已存在", body.UserName)
-		c.JSON(200, result.ErrMsg(msg))
+		c.JSON(200, response.ErrMsg(msg))
 		return
 	}
 
 	// 检查手机号码格式并判断是否唯一
 	if body.Phone != "" {
 		if regular.ValidMobile(body.Phone) {
-			uniquePhone := s.sysUserService.CheckUniqueByPhone(body.Phone, "")
+			uniquePhone := s.sysUserService.CheckUniqueByPhone(body.Phone, 0)
 			if !uniquePhone {
 				msg := fmt.Sprintf("新增用户【%s】失败，手机号码已存在", body.UserName)
-				c.JSON(200, result.ErrMsg(msg))
+				c.JSON(200, response.ErrMsg(msg))
 				return
 			}
 		} else {
 			msg := fmt.Sprintf("新增用户【%s】失败，手机号码格式错误", body.UserName)
-			c.JSON(200, result.ErrMsg(msg))
+			c.JSON(200, response.ErrMsg(msg))
 			return
 		}
 	}
@@ -166,26 +154,26 @@ func (s SysUserController) Add(c *gin.Context) {
 	// 检查邮箱格式并判断是否唯一
 	if body.Email != "" {
 		if regular.ValidEmail(body.Email) {
-			uniqueEmail := s.sysUserService.CheckUniqueByEmail(body.Email, "")
+			uniqueEmail := s.sysUserService.CheckUniqueByEmail(body.Email, 0)
 			if !uniqueEmail {
 				msg := fmt.Sprintf("新增用户【%s】失败，邮箱已存在", body.UserName)
-				c.JSON(200, result.ErrMsg(msg))
+				c.JSON(200, response.ErrMsg(msg))
 				return
 			}
 		} else {
 			msg := fmt.Sprintf("新增用户【%s】失败，邮箱格式错误", body.UserName)
-			c.JSON(200, result.ErrMsg(msg))
+			c.JSON(200, response.ErrMsg(msg))
 			return
 		}
 	}
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
 	insertId := s.sysUserService.Insert(body)
-	if insertId != "" {
-		c.JSON(200, result.Ok(nil))
+	if insertId != 0 {
+		c.JSON(200, response.OkData(insertId))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Edit 用户信息修改
@@ -193,30 +181,21 @@ func (s SysUserController) Add(c *gin.Context) {
 // POST /
 func (s SysUserController) Edit(c *gin.Context) {
 	var body model.SysUser
-	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.UserId == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.UserId == 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 检查是否系统管理员用户
 	if config.IsSysAdmin(body.UserId) {
-		c.JSON(200, result.ErrMsg("不允许操作系统管理员用户"))
+		c.JSON(200, response.ErrMsg("不允许操作系统管理员用户"))
 		return
 	}
 
 	// 检查是否存在
-	user := s.sysUserService.FindById(body.UserId)
-	if user.UserId != body.UserId {
-		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
-		return
-	}
-
-	// 检查用户登录账号是否唯一
-	uniqueUserName := s.sysUserService.CheckUniqueByUserName(body.UserName, body.UserId)
-	if !uniqueUserName {
-		msg := fmt.Sprintf("修改用户【%s】失败，登录账号已存在", body.UserName)
-		c.JSON(200, result.ErrMsg(msg))
+	userInfo := s.sysUserService.FindById(body.UserId)
+	if userInfo.UserId != body.UserId {
+		c.JSON(200, response.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
 
@@ -226,12 +205,12 @@ func (s SysUserController) Edit(c *gin.Context) {
 			uniquePhone := s.sysUserService.CheckUniqueByPhone(body.Phone, body.UserId)
 			if !uniquePhone {
 				msg := fmt.Sprintf("修改用户【%s】失败，手机号码已存在", body.UserName)
-				c.JSON(200, result.ErrMsg(msg))
+				c.JSON(200, response.ErrMsg(msg))
 				return
 			}
 		} else {
 			msg := fmt.Sprintf("修改用户【%s】失败，手机号码格式错误", body.UserName)
-			c.JSON(200, result.ErrMsg(msg))
+			c.JSON(200, response.ErrMsg(msg))
 			return
 		}
 	}
@@ -242,161 +221,166 @@ func (s SysUserController) Edit(c *gin.Context) {
 			uniqueEmail := s.sysUserService.CheckUniqueByEmail(body.Email, body.UserId)
 			if !uniqueEmail {
 				msg := fmt.Sprintf("修改用户【%s】失败，邮箱已存在", body.UserName)
-				c.JSON(200, result.ErrMsg(msg))
+				c.JSON(200, response.ErrMsg(msg))
 				return
 			}
 		} else {
 			msg := fmt.Sprintf("修改用户【%s】失败，邮箱格式错误", body.UserName)
-			c.JSON(200, result.ErrMsg(msg))
+			c.JSON(200, response.ErrMsg(msg))
 			return
 		}
 	}
 
-	body.UserName = "" // 忽略修改登录用户名称
-	body.Password = "" // 忽略修改密码
-	body.LoginIp = ""  // 忽略登录IP
-	body.LoginDate = 0 // 忽略登录时间
-	body.UpdateBy = ctx.LoginUserToUserName(c)
-	rows := s.sysUserService.UpdateUserAndRolePost(body)
+	if body.Avatar != "" {
+		userInfo.Avatar = body.Avatar
+	}
+
+	userInfo.Phone = body.Phone
+	userInfo.Email = body.Email
+	userInfo.Sex = body.Sex
+	userInfo.StatusFlag = body.StatusFlag
+	userInfo.Remark = body.Remark
+	userInfo.DeptId = body.DeptId
+	userInfo.RoleIds = body.RoleIds
+	userInfo.PostIds = body.PostIds
+	userInfo.Passwd = "" // 忽略修改密码
+	userInfo.UpdateBy = ctx.LoginUserToUserName(c)
+	rows := s.sysUserService.UpdateUserAndRolePost(userInfo)
 	if rows > 0 {
-		c.JSON(200, result.Ok(nil))
+		c.JSON(200, response.Ok(nil))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Remove 用户信息删除
 //
-// DELETE /:userIds
+// DELETE /:userId
 func (s SysUserController) Remove(c *gin.Context) {
-	userIds := c.Param("userIds")
-	if userIds == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
-		return
-	}
-	// 处理字符转id数组后去重
-	ids := strings.Split(userIds, ",")
-	uniqueIDs := parse.RemoveDuplicates(ids)
-	if len(uniqueIDs) <= 0 {
-		c.JSON(200, result.Err(nil))
+	userIdsStr := c.Param("userId")
+	userIds := parse.RemoveDuplicatesToNumber(userIdsStr, ",")
+	if userIdsStr == "" {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
-	// 检查是否管理员用户
 	loginUserID := ctx.LoginUserToUserID(c)
-	for _, id := range uniqueIDs {
+	for _, id := range userIds {
+		// 不能删除自己
 		if id == loginUserID {
-			c.JSON(200, result.ErrMsg("当前用户不能删除"))
+			c.JSON(200, response.ErrMsg("当前用户不能删除"))
 			return
 		}
+		// 检查是否管理员用户
 		if config.IsSysAdmin(id) {
-			c.JSON(200, result.ErrMsg("不允许操作系统管理员用户"))
+			c.JSON(200, response.ErrMsg("不允许操作系统管理员用户"))
 			return
 		}
 	}
 
-	rows, err := s.sysUserService.DeleteByIds(uniqueIDs)
+	rows, err := s.sysUserService.DeleteByIds(userIds)
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
 	msg := fmt.Sprintf("删除成功：%d", rows)
-	c.JSON(200, result.OkMsg(msg))
+	c.JSON(200, response.OkMsg(msg))
 }
 
-// ResetPwd 用户重置密码
+// Passwd 用户密码修改
 //
-// PUT /resetPwd
-func (s SysUserController) ResetPwd(c *gin.Context) {
+// PUT /passwd
+func (s SysUserController) Passwd(c *gin.Context) {
 	var body struct {
-		UserID   string `json:"userId" binding:"required"`
-		Password string `json:"password" binding:"required"`
+		UserId int64  `json:"userId" binding:"required"`
+		Passwd string `json:"passwd" binding:"required"`
 	}
-	if err := c.ShouldBindBodyWith(&body, binding.JSON); err != nil {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 检查是否系统管理员用户
-	if config.IsSysAdmin(body.UserID) {
-		c.JSON(200, result.ErrMsg("不允许操作系统管理员用户"))
+	if config.IsSysAdmin(body.UserId) {
+		c.JSON(200, response.ErrMsg("不允许操作系统管理员用户"))
 		return
 	}
 
 	// 检查是否存在
-	user := s.sysUserService.FindById(body.UserID)
-	if user.UserId != body.UserID {
-		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
+	userInfo := s.sysUserService.FindById(body.UserId)
+	if userInfo.UserId != body.UserId {
+		c.JSON(200, response.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
 
-	if !regular.ValidPassword(body.Password) {
-		c.JSON(200, result.ErrMsg("登录密码至少包含大小写字母、数字、特殊符号，且不少于6位"))
+	if !regular.ValidPassword(body.Passwd) {
+		c.JSON(200, response.ErrMsg("登录密码至少包含大小写字母、数字、特殊符号，且不少于6位"))
 		return
 	}
 
-	user.Password = body.Password
-	user.UpdateBy = ctx.LoginUserToUserName(c)
-	rows := s.sysUserService.Update(user)
+	userInfo.Passwd = body.Passwd
+	userInfo.UpdateBy = ctx.LoginUserToUserName(c)
+	rows := s.sysUserService.Update(userInfo)
 	if rows > 0 {
-		c.JSON(200, result.Ok(nil))
+		c.JSON(200, response.Ok(nil))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Status 用户状态修改
 //
-// PUT /changeStatus
+// PUT /status
 func (s SysUserController) Status(c *gin.Context) {
 	var body struct {
-		UserID string `json:"userId" binding:"required"`
-		Status string `json:"status" binding:"required"`
+		UserId     int64  `json:"userId" binding:"required"`
+		StatusFlag string `json:"statusFlag" binding:"required,oneof=0 1"`
 	}
-	if err := c.ShouldBindBodyWith(&body, binding.JSON); err != nil {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 检查是否系统管理员用户
-	if config.IsSysAdmin(body.UserID) {
-		c.JSON(200, result.ErrMsg("不允许操作系统管理员用户"))
+	if config.IsSysAdmin(body.UserId) {
+		c.JSON(200, response.ErrMsg("不允许操作系统管理员用户"))
 		return
 	}
 
 	// 检查是否存在
-	user := s.sysUserService.FindById(body.UserID)
-	if user.UserId != body.UserID {
-		c.JSON(200, result.ErrMsg("没有权限访问用户数据！"))
+	userInfo := s.sysUserService.FindById(body.UserId)
+	if userInfo.UserId != body.UserId {
+		c.JSON(200, response.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
 
 	// 与旧值相等不变更
-	if user.Status == body.Status {
-		c.JSON(200, result.ErrMsg("变更状态与旧值相等！"))
+	if userInfo.StatusFlag == body.StatusFlag {
+		c.JSON(200, response.ErrMsg("变更状态与旧值相等！"))
 		return
 	}
 
-	user.Status = body.Status
-	user.UpdateBy = ctx.LoginUserToUserName(c)
-	rows := s.sysUserService.Update(user)
+	userInfo.StatusFlag = body.StatusFlag
+	userInfo.Passwd = "" // 密码不更新
+	userInfo.UpdateBy = ctx.LoginUserToUserName(c)
+	rows := s.sysUserService.Update(userInfo)
 	if rows > 0 {
-		c.JSON(200, result.Ok(nil))
+		c.JSON(200, response.Ok(nil))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Export 用户信息列表导出
 //
-// POST /export
+// GET /export
 func (s SysUserController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	queryMap := ctx.BodyJSONMap(c)
+	queryMap := ctx.QueryMap(c)
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
 	rows, total := s.sysUserService.FindByPage(queryMap, dataScopeSQL)
 	if total == 0 {
-		c.JSON(200, result.ErrMsg("导出数据记录为空"))
+		c.JSON(200, response.CodeMsg(40016, "export data record as empty"))
 		return
 	}
 
@@ -422,18 +406,18 @@ func (s SysUserController) Export(c *gin.Context) {
 	// 从第二行开始的数据
 	dataCells := make([]map[string]any, 0)
 	for i, row := range rows {
-		idx := strconv.Itoa(i + 2)
+		idx := fmt.Sprint(i + 2)
 		// 用户性别
 		sysUserSex := "未知"
 		for _, v := range dictSysUserSex {
-			if row.Sex == v.DictValue {
-				sysUserSex = v.DictLabel
+			if row.Sex == v.DataValue {
+				sysUserSex = v.DataLabel
 				break
 			}
 		}
 		// 账号状态
 		statusValue := "停用"
-		if row.Status == "1" {
+		if row.StatusFlag == "1" {
 			statusValue = "正常"
 		}
 		dataCells = append(dataCells, map[string]any{
@@ -448,14 +432,14 @@ func (s SysUserController) Export(c *gin.Context) {
 			"I" + idx: row.Dept.DeptName,
 			"J" + idx: row.Dept.Leader,
 			"K" + idx: row.LoginIp,
-			"L" + idx: date.ParseDateToStr(row.LoginDate, date.YYYY_MM_DD_HH_MM_SS),
+			"L" + idx: date.ParseDateToStr(row.LoginTime, date.YYYY_MM_DD_HH_MM_SS),
 		})
 	}
 
 	// 导出数据表格
 	saveFilePath, err := file.WriteSheet(headerCells, dataCells, fileName, "")
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
 
@@ -464,44 +448,49 @@ func (s SysUserController) Export(c *gin.Context) {
 
 // Template 用户信息列表导入模板下载
 //
-// GET /importTemplate
+// GET /import/template
 func (s SysUserController) Template(c *gin.Context) {
+	// 从 embed.FS 中读取内嵌文件
+	assetsDir := config.GetAssetsDirFS()
+	fileData, err := assetsDir.ReadFile("src/assets/template/excel/user_import_template.xlsx")
+	if err != nil {
+		c.String(400, "failed to read file")
+		return
+	}
 	fileName := fmt.Sprintf("user_import_template_%d.xlsx", time.Now().UnixMilli())
-	asserPath := "assets/template/excel/user_import_template.xlsx"
-	c.FileAttachment(asserPath, fileName)
+
+	// 设置响应头
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
+	c.Header("Content-Type", "application/octet-stream")
+
+	// 返回响应体
+	c.Data(200, "application/octet-stream", fileData)
 }
 
-// ImportData 用户信息列表导入
+// Import 用户信息列表导入
 //
-// POST /importData
-func (s SysUserController) ImportData(c *gin.Context) {
-	// 允许进行更新
-	updateSupport := c.PostForm("updateSupport")
-	// 上传的文件
-	formFile, err := c.FormFile("file")
-	if err != nil || updateSupport == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+// POST /import
+func (s SysUserController) Import(c *gin.Context) {
+	var body struct {
+		FilePath string `json:"filePath" binding:"required"` // 上传的文件地址
+		Update   bool   `json:"update"`                      // 允许进行更新
+	}
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
-	// 保存表格文件
-	filePath, err := file.TransferExcelUploadFile(formFile)
-	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
-		return
-	}
-
+	// 表格文件绝对地址
+	filePath := file.ParseUploadFilePath(body.FilePath)
 	// 读取表格数据
 	rows, err := file.ReadSheet(filePath, "")
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
 
 	// 获取操作人名称
 	operaName := ctx.LoginUserToUserName(c)
-	isUpdateSupport := parse.Boolean(updateSupport)
-
 	// 读取默认初始密码
 	initPassword := s.sysConfigService.FindValueByKey("sys.user.initPassword")
 	// 读取用户性别字典数据
@@ -533,8 +522,8 @@ func (s SysUserController) ImportData(c *gin.Context) {
 		// 用户性别转值
 		sysUserSex := "0"
 		for _, v := range dictSysUserSex {
-			if row["F"] == v.DictLabel {
-				sysUserSex = v.DictValue
+			if row["F"] == v.DataLabel {
+				sysUserSex = v.DataValue
 				break
 			}
 		}
@@ -545,14 +534,12 @@ func (s SysUserController) ImportData(c *gin.Context) {
 
 		// 验证是否存在这个用户
 		newSysUser := s.sysUserService.FindByUserName(row["B"])
-		newSysUser.UserType = "sys"
-		newSysUser.Password = initPassword
-		newSysUser.DeptId = row["H"]
+		newSysUser.Passwd = initPassword
 		newSysUser.UserName = row["B"]
 		newSysUser.NickName = row["C"]
 		newSysUser.Phone = row["E"]
 		newSysUser.Email = row["D"]
-		newSysUser.Status = sysUserStatus
+		newSysUser.StatusFlag = sysUserStatus
 		newSysUser.Sex = sysUserSex
 
 		// 行用户编号
@@ -561,7 +548,7 @@ func (s SysUserController) ImportData(c *gin.Context) {
 		// 检查手机号码格式并判断是否唯一
 		if newSysUser.Phone != "" {
 			if regular.ValidMobile(newSysUser.Phone) {
-				uniquePhone := s.sysUserService.CheckUniqueByPhone(newSysUser.Phone, "")
+				uniquePhone := s.sysUserService.CheckUniqueByPhone(newSysUser.Phone, 0)
 				if !uniquePhone {
 					msg := fmt.Sprintf("用户编号：%s 手机号码：%s 已存在", rowNo, newSysUser.Phone)
 					failureNum++
@@ -579,7 +566,7 @@ func (s SysUserController) ImportData(c *gin.Context) {
 		// 检查邮箱格式并判断是否唯一
 		if newSysUser.Email != "" {
 			if regular.ValidEmail(newSysUser.Email) {
-				uniqueEmail := s.sysUserService.CheckUniqueByEmail(newSysUser.Email, "")
+				uniqueEmail := s.sysUserService.CheckUniqueByEmail(newSysUser.Email, 0)
 				if !uniqueEmail {
 					msg := fmt.Sprintf("用户编号：%s 用户邮箱：%s 已存在", rowNo, newSysUser.Email)
 					failureNum++
@@ -594,10 +581,10 @@ func (s SysUserController) ImportData(c *gin.Context) {
 			}
 		}
 
-		if newSysUser.UserId == "" {
+		if newSysUser.UserId == 0 {
 			newSysUser.CreateBy = operaName
 			insertId := s.sysUserService.Insert(newSysUser)
-			if insertId != "" {
+			if insertId != 0 {
 				msg := fmt.Sprintf("用户编号：%s 登录名称：%s 导入成功", rowNo, newSysUser.UserName)
 				successNum++
 				successMsgArr = append(successMsgArr, msg)
@@ -610,7 +597,8 @@ func (s SysUserController) ImportData(c *gin.Context) {
 		}
 
 		// 如果用户已存在 同时 是否更新支持
-		if newSysUser.UserId != "" && isUpdateSupport {
+		if newSysUser.UserId != 0 && body.Update {
+			newSysUser.Passwd = "" // 密码不更新
 			newSysUser.UpdateBy = operaName
 			rows := s.sysUserService.Update(newSysUser)
 			if rows > 0 {
@@ -635,5 +623,5 @@ func (s SysUserController) ImportData(c *gin.Context) {
 		message = strings.Join(append([]string{msg}, successMsgArr...), "<br/>")
 	}
 
-	c.JSON(200, result.OkMsg(message))
+	c.JSON(200, response.OkMsg(message))
 }

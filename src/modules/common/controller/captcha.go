@@ -4,10 +4,10 @@ import (
 	"mask_api_gin/src/framework/config"
 	constCachekey "mask_api_gin/src/framework/constants/cache_key"
 	constCaptcha "mask_api_gin/src/framework/constants/captcha"
+	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/redis"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/vo/result"
 	systemService "mask_api_gin/src/modules/system/service"
 	"time"
 
@@ -35,7 +35,7 @@ func (s *CaptchaController) Image(c *gin.Context) {
 	captchaEnabledStr := s.sysConfigService.FindValueByKey("sys.account.captchaEnabled")
 	captchaEnabled := parse.Boolean(captchaEnabledStr)
 	if !captchaEnabled {
-		c.JSON(200, result.OkData(map[string]any{
+		c.JSON(200, response.OkData(map[string]any{
 			"enabled": captchaEnabled,
 		}))
 		return
@@ -120,8 +120,8 @@ func (s *CaptchaController) Image(c *gin.Context) {
 	if config.Env() == "local" {
 		text, _ := redis.Get("", verifyKey)
 		data["text"] = text
-		c.JSON(200, result.OkData(data))
+		c.JSON(200, response.OkData(data))
 		return
 	}
-	c.JSON(200, result.OkData(data))
+	c.JSON(200, response.OkData(data))
 }

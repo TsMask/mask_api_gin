@@ -23,7 +23,7 @@ func (p *Processor) Execute(data any) (any, error) {
 
 	options := data.(cron.JobData)
 	sysJob := options.SysJob
-	logger.Infof("重复 %v 任务ID %s", options.Repeat, sysJob.JobId)
+	logger.Infof("重复 %v 任务ID %d", options.Repeat, sysJob.JobId)
 
 	// 实现任务处理逻辑
 	i := 0
@@ -31,7 +31,7 @@ func (p *Processor) Execute(data any) (any, error) {
 	for i < 20 {
 		// 获取任务进度
 		progress := p.progress
-		logger.Infof("jonId: %s => 任务进度：%d", sysJob.JobId, progress)
+		logger.Infof("jonId: %d => 任务进度：%d", sysJob.JobId, progress)
 		// 延迟响应
 		time.Sleep(time.Second * 2)
 		i++

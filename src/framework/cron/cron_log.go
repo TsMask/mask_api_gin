@@ -73,7 +73,7 @@ type jobLogData struct {
 }
 
 // SaveLog 日志记录保存
-func (jl *jobLogData) SaveLog(status string) {
+func (jl *jobLogData) SaveLog(statusFlag string) {
 	// 读取任务信息
 	sysJob := jl.Data.SysJob
 
@@ -84,7 +84,7 @@ func (jl *jobLogData) SaveLog(status string) {
 
 	// 结果信息key的Name
 	resultName := "failed"
-	if status == constSystem.STATUS_YES {
+	if statusFlag == constSystem.STATUS_YES {
 		resultName = "completed"
 	}
 
@@ -106,7 +106,7 @@ func (jl *jobLogData) SaveLog(status string) {
 		JobGroup:     sysJob.JobGroup,
 		InvokeTarget: sysJob.InvokeTarget,
 		TargetParams: sysJob.TargetParams,
-		Status:       status,
+		StatusFlag:   statusFlag,
 		JobMsg:       jobMsg,
 		CostTime:     duration.Milliseconds(),
 	}

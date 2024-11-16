@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"mask_api_gin/src/framework/vo/result"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/modules/monitor/service"
 
 	"github.com/gin-gonic/gin"
@@ -24,7 +24,7 @@ type SystemInfoController struct {
 //
 // GET /
 func (s SystemInfoController) Info(c *gin.Context) {
-	c.JSON(200, result.OkData(map[string]any{
+	c.JSON(200, response.OkData(map[string]any{
 		"project": s.systemInfoService.ProjectInfo(),
 		"cpu":     s.systemInfoService.CPUInfo(),
 		"memory":  s.systemInfoService.MemoryInfo(),

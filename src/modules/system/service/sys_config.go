@@ -3,7 +3,7 @@ package service
 import (
 	"fmt"
 	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
-	"mask_api_gin/src/framework/redis"
+	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )
@@ -24,11 +24,11 @@ func (s SysConfig) FindByPage(query map[string]any) ([]model.SysConfig, int64) {
 }
 
 // FindById 通过ID查询信息
-func (s SysConfig) FindById(configId string) model.SysConfig {
-	if configId == "" {
+func (s SysConfig) FindById(configId int64) model.SysConfig {
+	if configId <= 0 {
 		return model.SysConfig{}
 	}
-	configs := s.sysConfigRepository.SelectByIds([]string{configId})
+	configs := s.sysConfigRepository.SelectByIds([]int64{configId})
 	if len(configs) > 0 {
 		return configs[0]
 	}
@@ -36,23 +36,25 @@ func (s SysConfig) FindById(configId string) model.SysConfig {
 }
 
 // Insert 新增信息
-func (s SysConfig) Insert(sysConfig model.SysConfig) string {
-	if configId := s.sysConfigRepository.Insert(sysConfig); configId != "" {
+func (s SysConfig) Insert(sysConfig model.SysConfig) int64 {
+	configId := s.sysConfigRepository.Insert(sysConfig)
+	if configId > 0 {
 		s.CacheLoad(sysConfig.ConfigKey)
 	}
-	return ""
+	return configId
 }
 
 // Update 修改信息
 func (s SysConfig) Update(sysConfig model.SysConfig) int64 {
-	if rows := s.sysConfigRepository.Update(sysConfig); rows > 0 {
+	rows := s.sysConfigRepository.Update(sysConfig)
+	if rows > 0 {
 		s.CacheLoad(sysConfig.ConfigKey)
 	}
-	return 0
+	return rows
 }
 
 // DeleteByIds 批量删除信息
-func (s SysConfig) DeleteByIds(configIds []string) (int64, error) {
+func (s SysConfig) DeleteByIds(configIds []int64) (int64, error) {
 	// 检查是否存在
 	configs := s.sysConfigRepository.SelectByIds(configIds)
 	if len(configs) <= 0 {
@@ -61,7 +63,7 @@ func (s SysConfig) DeleteByIds(configIds []string) (int64, error) {
 	for _, config := range configs {
 		// 检查是否为内置参数
 		if config.ConfigType == "Y" {
-			return 0, fmt.Errorf("%s 配置参数属于内置参数，禁止删除！", config.ConfigId)
+			return 0, fmt.Errorf("该配置参数属于内置参数，禁止删除！")
 		}
 		// 清除缓存
 		s.CacheClean(config.ConfigKey)
@@ -88,14 +90,14 @@ func (s SysConfig) FindValueByKey(configKey string) string {
 }
 
 // CheckUniqueByKey 检查参数键名是否唯一
-func (s SysConfig) CheckUniqueByKey(configKey, configId string) bool {
+func (s SysConfig) CheckUniqueByKey(configKey string, configId int64) bool {
 	uniqueId := s.sysConfigRepository.CheckUnique(model.SysConfig{
 		ConfigKey: configKey,
 	})
 	if uniqueId == configId {
 		return true
 	}
-	return uniqueId == ""
+	return uniqueId == 0
 }
 
 // getCacheKey 组装缓存key

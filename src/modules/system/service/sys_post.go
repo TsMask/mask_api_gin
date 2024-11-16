@@ -29,11 +29,11 @@ func (s SysPost) Find(sysPost model.SysPost) []model.SysPost {
 }
 
 // FindById 通过ID查询信息
-func (s SysPost) FindById(postId string) model.SysPost {
-	if postId == "" {
+func (s SysPost) FindById(postId int64) model.SysPost {
+	if postId == 0 {
 		return model.SysPost{}
 	}
-	posts := s.sysPostRepository.SelectByIds([]string{postId})
+	posts := s.sysPostRepository.SelectByIds([]int64{postId})
 	if len(posts) > 0 {
 		return posts[0]
 	}
@@ -41,7 +41,7 @@ func (s SysPost) FindById(postId string) model.SysPost {
 }
 
 // Insert 新增信息
-func (s SysPost) Insert(sysPost model.SysPost) string {
+func (s SysPost) Insert(sysPost model.SysPost) int64 {
 	return s.sysPostRepository.Insert(sysPost)
 }
 
@@ -51,7 +51,7 @@ func (s SysPost) Update(sysPost model.SysPost) int64 {
 }
 
 // DeleteByIds 批量删除信息
-func (s SysPost) DeleteByIds(postIds []string) (int64, error) {
+func (s SysPost) DeleteByIds(postIds []int64) (int64, error) {
 	// 检查是否存在
 	posts := s.sysPostRepository.SelectByIds(postIds)
 	if len(posts) <= 0 {
@@ -69,28 +69,28 @@ func (s SysPost) DeleteByIds(postIds []string) (int64, error) {
 }
 
 // CheckUniqueByName 检查岗位名称是否唯一
-func (s SysPost) CheckUniqueByName(postName, postId string) bool {
+func (s SysPost) CheckUniqueByName(postName string, postId int64) bool {
 	uniqueId := s.sysPostRepository.CheckUnique(model.SysPost{
 		PostName: postName,
 	})
 	if uniqueId == postId {
 		return true
 	}
-	return uniqueId == ""
+	return uniqueId == 0
 }
 
 // CheckUniqueByCode 检查岗位编码是否唯一
-func (s SysPost) CheckUniqueByCode(postCode, postId string) bool {
+func (s SysPost) CheckUniqueByCode(postCode string, postId int64) bool {
 	uniqueId := s.sysPostRepository.CheckUnique(model.SysPost{
 		PostCode: postCode,
 	})
 	if uniqueId == postId {
 		return true
 	}
-	return uniqueId == ""
+	return uniqueId == 0
 }
 
 // FindByUserId 根据用户ID获取岗位选择框列表
-func (s SysPost) FindByUserId(userId string) []model.SysPost {
+func (s SysPost) FindByUserId(userId int64) []model.SysPost {
 	return s.sysPostRepository.SelectByUserId(userId)
 }

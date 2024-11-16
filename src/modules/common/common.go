@@ -17,7 +17,7 @@ func Setup(router *gin.Engine) {
 		middleware.RateLimit(middleware.LimitOption{
 			Time:  300,
 			Count: 10,
-			Type:  middleware.LimitIP,
+			Type:  middleware.LIMIT_IP,
 		}),
 		controller.NewIndex.Handler,
 	)
@@ -27,7 +27,7 @@ func Setup(router *gin.Engine) {
 		middleware.RateLimit(middleware.LimitOption{
 			Time:  300,
 			Count: 60,
-			Type:  middleware.LimitIP,
+			Type:  middleware.LIMIT_IP,
 		}),
 		controller.NewCaptcha.Image,
 	)
@@ -38,7 +38,7 @@ func Setup(router *gin.Engine) {
 			middleware.RateLimit(middleware.LimitOption{
 				Time:  180,
 				Count: 15,
-				Type:  middleware.LimitIP,
+				Type:  middleware.LIMIT_IP,
 			}),
 			controller.NewAccount.Login,
 		)
@@ -48,7 +48,7 @@ func Setup(router *gin.Engine) {
 			middleware.RateLimit(middleware.LimitOption{
 				Time:  120,
 				Count: 15,
-				Type:  middleware.LimitIP,
+				Type:  middleware.LIMIT_IP,
 			}),
 			controller.NewAccount.Logout,
 		)
@@ -60,7 +60,7 @@ func Setup(router *gin.Engine) {
 			middleware.RateLimit(middleware.LimitOption{
 				Time:  300,
 				Count: 10,
-				Type:  middleware.LimitIP,
+				Type:  middleware.LIMIT_IP,
 			}),
 			controller.NewRegister.Register,
 		)

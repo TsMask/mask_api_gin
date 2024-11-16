@@ -1,464 +1,273 @@
 package repository
 
 import (
-	"fmt"
 	constMenu "mask_api_gin/src/framework/constants/menu"
-	db "mask_api_gin/src/framework/data_source"
+	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
-	"strings"
 	"time"
 )
 
 // NewSysMenu 实例化数据层
-var NewSysMenu = &SysMenu{
-	selectSql: `select 
-	m.menu_id, m.menu_name, m.parent_id, m.menu_sort, m.path, m.component, 
-	m.is_frame, m.is_cache, m.menu_type, m.visible, m.status, m.perms, m.icon, 
-	m.create_time, m.remark 
-	from sys_menu m`,
-
-	selectSqlByUser: `select distinct 
-	m.menu_id, m.menu_name, m.parent_id, m.menu_sort, m.path, m.component, 
-	m.is_frame, m.is_cache, m.menu_type, m.visible, m.status, m.perms, m.icon, 
-	m.create_time, m.remark
-	from sys_menu m
-	left join sys_role_menu rm on m.menu_id = rm.menu_id
-	left join sys_user_role ur on rm.role_id = ur.role_id
-	left join sys_role ro on ur.role_id = ro.role_id`,
-
-	resultMap: map[string]string{
-		"menu_id":     "MenuId",
-		"menu_name":   "MenuName",
-		"parent_name": "ParentName",
-		"parent_id":   "ParentId",
-		"path":        "Path",
-		"menu_sort":   "MenuSort",
-		"component":   "Component",
-		"is_frame":    "IsFrame",
-		"is_cache":    "IsCache",
-		"menu_type":   "MenuType",
-		"visible":     "Visible",
-		"status":      "Status",
-		"perms":       "Perms",
-		"icon":        "Icon",
-		"create_by":   "CreateBy",
-		"create_time": "CreateTime",
-		"update_by":   "UpdateBy",
-		"update_time": "UpdateTime",
-		"remark":      "Remark",
-	},
-}
+var NewSysMenu = &SysMenu{}
 
 // SysMenu 菜单表 数据层处理
-type SysMenu struct {
-	selectSql       string            // 查询视图对象SQL
-	selectSqlByUser string            // 查询视图用户对象SQL
-	resultMap       map[string]string // 结果字段与实体映射
-}
+type SysMenu struct{}
 
 // Select 查询集合
-func (r SysMenu) Select(sysMenu model.SysMenu, userId string) []model.SysMenu {
+func (r SysMenu) Select(sysMenu model.SysMenu, userId int64) []model.SysMenu {
+	tx := db.DB("").Model(&model.SysMenu{})
+	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
-	var conditions []string
-	var params []any
 	if sysMenu.MenuName != "" {
-		conditions = append(conditions, "m.menu_name like concat(?, '%')")
-		params = append(params, sysMenu.MenuName)
+		tx = tx.Where("menu_name like concat(?, '%')", sysMenu.MenuName)
 	}
-	if sysMenu.Visible != "" {
-		conditions = append(conditions, "m.visible = ?")
-		params = append(params, sysMenu.Visible)
+	if sysMenu.VisibleFlag != "" {
+		tx = tx.Where("visible_flag = ?", sysMenu.VisibleFlag)
 	}
-	if sysMenu.Status != "" {
-		conditions = append(conditions, "m.status = ?")
-		params = append(params, sysMenu.Status)
+	if sysMenu.StatusFlag != "" {
+		tx = tx.Where("status_flag = ?", sysMenu.StatusFlag)
 	}
-
-	fromSql := r.selectSql
 
 	// 个人菜单
-	if userId != "*" {
-		fromSql = r.selectSqlByUser
-		conditions = append(conditions, "ur.user_id = ?")
-		params = append(params, userId)
-	}
-
-	// 构建查询条件语句
-	whereSql := ""
-	if len(conditions) > 0 {
-		whereSql += " where " + strings.Join(conditions, " and ")
+	if userId > 0 {
+		//
 	}
 
 	// 查询数据
-	orderSql := " order by m.parent_id, m.menu_sort"
-	querySql := fromSql + whereSql + orderSql
-	rows, err := db.RawDB("", querySql, params)
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return []model.SysMenu{}
-	}
-
-	// 转换实体
-	arr := []model.SysMenu{}
-	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("unmarshal err => %v", err)
-	}
-	return arr
-}
-
-// SelectByIds 通过ID查询信息
-func (r SysMenu) SelectByIds(MenuIds []string) []model.SysMenu {
-	placeholder := db.KeyPlaceholderByQuery(len(MenuIds))
-	querySql := r.selectSql + " where m.menu_id in (" + placeholder + ")"
-	parameters := db.ConvertIdsSlice(MenuIds)
-	rows, err := db.RawDB("", querySql, parameters)
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return []model.SysMenu{}
-	}
-	// 转换实体
-	arr := []model.SysMenu{}
-	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("unmarshal err => %v", err)
-	}
-	return arr
-}
-
-// Insert 新增信息
-func (r SysMenu) Insert(sysMenu model.SysMenu) string {
-	// 参数拼接
-	params := make(map[string]any)
-	if sysMenu.MenuId != "" {
-		params["menu_id"] = sysMenu.MenuId
-	}
-	if sysMenu.ParentId != "" {
-		params["parent_id"] = sysMenu.ParentId
-	}
-	if sysMenu.MenuName != "" {
-		params["menu_name"] = sysMenu.MenuName
-	}
-	if sysMenu.MenuSort >= 0 {
-		params["menu_sort"] = sysMenu.MenuSort
-	}
-	if sysMenu.Path != "" {
-		params["path"] = sysMenu.Path
-	}
-	if sysMenu.Component != "" {
-		params["component"] = sysMenu.Component
-	}
-	if sysMenu.IsFrame != "" {
-		params["is_frame"] = parse.Number(sysMenu.IsFrame)
-	}
-	if sysMenu.IsCache != "" {
-		params["is_cache"] = parse.Number(sysMenu.IsCache)
-	}
-	if sysMenu.MenuType != "" {
-		params["menu_type"] = sysMenu.MenuType
-	}
-	if sysMenu.Visible != "" {
-		params["visible"] = parse.Number(sysMenu.Visible)
-	}
-	if sysMenu.Status != "" {
-		params["status"] = parse.Number(sysMenu.Status)
-	}
-	if sysMenu.Perms != "" {
-		params["perms"] = sysMenu.Perms
-	}
-	if sysMenu.Icon != "" {
-		params["icon"] = sysMenu.Icon
-	} else {
-		params["icon"] = "#"
-	}
-	if sysMenu.Remark != "" {
-		params["remark"] = sysMenu.Remark
-	}
-	if sysMenu.CreateBy != "" {
-		params["create_by"] = sysMenu.CreateBy
-		params["create_time"] = time.Now().UnixMilli()
-	}
-
-	// 根据菜单类型重置参数
-	if sysMenu.MenuType == constMenu.TYPE_BUTTON {
-		params["component"] = ""
-		params["path"] = ""
-		params["icon"] = "#"
-		params["is_cache"] = "1"
-		params["is_frame"] = "1"
-		params["visible"] = "1"
-		params["status"] = "1"
-	} else if sysMenu.MenuType == constMenu.TYPE_DIR {
-		params["component"] = ""
-		params["perms"] = ""
-	}
-
-	// 构建执行语句
-	keys, values, placeholder := db.KeyValuePlaceholderByInsert(params)
-	sql := fmt.Sprintf("insert into sys_menu (%s)values(%s)", keys, placeholder)
-
-	tx := db.DB("").Begin() // 开启事务
-	// 执行插入
-	if err := tx.Exec(sql, values...).Error; err != nil {
-		logger.Errorf("insert row : %v", err.Error())
-		tx.Rollback()
-		return ""
-	}
-	// 获取生成的自增 ID
-	var insertedID string
-	if err := tx.Raw("select last_insert_id()").Row().Scan(&insertedID); err != nil {
-		logger.Errorf("insert last id : %v", err.Error())
-		tx.Rollback()
-		return ""
-	}
-	tx.Commit() // 提交事务
-	return insertedID
-}
-
-// Update 修改信息
-func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
-	// 参数拼接
-	params := make(map[string]any)
-	if sysMenu.MenuId != "" {
-		params["menu_id"] = sysMenu.MenuId
-	}
-	if sysMenu.ParentId != "" {
-		params["parent_id"] = sysMenu.ParentId
-	}
-	if sysMenu.MenuName != "" {
-		params["menu_name"] = sysMenu.MenuName
-	}
-	if sysMenu.MenuSort >= 0 {
-		params["menu_sort"] = sysMenu.MenuSort
-	}
-	if sysMenu.Path != "" {
-		params["path"] = sysMenu.Path
-	}
-	if sysMenu.Component != "" {
-		params["component"] = sysMenu.Component
-	}
-	if sysMenu.IsFrame != "" {
-		params["is_frame"] = parse.Number(sysMenu.IsFrame)
-	}
-	if sysMenu.IsCache != "" {
-		params["is_cache"] = parse.Number(sysMenu.IsCache)
-	}
-	if sysMenu.MenuType != "" {
-		params["menu_type"] = sysMenu.MenuType
-	}
-	if sysMenu.Visible != "" {
-		params["visible"] = parse.Number(sysMenu.Visible)
-	}
-	if sysMenu.Status != "" {
-		params["status"] = parse.Number(sysMenu.Status)
-	}
-	if sysMenu.Perms != "" {
-		params["perms"] = sysMenu.Perms
-	}
-	if sysMenu.Icon != "" {
-		params["icon"] = sysMenu.Icon
-	} else {
-		params["icon"] = "#"
-	}
-	params["remark"] = sysMenu.Remark
-	if sysMenu.UpdateBy != "" {
-		params["update_by"] = sysMenu.UpdateBy
-		params["update_time"] = time.Now().UnixMilli()
-	}
-
-	// 根据菜单类型重置参数
-	if sysMenu.MenuType == constMenu.TYPE_BUTTON {
-		params["component"] = ""
-		params["path"] = ""
-		params["icon"] = "#"
-		params["is_cache"] = "1"
-		params["is_frame"] = "1"
-		params["visible"] = "1"
-		params["status"] = "1"
-	} else if sysMenu.MenuType == constMenu.TYPE_DIR {
-		params["component"] = ""
-		params["perms"] = ""
-	}
-
-	// 构建执行语句
-	keys, values := db.KeyValueByUpdate(params)
-	sql := fmt.Sprintf("update sys_menu set %s where menu_id = ?", keys)
-
-	// 执行更新
-	values = append(values, sysMenu.MenuId)
-	rows, err := db.ExecDB("", sql, values)
-	if err != nil {
-		logger.Errorf("update row : %v", err.Error())
-		return 0
+	rows := []model.SysMenu{}
+	if err := tx.Order("parent_id, menu_sort").Find(&rows).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return rows
 	}
 	return rows
 }
 
-// DeleteById 删除信息
-func (r SysMenu) DeleteById(MenuId string) int64 {
-	sql := "delete from sys_menu where menu_id = ?"
-	results, err := db.ExecDB("", sql, []any{MenuId})
-	if err != nil {
-		logger.Errorf("delete err => %v", err)
+// SelectByIds 通过ID查询信息
+func (r SysMenu) SelectByIds(menuIds []int64) []model.SysMenu {
+	rows := []model.SysMenu{}
+	if len(menuIds) <= 0 {
+		return rows
+	}
+	tx := db.DB("").Model(&model.SysMenu{})
+	// 构建查询条件
+	tx = tx.Where("menu_id in ? and del_flag = '0'", menuIds)
+	// 查询数据
+	if err := tx.Find(&rows).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return rows
+	}
+	return rows
+}
+
+// Insert 新增信息
+func (r SysMenu) Insert(sysMenu model.SysMenu) int64 {
+	sysMenu.DelFlag = "0"
+	if sysMenu.MenuId > 0 {
 		return 0
 	}
-	return results
+	if sysMenu.Icon == "" {
+		sysMenu.Icon = "#"
+	}
+	if sysMenu.CreateBy != "" {
+		sysMenu.CreateTime = time.Now().UnixMilli()
+	}
+
+	// 根据菜单类型重置参数
+	if sysMenu.MenuType == constMenu.TYPE_BUTTON {
+		sysMenu.Component = ""
+		sysMenu.Perms = ""
+		sysMenu.Icon = "#"
+		sysMenu.FrameFlag = "1"
+		sysMenu.CacheFlag = "1"
+		sysMenu.VisibleFlag = "1"
+		sysMenu.StatusFlag = "1"
+	} else if sysMenu.MenuType == constMenu.TYPE_DIR {
+		sysMenu.Component = ""
+		sysMenu.Perms = ""
+	}
+
+	// 执行插入
+	if err := db.DB("").Create(&sysMenu).Error; err != nil {
+		logger.Errorf("insert err => %v", err.Error())
+		return 0
+	}
+	return sysMenu.MenuId
+}
+
+// Update 修改信息
+func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
+	if sysMenu.MenuId <= 0 {
+		return 0
+	}
+	if sysMenu.Icon == "" {
+		sysMenu.Icon = "#"
+	}
+	if sysMenu.UpdateBy != "" {
+		sysMenu.UpdateTime = time.Now().UnixMilli()
+	}
+
+	// 根据菜单类型重置参数
+	if sysMenu.MenuType == constMenu.TYPE_BUTTON {
+		sysMenu.Component = ""
+		sysMenu.Perms = ""
+		sysMenu.Icon = "#"
+		sysMenu.FrameFlag = "1"
+		sysMenu.CacheFlag = "1"
+		sysMenu.VisibleFlag = "1"
+		sysMenu.StatusFlag = "1"
+	} else if sysMenu.MenuType == constMenu.TYPE_DIR {
+		sysMenu.Component = ""
+		sysMenu.Perms = ""
+	}
+
+	tx := db.DB("").Model(&model.SysMenu{})
+	// 构建查询条件
+	tx = tx.Where("menu_id = ?", sysMenu.MenuId)
+	// 执行更新
+	if err := tx.Updates(sysMenu).Error; err != nil {
+		logger.Errorf("update err => %v", err.Error())
+		return 0
+	}
+	return tx.RowsAffected
+}
+
+// DeleteById 删除信息 返回受影响行数
+func (r SysMenu) DeleteById(menuId int64) int64 {
+	if menuId <= 0 {
+		return 0
+	}
+	tx := db.DB("").Model(&model.SysMenu{})
+	// 构建查询条件
+	tx = tx.Where("menu_id = ?", menuId)
+	// 执行更新删除标记
+	if err := tx.Update("del_flag", "1").Error; err != nil {
+		logger.Errorf("update err => %v", err.Error())
+		return 0
+	}
+	return tx.RowsAffected
 }
 
 // ExistChildrenByMenuIdAndStatus 菜单下同状态存在子节点数量
-func (r SysMenu) ExistChildrenByMenuIdAndStatus(MenuId, status string) int64 {
-	querySql := "select count(1) as 'total' from sys_menu where parent_id = ?"
-	params := []any{MenuId}
-
-	// 菜单状态
-	if status != "" {
-		querySql += " and status = ? and menu_type in (?, ?) "
-		params = append(params, status)
-		params = append(params, constMenu.TYPE_DIR)
-		params = append(params, constMenu.TYPE_MENU)
-	}
-
-	results, err := db.RawDB("", querySql, params)
-	if err != nil {
-		logger.Errorf("query err => %v", err)
+func (r SysMenu) ExistChildrenByMenuIdAndStatus(menuId int64, statusFlag string) int64 {
+	if menuId <= 0 {
 		return 0
 	}
-	if len(results) > 0 {
-		return parse.Number(results[0]["total"])
+	tx := db.DB("").Model(&model.SysMenu{})
+	// 构建查询条件
+	tx = tx.Where("parent_id = ? and del_flag = '0'", menuId)
+	if statusFlag != "" {
+		tx = tx.Where("status_flag = ?", statusFlag)
+		tx = tx.Where("menu_type in ?", []string{constMenu.TYPE_DIR, constMenu.TYPE_MENU})
 	}
-	return 0
+	// 查询数据
+	var count int64 = 0
+	if err := tx.Count(&count).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return count
+	}
+	return count
 }
 
 // CheckUnique 检查信息是否唯一
-func (r SysMenu) CheckUnique(sysMenu model.SysMenu) string {
+func (r SysMenu) CheckUnique(sysMenu model.SysMenu) int64 {
+	tx := db.DB("").Model(&model.SysMenu{})
+	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
-	var conditions []string
-	var params []any
+	if sysMenu.ParentId > 0 {
+		tx = tx.Where("parent_id = ?", sysMenu.ParentId)
+	}
 	if sysMenu.MenuName != "" {
-		conditions = append(conditions, "menu_name = ?")
-		params = append(params, sysMenu.MenuName)
+		tx = tx.Where("menu_name = ?", sysMenu.MenuName)
 	}
-	if sysMenu.ParentId != "" {
-		conditions = append(conditions, "parent_id = ?")
-		params = append(params, sysMenu.ParentId)
-	}
-	if sysMenu.Path != "" {
-		conditions = append(conditions, "path = ?")
-		params = append(params, sysMenu.Path)
-	}
-
-	// 构建查询条件语句
-	whereSql := ""
-	if len(conditions) > 0 {
-		whereSql += " where " + strings.Join(conditions, " and ")
-	}
-	if whereSql == "" {
-		return "-"
+	if sysMenu.MenuPath != "" {
+		tx = tx.Where("menu_path = ?", sysMenu.MenuPath)
 	}
 
 	// 查询数据
-	querySql := fmt.Sprintf("select menu_id as 'str' from sys_menu %s limit 1", whereSql)
-	results, err := db.RawDB("", querySql, params)
-	if err != nil {
-		logger.Errorf("query err %v", err)
-		return "-"
+	var id int64 = 0
+	if err := tx.Select("menu_id").Limit(1).Find(&id).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return id
 	}
-	if len(results) > 0 {
-		return fmt.Sprint(results[0]["str"])
-	}
-	return ""
+	return id
 }
 
 // SelectPermsByUserId 根据用户ID查询权限标识
-func (r SysMenu) SelectPermsByUserId(userId string) []string {
-	querySql := `select distinct m.perms as 'str' from sys_menu m 
-    left join sys_role_menu rm on m.menu_id = rm.menu_id 
-    left join sys_user_role ur on rm.role_id = ur.role_id 
-    left join sys_role r on r.role_id = ur.role_id
-	where m.status = '1' and m.perms != '' and r.status = '1' and ur.user_id = ? `
-
-	// 查询结果
-	results, err := db.RawDB("", querySql, []any{userId})
-	if err != nil {
-		logger.Errorf("query err => %v", err)
-		return []string{}
+func (r SysMenu) SelectPermsByUserId(userId int64) []string {
+	rows := []string{}
+	if userId <= 0 {
+		return rows
 	}
+	tx := db.DB("").Table("sys_menu m")
+	// 构建查询条件
+	tx = tx.Distinct("m.perms").
+		Joins("left join sys_role_menu rm on m.menu_id = rm.menu_id").
+		Joins("left join sys_user_role ur on rm.role_id = ur.role_id").
+		Joins("left join sys_role r on r.role_id = ur.role_id").
+		Where("m.status = '1' and m.perms != '' and r.status = '1' and r.del_flag = '0'").
+		Where("ur.user_id = ?", userId)
 
-	// 读取结果
-	rows := make([]string, 0)
-	for _, m := range results {
-		rows = append(rows, fmt.Sprintf("%v", m["str"]))
+	// 查询数据
+	if err := tx.Find(&rows).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return rows
 	}
 	return rows
 }
 
 // SelectByRoleId 根据角色ID查询菜单树信息 TODO
-func (r SysMenu) SelectByRoleId(roleId string, menuCheckStrictly bool) []string {
-	querySql := `select m.menu_id as 'str' from sys_menu m 
-    left join sys_role_menu rm on m.menu_id = rm.menu_id
-    where rm.role_id = ? `
-	var params []any
-	params = append(params, roleId)
-	// 展开
-	if menuCheckStrictly {
-		querySql += ` and m.menu_id not in 
-		(select m.parent_id from sys_menu m 
-		inner join sys_role_menu rm on m.menu_id = rm.menu_id 
-		and rm.role_id = ?) `
-		params = append(params, roleId)
-	}
-
-	// 查询结果
-	results, err := db.RawDB("", querySql, params)
-	if err != nil {
-		logger.Errorf("query err => %v", err)
+func (r SysMenu) SelectByRoleId(roleId int64, menuCheckStrictly bool) []string {
+	if roleId <= 0 {
 		return []string{}
 	}
 
-	if len(results) > 0 {
-		ids := make([]string, 0)
-		for _, v := range results {
-			ids = append(ids, fmt.Sprintf("%v", v["str"]))
-		}
-		return ids
+	tx := db.DB("").Model(&model.SysMenu{})
+	tx = tx.Where("del_flag = '0'")
+	tx = tx.Where("menu_id in (select menu_id from sys_role_menu where role_id = ?)", roleId)
+	// 展开
+	if menuCheckStrictly {
+		tx = tx.Where(`menu_id not in (
+		select m.parent_id from sys_menu m 
+		inner join sys_role_menu rm on m.menu_id = rm.menu_id 
+		and rm.role_id = ?
+		)`, roleId)
 	}
-	return []string{}
+
+	// 查询数据
+	rows := []string{}
+	if err := tx.Distinct("menu_id").Find(&rows).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return rows
+	}
+	return rows
 }
 
-// SelectTreeByUserId 根据用户ID查询菜单 TODO
-func (r SysMenu) SelectTreeByUserId(userId string) []model.SysMenu {
-	var params []any
-	var querySql string
-
-	if userId == "*" {
-		// 管理员全部菜单
-		querySql = r.selectSql + ` where 
-		m.menu_type in (?,?) and m.status = '1'
-		order by m.parent_id, m.menu_sort`
-		params = append(params, constMenu.TYPE_DIR)
-		params = append(params, constMenu.TYPE_MENU)
-	} else {
-		// 用户ID权限
-		querySql = r.selectSqlByUser + ` where 
-		m.menu_type in (?, ?) and m.status = '1'
-		and ur.user_id = ? and ro.status = '1'
-		order by m.parent_id, m.menu_sort`
-		params = append(params, constMenu.TYPE_DIR)
-		params = append(params, constMenu.TYPE_MENU)
-		params = append(params, userId)
-	}
-
-	// 查询结果
-	rows, err := db.RawDB("", querySql, params)
-	if err != nil {
-		logger.Errorf("query err => %v", err)
+// SelectTreeByUserId 根据用户ID查询菜单 -1为管理员查询全部菜单，其他为用户ID查询权限
+func (r SysMenu) SelectTreeByUserId(userId int64) []model.SysMenu {
+	if userId == 0 {
 		return []model.SysMenu{}
 	}
 
-	// 转换实体
-	arr := []model.SysMenu{}
-	if err := db.Unmarshal(rows, &arr); err != nil {
-		logger.Errorf("unmarshal err => %v", err)
+	tx := db.DB("").Model(&model.SysMenu{})
+	tx = tx.Where("del_flag = '0'")
+	// 管理员全部菜单
+	if userId == -1 {
+		tx = tx.Where("menu_type in ? and status_flag = '1'", []string{constMenu.TYPE_DIR, constMenu.TYPE_MENU})
+	} else {
+		// 用户ID权限
+		tx = tx.Where(`menu_type in ? and status_flag = '1' 
+		and menu_id in (
+		select menu_id from sys_role_menu where role_id in (
+		select role_id from sys_user_role where user_id = ?
+		))`, []string{constMenu.TYPE_DIR, constMenu.TYPE_MENU}, userId)
 	}
-	return arr
+
+	// 查询数据
+	rows := []model.SysMenu{}
+	if err := tx.Find(&rows).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return rows
+	}
+	return rows
 }

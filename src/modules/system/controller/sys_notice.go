@@ -2,15 +2,13 @@ package controller
 
 import (
 	"fmt"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
-	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 )
 
 // NewSysNotice 实例化控制层
@@ -31,24 +29,26 @@ type SysNoticeController struct {
 func (s SysNoticeController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	rows, total := s.sysNoticeService.FindByPage(query)
-	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
+	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Info 通知公告信息
 //
 // GET /:noticeId
 func (s SysNoticeController) Info(c *gin.Context) {
-	noticeId := c.Param("noticeId")
-	if noticeId == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	noticeIdStr := c.Param("noticeId")
+	noticeId := parse.Number(noticeIdStr)
+	if noticeIdStr == "" || noticeId <= 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
+
 	data := s.sysNoticeService.FindById(noticeId)
 	if data.NoticeId == noticeId {
-		c.JSON(200, result.OkData(data))
+		c.JSON(200, response.OkData(data))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Add 通知公告新增
@@ -56,19 +56,18 @@ func (s SysNoticeController) Info(c *gin.Context) {
 // POST /
 func (s SysNoticeController) Add(c *gin.Context) {
 	var body model.SysNotice
-	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.NoticeId != "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.NoticeId != 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
 	insertId := s.sysNoticeService.Insert(body)
-	if insertId != "" {
-		c.JSON(200, result.Ok(nil))
+	if insertId > 0 {
+		c.JSON(200, response.OkData(insertId))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Edit 通知公告修改
@@ -76,49 +75,48 @@ func (s SysNoticeController) Add(c *gin.Context) {
 // PUT /
 func (s SysNoticeController) Edit(c *gin.Context) {
 	var body model.SysNotice
-	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.NoticeId == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.NoticeId <= 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 检查是否存在
-	notice := s.sysNoticeService.FindById(body.NoticeId)
-	if notice.NoticeId != body.NoticeId {
-		c.JSON(200, result.ErrMsg("没有权限访问公告信息数据！"))
+	noticeInfo := s.sysNoticeService.FindById(body.NoticeId)
+	if noticeInfo.NoticeId != body.NoticeId {
+		c.JSON(200, response.ErrMsg("没有权限访问公告信息数据！"))
 		return
 	}
 
-	body.UpdateBy = ctx.LoginUserToUserName(c)
-	rows := s.sysNoticeService.Update(body)
+	noticeInfo.NoticeTitle = body.NoticeTitle
+	noticeInfo.NoticeType = body.NoticeType
+	noticeInfo.NoticeContent = body.NoticeContent
+	noticeInfo.StatusFlag = body.StatusFlag
+	noticeInfo.Remark = body.Remark
+	noticeInfo.UpdateBy = ctx.LoginUserToUserName(c)
+	rows := s.sysNoticeService.Update(noticeInfo)
 	if rows > 0 {
-		c.JSON(200, result.Ok(nil))
+		c.JSON(200, response.Ok(nil))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Remove 通知公告删除
 //
-// DELETE /:noticeIds
+// DELETE /:noticeId
 func (s SysNoticeController) Remove(c *gin.Context) {
-	noticeIds := c.Param("noticeIds")
-	if noticeIds == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	noticeIdsStr := c.Param("noticeId")
+	noticeIds := parse.RemoveDuplicatesToNumber(noticeIdsStr, ",")
+	if noticeIdsStr == "" || len(noticeIds) <= 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
-	// 处理字符转id数组后去重
-	ids := strings.Split(noticeIds, ",")
-	uniqueIDs := parse.RemoveDuplicates(ids)
-	if len(uniqueIDs) <= 0 {
-		c.JSON(200, result.Err(nil))
-		return
-	}
-	rows, err := s.sysNoticeService.DeleteByIds(uniqueIDs)
+
+	rows, err := s.sysNoticeService.DeleteByIds(noticeIds)
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
 	msg := fmt.Sprintf("删除成功：%d", rows)
-	c.JSON(200, result.OkMsg(msg))
+	c.JSON(200, response.OkMsg(msg))
 }

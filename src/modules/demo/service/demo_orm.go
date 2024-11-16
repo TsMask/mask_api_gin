@@ -1,8 +1,7 @@
 package service
 
 import (
-	db "mask_api_gin/src/framework/data_source"
-	"mask_api_gin/src/framework/utils/parse"
+	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/modules/demo/model"
 	"time"
 )
@@ -15,127 +14,121 @@ var NewDemoORMService = DemoORMService{}
 type DemoORMService struct{}
 
 // FindByPage 分页查询
-func (s *DemoORMService) FindByPage(query map[string]any) (map[string]any, error) {
-	// 检查分页条件
-	pageNum := int(parse.Number(query["pageNum"]))
-	if pageNum < 1 || pageNum > 50 {
-		pageNum = 1
-	}
-	pageSize := int(parse.Number(query["pageSize"]))
-	if pageSize < 10 || pageSize > 50 {
-		pageSize = 10
-	}
-
-	// 条件判断
-	where := &model.DemoORM{}
+func (s *DemoORMService) FindByPage(query map[string]any) ([]model.DemoORM, int64) {
+	tx := db.DB("").Model(&model.DemoORM{})
+	// 查询条件拼接
 	if v, ok := query["title"]; ok && v != "" {
-		where.Title = v.(string)
+		tx = tx.Where("title like concat(?, '%')", v)
 	}
-	if v, ok := query["status"]; ok && v != "" {
-		where.Status = v.(string)
+	if v, ok := query["statusFlag"]; ok && v != "" {
+		tx = tx.Where("status_flag = ?", v)
 	}
 
+	// 查询结果
 	var total int64 = 0
-	var rows = make([]model.DemoORM, 0)
+	rows := []model.DemoORM{}
 
-	// 执行查询记录总数
-	totalResult := db.DB("").Model(&model.DemoORM{}).Where(where).Count(&total)
-	if total == 0 || totalResult.Error != nil {
-		return map[string]any{
-			"total": total,
-			"rows":  rows,
-		}, totalResult.Error
+	// 查询数量为0直接返回
+	if err := tx.Count(&total).Error; err != nil || total <= 0 {
+		return rows, total
 	}
 
-	// 执行查询记录
-	rowsResult := db.DB("").Where(where).Limit(pageSize).Offset(int((pageNum - 1) * pageSize)).Find(&rows)
-	if rowsResult.Error != nil {
-		return map[string]any{
-			"total": total,
-			"rows":  rows,
-		}, rowsResult.Error
+	// 查询数据分页
+	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
+	err := tx.Limit(pageSize).Offset(pageSize * pageNum).Find(&rows).Error
+	if err != nil {
+		return rows, total
 	}
-
-	return map[string]any{
-		"total": total,
-		"rows":  rows,
-	}, nil
+	return rows, total
 }
 
 // Find 查询集合
-func (s *DemoORMService) Find(demoORM model.DemoORM) ([]model.DemoORM, error) {
-
-	// 条件判断
-	where := &model.DemoORM{}
+func (s *DemoORMService) Find(demoORM model.DemoORM) []model.DemoORM {
+	tx := db.DB("").Model(&model.DemoORM{})
+	// 查询条件拼接
 	if demoORM.Title != "" {
-		where.Title = demoORM.Title
+		tx = tx.Where("title like concat(?, '%')", demoORM.Title)
+	}
+	if demoORM.StatusFlag != "" {
+		tx = tx.Where("status_flag = ?", demoORM.StatusFlag)
 	}
 
-	var rows []model.DemoORM
-	result := db.DB("").Where(where).Find(&rows)
-	if result.Error != nil {
-		return nil, result.Error
+	// 查询数据
+	rows := []model.DemoORM{}
+	if err := tx.Find(&rows).Error; err != nil {
+		return rows
 	}
-
-	return rows, nil
+	return rows
 }
 
 // FindById 通过ID查询
-func (s *DemoORMService) FindById(id string) (model.DemoORM, error) {
-	var result model.DemoORM
-
-	err := db.DB("").First(&result, id).Error
-	if err != nil {
-		return result, err
+func (s *DemoORMService) FindById(id int64) model.DemoORM {
+	item := model.DemoORM{}
+	if id <= 0 {
+		return item
 	}
-
-	return result, nil
+	tx := db.DB("").Model(&model.DemoORM{})
+	// 构建查询条件
+	tx = tx.Where("id = ?", id)
+	// 查询数据
+	if err := tx.Find(&item).Error; err != nil {
+		return item
+	}
+	return item
 }
 
 // Insert 新增
-func (s *DemoORMService) Insert(demoORM model.DemoORM) (model.DemoORM, error) {
+func (s *DemoORMService) Insert(demoORM model.DemoORM) int64 {
 	demoORM.CreateBy = "system"
 	demoORM.CreateTime = time.Now().UnixMilli()
-	result := db.DB("").Create(&demoORM)
-	if result.Error != nil {
-		return demoORM, result.Error
+	// 执行插入
+	if err := db.DB("").Create(&demoORM).Error; err != nil {
+		return 0
 	}
-
-	return demoORM, nil
+	return demoORM.Id
 }
 
 // Update 更新
-func (s *DemoORMService) Update(demoORM model.DemoORM) (model.DemoORM, error) {
-	var result model.DemoORM
-
-	err := db.DB("").First(&result, demoORM.ID).Error
+func (s *DemoORMService) Update(demoORM model.DemoORM) int64 {
+	if demoORM.Id <= 0 {
+		return 0
+	}
+	// 查询数据
+	var item model.DemoORM
+	err := db.DB("").First(&item, demoORM.Id).Error
 	if err != nil {
-		return result, err
+		return item.Id
 	}
 
 	// 只改某些属性
-	result.Title = demoORM.Title
-	result.OrmType = demoORM.OrmType
-	result.Status = demoORM.Status
-	result.Remark = demoORM.Remark
-	result.UpdateBy = "system"
-	result.UpdateTime = time.Now().UnixMilli()
-	updateResult := db.DB("").Save(&result)
-	if updateResult.Error != nil {
-		return result, updateResult.Error
+	item.Title = demoORM.Title
+	item.OrmType = demoORM.OrmType
+	item.StatusFlag = demoORM.StatusFlag
+	item.Remark = demoORM.Remark
+	item.UpdateBy = "system"
+	item.UpdateTime = time.Now().UnixMilli()
+	tx := db.DB("").Model(&model.DemoORM{})
+	// 构建查询条件
+	tx = tx.Where("id = ?", item.Id)
+	// 执行更新
+	if err := tx.Updates(item).Error; err != nil {
+		return 0
 	}
-
-	return result, nil
+	return tx.RowsAffected
 }
 
 // DeleteByIds 批量删除
-func (s *DemoORMService) DeleteByIds(ids []string) int64 {
-	result := db.DB("").Delete(&model.DemoORM{}, ids)
-	if result.Error != nil {
+func (s *DemoORMService) DeleteByIds(ids []int64) int64 {
+	if len(ids) <= 0 {
 		return 0
 	}
-
-	return result.RowsAffected
+	// 构建查询条件
+	tx := db.DB("").Where("id in ?", ids)
+	// 执行更新删除标记
+	if err := tx.Delete(&model.DemoORM{}).Error; err != nil {
+		return 0
+	}
+	return tx.RowsAffected
 }
 
 // Clean 清空测试ORM表

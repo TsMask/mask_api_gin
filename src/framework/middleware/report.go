@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"mask_api_gin/src/framework/logger"
+	"runtime"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +18,8 @@ func Report() gin.HandlerFunc {
 
 		// 计算请求处理时间，并打印日志
 		duration := time.Since(start)
-		logger.Infof("%s %s report end=> %v", c.Request.Method, c.Request.RequestURI, duration)
+		logger.Infof("report %v => %s %s", duration, c.Request.Method, c.Request.RequestURI)
+		numGoroutines := runtime.NumGoroutine()
+		logger.Infof("goroutine数量: %d\n\n", numGoroutines)
 	}
 }

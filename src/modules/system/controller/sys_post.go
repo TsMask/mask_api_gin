@@ -2,18 +2,16 @@ package controller
 
 import (
 	"fmt"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 )
 
 // NewSysPost 实例化控制层
@@ -34,24 +32,26 @@ type SysPostController struct {
 func (s SysPostController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	rows, total := s.sysPostService.FindByPage(query)
-	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
+	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Info 岗位信息
 //
 // GET /:postId
 func (s SysPostController) Info(c *gin.Context) {
-	postId := c.Param("postId")
-	if postId == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	postIdStr := c.Param("postId")
+	postId := parse.Number(postIdStr)
+	if postIdStr == "" || postId <= 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
+
 	data := s.sysPostService.FindById(postId)
 	if data.PostId == postId {
-		c.JSON(200, result.OkData(data))
+		c.JSON(200, response.OkData(data))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Add 岗位新增
@@ -59,35 +59,34 @@ func (s SysPostController) Info(c *gin.Context) {
 // POST /
 func (s SysPostController) Add(c *gin.Context) {
 	var body model.SysPost
-	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.PostId != "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.PostId != 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 检查名称唯一
-	uniquePostName := s.sysPostService.CheckUniqueByName(body.PostName, "")
+	uniquePostName := s.sysPostService.CheckUniqueByName(body.PostName, 0)
 	if !uniquePostName {
 		msg := fmt.Sprintf("岗位新增【%s】失败，岗位名称已存在", body.PostName)
-		c.JSON(200, result.ErrMsg(msg))
+		c.JSON(200, response.ErrMsg(msg))
 		return
 	}
 
 	// 检查编码属性值唯一
-	uniquePostCode := s.sysPostService.CheckUniqueByCode(body.PostCode, "")
+	uniquePostCode := s.sysPostService.CheckUniqueByCode(body.PostCode, 0)
 	if !uniquePostCode {
 		msg := fmt.Sprintf("岗位新增【%s】失败，岗位编码已存在", body.PostCode)
-		c.JSON(200, result.ErrMsg(msg))
+		c.JSON(200, response.ErrMsg(msg))
 		return
 	}
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
 	insertId := s.sysPostService.Insert(body)
-	if insertId != "" {
-		c.JSON(200, result.Ok(nil))
+	if insertId > 0 {
+		c.JSON(200, response.OkData(insertId))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Edit 岗位修改
@@ -95,16 +94,15 @@ func (s SysPostController) Add(c *gin.Context) {
 // PUT /
 func (s SysPostController) Edit(c *gin.Context) {
 	var body model.SysPost
-	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.PostId == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.PostId <= 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 检查是否存在
-	post := s.sysPostService.FindById(body.PostId)
-	if post.PostId != body.PostId {
-		c.JSON(200, result.ErrMsg("没有权限访问岗位数据！"))
+	postInfo := s.sysPostService.FindById(body.PostId)
+	if postInfo.PostId != body.PostId {
+		c.JSON(200, response.ErrMsg("没有权限访问岗位数据！"))
 		return
 	}
 
@@ -112,7 +110,7 @@ func (s SysPostController) Edit(c *gin.Context) {
 	uniquePostName := s.sysPostService.CheckUniqueByName(body.PostName, body.PostId)
 	if !uniquePostName {
 		msg := fmt.Sprintf("岗位修改【%s】失败，岗位名称已存在", body.PostName)
-		c.JSON(200, result.ErrMsg(msg))
+		c.JSON(200, response.ErrMsg(msg))
 		return
 	}
 
@@ -120,53 +118,53 @@ func (s SysPostController) Edit(c *gin.Context) {
 	uniquePostCode := s.sysPostService.CheckUniqueByCode(body.PostCode, body.PostId)
 	if !uniquePostCode {
 		msg := fmt.Sprintf("岗位修改【%s】失败，岗位编码已存在", body.PostCode)
-		c.JSON(200, result.ErrMsg(msg))
+		c.JSON(200, response.ErrMsg(msg))
 		return
 	}
 
-	body.UpdateBy = ctx.LoginUserToUserName(c)
-	rows := s.sysPostService.Update(body)
+	postInfo.PostCode = body.PostCode
+	postInfo.PostName = body.PostName
+	postInfo.PostSort = body.PostSort
+	postInfo.StatusFlag = body.StatusFlag
+	postInfo.Remark = body.Remark
+	postInfo.UpdateBy = ctx.LoginUserToUserName(c)
+	rows := s.sysPostService.Update(postInfo)
 	if rows > 0 {
-		c.JSON(200, result.Ok(nil))
+		c.JSON(200, response.Ok(nil))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Remove 岗位删除
 //
-// DELETE /:postIds
+// DELETE /:postId
 func (s SysPostController) Remove(c *gin.Context) {
-	postIds := c.Param("postIds")
-	if postIds == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	postIdsStr := c.Param("postId")
+	postIds := parse.RemoveDuplicatesToNumber(postIdsStr, ",")
+	if postIdsStr == "" || len(postIds) <= 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
-	// 处理字符转id数组后去重
-	ids := strings.Split(postIds, ",")
-	uniqueIDs := parse.RemoveDuplicates(ids)
-	if len(uniqueIDs) <= 0 {
-		c.JSON(200, result.Err(nil))
-		return
-	}
-	rows, err := s.sysPostService.DeleteByIds(uniqueIDs)
+
+	rows, err := s.sysPostService.DeleteByIds(postIds)
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
 	msg := fmt.Sprintf("删除成功：%d", rows)
-	c.JSON(200, result.OkMsg(msg))
+	c.JSON(200, response.OkMsg(msg))
 }
 
 // Export 导出岗位信息
 //
-// POST /export
+// GET /export
 func (s SysPostController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	query := ctx.BodyJSONMap(c)
+	query := ctx.QueryMap(c)
 	rows, total := s.sysPostService.FindByPage(query)
 	if total == 0 {
-		c.JSON(200, result.ErrMsg("导出数据记录为空"))
+		c.JSON(200, response.CodeMsg(40016, "export data record as empty"))
 		return
 	}
 
@@ -185,7 +183,7 @@ func (s SysPostController) Export(c *gin.Context) {
 	for i, row := range rows {
 		idx := strconv.Itoa(i + 2)
 		statusValue := "停用"
-		if row.Status == "1" {
+		if row.StatusFlag == "1" {
 			statusValue = "正常"
 		}
 		dataCells = append(dataCells, map[string]any{
@@ -200,7 +198,7 @@ func (s SysPostController) Export(c *gin.Context) {
 	// 导出数据表格
 	saveFilePath, err := file.WriteSheet(headerCells, dataCells, fileName, "")
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
 

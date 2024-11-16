@@ -2,12 +2,11 @@ package controller
 
 import (
 	"fmt"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/demo/model"
 	"mask_api_gin/src/modules/demo/service"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -30,12 +29,8 @@ type DemoORMController struct {
 // GET /list
 func (s *DemoORMController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
-	data, err := s.demoORMService.FindByPage(query)
-	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
-		return
-	}
-	c.JSON(200, result.Ok(data))
+	rows, total := s.demoORMService.FindByPage(query)
+	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // All 列表无分页
@@ -48,31 +43,32 @@ func (s *DemoORMController) All(c *gin.Context) {
 	if title != "" {
 		demoORM.Title = title
 	}
-
-	data, err := s.demoORMService.Find(demoORM)
-	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
-		return
+	statusFlag := c.Query("statusFlag")
+	if statusFlag != "" {
+		demoORM.StatusFlag = statusFlag
 	}
-	c.JSON(200, result.OkData(data))
+
+	data := s.demoORMService.Find(demoORM)
+	c.JSON(200, response.OkData(data))
 }
 
 // Info 信息
 //
-// GET /?id=xx
+// GET /:id
 func (s *DemoORMController) Info(c *gin.Context) {
-	id, idOk := c.GetQuery("id")
-	if id == "" || !idOk {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	idStr := c.Param("id")
+	id := parse.Number(idStr)
+	if idStr == "" || id <= 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
-	data, err := s.demoORMService.FindById(id)
-	if err == nil {
-		c.JSON(200, result.OkData(data))
+	data := s.demoORMService.FindById(id)
+	if data.Id == id {
+		c.JSON(200, response.OkData(data))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Add 新增
@@ -80,18 +76,17 @@ func (s *DemoORMController) Info(c *gin.Context) {
 // POST /
 func (s *DemoORMController) Add(c *gin.Context) {
 	var body model.DemoORM
-	err := c.ShouldBindJSON(&body)
-	if err != nil || body.ID != 0 {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	if err := c.ShouldBindJSON(&body); err != nil || body.Id != 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
-	demoORM, err := s.demoORMService.Insert(body)
-	if err == nil {
-		c.JSON(200, result.OkData(demoORM.ID))
+	InsertId := s.demoORMService.Insert(body)
+	if InsertId > 0 {
+		c.JSON(200, response.OkData(InsertId))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Edit 更新
@@ -99,44 +94,37 @@ func (s *DemoORMController) Add(c *gin.Context) {
 // PUT /
 func (s *DemoORMController) Edit(c *gin.Context) {
 	var body model.DemoORM
-	err := c.ShouldBindJSON(&body)
-	if err != nil || body.ID == 0 {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	if err := c.ShouldBindJSON(&body); err != nil || body.Id <= 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
-	demoORM, err := s.demoORMService.Update(body)
-	if err == nil {
-		c.JSON(200, result.OkData(demoORM.ID))
+	rowsAffected := s.demoORMService.Update(body)
+	if rowsAffected > 0 {
+		c.JSON(200, response.Ok(nil))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Remove 删除
 //
-// DELETE /?id=xx,xx
+// DELETE /:id
 func (s *DemoORMController) Remove(c *gin.Context) {
-	id, idOk := c.GetQuery("id")
-	if id == "" || !idOk {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	idStr := c.Param("id")
+	ids := parse.RemoveDuplicatesToNumber(idStr, ",")
+	if idStr == "" || len(ids) <= 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
-	// 处理字符转id数组后去重
-	idArr := strings.Split(id, ",")
-	uniqueIDs := parse.RemoveDuplicates(idArr)
-	if len(uniqueIDs) <= 0 {
-		c.JSON(200, result.Err(nil))
-		return
-	}
-	rows := s.demoORMService.DeleteByIds(uniqueIDs)
+	rows := s.demoORMService.DeleteByIds(ids)
 	if rows > 0 {
 		msg := fmt.Sprintf("删除成功：%d", rows)
-		c.JSON(200, result.OkMsg(msg))
+		c.JSON(200, response.OkMsg(msg))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Clean 清空
@@ -145,8 +133,8 @@ func (s *DemoORMController) Remove(c *gin.Context) {
 func (s *DemoORMController) Clean(c *gin.Context) {
 	_, err := s.demoORMService.Clean()
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
-	c.JSON(200, result.Ok(nil))
+	c.JSON(200, response.Ok(nil))
 }

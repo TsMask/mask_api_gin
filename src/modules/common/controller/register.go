@@ -1,10 +1,11 @@
 package controller
 
 import (
+	"fmt"
 	constSystem "mask_api_gin/src/framework/constants/system"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/regular"
-	"mask_api_gin/src/framework/vo/result"
 	commonModel "mask_api_gin/src/modules/common/model"
 	commonService "mask_api_gin/src/modules/common/service"
 	systemService "mask_api_gin/src/modules/system/service"
@@ -14,7 +15,7 @@ import (
 
 // NewRegister 实例化控制层
 var NewRegister = &RegisterController{
-	registerService:    commonService.NewRegisterService,
+	registerService:    commonService.NewRegister,
 	sysLogLoginService: systemService.NewSysLogLogin,
 }
 
@@ -22,17 +23,17 @@ var NewRegister = &RegisterController{
 //
 // PATH /
 type RegisterController struct {
-	registerService    commonService.IRegisterService // 账号注册操作服务
-	sysLogLoginService *systemService.SysLogLogin     // 系统登录访问服务
+	registerService    *commonService.Register    // 账号注册操作服务
+	sysLogLoginService *systemService.SysLogLogin // 系统登录访问服务
 }
 
 // Register 账号注册
 //
 // POST /register
 func (s *RegisterController) Register(c *gin.Context) {
-	var registerBody commonModel.RegisterBody
-	if err := c.ShouldBindJSON(&registerBody); err != nil {
-		c.JSON(400, result.ErrMsg("参数错误"))
+	var body commonModel.RegisterBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
@@ -41,44 +42,41 @@ func (s *RegisterController) Register(c *gin.Context) {
 	os, browser := ctx.UaOsBrowser(c)
 
 	// 校验验证码
-	err := s.registerService.ValidateCaptcha(
-		registerBody.Code,
-		registerBody.UUID,
-	)
+	err := s.registerService.ValidateCaptcha(body.Code, body.UUID)
 	// 根据错误信息，创建系统访问记录
 	if err != nil {
-		msg := err.Error() + " " + registerBody.Code
+		msg := err.Error() + " " + body.Code
 		s.sysLogLoginService.Insert(
-			registerBody.Username, constSystem.STATUS_NO, msg,
+			body.Username, constSystem.STATUS_NO, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(400, response.CodeMsg(40012, err.Error()))
 		return
 	}
 
 	// 判断必传参数
-	if !regular.ValidUsername(registerBody.Username) {
-		c.JSON(200, result.ErrMsg("用户账号只能包含大写小写字母，数字，且不少于6位"))
+	if !regular.ValidUsername(body.Username) {
+		c.JSON(200, response.ErrMsg("用户账号只能包含大写小写字母，数字，且不少于6位"))
 		return
 	}
-	if !regular.ValidPassword(registerBody.Password) {
-		c.JSON(200, result.ErrMsg("登录密码至少包含大小写字母、数字、特殊符号，且不少于6位"))
+	if !regular.ValidPassword(body.Password) {
+		c.JSON(200, response.ErrMsg("登录密码至少包含大小写字母、数字、特殊符号，且不少于6位"))
 		return
 	}
-	if registerBody.Password != registerBody.ConfirmPassword {
-		c.JSON(200, result.ErrMsg("用户确认输入密码不一致"))
+	if body.Password != body.ConfirmPassword {
+		c.JSON(200, response.ErrMsg("用户确认输入密码不一致"))
 		return
 	}
 
-	userID, err := s.registerService.ByUserName(registerBody.Username, registerBody.Password, registerBody.UserType)
+	userId, err := s.registerService.ByUserName(body.Username, body.Password)
 	if err == nil {
-		msg := registerBody.Username + " 注册成功 " + userID
+		msg := fmt.Sprintf("%s 注册成功 %d", body.Username, userId)
 		s.sysLogLoginService.Insert(
-			registerBody.Username, constSystem.STATUS_YES, msg,
+			body.Username, constSystem.STATUS_YES, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
-		c.JSON(200, result.OkMsg("注册成功"))
+		c.JSON(200, response.OkMsg("注册成功"))
 		return
 	}
-	c.JSON(200, result.ErrMsg(err.Error()))
+	c.JSON(200, response.ErrMsg(err.Error()))
 }

@@ -6,8 +6,8 @@ import (
 	"mask_api_gin/src/framework/config"
 	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
 	constToken "mask_api_gin/src/framework/constants/token"
+	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/redis"
 	"mask_api_gin/src/framework/utils/generate"
 	"mask_api_gin/src/framework/vo"
 	"time"
@@ -38,14 +38,14 @@ func Create(loginUser *vo.LoginUser, ilobArr [4]string) string {
 	loginUser.UUID = generate.Code(32)
 
 	// 设置请求用户登录客户端
-	loginUser.IPAddr = ilobArr[0]
+	loginUser.LoginIp = ilobArr[0]
 	loginUser.LoginLocation = ilobArr[1]
 	loginUser.OS = ilobArr[2]
 	loginUser.Browser = ilobArr[3]
 
 	// 设置新登录IP和登录时间
-	loginUser.User.LoginIp = loginUser.IPAddr
-	loginUser.User.LoginDate = loginUser.LoginTime
+	loginUser.User.LoginIp = loginUser.LoginIp
+	loginUser.User.LoginTime = loginUser.LoginTime
 
 	// 设置用户令牌有效期并存入缓存
 	Cache(loginUser)
@@ -65,7 +65,7 @@ func Create(loginUser *vo.LoginUser, ilobArr [4]string) string {
 	// 生成令牌负荷绑定uuid标识
 	jwtToken := jwt.NewWithClaims(method, jwt.MapClaims{
 		constToken.JWT_UUID:      loginUser.UUID,
-		constToken.JWT_USER_ID:   loginUser.UserID,
+		constToken.JWT_USER_ID:   loginUser.UserId,
 		constToken.JWT_USER_NAME: loginUser.User.UserName,
 		"exp":                    loginUser.ExpireTime,
 		"ait":                    loginUser.LoginTime,
@@ -89,7 +89,7 @@ func Cache(loginUser *vo.LoginUser) {
 	iatTimestamp := time.Now().UnixMilli()
 	loginUser.LoginTime = iatTimestamp
 	loginUser.ExpireTime = iatTimestamp + expTimestamp.Milliseconds()
-	loginUser.User.Password = ""
+	loginUser.User.Passwd = ""
 	// 根据登录标识将loginUser缓存
 	tokenKey := constCacheKey.LOGIN_TOKEN_KEY + loginUser.UUID
 	jsonBytes, err := json.Marshal(loginUser)

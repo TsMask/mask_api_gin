@@ -4,8 +4,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	constUploadSubPath "mask_api_gin/src/framework/constants/upload_sub_path"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/file"
-	"mask_api_gin/src/framework/vo/result"
 	"net/url"
 	"path/filepath"
 
@@ -26,13 +26,13 @@ type FileController struct{}
 func (s *FileController) Download(c *gin.Context) {
 	filePath := c.Param("filePath")
 	if len(filePath) < 8 {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 	// base64解析出地址
 	decodedBytes, err := base64.StdEncoding.DecodeString(filePath)
 	if err != nil {
-		c.JSON(400, result.CodeMsg(400, err.Error()))
+		c.JSON(400, response.CodeMsg(400, err.Error()))
 		return
 	}
 	routerPath := string(decodedBytes)
@@ -41,7 +41,7 @@ func (s *FileController) Download(c *gin.Context) {
 	headerRange := c.GetHeader("Range")
 	resultMap, err := file.ReadUploadFileStream(routerPath, headerRange)
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
 
@@ -69,13 +69,13 @@ func (s *FileController) Upload(c *gin.Context) {
 	// 上传的文件
 	formFile, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 	// 子路径需要在指定范围内
 	subPath := c.PostForm("subPath")
 	if _, ok := constUploadSubPath.UploadSubPath[subPath]; subPath != "" && !ok {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 	if subPath == "" {
@@ -85,11 +85,11 @@ func (s *FileController) Upload(c *gin.Context) {
 	// 上传文件转存
 	uploadFilePath, err := file.TransferUploadFile(formFile, subPath, nil)
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
 
-	c.JSON(200, result.OkData(map[string]string{
+	c.JSON(200, response.OkData(map[string]string{
 		"url":              "http://" + c.Request.Host + uploadFilePath,
 		"filePath":         uploadFilePath,
 		"newFileName":      filepath.Base(uploadFilePath),
@@ -99,29 +99,29 @@ func (s *FileController) Upload(c *gin.Context) {
 
 // ChunkCheck 切片文件检查
 //
-// POST /chunkCheck
+// POST /chunk-check
 func (s *FileController) ChunkCheck(c *gin.Context) {
 	var body struct {
 		Identifier string `json:"identifier" binding:"required"` // 唯一标识
 		FileName   string `json:"fileName" binding:"required"`   // 文件名
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 读取标识目录
 	chunks, err := file.ChunkCheckFile(body.Identifier, body.FileName)
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
-	c.JSON(200, result.OkData(chunks))
+	c.JSON(200, response.OkData(chunks))
 }
 
 // ChunkMerge 切片文件合并
 //
-// POST /chunkMerge
+// POST /chunk-merge
 func (s *FileController) ChunkMerge(c *gin.Context) {
 	var body struct {
 		Identifier string `json:"identifier" binding:"required"` // 唯一标识
@@ -130,12 +130,12 @@ func (s *FileController) ChunkMerge(c *gin.Context) {
 	}
 	err := c.ShouldBindJSON(&body)
 	if err != nil {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 	// 子路径需要在指定范围内
 	if _, ok := constUploadSubPath.UploadSubPath[body.SubPath]; body.SubPath != "" && !ok {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 	if body.SubPath == "" {
@@ -145,11 +145,11 @@ func (s *FileController) ChunkMerge(c *gin.Context) {
 	// 切片文件合并
 	mergeFilePath, err := file.ChunkMergeFile(body.Identifier, body.FileName, body.SubPath)
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
 
-	c.JSON(200, result.OkData(map[string]string{
+	c.JSON(200, response.OkData(map[string]string{
 		"url":              "http://" + c.Request.Host + mergeFilePath,
 		"filePath":         mergeFilePath,
 		"newFileName":      filepath.Base(mergeFilePath),
@@ -159,7 +159,7 @@ func (s *FileController) ChunkMerge(c *gin.Context) {
 
 // ChunkUpload 切片文件上传
 //
-// POST /chunkUpload
+// POST /chunk-upload
 func (s *FileController) ChunkUpload(c *gin.Context) {
 	// 切片编号
 	index := c.PostForm("index")
@@ -168,15 +168,15 @@ func (s *FileController) ChunkUpload(c *gin.Context) {
 	// 上传的文件
 	formFile, err := c.FormFile("file")
 	if index == "" || identifier == "" || err != nil {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 上传文件转存
 	chunkFilePath, err := file.TransferChunkUploadFile(formFile, index, identifier)
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
-	c.JSON(206, result.OkData(chunkFilePath))
+	c.JSON(206, response.OkData(chunkFilePath))
 }

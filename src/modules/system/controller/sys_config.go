@@ -2,18 +2,16 @@ package controller
 
 import (
 	"fmt"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 )
 
 // NewSysConfig 实例化控制层
@@ -34,24 +32,26 @@ type SysConfigController struct {
 func (s SysConfigController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	rows, total := s.sysConfigService.FindByPage(query)
-	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
+	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Info 参数配置信息
 //
 // GET /:configId
 func (s SysConfigController) Info(c *gin.Context) {
-	configId := c.Param("configId")
-	if configId == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	configIdStr := c.Param("configId")
+	configId := parse.Number(configIdStr)
+	if configIdStr == "" || configId <= 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
-	data := s.sysConfigService.FindById(configId)
-	if data.ConfigId == configId {
-		c.JSON(200, result.OkData(data))
+
+	configInfo := s.sysConfigService.FindById(configId)
+	if configInfo.ConfigId == configId {
+		c.JSON(200, response.OkData(configInfo))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Add 参数配置新增
@@ -59,27 +59,26 @@ func (s SysConfigController) Info(c *gin.Context) {
 // POST /
 func (s SysConfigController) Add(c *gin.Context) {
 	var body model.SysConfig
-	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.ConfigId != "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.ConfigId != 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 检查属性值唯一
-	uniqueConfigKey := s.sysConfigService.CheckUniqueByKey(body.ConfigKey, "")
+	uniqueConfigKey := s.sysConfigService.CheckUniqueByKey(body.ConfigKey, 0)
 	if !uniqueConfigKey {
 		msg := fmt.Sprintf("参数配置新增【%s】失败，参数键名已存在", body.ConfigKey)
-		c.JSON(200, result.ErrMsg(msg))
+		c.JSON(200, response.ErrMsg(msg))
 		return
 	}
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
 	insertId := s.sysConfigService.Insert(body)
-	if insertId != "" {
-		c.JSON(200, result.Ok(nil))
+	if insertId > 0 {
+		c.JSON(200, response.OkData(insertId))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Edit 参数配置修改
@@ -87,16 +86,15 @@ func (s SysConfigController) Add(c *gin.Context) {
 // PUT /
 func (s SysConfigController) Edit(c *gin.Context) {
 	var body model.SysConfig
-	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.ConfigId == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.ConfigId <= 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 检查是否存在
-	config := s.sysConfigService.FindById(body.ConfigId)
-	if config.ConfigId != body.ConfigId {
-		c.JSON(200, result.ErrMsg("没有权限访问参数配置数据！"))
+	configInfo := s.sysConfigService.FindById(body.ConfigId)
+	if configInfo.ConfigId != body.ConfigId {
+		c.JSON(200, response.ErrMsg("没有权限访问参数配置数据！"))
 		return
 	}
 
@@ -104,79 +102,79 @@ func (s SysConfigController) Edit(c *gin.Context) {
 	uniqueConfigKey := s.sysConfigService.CheckUniqueByKey(body.ConfigKey, body.ConfigId)
 	if !uniqueConfigKey {
 		msg := fmt.Sprintf("参数配置修改【%s】失败，参数键名已存在", body.ConfigKey)
-		c.JSON(200, result.ErrMsg(msg))
+		c.JSON(200, response.ErrMsg(msg))
 		return
 	}
 
-	body.UpdateBy = ctx.LoginUserToUserName(c)
-	rows := s.sysConfigService.Update(body)
+	configInfo.ConfigType = body.ConfigType
+	configInfo.ConfigName = body.ConfigName
+	configInfo.ConfigKey = body.ConfigKey
+	configInfo.ConfigValue = body.ConfigValue
+	configInfo.Remark = body.Remark
+	configInfo.UpdateBy = ctx.LoginUserToUserName(c)
+	rows := s.sysConfigService.Update(configInfo)
 	if rows > 0 {
-		c.JSON(200, result.Ok(nil))
+		c.JSON(200, response.Ok(nil))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Remove 参数配置删除
 //
-// DELETE /:configIds
+// DELETE /:configId
 func (s SysConfigController) Remove(c *gin.Context) {
-	configIds := c.Param("configIds")
-	if configIds == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	configIdStr := c.Param("configId")
+	configIds := parse.RemoveDuplicatesToNumber(configIdStr, ",")
+	if configIdStr == "" || len(configIds) == 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
-	// 处理字符转id数组后去重
-	ids := strings.Split(configIds, ",")
-	uniqueIDs := parse.RemoveDuplicates(ids)
-	if len(uniqueIDs) <= 0 {
-		c.JSON(200, result.Err(nil))
-		return
-	}
-	rows, err := s.sysConfigService.DeleteByIds(uniqueIDs)
+
+	rows, err := s.sysConfigService.DeleteByIds(configIds)
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
 	msg := fmt.Sprintf("删除成功：%d", rows)
-	c.JSON(200, result.OkMsg(msg))
+	c.JSON(200, response.OkMsg(msg))
 }
 
-// RefreshCache 参数配置刷新缓存
+// Refresh 参数配置刷新缓存
 //
-// PUT /refreshCache
-func (s SysConfigController) RefreshCache(c *gin.Context) {
+// PUT /refresh
+func (s SysConfigController) Refresh(c *gin.Context) {
 	s.sysConfigService.CacheClean("*")
 	s.sysConfigService.CacheLoad("*")
-	c.JSON(200, result.Ok(nil))
+	c.JSON(200, response.Ok(nil))
 }
 
 // ConfigKey 参数配置根据参数键名
 //
-// GET /configKey/:configKey
+// GET /config-key/:configKey
 func (s SysConfigController) ConfigKey(c *gin.Context) {
 	configKey := c.Param("configKey")
 	if configKey == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 	key := s.sysConfigService.FindValueByKey(configKey)
 	if key != "" {
-		c.JSON(200, result.OkData(key))
+		c.JSON(200, response.OkData(key))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Export 导出参数配置信息
 //
-// POST /export
+// GET /export
 func (s SysConfigController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	query := ctx.BodyJSONMap(c)
+	query := ctx.QueryMap(c)
 	rows, total := s.sysConfigService.FindByPage(query)
 	if total == 0 {
-		c.JSON(200, result.ErrMsg("导出数据记录为空"))
+		c.JSON(200, response.CodeMsg(40016, "export data record as empty"))
 		return
 	}
 
@@ -210,7 +208,7 @@ func (s SysConfigController) Export(c *gin.Context) {
 	// 导出数据表格
 	saveFilePath, err := file.WriteSheet(headerCells, dataCells, fileName, "")
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
 

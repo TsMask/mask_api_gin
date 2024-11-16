@@ -3,7 +3,7 @@ package controller
 import (
 	"fmt"
 	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/vo/result"
+	"mask_api_gin/src/framework/response"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,6 +20,6 @@ type IndexController struct{}
 //
 // GET /
 func (s *IndexController) Handler(c *gin.Context) {
-	str := "欢迎使用%s后台管理框架，当前版本：%s，请通过前端管理地址访问。"
-	c.JSON(200, result.OkMsg(fmt.Sprintf(str, config.Name, config.Version)))
+	str := "欢迎使用%s后台服务，当前版本：%s，请通过前台服务地址访问。"
+	c.JSON(200, response.OkMsg(fmt.Sprintf(str, config.Name, config.Version)))
 }

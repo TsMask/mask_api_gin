@@ -3,13 +3,126 @@ package file
 import (
 	"fmt"
 	"io"
+	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/utils/generate"
+	"mask_api_gin/src/framework/utils/parse"
+	"mask_api_gin/src/framework/utils/regular"
 	"mime/multipart"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 )
+
+// 文件上传路径 prefix, dir
+func resourceUpload() (string, string) {
+	upload := config.Get("staticFile.upload").(map[string]any)
+	dir, err := filepath.Abs(upload["dir"].(string))
+	if err != nil {
+		logger.Errorf("file resourceUpload err %v", err)
+	}
+	return upload["prefix"].(string), dir
+}
+
+// 最大上传文件大小
+func uploadFileSize() int64 {
+	fileSize := 1 * 1024 * 1024
+	size := config.Get("upload.fileSize").(int)
+	if size > 1 {
+		fileSize = size * 1024 * 1024
+	}
+	return int64(fileSize)
+}
+
+// 文件上传扩展名白名单
+func uploadWhiteList() []string {
+	arr := config.Get("upload.whitelist").([]any)
+	whiteList := make([]string, len(arr))
+	for i, val := range arr {
+		if str, ok := val.(string); ok {
+			whiteList[i] = str
+		}
+	}
+	return whiteList
+}
+
+// 生成文件名称 fileName_随机值.extName
+//
+// fileName 原始文件名称含后缀，如：logo.png
+func generateFileName(fileName string) string {
+	fileExt := filepath.Ext(fileName)
+	// 替换掉后缀和特殊字符保留文件名
+	newFileName := regular.Replace(fileExt, fileName, "")
+	newFileName = regular.Replace(`[<>:"\\|?*]+`, newFileName, "")
+	newFileName = strings.TrimSpace(newFileName)
+	return fmt.Sprintf("%s_%s%s", newFileName, generate.Code(6), fileExt)
+}
+
+// DEFAULT_FILE_NAME_LENGTH 最大文件名长度
+const DEFAULT_FILE_NAME_LENGTH = 100
+
+// isAllowWrite 检查文件允许写入本地
+//
+// fileName 原始文件名称含后缀，如：file_logo_xxw68.png
+//
+// allowExt 允许上传拓展类型，['.png']
+func isAllowWrite(fileName string, allowExt []string, fileSize int64) error {
+	// 判断上传文件名称长度
+	if len(fileName) > DEFAULT_FILE_NAME_LENGTH {
+		return fmt.Errorf("上传文件名称长度限制最长为 %d", DEFAULT_FILE_NAME_LENGTH)
+	}
+
+	// 最大上传文件大小
+	maxFileSize := uploadFileSize()
+	if fileSize > maxFileSize {
+		return fmt.Errorf("最大上传文件大小 %s", parse.Bit(float64(maxFileSize)))
+	}
+
+	// 判断文件拓展是否为允许的拓展类型
+	fileExt := filepath.Ext(fileName)
+	hasExt := false
+	if len(allowExt) == 0 {
+		allowExt = uploadWhiteList()
+	}
+	for _, ext := range allowExt {
+		if ext == fileExt {
+			hasExt = true
+			break
+		}
+	}
+	if !hasExt {
+		return fmt.Errorf("上传文件类型不支持，仅支持以下类型：%s", strings.Join(allowExt, "、"))
+	}
+
+	return nil
+}
+
+// 检查文件允许本地读取
+//
+// filePath 文件存放资源路径，URL相对地址
+func isAllowRead(filePath string) error {
+	// 禁止目录上跳级别
+	if strings.Contains(filePath, "..") {
+		return fmt.Errorf("禁止目录上跳级别")
+	}
+
+	// 检查允许下载的文件规则
+	fileExt := filepath.Ext(filePath)
+	hasExt := false
+	for _, ext := range uploadWhiteList() {
+		if ext == fileExt {
+			hasExt = true
+			break
+		}
+	}
+	if !hasExt {
+		return fmt.Errorf("非法下载的文件规则：%s", fileExt)
+	}
+
+	return nil
+}
 
 // transferToNewFile 读取目标文件转移到新路径下
 //

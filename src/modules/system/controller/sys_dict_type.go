@@ -2,18 +2,16 @@ package controller
 
 import (
 	"fmt"
+	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/vo/result"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 )
 
 // NewSysDictType 实例化控制层
@@ -34,24 +32,26 @@ type SysDictTypeController struct {
 func (s SysDictTypeController) List(c *gin.Context) {
 	query := ctx.QueryMap(c)
 	rows, total := s.sysDictTypeService.FindByPage(query)
-	c.JSON(200, result.OkData(map[string]any{"rows": rows, "total": total}))
+	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Info 字典类型信息
 //
 // GET /:dictId
 func (s SysDictTypeController) Info(c *gin.Context) {
-	dictId := c.Param("dictId")
-	if dictId == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	dictIdStr := c.Param("dictId")
+	dictId := parse.Number(dictIdStr)
+	if dictIdStr == "" || dictId <= 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
+
 	data := s.sysDictTypeService.FindById(dictId)
 	if data.DictId == dictId {
-		c.JSON(200, result.OkData(data))
+		c.JSON(200, response.OkData(data))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Add 字典类型新增
@@ -59,35 +59,34 @@ func (s SysDictTypeController) Info(c *gin.Context) {
 // POST /
 func (s SysDictTypeController) Add(c *gin.Context) {
 	var body model.SysDictType
-	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.DictId != "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DictId != 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 检查字典名称唯一
-	uniqueDictName := s.sysDictTypeService.CheckUniqueByName(body.DictName, "")
+	uniqueDictName := s.sysDictTypeService.CheckUniqueByName(body.DictName, 0)
 	if !uniqueDictName {
 		msg := fmt.Sprintf("字典新增【%s】失败，字典名称已存在", body.DictName)
-		c.JSON(200, result.ErrMsg(msg))
+		c.JSON(200, response.ErrMsg(msg))
 		return
 	}
 
 	// 检查字典类型唯一
-	uniqueDictType := s.sysDictTypeService.CheckUniqueByType(body.DictType, "")
+	uniqueDictType := s.sysDictTypeService.CheckUniqueByType(body.DictType, 0)
 	if !uniqueDictType {
 		msg := fmt.Sprintf("字典新增【%s】失败，字典类型已存在", body.DictType)
-		c.JSON(200, result.ErrMsg(msg))
+		c.JSON(200, response.ErrMsg(msg))
 		return
 	}
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
 	insertId := s.sysDictTypeService.Insert(body)
-	if insertId != "" {
-		c.JSON(200, result.Ok(nil))
+	if insertId > 0 {
+		c.JSON(200, response.OkData(insertId))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Edit 字典类型修改
@@ -95,16 +94,15 @@ func (s SysDictTypeController) Add(c *gin.Context) {
 // PUT /
 func (s SysDictTypeController) Edit(c *gin.Context) {
 	var body model.SysDictType
-	err := c.ShouldBindBodyWith(&body, binding.JSON)
-	if err != nil || body.DictId == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DictId <= 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 检查数据是否存在
 	dictInfo := s.sysDictTypeService.FindById(body.DictId)
 	if dictInfo.DictId != body.DictId {
-		c.JSON(200, result.ErrMsg("没有权限访问字典类型数据！"))
+		c.JSON(200, response.ErrMsg("没有权限访问字典类型数据！"))
 		return
 	}
 
@@ -112,7 +110,7 @@ func (s SysDictTypeController) Edit(c *gin.Context) {
 	uniqueDictName := s.sysDictTypeService.CheckUniqueByName(body.DictName, body.DictId)
 	if !uniqueDictName {
 		msg := fmt.Sprintf("字典修改【%s】失败，字典名称已存在", body.DictName)
-		c.JSON(200, result.ErrMsg(msg))
+		c.JSON(200, response.ErrMsg(msg))
 		return
 	}
 
@@ -120,58 +118,57 @@ func (s SysDictTypeController) Edit(c *gin.Context) {
 	uniqueDictType := s.sysDictTypeService.CheckUniqueByType(body.DictType, body.DictId)
 	if !uniqueDictType {
 		msg := fmt.Sprintf("字典修改【%s】失败，字典类型已存在", body.DictType)
-		c.JSON(200, result.ErrMsg(msg))
+		c.JSON(200, response.ErrMsg(msg))
 		return
 	}
 
-	body.UpdateBy = ctx.LoginUserToUserName(c)
-	rows := s.sysDictTypeService.Update(body)
+	dictInfo.DictName = body.DictName
+	dictInfo.DictType = body.DictType
+	dictInfo.StatusFlag = body.StatusFlag
+	dictInfo.Remark = body.Remark
+	dictInfo.UpdateBy = ctx.LoginUserToUserName(c)
+	rows := s.sysDictTypeService.Update(dictInfo)
 	if rows > 0 {
-		c.JSON(200, result.Ok(nil))
+		c.JSON(200, response.Ok(nil))
 		return
 	}
-	c.JSON(200, result.Err(nil))
+	c.JSON(200, response.Err(nil))
 }
 
 // Remove 字典类型删除
 //
-// DELETE /:dictIds
+// DELETE /:dictId
 func (s SysDictTypeController) Remove(c *gin.Context) {
-	dictIds := c.Param("dictIds")
-	if dictIds == "" {
-		c.JSON(400, result.CodeMsg(400, "参数错误"))
+	dictIdStr := c.Param("dictId")
+	dictIds := parse.RemoveDuplicatesToNumber(dictIdStr, ",")
+	if dictIdStr == "" || len(dictIds) <= 0 {
+		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
-	// 处理字符转id数组后去重
-	ids := strings.Split(dictIds, ",")
-	uniqueIDs := parse.RemoveDuplicates(ids)
-	if len(uniqueIDs) <= 0 {
-		c.JSON(200, result.Err(nil))
-		return
-	}
-	rows, err := s.sysDictTypeService.DeleteByIds(uniqueIDs)
+
+	rows, err := s.sysDictTypeService.DeleteByIds(dictIds)
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
 	msg := fmt.Sprintf("删除成功：%d", rows)
-	c.JSON(200, result.OkMsg(msg))
+	c.JSON(200, response.OkMsg(msg))
 }
 
-// RefreshCache 字典类型刷新缓存
+// Refresh 字典类型刷新缓存
 //
-// PUT /refreshCache
-func (s SysDictTypeController) RefreshCache(c *gin.Context) {
+// PUT /refresh
+func (s SysDictTypeController) Refresh(c *gin.Context) {
 	s.sysDictTypeService.CacheClean("*")
 	s.sysDictTypeService.CacheLoad("*")
-	c.JSON(200, result.Ok(nil))
+	c.JSON(200, response.Ok(nil))
 }
 
-// DictOptionSelect 字典类型选择框列表
+// Options 字典类型选择框列表
 //
-// GET /getDictOptionSelect
-func (s SysDictTypeController) DictOptionSelect(c *gin.Context) {
-	data := s.sysDictTypeService.Find(model.SysDictType{Status: "1"})
+// GET /options
+func (s SysDictTypeController) Options(c *gin.Context) {
+	data := s.sysDictTypeService.Find(model.SysDictType{StatusFlag: "1"})
 
 	type labelValue struct {
 		Label string `json:"label"`
@@ -186,18 +183,18 @@ func (s SysDictTypeController) DictOptionSelect(c *gin.Context) {
 			Value: v.DictType,
 		})
 	}
-	c.JSON(200, result.OkData(arr))
+	c.JSON(200, response.OkData(arr))
 }
 
 // Export 字典类型列表导出
 //
-// POST /export
+// GET /export
 func (s SysDictTypeController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	query := ctx.BodyJSONMap(c)
+	query := ctx.QueryMap(c)
 	rows, total := s.sysDictTypeService.FindByPage(query)
 	if total == 0 {
-		c.JSON(200, result.ErrMsg("导出数据记录为空"))
+		c.JSON(200, response.CodeMsg(40016, "export data record as empty"))
 		return
 	}
 
@@ -215,7 +212,7 @@ func (s SysDictTypeController) Export(c *gin.Context) {
 	for i, row := range rows {
 		idx := strconv.Itoa(i + 2)
 		statusValue := "停用"
-		if row.Status == "1" {
+		if row.StatusFlag == "1" {
 			statusValue = "正常"
 		}
 		dataCells = append(dataCells, map[string]any{
@@ -229,7 +226,7 @@ func (s SysDictTypeController) Export(c *gin.Context) {
 	// 导出数据表格
 	saveFilePath, err := file.WriteSheet(headerCells, dataCells, fileName, "")
 	if err != nil {
-		c.JSON(200, result.ErrMsg(err.Error()))
+		c.JSON(200, response.ErrMsg(err.Error()))
 		return
 	}
 

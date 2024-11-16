@@ -37,7 +37,7 @@ func InitConfig(configDir *embed.FS) {
 func initFlag() {
 	// --env prod
 	pflag.String("env", "local", "指定运行环境配置,读取config配置文件 (local|prod)")
-	// --c /etc/config.yaml
+	// --config /etc/config.yaml
 	// -c ./config.yaml
 	pflag.StringP("config", "c", "", "指定配置文件覆盖默认配置")
 	// --version
@@ -144,14 +144,14 @@ func readExternalConfig(configPaht string) {
 }
 
 // IsSysAdmin 用户是否为系统管理员
-func IsSysAdmin(userID string) bool {
-	if userID == "" {
+func IsSysAdmin(userId int64) bool {
+	if userId <= 0 {
 		return false
 	}
-	// 从配置中获取系统管理员id列表
-	admins := Get("user.sysAdminList").([]any)
-	for _, s := range admins {
-		if s.(string) == userID {
+	// 从配置中获取系统管理员ID列表
+	arr := Get("user.sysAdmin").([]any)
+	for _, v := range arr {
+		if int64(v.(int)) == userId {
 			return true
 		}
 	}

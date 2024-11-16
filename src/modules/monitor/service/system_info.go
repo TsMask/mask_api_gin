@@ -33,8 +33,8 @@ func (s SystemInfo) ProjectInfo() map[string]any {
 	return map[string]any{
 		"appDir":  appDir,
 		"env":     config.Env(),
-		"name":    config.Get("framework.name"),
-		"version": config.Get("framework.version"),
+		"name":    config.Name,
+		"version": config.Version,
 	}
 }
 
@@ -119,8 +119,8 @@ func (s SystemInfo) MemoryInfo() map[string]any {
 // CPUInfo CPU信息
 func (s SystemInfo) CPUInfo() map[string]any {
 	var core = 0
-	var speed = "未知"
-	var model = "未知"
+	var speed = "-"
+	var model = "-"
 	cpuInfo, err := cpu.Info()
 	if err == nil {
 		core = runtime.NumCPU()
