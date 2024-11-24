@@ -2,7 +2,7 @@
 
 [![star](https://gitee.com/TsMask/mask_api_gin/badge/star.svg?theme=dark)](https://gitee.com/TsMask/mask_api_gin/stargazers)
 ![Build Gin](https://img.shields.io/badge/Build-Gin-green.svg)
-![Release V0.4.0](https://img.shields.io/badge/Release-V0.4.0-orange.svg)
+![Release V0.4.2](https://img.shields.io/badge/Release-V0.4.2-orange.svg)
 ![License MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
 ## 介绍
@@ -95,16 +95,20 @@ go mod download              # 下载项目所需依赖
 go run main.go               # 开发模式启动项目
 open http://localhost:6275   # 启动成功后得到服务访问地址
 
-go run main.go --env prod    # 生产模式启动项目
+go run main.go --env local    # 本地模式启动项目
 ```
 
 #### 生产部署-Liunx
 
 ```bash
 # 修改配置参数 /src/connfig/config.prod.yaml
-go mod download             # 下载项目所需依赖
-go build -o api -ldflags="-s -w"   # 构建项目二进制文件
-./api --env prod            # 二进制文件启动时指定生产模式
+# 指定构建环境
+go env -w GOOS=linux
+go env -w GOOS=windows
+# 构建项目二进制文件
+go build -o app -ldflags="-s -w -X 'mask_api_gin/src/framework/config.Name=mask-api' -X 'mask_api_gin/src/framework/config.Version=0.0.1' -X 'mask_api_gin/src/framework/config.BuildTime=$(date)' -X 'mask_api_gin/src/framework/config.GoVer=$(go version)'"
+# 二进制文件启动时指定生产模式
+chmod +x ./app && ./app --env prod
 ```
 
 > 有任何问题或者建议，可以在 [_Issues_](https://gitee.com/TsMask/mask_api_gin/issues) 或通过QQ群：[_57242844_](https://jq.qq.com/?_wv=1027&k=z6Y4YQcB) 提出想法。  
