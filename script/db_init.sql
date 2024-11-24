@@ -71,9 +71,9 @@ create table sys_user (
 -- ----------------------------
 -- 初始化-用户信息表数据
 -- ----------------------------
-insert into sys_user values(1,  100, 'system', 'system@163.com', '15612341234', '系统管理员', '0', '', '$2y$10$a6y06cCCB2Dl3wmwN5eRmO5oLuu7eSrEKKl0hwCizJsKcIPFZh0fa', '1', '0', '127.0.0.1', REPLACE(unix_timestamp(now(3)),'.',''), 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '系统管理员');
-insert into sys_user values(2,  100, 'admin',  'admin@qq.com',   '13412341234', '管理员',     '0', '', '$2y$10$MZWv2ptjit8uQA4LjXq6nOBtGsl1NmCo2iuzWiYAs7o7UtnLzckd.', '1', '0', '127.0.0.1', REPLACE(unix_timestamp(now(3)),'.',''), 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '管理员');
-insert into sys_user values(3,  105, 'user',   'user@gmail.com', '13612341234', '普通用户',   '0', '', '$2y$10$MZWv2ptjit8uQA4LjXq6nOBtGsl1NmCo2iuzWiYAs7o7UtnLzckd.', '1', '0', '127.0.0.1', REPLACE(unix_timestamp(now(3)),'.',''), 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '普通人员');
+insert into sys_user values(1,  100, 'system', 'system@163.com', '15612341234', '系统管理员', '0', '', '$2a$10$tXF0pa0BVDPf2r6VgNWk2eCZHBhrTbe15km.0HlTb9JpdAv2bdGc6', '1', '0', '127.0.0.1', REPLACE(unix_timestamp(now(3)),'.',''), 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '系统管理员');
+insert into sys_user values(2,  100, 'admin',  'admin@qq.com',   '13412341234', '管理员',     '0', '', '$2a$10$tXF0pa0BVDPf2r6VgNWk2eCZHBhrTbe15km.0HlTb9JpdAv2bdGc6', '1', '0', '127.0.0.1', REPLACE(unix_timestamp(now(3)),'.',''), 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '管理员');
+insert into sys_user values(3,  105, 'user',   'user@gmail.com', '13612341234', '普通用户',   '0', '', '$2a$10$tXF0pa0BVDPf2r6VgNWk2eCZHBhrTbe15km.0HlTb9JpdAv2bdGc6', '1', '0', '127.0.0.1', REPLACE(unix_timestamp(now(3)),'.',''), 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '普通人员');
 
 
 -- ----------------------------
@@ -187,11 +187,11 @@ insert into sys_menu values(113,  '缓存信息', 2,   2,   'cache-info',       
 insert into sys_menu values(114,  '缓存管理', 2,   3,   'cache',                                'monitor/cache/index',      '1', '1', 'M', '1', '1', 'monitor:cache:list',      '#', '0', 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '缓存列表菜单');
 insert into sys_menu values(115,  '在线用户', 2,   4,   'online',                               'monitor/online/index',     '1', '1', 'M', '1', '1', 'monitor:online:list',     '#', '0', 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '在线用户菜单');
 insert into sys_menu values(116,  '调度任务', 2,   5,   'job',                                  'monitor/job/index',        '1', '1', 'M', '1', '1', 'monitor:job:list',        '#', '0', 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '调度任务菜单');
-insert into sys_menu values(117,  '调度日志', 2,   6,   'job/inline/log/:jobId',                'monitor/job/log',          '1', '1', 'M', '0', '1', 'monitor:job:log',         '#', '0', 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '调度日志内嵌隐藏菜单');
+insert into sys_menu values(117,  '调度日志', 2,   6,   'job/inline/log/:jobId',                'monitor/job/log',          '1', '0', 'M', '0', '1', 'monitor:job:log',         '#', '0', 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '调度日志内嵌隐藏菜单');
 insert into sys_menu values(118,  '系统接口', 3,   1,   'swagger',                              'tool/swagger/index',       '1', '1', 'M', '1', '1', 'monitor:swagger:list',    '#', '0', 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '系统接口菜单');
 -- 三级菜单
-insert into sys_menu values(500,  '操作日志', 111, 1,   'operate',                              'system/log/operate/index',    '1', '1', 'M', '1', '1', 'system:log:operate:list',    '#', '0', 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '操作日志菜单');
-insert into sys_menu values(501,  '登录日志', 111, 2,   'login',                                'system/log/login/index',      '1', '1', 'M', '1', '1', 'system:log:login:list',      '#', '0', 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '登录日志菜单');
+insert into sys_menu values(500,  '操作日志', 111, 1,   'operate',                              'system/log/operate/index',    '1', '0', 'M', '1', '1', 'system:log:operate:list',    '#', '0', 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '操作日志菜单');
+insert into sys_menu values(501,  '登录日志', 111, 2,   'login',                                'system/log/login/index',      '1', '0', 'M', '1', '1', 'system:log:login:list',      '#', '0', 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '登录日志菜单');
 -- 用户管理按钮
 insert into sys_menu values(1000, '用户查询', 100, 1,  '', '', '1', '1', 'A', '1', '1', 'system:user:query',          '#', '0', 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
 insert into sys_menu values(1001, '用户新增', 100, 2,  '', '', '1', '1', 'A', '1', '1', 'system:user:add',            '#', '0', 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '');
@@ -560,7 +560,7 @@ create table sys_notice (
   notice_id         bigint          not null auto_increment    comment '公告ID',
   notice_title      varchar(50)     not null                   comment '公告标题',
   notice_type       varchar(1)      not null                   comment '公告类型（1通知 2公告）',
-  notice_content    text            default null               comment '公告内容',
+  notice_content    varchar(3000)   default ''                 comment '公告内容',
   status_flag       varchar(1)      default '0'                comment '公告状态（0关闭 1正常）',
   del_flag          varchar(1)      default '0'                comment '删除标记（0存在 1删除）',
   create_by         varchar(64)     default ''                 comment '创建者',
@@ -574,6 +574,6 @@ create table sys_notice (
 -- ----------------------------
 -- 初始化-公告信息表数据
 -- ----------------------------
-insert into sys_notice values('1', '温馨提醒：2022-11-05 MASK新版本发布啦', '2', '新版本内容', '1', '0', 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '系统管理员');
-insert into sys_notice values('2', '维护通知：2022-11-10 MASK系统凌晨维护', '1', '维护内容',   '1', '0', 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '系统管理员');
+insert into sys_notice values('1', '温馨提醒：2022-11-05 MASK新版本发布啦', '2', '新版本内容', '1', '0', 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '初始数据');
+insert into sys_notice values('2', '维护通知：2022-11-10 MASK系统凌晨维护', '1', '维护内容',   '1', '0', 'system', REPLACE(unix_timestamp(now(3)),'.',''), '', 0, '初始数据');
 
