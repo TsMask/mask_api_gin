@@ -22,10 +22,27 @@ go env -w GOOS=windows
 - `db_init_demo.sql` 初始化demo模块数据表，不需要可不导入
 
 > **账号/密码**  
-> **管理员**：systemAdmin/Admin@1234  
-> **普通人员**：maskUser/User@1234  
+> **系统管理员**：system/Abcd@1234..  
+> **管理员**：admin/Abcd@1234..  
+> **普通人员**：user/Abcd@1234..  
 
 ## Docker 部署
 
 - `Dockerfile` 构建Docker镜像脚本文件
 - `Dockerfile分阶段` 构建Docker最小镜像
+
+```shell
+# 构建
+docker build --build-arg NAME=mask_api --build-arg VERSION=0.0.1 -t mask_api:0.0.1 .
+
+# 启动
+docker run -d \
+--privileged=true \
+--restart=always \
+-p 8080:6275 \
+-e TZ="Asia/Shanghai" \
+-m 512M \
+--name mask_api_000400 \
+mask_api:0.0.1
+
+```
