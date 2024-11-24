@@ -2,7 +2,7 @@ package model
 
 // SysPost 岗位信息表
 type SysPost struct {
-	PostId     int64  `json:"postId" gorm:"column:post_id;primary_key"`            // 岗位ID
+	PostId     string `json:"postId" gorm:"column:post_id;primary_key"`            // 岗位ID
 	PostCode   string `json:"postCode" gorm:"column:post_code" binding:"required"` // 岗位编码
 	PostName   string `json:"postName" gorm:"column:post_name" binding:"required"` // 岗位名称
 	PostSort   int64  `json:"postSort" gorm:"column:post_sort"`                    // 显示顺序

@@ -1,8 +1,6 @@
 package security
 
-import (
-	"github.com/gin-gonic/gin"
-)
+import "github.com/gin-gonic/gin"
 
 // Security 安全
 func Security() gin.HandlerFunc {

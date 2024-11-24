@@ -1,13 +1,14 @@
 package controller
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
+
+	"fmt"
 	"strconv"
 	"time"
 
@@ -39,9 +40,8 @@ func (s SysConfigController) List(c *gin.Context) {
 //
 // GET /:configId
 func (s SysConfigController) Info(c *gin.Context) {
-	configIdStr := c.Param("configId")
-	configId := parse.Number(configIdStr)
-	if configIdStr == "" || configId <= 0 {
+	configId := c.Param("configId")
+	if configId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -59,13 +59,13 @@ func (s SysConfigController) Info(c *gin.Context) {
 // POST /
 func (s SysConfigController) Add(c *gin.Context) {
 	var body model.SysConfig
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.ConfigId != 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.ConfigId != "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 检查属性值唯一
-	uniqueConfigKey := s.sysConfigService.CheckUniqueByKey(body.ConfigKey, 0)
+	uniqueConfigKey := s.sysConfigService.CheckUniqueByKey(body.ConfigKey, "")
 	if !uniqueConfigKey {
 		msg := fmt.Sprintf("参数配置新增【%s】失败，参数键名已存在", body.ConfigKey)
 		c.JSON(200, response.ErrMsg(msg))
@@ -74,7 +74,7 @@ func (s SysConfigController) Add(c *gin.Context) {
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
 	insertId := s.sysConfigService.Insert(body)
-	if insertId > 0 {
+	if insertId != "" {
 		c.JSON(200, response.OkData(insertId))
 		return
 	}
@@ -86,7 +86,7 @@ func (s SysConfigController) Add(c *gin.Context) {
 // PUT /
 func (s SysConfigController) Edit(c *gin.Context) {
 	var body model.SysConfig
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.ConfigId <= 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.ConfigId != "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -125,7 +125,7 @@ func (s SysConfigController) Edit(c *gin.Context) {
 // DELETE /:configId
 func (s SysConfigController) Remove(c *gin.Context) {
 	configIdStr := c.Param("configId")
-	configIds := parse.RemoveDuplicatesToNumber(configIdStr, ",")
+	configIds := parse.RemoveDuplicatesToArray(configIdStr, ",")
 	if configIdStr == "" || len(configIds) == 0 {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return

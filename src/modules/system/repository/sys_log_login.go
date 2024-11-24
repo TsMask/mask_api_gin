@@ -1,11 +1,13 @@
 package repository
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/modules/system/model"
+
+	"fmt"
+	"time"
 )
 
 // NewSysLogLogin 实例化数据层
@@ -28,18 +30,18 @@ func (r SysLogLogin) SelectByPage(query map[string]any) ([]model.SysLogLogin, in
 		tx = tx.Where("status_flag = ?", v)
 	}
 	if v, ok := query["beginTime"]; ok && v != "" {
-		tx = tx.Where("create_time >= ?", v)
+		tx = tx.Where("login_time >= ?", v)
 	}
 	if v, ok := query["endTime"]; ok && v != "" {
-		tx = tx.Where("create_time <= ?", v)
+		tx = tx.Where("login_time <= ?", v)
 	}
 	if v, ok := query["params[beginTime]"]; ok && v != "" {
 		beginDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
-		tx = tx.Where("create_time >= ?", beginDate.UnixMilli())
+		tx = tx.Where("login_time >= ?", beginDate.UnixMilli())
 	}
 	if v, ok := query["params[endTime]"]; ok && v != "" {
 		endDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
-		tx = tx.Where("create_time <= ?", endDate.UnixMilli())
+		tx = tx.Where("login_time <= ?", endDate.UnixMilli())
 	}
 
 	// 查询结果
@@ -62,11 +64,12 @@ func (r SysLogLogin) SelectByPage(query map[string]any) ([]model.SysLogLogin, in
 }
 
 // Insert 新增信息 返回新增的数据ID
-func (r SysLogLogin) Insert(sysLogLogin model.SysLogLogin) int64 {
+func (r SysLogLogin) Insert(sysLogLogin model.SysLogLogin) string {
+	sysLogLogin.LoginTime = time.Now().UnixMilli()
 	// 执行插入
 	if err := db.DB("").Create(&sysLogLogin).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
-		return 0
+		return ""
 	}
 	return sysLogLogin.ID
 }

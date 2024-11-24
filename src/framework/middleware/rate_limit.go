@@ -1,12 +1,13 @@
 package middleware
 
 import (
-	"fmt"
 	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/ip2region"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
+
+	"fmt"
 	"strings"
 	"time"
 

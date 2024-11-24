@@ -1,9 +1,10 @@
 package main
 
 import (
+	"mask_api_gin/src"
+
 	"embed"
 	"log"
-	"mask_api_gin/src"
 )
 
 //go:embed src/assets/**

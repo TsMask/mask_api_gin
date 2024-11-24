@@ -1,8 +1,6 @@
 package token
 
 import (
-	"encoding/json"
-	"fmt"
 	"mask_api_gin/src/framework/config"
 	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
 	constToken "mask_api_gin/src/framework/constants/token"
@@ -10,6 +8,9 @@ import (
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/generate"
 	"mask_api_gin/src/framework/vo"
+
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -36,6 +37,7 @@ func Remove(token string) string {
 func Create(loginUser *vo.LoginUser, ilobArr [4]string) string {
 	// 生成用户唯一token 32位
 	loginUser.UUID = generate.Code(32)
+	loginUser.LoginTime = time.Now().UnixMilli()
 
 	// 设置请求用户登录客户端
 	loginUser.LoginIp = ilobArr[0]

@@ -1,16 +1,16 @@
 package controller
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/config"
 	constMenu "mask_api_gin/src/framework/constants/menu"
 	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
-	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
+
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -41,7 +41,7 @@ func (s SysMenuController) List(c *gin.Context) {
 
 	userId := ctx.LoginUserToUserID(c)
 	if config.IsSysAdmin(userId) {
-		userId = -1
+		userId = "0"
 	}
 	data := s.sysMenuService.Find(query, userId)
 	c.JSON(200, response.OkData(data))
@@ -51,9 +51,8 @@ func (s SysMenuController) List(c *gin.Context) {
 //
 // GET /:menuId
 func (s SysMenuController) Info(c *gin.Context) {
-	menuIdStr := c.Param("menuId")
-	menuId := parse.Number(menuIdStr)
-	if menuIdStr == "" || menuId <= 0 {
+	menuId := c.Param("menuId")
+	if menuId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -71,14 +70,14 @@ func (s SysMenuController) Info(c *gin.Context) {
 // POST /
 func (s SysMenuController) Add(c *gin.Context) {
 	var body model.SysMenu
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.MenuId != 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.MenuId != "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 目录和菜单检查地址唯一
 	if constMenu.TYPE_DIR == body.MenuType || constMenu.TYPE_MENU == body.MenuType {
-		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentId, body.MenuPath, 0)
+		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentId, body.MenuPath, "")
 		if !uniqueMenuPath {
 			msg := fmt.Sprintf("菜单新增【%s】失败，菜单路由地址已存在", body.MenuName)
 			c.JSON(200, response.ErrMsg(msg))
@@ -87,7 +86,7 @@ func (s SysMenuController) Add(c *gin.Context) {
 	}
 
 	// 检查名称唯一
-	uniqueMenuName := s.sysMenuService.CheckUniqueParentIdByMenuName(body.ParentId, body.MenuName, 0)
+	uniqueMenuName := s.sysMenuService.CheckUniqueParentIdByMenuName(body.ParentId, body.MenuName, "")
 	if !uniqueMenuName {
 		msg := fmt.Sprintf("菜单新增【%s】失败，菜单名称已存在", body.MenuName)
 		c.JSON(200, response.ErrMsg(msg))
@@ -103,7 +102,7 @@ func (s SysMenuController) Add(c *gin.Context) {
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
 	insertId := s.sysMenuService.Insert(body)
-	if insertId > 0 {
+	if insertId != "" {
 		c.JSON(200, response.OkData(insertId))
 		return
 	}
@@ -115,7 +114,7 @@ func (s SysMenuController) Add(c *gin.Context) {
 // PUT /
 func (s SysMenuController) Edit(c *gin.Context) {
 	var body model.SysMenu
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.MenuId <= 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.MenuId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -134,7 +133,7 @@ func (s SysMenuController) Edit(c *gin.Context) {
 		return
 	}
 	// 父级ID不为0是要检查
-	if body.ParentId != 0 {
+	if body.ParentId != "0" {
 		menuParent := s.sysMenuService.FindById(body.ParentId)
 		if menuParent.MenuId != body.ParentId {
 			c.JSON(200, response.ErrMsg("没有权限访问菜单数据"))
@@ -208,9 +207,8 @@ func (s SysMenuController) Edit(c *gin.Context) {
 //
 // DELETE /:menuId
 func (s SysMenuController) Remove(c *gin.Context) {
-	menuIdStr := c.Param("menuId")
-	menuId := parse.Number(menuIdStr)
-	if menuIdStr == "" || menuId <= 0 {
+	menuId := c.Param("menuId")
+	if menuId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -261,7 +259,7 @@ func (s SysMenuController) Tree(c *gin.Context) {
 
 	userId := ctx.LoginUserToUserID(c)
 	if config.IsSysAdmin(userId) {
-		userId = -1
+		userId = "0"
 	}
 	data := s.sysMenuService.BuildTreeSelectByUserId(query, userId)
 	c.JSON(200, response.OkData(data))
@@ -272,9 +270,8 @@ func (s SysMenuController) Tree(c *gin.Context) {
 //
 // GET /tree/role/:roleId
 func (s SysMenuController) TreeRole(c *gin.Context) {
-	roleIdStr := c.Param("roleId")
-	roleId := parse.Number(roleIdStr)
-	if roleIdStr == "" || roleId <= 0 {
+	roleId := c.Param("roleId")
+	if roleId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -289,7 +286,7 @@ func (s SysMenuController) TreeRole(c *gin.Context) {
 
 	userId := ctx.LoginUserToUserID(c)
 	if config.IsSysAdmin(userId) {
-		userId = -1
+		userId = "0"
 	}
 	menuTreeSelect := s.sysMenuService.BuildTreeSelectByUserId(query, userId)
 	checkedKeys := s.sysMenuService.FindByRoleId(roleId)

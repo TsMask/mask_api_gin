@@ -1,12 +1,12 @@
 package repository
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
-
 	"mask_api_gin/src/modules/monitor/model"
+
+	"fmt"
 )
 
 // NewSysJobLog 实例化数据层
@@ -92,9 +92,9 @@ func (r SysJobLog) Select(sysJobLog model.SysJobLog) []model.SysJobLog {
 }
 
 // SelectById 通过ID查询信息
-func (r SysJobLog) SelectById(jobLogId int64) model.SysJobLog {
+func (r SysJobLog) SelectById(jobLogId string) model.SysJobLog {
 	item := model.SysJobLog{}
-	if jobLogId <= 0 {
+	if jobLogId == "" {
 		return item
 	}
 	tx := db.DB("").Model(&model.SysJobLog{})
@@ -109,17 +109,17 @@ func (r SysJobLog) SelectById(jobLogId int64) model.SysJobLog {
 }
 
 // Insert 新增信息
-func (r SysJobLog) Insert(sysJobLog model.SysJobLog) int64 {
+func (r SysJobLog) Insert(sysJobLog model.SysJobLog) string {
 	// 执行插入
 	if err := db.DB("").Create(&sysJobLog).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
-		return 0
+		return ""
 	}
 	return sysJobLog.LogId
 }
 
 // DeleteByIds 批量删除信息
-func (r SysJobLog) DeleteByIds(logIds []int64) int64 {
+func (r SysJobLog) DeleteByIds(logIds []string) int64 {
 	if len(logIds) <= 0 {
 		return 0
 	}

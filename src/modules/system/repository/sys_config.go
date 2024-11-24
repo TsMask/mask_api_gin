@@ -1,11 +1,12 @@
 package repository
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/modules/system/model"
+
+	"fmt"
 	"time"
 )
 
@@ -91,7 +92,7 @@ func (r SysConfig) Select(sysConfig model.SysConfig) []model.SysConfig {
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysConfig) SelectByIds(configIds []int64) []model.SysConfig {
+func (r SysConfig) SelectByIds(configIds []string) []model.SysConfig {
 	rows := []model.SysConfig{}
 	if len(configIds) <= 0 {
 		return rows
@@ -108,22 +109,25 @@ func (r SysConfig) SelectByIds(configIds []int64) []model.SysConfig {
 }
 
 // Insert 新增信息 返回新增数据ID
-func (r SysConfig) Insert(sysConfig model.SysConfig) int64 {
+func (r SysConfig) Insert(sysConfig model.SysConfig) string {
 	sysConfig.DelFlag = "0"
 	if sysConfig.CreateBy != "" {
-		sysConfig.CreateTime = time.Now().UnixMilli()
+		ms := time.Now().UnixMilli()
+		sysConfig.UpdateBy = sysConfig.CreateBy
+		sysConfig.UpdateTime = ms
+		sysConfig.CreateTime = ms
 	}
 	// 执行插入
 	if err := db.DB("").Create(&sysConfig).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
-		return 0
+		return ""
 	}
 	return sysConfig.ConfigId
 }
 
 // Update 修改信息 返回受影响行数
 func (r SysConfig) Update(sysConfig model.SysConfig) int64 {
-	if sysConfig.ConfigId <= 0 {
+	if sysConfig.ConfigId == "" {
 		return 0
 	}
 	if sysConfig.UpdateBy != "" {
@@ -141,7 +145,7 @@ func (r SysConfig) Update(sysConfig model.SysConfig) int64 {
 }
 
 // DeleteByIds 批量删除信息 返回受影响行数
-func (r SysConfig) DeleteByIds(configIds []int64) int64 {
+func (r SysConfig) DeleteByIds(configIds []string) int64 {
 	if len(configIds) <= 0 {
 		return 0
 	}
@@ -157,7 +161,7 @@ func (r SysConfig) DeleteByIds(configIds []int64) int64 {
 }
 
 // CheckUnique 检查信息是否唯一 返回数据ID
-func (r SysConfig) CheckUnique(sysConfig model.SysConfig) int64 {
+func (r SysConfig) CheckUnique(sysConfig model.SysConfig) string {
 	tx := db.DB("").Model(&model.SysConfig{})
 	tx = tx.Where("del_flag = 0")
 	// 查询条件拼接
@@ -168,7 +172,7 @@ func (r SysConfig) CheckUnique(sysConfig model.SysConfig) int64 {
 		tx = tx.Where("config_key = ?", sysConfig.ConfigKey)
 	}
 	// 查询数据
-	var id int64 = 0
+	var id string = ""
 	if err := tx.Select("config_id").Limit(1).Find(&id).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return id

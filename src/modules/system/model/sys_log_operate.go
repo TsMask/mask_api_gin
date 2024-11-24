@@ -2,7 +2,7 @@ package model
 
 // SysLogOperate 系统操作日志表
 type SysLogOperate struct {
-	ID             int64  `json:"id" gorm:"column:id;primary_key"`               // 操作ID
+	ID             string `json:"id" gorm:"column:id;primary_key"`               // 操作ID
 	Title          string `json:"title" gorm:"column:title"`                     // 模块标题
 	BusinessType   string `json:"businessType" gorm:"column:business_type"`      // 业务类型（0其它 1新增 2修改 3删除 4授权 5导出 6导入 7强退 8清空数据）
 	OperaUrl       string `json:"operaUrl" gorm:"column:opera_url"`              // 请求URL

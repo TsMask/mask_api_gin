@@ -2,9 +2,9 @@ package model
 
 // SysMenu 菜单权限表
 type SysMenu struct {
-	MenuId      int64  `json:"menuId" gorm:"column:menu_id;primary_key"`            // 菜单ID
+	MenuId      string `json:"menuId" gorm:"column:menu_id;primary_key"`            // 菜单ID
 	MenuName    string `json:"menuName" gorm:"column:menu_name" binding:"required"` // 菜单名称
-	ParentId    int64  `json:"parentId" gorm:"column:parent_id"`                    // 父菜单ID 默认0
+	ParentId    string `json:"parentId" gorm:"column:parent_id"`                    // 父菜单ID 默认0
 	MenuSort    int64  `json:"menuSort" gorm:"column:menu_sort"`                    // 显示顺序
 	MenuPath    string `json:"menuPath" gorm:"column:menu_path"`                    // 路由地址
 	Component   string `json:"component" gorm:"column:component"`                   // 组件路径

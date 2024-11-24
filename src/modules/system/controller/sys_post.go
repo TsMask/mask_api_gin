@@ -1,13 +1,14 @@
 package controller
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
+
+	"fmt"
 	"strconv"
 	"time"
 
@@ -39,9 +40,8 @@ func (s SysPostController) List(c *gin.Context) {
 //
 // GET /:postId
 func (s SysPostController) Info(c *gin.Context) {
-	postIdStr := c.Param("postId")
-	postId := parse.Number(postIdStr)
-	if postIdStr == "" || postId <= 0 {
+	postId := c.Param("postId")
+	if postId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -59,13 +59,13 @@ func (s SysPostController) Info(c *gin.Context) {
 // POST /
 func (s SysPostController) Add(c *gin.Context) {
 	var body model.SysPost
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.PostId != 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.PostId != "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 检查名称唯一
-	uniquePostName := s.sysPostService.CheckUniqueByName(body.PostName, 0)
+	uniquePostName := s.sysPostService.CheckUniqueByName(body.PostName, "")
 	if !uniquePostName {
 		msg := fmt.Sprintf("岗位新增【%s】失败，岗位名称已存在", body.PostName)
 		c.JSON(200, response.ErrMsg(msg))
@@ -73,7 +73,7 @@ func (s SysPostController) Add(c *gin.Context) {
 	}
 
 	// 检查编码属性值唯一
-	uniquePostCode := s.sysPostService.CheckUniqueByCode(body.PostCode, 0)
+	uniquePostCode := s.sysPostService.CheckUniqueByCode(body.PostCode, "")
 	if !uniquePostCode {
 		msg := fmt.Sprintf("岗位新增【%s】失败，岗位编码已存在", body.PostCode)
 		c.JSON(200, response.ErrMsg(msg))
@@ -82,7 +82,7 @@ func (s SysPostController) Add(c *gin.Context) {
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
 	insertId := s.sysPostService.Insert(body)
-	if insertId > 0 {
+	if insertId != "" {
 		c.JSON(200, response.OkData(insertId))
 		return
 	}
@@ -94,7 +94,7 @@ func (s SysPostController) Add(c *gin.Context) {
 // PUT /
 func (s SysPostController) Edit(c *gin.Context) {
 	var body model.SysPost
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.PostId <= 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.PostId <= "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -141,7 +141,7 @@ func (s SysPostController) Edit(c *gin.Context) {
 // DELETE /:postId
 func (s SysPostController) Remove(c *gin.Context) {
 	postIdsStr := c.Param("postId")
-	postIds := parse.RemoveDuplicatesToNumber(postIdsStr, ",")
+	postIds := parse.RemoveDuplicatesToArray(postIdsStr, ",")
 	if postIdsStr == "" || len(postIds) <= 0 {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
@@ -176,7 +176,7 @@ func (s SysPostController) Export(c *gin.Context) {
 		"B1": "岗位编码",
 		"C1": "岗位名称",
 		"D1": "岗位排序",
-		"E1": "状态",
+		"E1": "岗位状态",
 	}
 	// 从第二行开始的数据
 	dataCells := make([]map[string]any, 0)

@@ -113,7 +113,7 @@ func (q *Queue) RunJob(data any, opts JobOptions) int {
 }
 
 // RemoveJob 移除任务
-func (q *Queue) RemoveJob(jobId int64) bool {
+func (q *Queue) RemoveJob(jobId string) bool {
 	for i, v := range q.Job {
 		if jobId == v.Opts.JobId {
 			cronLog.Info("RemoveJob", v.cid, jobId, v.Status)
@@ -138,7 +138,7 @@ const (
 
 // JobOptions 任务参数信息
 type JobOptions struct {
-	JobId int64  // 执行任务编号
+	JobId string // 执行任务编号
 	Cron  string // 重复任务cron表达式
 }
 

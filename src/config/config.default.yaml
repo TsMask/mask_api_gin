@@ -169,7 +169,7 @@ user:
     lockTime: 10
   # 设定为系统管理员的用户ID
   sysAdmin:
-    - 1
+    - "1"
 
 # char 字符验证码配置
 charCaptcha:

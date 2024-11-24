@@ -4,7 +4,7 @@ import systemModel "mask_api_gin/src/modules/system/model"
 
 // TreeSelect 树结构实体类
 type TreeSelect struct {
-	ID       int64        `json:"id"`       // 节点ID
+	ID       string       `json:"id"`       // 节点ID
 	Label    string       `json:"label"`    // 节点名称
 	Children []TreeSelect `json:"children"` // 子节点
 }

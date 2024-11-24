@@ -1,14 +1,14 @@
 package controller
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
-	"mask_api_gin/src/framework/utils/parse"
 	commonService "mask_api_gin/src/modules/common/service"
 	"mask_api_gin/src/modules/system/service"
+
+	"fmt"
 	"strconv"
 	"time"
 
@@ -54,9 +54,8 @@ func (s SysLogLoginController) Clean(c *gin.Context) {
 //
 // PUT /unlock/:userId
 func (s SysLogLoginController) Unlock(c *gin.Context) {
-	userIdStr := c.Param("userId")
-	userId := parse.Number(userIdStr)
-	if userIdStr == "" || userId <= 0 {
+	userId := c.Param("userId")
+	if userId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}

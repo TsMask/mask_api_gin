@@ -1,13 +1,14 @@
 package src
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/engine"
 	"mask_api_gin/src/modules/common"
 	"mask_api_gin/src/modules/demo"
 	"mask_api_gin/src/modules/monitor"
 	"mask_api_gin/src/modules/system"
+
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )

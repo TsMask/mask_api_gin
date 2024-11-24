@@ -1,13 +1,14 @@
 package src
 
 import (
-	"embed"
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/cron"
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/ip2region"
 	"mask_api_gin/src/framework/logger"
+
+	"embed"
 )
 
 // ConfigurationInit 配置中心初始加载

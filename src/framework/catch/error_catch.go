@@ -1,10 +1,11 @@
 package catch
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/response"
+
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )

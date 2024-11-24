@@ -1,11 +1,12 @@
 package service
 
 import (
-	"fmt"
 	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
+
+	"fmt"
 )
 
 // NewSysConfig 实例化服务层
@@ -24,11 +25,11 @@ func (s SysConfig) FindByPage(query map[string]any) ([]model.SysConfig, int64) {
 }
 
 // FindById 通过ID查询信息
-func (s SysConfig) FindById(configId int64) model.SysConfig {
-	if configId <= 0 {
+func (s SysConfig) FindById(configId string) model.SysConfig {
+	if configId == "" {
 		return model.SysConfig{}
 	}
-	configs := s.sysConfigRepository.SelectByIds([]int64{configId})
+	configs := s.sysConfigRepository.SelectByIds([]string{configId})
 	if len(configs) > 0 {
 		return configs[0]
 	}
@@ -36,9 +37,9 @@ func (s SysConfig) FindById(configId int64) model.SysConfig {
 }
 
 // Insert 新增信息
-func (s SysConfig) Insert(sysConfig model.SysConfig) int64 {
+func (s SysConfig) Insert(sysConfig model.SysConfig) string {
 	configId := s.sysConfigRepository.Insert(sysConfig)
-	if configId > 0 {
+	if configId != "" {
 		s.CacheLoad(sysConfig.ConfigKey)
 	}
 	return configId
@@ -54,7 +55,7 @@ func (s SysConfig) Update(sysConfig model.SysConfig) int64 {
 }
 
 // DeleteByIds 批量删除信息
-func (s SysConfig) DeleteByIds(configIds []int64) (int64, error) {
+func (s SysConfig) DeleteByIds(configIds []string) (int64, error) {
 	// 检查是否存在
 	configs := s.sysConfigRepository.SelectByIds(configIds)
 	if len(configs) <= 0 {
@@ -90,14 +91,14 @@ func (s SysConfig) FindValueByKey(configKey string) string {
 }
 
 // CheckUniqueByKey 检查参数键名是否唯一
-func (s SysConfig) CheckUniqueByKey(configKey string, configId int64) bool {
+func (s SysConfig) CheckUniqueByKey(configKey string, configId string) bool {
 	uniqueId := s.sysConfigRepository.CheckUnique(model.SysConfig{
 		ConfigKey: configKey,
 	})
 	if uniqueId == configId {
 		return true
 	}
-	return uniqueId == 0
+	return uniqueId == ""
 }
 
 // getCacheKey 组装缓存key

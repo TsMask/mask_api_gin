@@ -1,8 +1,9 @@
 package logger
 
 import (
-	"log"
 	"mask_api_gin/src/framework/config"
+
+	"log"
 )
 
 var logWriter *Logger

@@ -36,7 +36,7 @@ func InitConfig(configDir *embed.FS) {
 // 指定参数绑定
 func initFlag() {
 	// --env prod
-	pflag.String("env", "local", "指定运行环境配置,读取config配置文件 (local|prod)")
+	pflag.String("env", "prod", "指定运行环境配置,读取config配置文件 (local|prod)")
 	// --config /etc/config.yaml
 	// -c ./config.yaml
 	pflag.StringP("config", "c", "", "指定配置文件覆盖默认配置")
@@ -49,7 +49,7 @@ func initFlag() {
 
 	// 参数固定输出
 	if *pVersion {
-		fmt.Printf("%s version: %s\n%s\n%s\n\n", Name, Version, BuildTime, GoVer)
+		fmt.Printf("Name:%s\nVersion:%s\nBuildTime:%s\nBuildGoVer:%s\n\n", Name, Version, BuildTime, GoVer)
 		os.Exit(1)
 	}
 	if *pHelp {
@@ -119,8 +119,8 @@ func Get(key string) any {
 }
 
 // GetAssetsDirFS 访问程序内全局资源访问
-func GetAssetsDirFS() embed.FS {
-	return *conf.Get("AssetsDir").(*embed.FS)
+func GetAssetsDirFS() *embed.FS {
+	return conf.Get("AssetsDir").(*embed.FS)
 }
 
 // SetAssetsDirFS 设置程序内全局资源访问
@@ -144,14 +144,14 @@ func readExternalConfig(configPaht string) {
 }
 
 // IsSysAdmin 用户是否为系统管理员
-func IsSysAdmin(userId int64) bool {
-	if userId <= 0 {
+func IsSysAdmin(userId string) bool {
+	if userId == "" {
 		return false
 	}
 	// 从配置中获取系统管理员ID列表
 	arr := Get("user.sysAdmin").([]any)
 	for _, v := range arr {
-		if int64(v.(int)) == userId {
+		if fmt.Sprint(v) == userId {
 			return true
 		}
 	}

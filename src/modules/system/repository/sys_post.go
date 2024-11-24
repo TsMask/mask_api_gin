@@ -4,6 +4,7 @@ import (
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
+
 	"time"
 )
 
@@ -72,7 +73,7 @@ func (r SysPost) Select(sysPost model.SysPost) []model.SysPost {
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysPost) SelectByIds(postIds []int64) []model.SysPost {
+func (r SysPost) SelectByIds(postIds []string) []model.SysPost {
 	rows := []model.SysPost{}
 	if len(postIds) <= 0 {
 		return rows
@@ -89,22 +90,25 @@ func (r SysPost) SelectByIds(postIds []int64) []model.SysPost {
 }
 
 // Insert 新增信息 返回新增数据ID
-func (r SysPost) Insert(sysPost model.SysPost) int64 {
+func (r SysPost) Insert(sysPost model.SysPost) string {
 	sysPost.DelFlag = "0"
 	if sysPost.CreateBy != "" {
-		sysPost.CreateTime = time.Now().UnixMilli()
+		ms := time.Now().UnixMilli()
+		sysPost.UpdateBy = sysPost.CreateBy
+		sysPost.UpdateTime = ms
+		sysPost.CreateTime = ms
 	}
 	// 执行插入
 	if err := db.DB("").Create(&sysPost).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
-		return 0
+		return ""
 	}
 	return sysPost.PostId
 }
 
 // Update 修改信息 返回受影响行数
 func (r SysPost) Update(sysPost model.SysPost) int64 {
-	if sysPost.PostId <= 0 {
+	if sysPost.PostId == "" {
 		return 0
 	}
 	if sysPost.UpdateBy != "" {
@@ -122,7 +126,7 @@ func (r SysPost) Update(sysPost model.SysPost) int64 {
 }
 
 // DeleteByIds 批量删除信息 返回受影响行数
-func (r SysPost) DeleteByIds(postIds []int64) int64 {
+func (r SysPost) DeleteByIds(postIds []string) int64 {
 	if len(postIds) <= 0 {
 		return 0
 	}
@@ -138,9 +142,9 @@ func (r SysPost) DeleteByIds(postIds []int64) int64 {
 }
 
 // SelectByUserId 根据用户ID获取岗位选择框列表
-func (r SysPost) SelectByUserId(userId int64) []model.SysPost {
+func (r SysPost) SelectByUserId(userId string) []model.SysPost {
 	rows := []model.SysPost{}
-	if userId <= 0 {
+	if userId == "" {
 		return rows
 	}
 	tx := db.DB("").Model(&model.SysPost{})
@@ -155,8 +159,8 @@ func (r SysPost) SelectByUserId(userId int64) []model.SysPost {
 	return rows
 }
 
-// CheckUnique 检查信息是否唯一
-func (r SysPost) CheckUnique(sysPost model.SysPost) int64 {
+// CheckUnique 检查信息是否唯一 返回ID
+func (r SysPost) CheckUnique(sysPost model.SysPost) string {
 	tx := db.DB("").Model(&model.SysPost{})
 	tx = tx.Where("del_flag = 0")
 	// 查询条件拼接
@@ -168,7 +172,7 @@ func (r SysPost) CheckUnique(sysPost model.SysPost) int64 {
 	}
 
 	// 查询数据
-	var id int64 = 0
+	var id string = ""
 	if err := tx.Select("post_id").Limit(1).Find(&id).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return id

@@ -1,10 +1,11 @@
 package cron
 
 import (
-	"encoding/json"
 	constSystem "mask_api_gin/src/framework/constants/system"
 	monitorModel "mask_api_gin/src/modules/monitor/model"
 	monitorRepository "mask_api_gin/src/modules/monitor/repository"
+
+	"encoding/json"
 	"time"
 )
 
@@ -109,6 +110,7 @@ func (jl *jobLogData) SaveLog(statusFlag string) {
 		StatusFlag:   statusFlag,
 		JobMsg:       jobMsg,
 		CostTime:     duration.Milliseconds(),
+		CreateTime:   time.Now().UnixMilli(),
 	}
 	// 插入数据
 	monitorRepository.NewSysJobLog.Insert(sysJobLog)

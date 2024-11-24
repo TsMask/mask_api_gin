@@ -2,7 +2,7 @@ package model
 
 // SysConfig 参数配置表
 type SysConfig struct {
-	ConfigId    int64  `json:"configId" gorm:"column:config_id;primary_key"`              // 参数ID
+	ConfigId    string `json:"configId" gorm:"column:config_id;primary_key"`              // 参数ID
 	ConfigName  string `json:"configName" gorm:"column:config_name" binding:"required"`   // 参数名称
 	ConfigKey   string `json:"configKey" gorm:"column:config_key" binding:"required"`     // 参数键名
 	ConfigValue string `json:"configValue" gorm:"column:config_value" binding:"required"` // 参数键值

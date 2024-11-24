@@ -2,6 +2,7 @@ package date
 
 import (
 	"mask_api_gin/src/framework/logger"
+
 	"time"
 )
 
@@ -46,8 +47,9 @@ func ParseDateToStr(data any, formatStr string) string {
 				t = time.UnixMilli(v)
 			} else if v >= 1e9 {
 				t = time.Unix(v, 0)
+			} else {
+				return ""
 			}
-			return ""
 		case string:
 			parsedTime, err := time.Parse(formatStr, v)
 			if err != nil {

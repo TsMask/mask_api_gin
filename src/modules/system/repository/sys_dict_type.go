@@ -3,7 +3,10 @@ package repository
 import (
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/modules/system/model"
+
+	"fmt"
 	"time"
 )
 
@@ -26,6 +29,20 @@ func (r SysDictType) SelectByPage(query map[string]any) ([]model.SysDictType, in
 	}
 	if v, ok := query["statusFlag"]; ok && v != "" {
 		tx = tx.Where("status_flag = ?", v)
+	}
+	if v, ok := query["beginTime"]; ok && v != "" {
+		tx = tx.Where("create_time >= ?", v)
+	}
+	if v, ok := query["endTime"]; ok && v != "" {
+		tx = tx.Where("create_time <= ?", v)
+	}
+	if v, ok := query["params[beginTime]"]; ok && v != "" {
+		beginDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
+		tx = tx.Where("create_time >= ?", beginDate.UnixMilli())
+	}
+	if v, ok := query["params[endTime]"]; ok && v != "" {
+		endDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
+		tx = tx.Where("create_time <= ?", endDate.UnixMilli())
 	}
 
 	// 查询结果
@@ -72,7 +89,7 @@ func (r SysDictType) Select(sysDictType model.SysDictType) []model.SysDictType {
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysDictType) SelectByIds(dictIds []int64) []model.SysDictType {
+func (r SysDictType) SelectByIds(dictIds []string) []model.SysDictType {
 	rows := []model.SysDictType{}
 	if len(dictIds) <= 0 {
 		return rows
@@ -89,22 +106,25 @@ func (r SysDictType) SelectByIds(dictIds []int64) []model.SysDictType {
 }
 
 // Insert 新增信息 返回新增数据ID
-func (r SysDictType) Insert(sysDictType model.SysDictType) int64 {
+func (r SysDictType) Insert(sysDictType model.SysDictType) string {
 	sysDictType.DelFlag = "0"
 	if sysDictType.CreateBy != "" {
-		sysDictType.CreateTime = time.Now().UnixMilli()
+		ms := time.Now().UnixMilli()
+		sysDictType.UpdateBy = sysDictType.CreateBy
+		sysDictType.UpdateTime = ms
+		sysDictType.CreateTime = ms
 	}
 	// 执行插入
 	if err := db.DB("").Create(&sysDictType).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
-		return 0
+		return ""
 	}
 	return sysDictType.DictId
 }
 
 // Update 修改信息 返回受影响的行数
 func (r SysDictType) Update(sysDictType model.SysDictType) int64 {
-	if sysDictType.DictId <= 0 {
+	if sysDictType.DictId == "" {
 		return 0
 	}
 	if sysDictType.UpdateBy != "" {
@@ -122,7 +142,7 @@ func (r SysDictType) Update(sysDictType model.SysDictType) int64 {
 }
 
 // DeleteByIds 批量删除信息 返回受影响的行数
-func (r SysDictType) DeleteByIds(dictIds []int64) int64 {
+func (r SysDictType) DeleteByIds(dictIds []string) int64 {
 	if len(dictIds) <= 0 {
 		return 0
 	}
@@ -138,7 +158,7 @@ func (r SysDictType) DeleteByIds(dictIds []int64) int64 {
 }
 
 // CheckUnique 检查信息是否唯一 返回数据ID
-func (r SysDictType) CheckUnique(sysDictType model.SysDictType) int64 {
+func (r SysDictType) CheckUnique(sysDictType model.SysDictType) string {
 	tx := db.DB("").Model(&model.SysDictType{})
 	tx = tx.Where("del_flag = 0")
 	// 查询条件拼接
@@ -149,7 +169,7 @@ func (r SysDictType) CheckUnique(sysDictType model.SysDictType) int64 {
 		tx = tx.Where("dict_type = ?", sysDictType.DictType)
 	}
 	// 查询数据
-	var id int64 = 0
+	var id string = ""
 	if err := tx.Select("dict_id").Limit(1).Find(&id).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return id

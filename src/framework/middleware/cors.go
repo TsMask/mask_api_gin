@@ -1,8 +1,9 @@
 package middleware
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/config"
+
+	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"

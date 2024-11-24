@@ -20,7 +20,7 @@ func Setup(router *gin.Engine) {
 	// 服务器信息
 	router.GET("/monitor/system",
 		middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:system:info"}}),
-		controller.NewSystemInfo.Info,
+		controller.NewSystem.Info,
 	)
 
 	// 在线用户监控
@@ -121,7 +121,7 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 调度任务日志信息
-	sysJobLogGroup := router.Group("/monitor/job-log")
+	sysJobLogGroup := router.Group("/monitor/job/log")
 	{
 		sysJobLogGroup.GET("/list",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:job:list"}}),

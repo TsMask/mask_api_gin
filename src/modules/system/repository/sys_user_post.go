@@ -13,8 +13,8 @@ var NewSysUserPost = &SysUserPost{}
 type SysUserPost struct{}
 
 // ExistUserByPostId 存在用户使用数量
-func (r SysUserPost) ExistUserByPostId(postId int64) int64 {
-	if postId <= 0 {
+func (r SysUserPost) ExistUserByPostId(postId string) int64 {
+	if postId == "" {
 		return 0
 	}
 	tx := db.DB("").Model(&model.SysUserPost{})
@@ -29,7 +29,7 @@ func (r SysUserPost) ExistUserByPostId(postId int64) int64 {
 }
 
 // DeleteByUserIds 批量删除关联By用户
-func (r SysUserPost) DeleteByUserIds(userIds []int64) int64 {
+func (r SysUserPost) DeleteByUserIds(userIds []string) int64 {
 	if len(userIds) <= 0 {
 		return 0
 	}

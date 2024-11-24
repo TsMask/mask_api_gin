@@ -140,7 +140,7 @@ func (s SysCacheController) CleanKeys(c *gin.Context) {
 
 // CleanValue 缓存内容删除
 //
-// DELETE /clean/value?cacheName=xxx&cacheKey=xxx
+// DELETE /value?cacheName=xxx&cacheKey=xxx
 func (s SysCacheController) CleanValue(c *gin.Context) {
 	var query struct {
 		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称

@@ -2,7 +2,7 @@ package model
 
 // SysNotice 通知公告表
 type SysNotice struct {
-	NoticeId      int64  `json:"noticeId" gorm:"column:notice_id;primary_key"`                  // 公告ID
+	NoticeId      string `json:"noticeId" gorm:"column:notice_id;primary_key"`                  // 公告ID
 	NoticeTitle   string `json:"noticeTitle" gorm:"column:notice_title" binding:"required"`     // 公告标题
 	NoticeType    string `json:"noticeType" gorm:"column:notice_type" binding:"required"`       // 公告类型（1通知 2公告）
 	NoticeContent string `json:"noticeContent" gorm:"column:notice_content" binding:"required"` // 公告内容

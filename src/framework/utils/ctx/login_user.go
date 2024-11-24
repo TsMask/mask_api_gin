@@ -1,11 +1,12 @@
 package ctx
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/config"
 	constRoleDataScope "mask_api_gin/src/framework/constants/role_data_scope"
 	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/vo"
+
+	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -21,13 +22,13 @@ func LoginUser(c *gin.Context) (vo.LoginUser, error) {
 }
 
 // LoginUserToUserID 登录用户信息-用户ID
-func LoginUserToUserID(c *gin.Context) int64 {
+func LoginUserToUserID(c *gin.Context) string {
 	value, exists := c.Get(constSystem.CTX_LOGIN_USER)
 	if exists {
 		loginUser := value.(vo.LoginUser)
 		return loginUser.UserId
 	}
-	return 0
+	return ""
 }
 
 // LoginUserToUserName 登录用户信息-用户名称

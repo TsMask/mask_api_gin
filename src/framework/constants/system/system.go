@@ -3,7 +3,7 @@ package system
 // 系统常量信息
 
 // ROLE_SYSTEM_ID 系统管理员-系统指定角色ID
-const ROLE_SYSTEM_ID int64 = 1
+const ROLE_SYSTEM_ID = "1"
 
 // ROLE_SYSTEM_KEY 系统管理员-系统指定角色KEY
 const ROLE_SYSTEM_KEY = "system"

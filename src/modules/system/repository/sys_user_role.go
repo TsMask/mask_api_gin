@@ -13,8 +13,8 @@ var NewSysUserRole = &SysUserRole{}
 type SysUserRole struct{}
 
 // ExistUserByRoleId 存在用户使用数量
-func (r SysUserRole) ExistUserByRoleId(roleId int64) int64 {
-	if roleId <= 0 {
+func (r SysUserRole) ExistUserByRoleId(roleId string) int64 {
+	if roleId == "" {
 		return 0
 	}
 	tx := db.DB("").Model(&model.SysUserRole{})
@@ -29,7 +29,7 @@ func (r SysUserRole) ExistUserByRoleId(roleId int64) int64 {
 }
 
 // DeleteByUserIds 批量删除关联By用户
-func (r SysUserRole) DeleteByUserIds(userIds []int64) int64 {
+func (r SysUserRole) DeleteByUserIds(userIds []string) int64 {
 	if len(userIds) <= 0 {
 		return 0
 	}
@@ -43,8 +43,8 @@ func (r SysUserRole) DeleteByUserIds(userIds []int64) int64 {
 }
 
 // DeleteByRoleId 批量删除关联By角色
-func (r SysUserRole) DeleteByRoleId(roleId int64, userIds []int64) int64 {
-	if roleId <= 0 || len(userIds) <= 0 {
+func (r SysUserRole) DeleteByRoleId(roleId string, userIds []string) int64 {
+	if roleId == "" || len(userIds) <= 0 {
 		return 0
 	}
 	tx := db.DB("").Where("role_id = ?", roleId).Where("user_id in ?", userIds)

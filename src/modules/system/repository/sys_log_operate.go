@@ -1,11 +1,12 @@
 package repository
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/modules/system/model"
+
+	"fmt"
 	"time"
 )
 
@@ -69,14 +70,14 @@ func (r SysLogOperate) SelectByPage(query map[string]any) ([]model.SysLogOperate
 }
 
 // Insert 新增信息
-func (r SysLogOperate) Insert(sysLogOperate model.SysLogOperate) int64 {
+func (r SysLogOperate) Insert(sysLogOperate model.SysLogOperate) string {
 	if sysLogOperate.OperaBy != "" {
 		sysLogOperate.OperaTime = time.Now().UnixMilli()
 	}
 	// 执行插入
 	if err := db.DB("").Create(&sysLogOperate).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
-		return 0
+		return ""
 	}
 	return sysLogOperate.ID
 }

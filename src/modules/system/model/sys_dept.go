@@ -2,8 +2,8 @@ package model
 
 // SysDept 部门表
 type SysDept struct {
-	DeptId     int64  `json:"deptId" gorm:"column:dept_id;primary_key"`            // 部门ID
-	ParentId   int64  `json:"parentId" gorm:"column:parent_id" binding:"required"` // 父部门ID 默认0
+	DeptId     string `json:"deptId" gorm:"column:dept_id;primary_key"`            // 部门ID
+	ParentId   string `json:"parentId" gorm:"column:parent_id" binding:"required"` // 父部门ID 默认0
 	Ancestors  string `json:"ancestors" gorm:"column:ancestors"`                   // 祖级列表
 	DeptName   string `json:"deptName" gorm:"column:dept_name" binding:"required"` // 部门名称
 	DeptSort   int64  `json:"deptSort" gorm:"column:dept_sort"`                    // 显示顺序

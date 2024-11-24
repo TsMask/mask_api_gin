@@ -1,12 +1,13 @@
 package controller
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
+
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -36,9 +37,8 @@ func (s SysNoticeController) List(c *gin.Context) {
 //
 // GET /:noticeId
 func (s SysNoticeController) Info(c *gin.Context) {
-	noticeIdStr := c.Param("noticeId")
-	noticeId := parse.Number(noticeIdStr)
-	if noticeIdStr == "" || noticeId <= 0 {
+	noticeId := c.Param("noticeId")
+	if noticeId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -56,14 +56,14 @@ func (s SysNoticeController) Info(c *gin.Context) {
 // POST /
 func (s SysNoticeController) Add(c *gin.Context) {
 	var body model.SysNotice
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.NoticeId != 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.NoticeId != "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
 	insertId := s.sysNoticeService.Insert(body)
-	if insertId > 0 {
+	if insertId != "" {
 		c.JSON(200, response.OkData(insertId))
 		return
 	}
@@ -75,7 +75,7 @@ func (s SysNoticeController) Add(c *gin.Context) {
 // PUT /
 func (s SysNoticeController) Edit(c *gin.Context) {
 	var body model.SysNotice
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.NoticeId <= 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.NoticeId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -106,7 +106,7 @@ func (s SysNoticeController) Edit(c *gin.Context) {
 // DELETE /:noticeId
 func (s SysNoticeController) Remove(c *gin.Context) {
 	noticeIdsStr := c.Param("noticeId")
-	noticeIds := parse.RemoveDuplicatesToNumber(noticeIdsStr, ",")
+	noticeIds := parse.RemoveDuplicatesToArray(noticeIdsStr, ",")
 	if noticeIdsStr == "" || len(noticeIds) <= 0 {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return

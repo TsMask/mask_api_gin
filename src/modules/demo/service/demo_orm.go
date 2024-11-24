@@ -62,9 +62,9 @@ func (s *DemoORMService) Find(demoORM model.DemoORM) []model.DemoORM {
 }
 
 // FindById 通过ID查询
-func (s *DemoORMService) FindById(id int64) model.DemoORM {
+func (s *DemoORMService) FindById(id string) model.DemoORM {
 	item := model.DemoORM{}
-	if id <= 0 {
+	if id == "" {
 		return item
 	}
 	tx := db.DB("").Model(&model.DemoORM{})
@@ -78,26 +78,26 @@ func (s *DemoORMService) FindById(id int64) model.DemoORM {
 }
 
 // Insert 新增
-func (s *DemoORMService) Insert(demoORM model.DemoORM) int64 {
+func (s *DemoORMService) Insert(demoORM model.DemoORM) string {
 	demoORM.CreateBy = "system"
 	demoORM.CreateTime = time.Now().UnixMilli()
 	// 执行插入
 	if err := db.DB("").Create(&demoORM).Error; err != nil {
-		return 0
+		return ""
 	}
 	return demoORM.Id
 }
 
 // Update 更新
 func (s *DemoORMService) Update(demoORM model.DemoORM) int64 {
-	if demoORM.Id <= 0 {
+	if demoORM.Id == "" {
 		return 0
 	}
 	// 查询数据
 	var item model.DemoORM
 	err := db.DB("").First(&item, demoORM.Id).Error
 	if err != nil {
-		return item.Id
+		return 0
 	}
 
 	// 只改某些属性
@@ -118,7 +118,7 @@ func (s *DemoORMService) Update(demoORM model.DemoORM) int64 {
 }
 
 // DeleteByIds 批量删除
-func (s *DemoORMService) DeleteByIds(ids []int64) int64 {
+func (s *DemoORMService) DeleteByIds(ids []string) int64 {
 	if len(ids) <= 0 {
 		return 0
 	}

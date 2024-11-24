@@ -1,8 +1,9 @@
 package ip2region
 
 import (
-	"embed"
 	"mask_api_gin/src/framework/logger"
+
+	"embed"
 	"strings"
 	"time"
 )

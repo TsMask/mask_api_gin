@@ -108,7 +108,7 @@ func (s Account) UpdateLoginDateAndIP(loginUser *vo.LoginUser) bool {
 }
 
 // CleanLoginRecordCache 清除错误记录次数
-func (s Account) CleanLoginRecordCache(userId int64) bool {
+func (s Account) CleanLoginRecordCache(userId string) bool {
 	cacheKey := fmt.Sprintf("%s%d", constCacheKey.PWD_ERR_COUNT_KEY, userId)
 	hasKey, err := redis.Has("", cacheKey)
 	if hasKey > 0 && err == nil {
@@ -118,7 +118,7 @@ func (s Account) CleanLoginRecordCache(userId int64) bool {
 }
 
 // passwordRetryCount 密码重试次数
-func (s Account) passwordRetryCount(userId int64) (string, int64, time.Duration, error) {
+func (s Account) passwordRetryCount(userId string) (string, int64, time.Duration, error) {
 	// 验证登录次数和错误锁定时间
 	maxRetryCount := config.Get("user.password.maxRetryCount").(int)
 	lockTime := config.Get("user.password.lockTime").(int)
@@ -138,7 +138,7 @@ func (s Account) passwordRetryCount(userId int64) (string, int64, time.Duration,
 }
 
 // RoleAndMenuPerms 角色和菜单数据权限
-func (s Account) RoleAndMenuPerms(userId int64, isSysAdmin bool) ([]string, []string) {
+func (s Account) RoleAndMenuPerms(userId string, isSysAdmin bool) ([]string, []string) {
 	if isSysAdmin {
 		return []string{constSystem.ROLE_SYSTEM_KEY}, []string{constSystem.PERMISSION_SYSTEM}
 	}
@@ -154,10 +154,10 @@ func (s Account) RoleAndMenuPerms(userId int64, isSysAdmin bool) ([]string, []st
 }
 
 // RouteMenus 前端路由所需要的菜单
-func (s Account) RouteMenus(userId int64, isSysAdmin bool) []vo.Router {
+func (s Account) RouteMenus(userId string, isSysAdmin bool) []vo.Router {
 	var buildMenus []vo.Router
 	if isSysAdmin {
-		menus := s.sysMenuService.BuildTreeMenusByUserId(-1)
+		menus := s.sysMenuService.BuildTreeMenusByUserId("0")
 		buildMenus = s.sysMenuService.BuildRouteMenus(menus, "")
 	} else {
 		menus := s.sysMenuService.BuildTreeMenusByUserId(userId)

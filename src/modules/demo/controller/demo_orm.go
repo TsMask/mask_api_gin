@@ -56,9 +56,8 @@ func (s *DemoORMController) All(c *gin.Context) {
 //
 // GET /:id
 func (s *DemoORMController) Info(c *gin.Context) {
-	idStr := c.Param("id")
-	id := parse.Number(idStr)
-	if idStr == "" || id <= 0 {
+	id := c.Param("id")
+	if id == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -76,13 +75,13 @@ func (s *DemoORMController) Info(c *gin.Context) {
 // POST /
 func (s *DemoORMController) Add(c *gin.Context) {
 	var body model.DemoORM
-	if err := c.ShouldBindJSON(&body); err != nil || body.Id != 0 {
+	if err := c.ShouldBindJSON(&body); err != nil || body.Id != "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	InsertId := s.demoORMService.Insert(body)
-	if InsertId > 0 {
+	if InsertId != "" {
 		c.JSON(200, response.OkData(InsertId))
 		return
 	}
@@ -94,7 +93,7 @@ func (s *DemoORMController) Add(c *gin.Context) {
 // PUT /
 func (s *DemoORMController) Edit(c *gin.Context) {
 	var body model.DemoORM
-	if err := c.ShouldBindJSON(&body); err != nil || body.Id <= 0 {
+	if err := c.ShouldBindJSON(&body); err != nil || body.Id != "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -112,7 +111,7 @@ func (s *DemoORMController) Edit(c *gin.Context) {
 // DELETE /:id
 func (s *DemoORMController) Remove(c *gin.Context) {
 	idStr := c.Param("id")
-	ids := parse.RemoveDuplicatesToNumber(idStr, ",")
+	ids := parse.RemoveDuplicatesToArray(idStr, ",")
 	if idStr == "" || len(ids) <= 0 {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return

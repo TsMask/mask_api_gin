@@ -1,8 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
-	"fmt"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/file"
@@ -10,6 +8,9 @@ import (
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/service"
 	systemService "mask_api_gin/src/modules/system/service"
+
+	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -43,9 +44,8 @@ func (s SysJobController) List(c *gin.Context) {
 //
 // GET /:jobId
 func (s SysJobController) Info(c *gin.Context) {
-	jobIdStr := c.Param("jobId")
-	jobId := parse.Number(jobIdStr)
-	if jobIdStr == "" || jobId == 0 {
+	jobId := c.Param("jobId")
+	if jobId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -63,7 +63,7 @@ func (s SysJobController) Info(c *gin.Context) {
 // POST /
 func (s SysJobController) Add(c *gin.Context) {
 	var body model.SysJob
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.JobId != 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.JobId != "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -89,7 +89,7 @@ func (s SysJobController) Add(c *gin.Context) {
 	}
 
 	// 检查属性值唯一
-	uniqueJob := s.sysJobService.CheckUniqueByJobName(body.JobName, body.JobGroup, 0)
+	uniqueJob := s.sysJobService.CheckUniqueByJobName(body.JobName, body.JobGroup, "")
 	if !uniqueJob {
 		msg := fmt.Sprintf("调度任务新增【%s】失败，同任务组内有相同任务名称", body.JobName)
 		c.JSON(200, response.ErrMsg(msg))
@@ -98,7 +98,7 @@ func (s SysJobController) Add(c *gin.Context) {
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
 	insertId := s.sysJobService.Insert(body)
-	if insertId != 0 {
+	if insertId != "" {
 		c.JSON(200, response.OkData(insertId))
 		return
 	}
@@ -110,7 +110,7 @@ func (s SysJobController) Add(c *gin.Context) {
 // PUT /
 func (s SysJobController) Edit(c *gin.Context) {
 	var body model.SysJob
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.JobId == 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.JobId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -174,7 +174,7 @@ func (s SysJobController) Edit(c *gin.Context) {
 // DELETE /:jobId
 func (s SysJobController) Remove(c *gin.Context) {
 	jobIdStr := c.Param("jobId")
-	jobIds := parse.RemoveDuplicatesToNumber(jobIdStr, ",")
+	jobIds := parse.RemoveDuplicatesToArray(jobIdStr, ",")
 	if jobIdStr == "" || len(jobIds) == 0 {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
@@ -194,7 +194,7 @@ func (s SysJobController) Remove(c *gin.Context) {
 // POST /status
 func (s SysJobController) Status(c *gin.Context) {
 	var body struct {
-		JobId      int64  `json:"jobId" binding:"required"`
+		JobId      string `json:"jobId" binding:"required"`
 		StatusFlag string `json:"statusFlag" binding:"required"`
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
@@ -230,9 +230,8 @@ func (s SysJobController) Status(c *gin.Context) {
 //
 // PUT /run/:jobId
 func (s SysJobController) Run(c *gin.Context) {
-	jobIdStr := c.Param("jobId")
-	jobId := parse.Number(jobIdStr)
-	if jobIdStr == "" || jobId == 0 {
+	jobId := c.Param("jobId")
+	if jobId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}

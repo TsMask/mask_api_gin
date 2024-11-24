@@ -142,9 +142,9 @@ func RemoveDuplicates(arr []string) []string {
 	return uniqueIDSlice
 }
 
-// RemoveDuplicatesToNumber 数组内字符串分隔去重转为整型数组
-func RemoveDuplicatesToNumber(keyStr, sep string) []int64 {
-	arr := make([]int64, 0)
+// RemoveDuplicatesToArray 数组内字符串分隔去重转为字符数组
+func RemoveDuplicatesToArray(keyStr, sep string) []string {
+	arr := make([]string, 0)
 	if keyStr == "" {
 		return arr
 	}
@@ -156,17 +156,11 @@ func RemoveDuplicatesToNumber(keyStr, sep string) []int64 {
 			_, ok := uniqueKeys[str]
 			if !ok && str != "" {
 				uniqueKeys[str] = true
-				val := Number(str)
-				if val != 0 {
-					arr = append(arr, val)
-				}
+				arr = append(arr, str)
 			}
 		}
 	} else {
-		val := Number(keyStr)
-		if val != 0 {
-			arr = append(arr, val)
-		}
+		arr = append(arr, keyStr)
 	}
 	return arr
 }

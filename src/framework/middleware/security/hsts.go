@@ -1,8 +1,9 @@
 package security
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/config"
+
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )

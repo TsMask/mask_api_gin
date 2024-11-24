@@ -1,13 +1,14 @@
 package controller
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
+
+	"fmt"
 	"strconv"
 	"time"
 
@@ -39,9 +40,8 @@ func (s SysDictTypeController) List(c *gin.Context) {
 //
 // GET /:dictId
 func (s SysDictTypeController) Info(c *gin.Context) {
-	dictIdStr := c.Param("dictId")
-	dictId := parse.Number(dictIdStr)
-	if dictIdStr == "" || dictId <= 0 {
+	dictId := c.Param("dictId")
+	if dictId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -59,13 +59,13 @@ func (s SysDictTypeController) Info(c *gin.Context) {
 // POST /
 func (s SysDictTypeController) Add(c *gin.Context) {
 	var body model.SysDictType
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DictId != 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DictId != "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 检查字典名称唯一
-	uniqueDictName := s.sysDictTypeService.CheckUniqueByName(body.DictName, 0)
+	uniqueDictName := s.sysDictTypeService.CheckUniqueByName(body.DictName, "")
 	if !uniqueDictName {
 		msg := fmt.Sprintf("字典新增【%s】失败，字典名称已存在", body.DictName)
 		c.JSON(200, response.ErrMsg(msg))
@@ -73,7 +73,7 @@ func (s SysDictTypeController) Add(c *gin.Context) {
 	}
 
 	// 检查字典类型唯一
-	uniqueDictType := s.sysDictTypeService.CheckUniqueByType(body.DictType, 0)
+	uniqueDictType := s.sysDictTypeService.CheckUniqueByType(body.DictType, "")
 	if !uniqueDictType {
 		msg := fmt.Sprintf("字典新增【%s】失败，字典类型已存在", body.DictType)
 		c.JSON(200, response.ErrMsg(msg))
@@ -82,7 +82,7 @@ func (s SysDictTypeController) Add(c *gin.Context) {
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
 	insertId := s.sysDictTypeService.Insert(body)
-	if insertId > 0 {
+	if insertId != "" {
 		c.JSON(200, response.OkData(insertId))
 		return
 	}
@@ -94,7 +94,7 @@ func (s SysDictTypeController) Add(c *gin.Context) {
 // PUT /
 func (s SysDictTypeController) Edit(c *gin.Context) {
 	var body model.SysDictType
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DictId <= 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DictId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -140,7 +140,7 @@ func (s SysDictTypeController) Edit(c *gin.Context) {
 // DELETE /:dictId
 func (s SysDictTypeController) Remove(c *gin.Context) {
 	dictIdStr := c.Param("dictId")
-	dictIds := parse.RemoveDuplicatesToNumber(dictIdStr, ",")
+	dictIds := parse.RemoveDuplicatesToArray(dictIdStr, ",")
 	if dictIdStr == "" || len(dictIds) <= 0 {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
@@ -202,10 +202,10 @@ func (s SysDictTypeController) Export(c *gin.Context) {
 	fileName := fmt.Sprintf("dict_type_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
 	// 第一行表头标题
 	headerCells := map[string]string{
-		"A1": "字典主键",
+		"A1": "字典编号",
 		"B1": "字典名称",
 		"C1": "字典类型",
-		"D1": "状态",
+		"D1": "字典状态",
 	}
 	// 从第二行开始的数据
 	dataCells := make([]map[string]any, 0)

@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/config"
 	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/response"
@@ -12,6 +11,8 @@ import (
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
+
+	"fmt"
 	"strings"
 	"time"
 
@@ -52,9 +53,8 @@ func (s SysUserController) List(c *gin.Context) {
 //
 // GET /:userId
 func (s SysUserController) Info(c *gin.Context) {
-	userIdStr := c.Param("userId")
-	userId := parse.Number(userIdStr)
-	if userIdStr == "" || userId < 0 {
+	userId := c.Param("userId")
+	if userId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -66,7 +66,7 @@ func (s SysUserController) Info(c *gin.Context) {
 	posts := s.sysPostService.Find(model.SysPost{})
 
 	// 新增用户时，用户ID为0
-	if userId == 0 {
+	if userId == "0" {
 		c.JSON(200, response.OkData(map[string]any{
 			"user":    map[string]any{},
 			"roleIds": []string{},
@@ -85,13 +85,13 @@ func (s SysUserController) Info(c *gin.Context) {
 	}
 
 	// 角色ID组
-	roleIds := make([]int64, 0)
+	roleIds := make([]string, 0)
 	for _, r := range userInfo.Roles {
 		roleIds = append(roleIds, r.RoleId)
 	}
 
 	// 岗位ID组
-	postIds := make([]int64, 0)
+	postIds := make([]string, 0)
 	userPosts := s.sysPostService.FindByUserId(userId)
 	for _, p := range userPosts {
 		postIds = append(postIds, p.PostId)
@@ -111,7 +111,7 @@ func (s SysUserController) Info(c *gin.Context) {
 // POST /
 func (s SysUserController) Add(c *gin.Context) {
 	var body model.SysUser
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.UserId != 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.UserId != "" {
 		fmt.Println(err)
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
@@ -128,7 +128,7 @@ func (s SysUserController) Add(c *gin.Context) {
 	body.Passwd = bodyPasswd.Passwd
 
 	// 检查用户登录账号是否唯一
-	uniqueUserName := s.sysUserService.CheckUniqueByUserName(body.UserName, 0)
+	uniqueUserName := s.sysUserService.CheckUniqueByUserName(body.UserName, "")
 	if !uniqueUserName {
 		msg := fmt.Sprintf("新增用户【%s】失败，登录账号已存在", body.UserName)
 		c.JSON(200, response.ErrMsg(msg))
@@ -138,7 +138,7 @@ func (s SysUserController) Add(c *gin.Context) {
 	// 检查手机号码格式并判断是否唯一
 	if body.Phone != "" {
 		if regular.ValidMobile(body.Phone) {
-			uniquePhone := s.sysUserService.CheckUniqueByPhone(body.Phone, 0)
+			uniquePhone := s.sysUserService.CheckUniqueByPhone(body.Phone, "")
 			if !uniquePhone {
 				msg := fmt.Sprintf("新增用户【%s】失败，手机号码已存在", body.UserName)
 				c.JSON(200, response.ErrMsg(msg))
@@ -154,7 +154,7 @@ func (s SysUserController) Add(c *gin.Context) {
 	// 检查邮箱格式并判断是否唯一
 	if body.Email != "" {
 		if regular.ValidEmail(body.Email) {
-			uniqueEmail := s.sysUserService.CheckUniqueByEmail(body.Email, 0)
+			uniqueEmail := s.sysUserService.CheckUniqueByEmail(body.Email, "")
 			if !uniqueEmail {
 				msg := fmt.Sprintf("新增用户【%s】失败，邮箱已存在", body.UserName)
 				c.JSON(200, response.ErrMsg(msg))
@@ -169,7 +169,7 @@ func (s SysUserController) Add(c *gin.Context) {
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
 	insertId := s.sysUserService.Insert(body)
-	if insertId != 0 {
+	if insertId != "" {
 		c.JSON(200, response.OkData(insertId))
 		return
 	}
@@ -181,7 +181,7 @@ func (s SysUserController) Add(c *gin.Context) {
 // POST /
 func (s SysUserController) Edit(c *gin.Context) {
 	var body model.SysUser
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.UserId == 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.UserId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -258,7 +258,7 @@ func (s SysUserController) Edit(c *gin.Context) {
 // DELETE /:userId
 func (s SysUserController) Remove(c *gin.Context) {
 	userIdsStr := c.Param("userId")
-	userIds := parse.RemoveDuplicatesToNumber(userIdsStr, ",")
+	userIds := parse.RemoveDuplicatesToArray(userIdsStr, ",")
 	if userIdsStr == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
@@ -292,7 +292,7 @@ func (s SysUserController) Remove(c *gin.Context) {
 // PUT /passwd
 func (s SysUserController) Passwd(c *gin.Context) {
 	var body struct {
-		UserId int64  `json:"userId" binding:"required"`
+		UserId string `json:"userId" binding:"required"`
 		Passwd string `json:"passwd" binding:"required"`
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
@@ -333,7 +333,7 @@ func (s SysUserController) Passwd(c *gin.Context) {
 // PUT /status
 func (s SysUserController) Status(c *gin.Context) {
 	var body struct {
-		UserId     int64  `json:"userId" binding:"required"`
+		UserId     string `json:"userId" binding:"required"`
 		StatusFlag string `json:"statusFlag" binding:"required,oneof=0 1"`
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
@@ -548,7 +548,7 @@ func (s SysUserController) Import(c *gin.Context) {
 		// 检查手机号码格式并判断是否唯一
 		if newSysUser.Phone != "" {
 			if regular.ValidMobile(newSysUser.Phone) {
-				uniquePhone := s.sysUserService.CheckUniqueByPhone(newSysUser.Phone, 0)
+				uniquePhone := s.sysUserService.CheckUniqueByPhone(newSysUser.Phone, "")
 				if !uniquePhone {
 					msg := fmt.Sprintf("用户编号：%s 手机号码：%s 已存在", rowNo, newSysUser.Phone)
 					failureNum++
@@ -566,7 +566,7 @@ func (s SysUserController) Import(c *gin.Context) {
 		// 检查邮箱格式并判断是否唯一
 		if newSysUser.Email != "" {
 			if regular.ValidEmail(newSysUser.Email) {
-				uniqueEmail := s.sysUserService.CheckUniqueByEmail(newSysUser.Email, 0)
+				uniqueEmail := s.sysUserService.CheckUniqueByEmail(newSysUser.Email, "")
 				if !uniqueEmail {
 					msg := fmt.Sprintf("用户编号：%s 用户邮箱：%s 已存在", rowNo, newSysUser.Email)
 					failureNum++
@@ -581,10 +581,10 @@ func (s SysUserController) Import(c *gin.Context) {
 			}
 		}
 
-		if newSysUser.UserId == 0 {
+		if newSysUser.UserId == "" {
 			newSysUser.CreateBy = operaName
 			insertId := s.sysUserService.Insert(newSysUser)
-			if insertId != 0 {
+			if insertId != "" {
 				msg := fmt.Sprintf("用户编号：%s 登录名称：%s 导入成功", rowNo, newSysUser.UserName)
 				successNum++
 				successMsgArr = append(successMsgArr, msg)
@@ -597,7 +597,7 @@ func (s SysUserController) Import(c *gin.Context) {
 		}
 
 		// 如果用户已存在 同时 是否更新支持
-		if newSysUser.UserId != 0 && body.Update {
+		if newSysUser.UserId != "" && body.Update {
 			newSysUser.Passwd = "" // 密码不更新
 			newSysUser.UpdateBy = operaName
 			rows := s.sysUserService.Update(newSysUser)

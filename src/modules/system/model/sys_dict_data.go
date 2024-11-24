@@ -2,7 +2,7 @@ package model
 
 // SysDictData 字典数据表
 type SysDictData struct {
-	DataId     int64  `json:"dataId" gorm:"column:data_id;primary_key"`              // 数据ID
+	DataId     string `json:"dataId" gorm:"column:data_id;primary_key"`              // 数据ID
 	DictType   string `json:"dictType" gorm:"column:dict_type" binding:"required"`   // 字典类型
 	DataLabel  string `json:"dataLabel" gorm:"column:data_label" binding:"required"` // 数据标签
 	DataValue  string `json:"dataValue" gorm:"column:data_value" binding:"required"` // 数据键值

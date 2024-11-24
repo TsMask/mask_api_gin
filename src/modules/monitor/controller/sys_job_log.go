@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/date"
@@ -9,6 +8,8 @@ import (
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/monitor/service"
 	systemService "mask_api_gin/src/modules/system/service"
+
+	"fmt"
 	"strconv"
 	"time"
 
@@ -24,7 +25,7 @@ var NewSysJobLog = &SysJobLogController{
 
 // SysJobLogController 调度任务日志信息 控制层处理
 //
-// PATH /monitor/job-log
+// PATH /monitor/job/log
 type SysJobLogController struct {
 	sysJobService      *service.SysJob            // 调度任务服务
 	sysJobLogService   *service.SysJobLog         // 调度任务日志服务
@@ -37,8 +38,8 @@ type SysJobLogController struct {
 func (s SysJobLogController) List(c *gin.Context) {
 	// 查询参数转换map
 	query := ctx.QueryMap(c)
-	if v, ok := query["jobId"]; ok && v != "" && v != "0" {
-		job := s.sysJobLogService.FindById(parse.Number(v))
+	if jobId := c.Query("jobId"); jobId != "" && jobId != "0" {
+		job := s.sysJobService.FindById(jobId)
 		query["jobName"] = job.JobName
 		query["jobGroup"] = job.JobGroup
 	}
@@ -50,9 +51,8 @@ func (s SysJobLogController) List(c *gin.Context) {
 //
 // GET /:logId
 func (s SysJobLogController) Info(c *gin.Context) {
-	logIdStr := c.Param("logId")
-	logId := parse.Number(logIdStr)
-	if logIdStr == "" || logId == 0 {
+	logId := c.Param("logId")
+	if logId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -70,7 +70,7 @@ func (s SysJobLogController) Info(c *gin.Context) {
 // DELETE /:logId
 func (s SysJobLogController) Remove(c *gin.Context) {
 	logIdStr := c.Param("logId")
-	logIds := parse.RemoveDuplicatesToNumber(logIdStr, ",")
+	logIds := parse.RemoveDuplicatesToArray(logIdStr, ",")
 	if logIdStr == "" || len(logIds) == 0 {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
@@ -103,6 +103,11 @@ func (s SysJobLogController) Clean(c *gin.Context) {
 func (s SysJobLogController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := ctx.QueryMap(c)
+	if jobId := c.Query("jobId"); jobId != "" && jobId != "0" {
+		job := s.sysJobService.FindById(jobId)
+		query["jobName"] = job.JobName
+		query["jobGroup"] = job.JobGroup
+	}
 	rows, total := s.sysJobLogService.FindByPage(query)
 	if total == 0 {
 		c.JSON(200, response.CodeMsg(40016, "export data record as empty"))

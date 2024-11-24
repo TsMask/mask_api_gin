@@ -1,6 +1,6 @@
 # 应用服务配置
 server:
-  port: 6276
+  port: 6275
 
 # 日志
 logger:
@@ -23,7 +23,7 @@ gorm:
   dataSource:
     default:
       type: "mysql"
-      host: "192.168.1.6"
+      host: "192.168.56.102"
       port: 3306
       username: "root"
       password: "root@1234"
@@ -35,6 +35,6 @@ redis:
   dataSource:
     default:
       port: 6379 # Redis port
-      host: "192.168.1.6"
+      host: "192.168.56.102"
       password: "redis@1234"
       db: 0 # Redis db_num

@@ -2,7 +2,7 @@ package model
 
 // SysDictType 字典类型表
 type SysDictType struct {
-	DictId     int64  `json:"dictId" gorm:"column:dict_id;primary_key"`            // 字典ID
+	DictId     string `json:"dictId" gorm:"column:dict_id;primary_key"`            // 字典ID
 	DictName   string `json:"dictName" gorm:"column:dict_name" binding:"required"` // 字典名称
 	DictType   string `json:"dictType" gorm:"column:dict_type" binding:"required"` // 字典类型
 	StatusFlag string `json:"statusFlag" gorm:"column:status_flag"`                // 状态（0停用 1正常）

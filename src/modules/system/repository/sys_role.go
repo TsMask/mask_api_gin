@@ -1,11 +1,12 @@
 package repository
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/modules/system/model"
+
+	"fmt"
 	"time"
 )
 
@@ -97,7 +98,7 @@ func (r SysRole) Select(sysRole model.SysRole, dataScopeWhereSQL string) []model
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysRole) SelectByIds(roleIds []int64) []model.SysRole {
+func (r SysRole) SelectByIds(roleIds []string) []model.SysRole {
 	rows := []model.SysRole{}
 	if len(roleIds) <= 0 {
 		return rows
@@ -114,22 +115,25 @@ func (r SysRole) SelectByIds(roleIds []int64) []model.SysRole {
 }
 
 // Insert 新增信息 返回新增数据ID
-func (r SysRole) Insert(sysRole model.SysRole) int64 {
+func (r SysRole) Insert(sysRole model.SysRole) string {
 	sysRole.DelFlag = "0"
 	if sysRole.CreateBy != "" {
-		sysRole.CreateTime = time.Now().UnixMilli()
+		ms := time.Now().UnixMilli()
+		sysRole.UpdateBy = sysRole.CreateBy
+		sysRole.UpdateTime = ms
+		sysRole.CreateTime = ms
 	}
 	// 执行插入
 	if err := db.DB("").Create(&sysRole).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
-		return 0
+		return ""
 	}
 	return sysRole.RoleId
 }
 
 // Update 修改信息 返回受影响行数
 func (r SysRole) Update(sysRole model.SysRole) int64 {
-	if sysRole.RoleId <= 0 {
+	if sysRole.RoleId == "" {
 		return 0
 	}
 	if sysRole.UpdateBy != "" {
@@ -147,7 +151,7 @@ func (r SysRole) Update(sysRole model.SysRole) int64 {
 }
 
 // DeleteByIds 批量删除信息 返回受影响行数
-func (r SysRole) DeleteByIds(roleIds []int64) int64 {
+func (r SysRole) DeleteByIds(roleIds []string) int64 {
 	if len(roleIds) <= 0 {
 		return 0
 	}
@@ -163,9 +167,9 @@ func (r SysRole) DeleteByIds(roleIds []int64) int64 {
 }
 
 // SelectByUserId 根据用户ID获取角色信息
-func (r SysRole) SelectByUserId(userId int64) []model.SysRole {
+func (r SysRole) SelectByUserId(userId string) []model.SysRole {
 	rows := []model.SysRole{}
-	if userId <= 0 {
+	if userId == "" {
 		return rows
 	}
 	tx := db.DB("").Table("sys_user_role ur")
@@ -184,7 +188,7 @@ func (r SysRole) SelectByUserId(userId int64) []model.SysRole {
 }
 
 // CheckUnique 检查信息是否唯一
-func (r SysRole) CheckUnique(sysRole model.SysRole) int64 {
+func (r SysRole) CheckUnique(sysRole model.SysRole) string {
 	tx := db.DB("").Model(&model.SysRole{})
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
@@ -196,7 +200,7 @@ func (r SysRole) CheckUnique(sysRole model.SysRole) int64 {
 	}
 
 	// 查询数据
-	var id int64 = 0
+	var id string = ""
 	if err := tx.Select("role_id").Limit(1).Find(&id).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return id

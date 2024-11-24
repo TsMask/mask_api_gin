@@ -13,8 +13,8 @@ var NewSysRoleMenu = &SysRoleMenu{}
 type SysRoleMenu struct{}
 
 // ExistRoleByMenuId 存在角色使用数量By菜单
-func (r SysRoleMenu) ExistRoleByMenuId(menuId int64) int64 {
-	if menuId <= 0 {
+func (r SysRoleMenu) ExistRoleByMenuId(menuId string) int64 {
+	if menuId == "" {
 		return 0
 	}
 	tx := db.DB("").Model(&model.SysRoleMenu{})
@@ -29,7 +29,7 @@ func (r SysRoleMenu) ExistRoleByMenuId(menuId int64) int64 {
 }
 
 // DeleteByRoleIds 批量删除关联By角色
-func (r SysRoleMenu) DeleteByRoleIds(roleIds []int64) int64 {
+func (r SysRoleMenu) DeleteByRoleIds(roleIds []string) int64 {
 	if len(roleIds) <= 0 {
 		return 0
 	}
@@ -43,7 +43,7 @@ func (r SysRoleMenu) DeleteByRoleIds(roleIds []int64) int64 {
 }
 
 // DeleteByMenuIds 批量删除关联By菜单
-func (r SysRoleMenu) DeleteByMenuIds(menuIds []int64) int64 {
+func (r SysRoleMenu) DeleteByMenuIds(menuIds []string) int64 {
 	if len(menuIds) <= 0 {
 		return 0
 	}

@@ -1,13 +1,14 @@
 package controller
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
+
+	"fmt"
 	"strconv"
 	"time"
 
@@ -41,9 +42,8 @@ func (s SysDictDataController) List(c *gin.Context) {
 //
 // GET /:dataId
 func (s SysDictDataController) Info(c *gin.Context) {
-	dataIdStr := c.Param("dataId")
-	dataId := parse.Number(dataIdStr)
-	if dataIdStr == "" || dataId == 0 {
+	dataId := c.Param("dataId")
+	if dataId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -61,7 +61,7 @@ func (s SysDictDataController) Info(c *gin.Context) {
 // POST /
 func (s SysDictDataController) Add(c *gin.Context) {
 	var body model.SysDictData
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DataId != 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DataId != "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -74,7 +74,7 @@ func (s SysDictDataController) Add(c *gin.Context) {
 	}
 
 	// 检查字典标签唯一
-	uniqueDictLabel := s.sysDictDataService.CheckUniqueTypeByLabel(body.DictType, body.DataLabel, 0)
+	uniqueDictLabel := s.sysDictDataService.CheckUniqueTypeByLabel(body.DictType, body.DataLabel, "")
 	if !uniqueDictLabel {
 		msg := fmt.Sprintf("数据新增【%s】失败，该字典类型下标签名已存在", body.DataLabel)
 		c.JSON(200, response.ErrMsg(msg))
@@ -82,7 +82,7 @@ func (s SysDictDataController) Add(c *gin.Context) {
 	}
 
 	// 检查字典键值唯一
-	uniqueDictValue := s.sysDictDataService.CheckUniqueTypeByValue(body.DictType, body.DataValue, 0)
+	uniqueDictValue := s.sysDictDataService.CheckUniqueTypeByValue(body.DictType, body.DataValue, "")
 	if !uniqueDictValue {
 		msg := fmt.Sprintf("数据新增【%s】失败，该字典类型下标签值已存在", body.DataValue)
 		c.JSON(200, response.ErrMsg(msg))
@@ -91,7 +91,7 @@ func (s SysDictDataController) Add(c *gin.Context) {
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
 	insertId := s.sysDictDataService.Insert(body)
-	if insertId > 0 {
+	if insertId != "" {
 		c.JSON(200, response.OkData(insertId))
 		return
 	}
@@ -103,7 +103,7 @@ func (s SysDictDataController) Add(c *gin.Context) {
 // PUT /
 func (s SysDictDataController) Edit(c *gin.Context) {
 	var body model.SysDictData
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DataId == 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DataId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -160,7 +160,7 @@ func (s SysDictDataController) Edit(c *gin.Context) {
 // DELETE /:dataId
 func (s SysDictDataController) Remove(c *gin.Context) {
 	dataIdsStr := c.Param("dataId")
-	dataIds := parse.RemoveDuplicatesToNumber(dataIdsStr, ",")
+	dataIds := parse.RemoveDuplicatesToArray(dataIdsStr, ",")
 	if dataIdsStr == "" || len(dataIds) <= 0 {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
@@ -205,12 +205,12 @@ func (s SysDictDataController) Export(c *gin.Context) {
 	fileName := fmt.Sprintf("dict_data_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
 	// 第一行表头标题
 	headerCells := map[string]string{
-		"A1": "字典编码",
-		"B1": "字典排序",
-		"C1": "字典标签",
-		"D1": "字典键值",
-		"E1": "字典类型",
-		"F1": "状态",
+		"A1": "字典类型",
+		"B1": "数据排序",
+		"C1": "数据编号",
+		"D1": "数据标签",
+		"E1": "数据键值",
+		"F1": "数据状态",
 	}
 	// 从第二行开始的数据
 	dataCells := make([]map[string]any, 0)
@@ -221,11 +221,11 @@ func (s SysDictDataController) Export(c *gin.Context) {
 			statusValue = "正常"
 		}
 		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.DataId,
+			"A" + idx: row.DictType,
 			"B" + idx: row.DataSort,
-			"C" + idx: row.DataLabel,
-			"D" + idx: row.DataValue,
-			"E" + idx: row.DictType,
+			"C" + idx: row.DataId,
+			"D" + idx: row.DataLabel,
+			"E" + idx: row.DataValue,
 			"F" + idx: statusValue,
 		})
 	}

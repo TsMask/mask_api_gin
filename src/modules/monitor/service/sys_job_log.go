@@ -26,13 +26,13 @@ func (s SysJobLog) Find(sysJobLog model.SysJobLog) []model.SysJobLog {
 }
 
 // FindById 通过ID查询
-func (s SysJobLog) FindById(jobLogId int64) model.SysJobLog {
-	return s.sysJobLogRepository.SelectById(jobLogId)
+func (s SysJobLog) FindById(logId string) model.SysJobLog {
+	return s.sysJobLogRepository.SelectById(logId)
 }
 
 // RemoveByIds 批量删除
-func (s SysJobLog) RemoveByIds(jobLogIds []int64) int64 {
-	return s.sysJobLogRepository.DeleteByIds(jobLogIds)
+func (s SysJobLog) RemoveByIds(logIds []string) int64 {
+	return s.sysJobLogRepository.DeleteByIds(logIds)
 }
 
 // Clean 清空

@@ -2,7 +2,7 @@ package model
 
 // SysJobLog 调度任务调度日志表
 type SysJobLog struct {
-	LogId        int64  `json:"logId" gorm:"column:log_id;primary_key"`   // 任务日志ID
+	LogId        string `json:"logId" gorm:"column:log_id;primary_key"`   // 任务日志ID
 	JobName      string `json:"jobName" gorm:"column:job_name"`           // 任务名称
 	JobGroup     string `json:"jobGroup" gorm:"column:job_group"`         // 任务组名
 	InvokeTarget string `json:"invokeTarget" gorm:"column:invoke_target"` // 调用目标字符串

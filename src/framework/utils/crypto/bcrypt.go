@@ -1,8 +1,6 @@
 package crypto
 
-import (
-	"golang.org/x/crypto/bcrypt"
-)
+import "golang.org/x/crypto/bcrypt"
 
 // BcryptHash Bcrypt密码加密
 func BcryptHash(originStr string) string {

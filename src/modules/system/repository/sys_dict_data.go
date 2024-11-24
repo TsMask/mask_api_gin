@@ -4,6 +4,7 @@ import (
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
+
 	"time"
 )
 
@@ -72,7 +73,7 @@ func (r SysDictData) Select(sysDictData model.SysDictData) []model.SysDictData {
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysDictData) SelectByIds(dataIds []int64) []model.SysDictData {
+func (r SysDictData) SelectByIds(dataIds []string) []model.SysDictData {
 	rows := []model.SysDictData{}
 	if len(dataIds) <= 0 {
 		return rows
@@ -89,22 +90,25 @@ func (r SysDictData) SelectByIds(dataIds []int64) []model.SysDictData {
 }
 
 // Insert 新增信息 返回新增数据ID
-func (r SysDictData) Insert(sysDictData model.SysDictData) int64 {
+func (r SysDictData) Insert(sysDictData model.SysDictData) string {
 	sysDictData.DelFlag = "0"
 	if sysDictData.CreateBy != "" {
-		sysDictData.CreateTime = time.Now().UnixMilli()
+		ms := time.Now().UnixMilli()
+		sysDictData.UpdateBy = sysDictData.CreateBy
+		sysDictData.UpdateTime = ms
+		sysDictData.CreateTime = ms
 	}
 	// 执行插入
 	if err := db.DB("").Create(&sysDictData).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
-		return 0
+		return ""
 	}
 	return sysDictData.DataId
 }
 
 // Update 修改信息 返回受影响行数
 func (r SysDictData) Update(sysDictData model.SysDictData) int64 {
-	if sysDictData.DataId <= 0 {
+	if sysDictData.DataId == "" {
 		return 0
 	}
 	if sysDictData.UpdateBy != "" {
@@ -122,7 +126,7 @@ func (r SysDictData) Update(sysDictData model.SysDictData) int64 {
 }
 
 // DeleteByIds 批量删除信息 返回受影响行数
-func (r SysDictData) DeleteByIds(dataId []int64) int64 {
+func (r SysDictData) DeleteByIds(dataId []string) int64 {
 	if len(dataId) <= 0 {
 		return 0
 	}
@@ -138,7 +142,7 @@ func (r SysDictData) DeleteByIds(dataId []int64) int64 {
 }
 
 // CheckUnique 检查信息是否唯一 返回数据ID
-func (r SysDictData) CheckUnique(sysDictData model.SysDictData) int64 {
+func (r SysDictData) CheckUnique(sysDictData model.SysDictData) string {
 	tx := db.DB("").Model(&model.SysDictData{})
 	tx = tx.Where("del_flag = 0")
 	// 查询条件拼接
@@ -152,7 +156,7 @@ func (r SysDictData) CheckUnique(sysDictData model.SysDictData) int64 {
 		tx = tx.Where("data_value = ?", sysDictData.DataValue)
 	}
 	// 查询数据
-	var id int64 = 0
+	var id string = ""
 	if err := tx.Select("data_id").Limit(1).Find(&id).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return id

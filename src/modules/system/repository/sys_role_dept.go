@@ -13,7 +13,7 @@ var NewSysRoleDept = &SysRoleDept{}
 type SysRoleDept struct{}
 
 // DeleteByRoleIds 批量删除信息By角色
-func (r SysRoleDept) DeleteByRoleIds(roleIds []int64) int64 {
+func (r SysRoleDept) DeleteByRoleIds(roleIds []string) int64 {
 	if len(roleIds) <= 0 {
 		return 0
 	}
@@ -27,7 +27,7 @@ func (r SysRoleDept) DeleteByRoleIds(roleIds []int64) int64 {
 }
 
 // DeleteByDeptIds 批量删除信息By部门
-func (r SysRoleDept) DeleteByDeptIds(deptIds []int64) int64 {
+func (r SysRoleDept) DeleteByDeptIds(deptIds []string) int64 {
 	if len(deptIds) <= 0 {
 		return 0
 	}

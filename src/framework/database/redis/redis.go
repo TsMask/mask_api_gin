@@ -1,11 +1,12 @@
 package redis
 
 import (
+	"mask_api_gin/src/framework/config"
+	"mask_api_gin/src/framework/logger"
+
 	"context"
 	"errors"
 	"fmt"
-	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/logger"
 	"strings"
 	"time"
 

@@ -1,10 +1,11 @@
 package service
 
 import (
-	"context"
-	"fmt"
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/utils/parse"
+
+	"context"
+	"fmt"
 	"os"
 	"runtime"
 	"strings"
@@ -156,7 +157,7 @@ func (s SystemInfo) NetworkInfo() map[string]string {
 				name = strings.Trim(name, "")
 			}
 			// ignore localhost
-			if name == "lo" {
+			if strings.HasPrefix(name, "lo") || strings.HasPrefix(name, "veth") || strings.HasPrefix(name, "Loopback") {
 				continue
 			}
 			var adders []string
@@ -193,11 +194,11 @@ func (s SystemInfo) DiskInfo() []map[string]string {
 			continue
 		}
 		disks = append(disks, map[string]string{
-			"size":   parse.Bit(float64(usage.Total)),
-			"used":   parse.Bit(float64(usage.Used)),
-			"avail":  parse.Bit(float64(usage.Free)),
-			"cent":   fmt.Sprintf("%.1f%%", usage.UsedPercent),
-			"target": partition.Device,
+			"size":    parse.Bit(float64(usage.Total)),
+			"used":    parse.Bit(float64(usage.Used)),
+			"avail":   parse.Bit(float64(usage.Free)),
+			"percent": fmt.Sprintf("%.1f%%", usage.UsedPercent),
+			"target":  partition.Device,
 		})
 	}
 	return disks

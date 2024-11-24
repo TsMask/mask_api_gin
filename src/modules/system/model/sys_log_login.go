@@ -2,7 +2,7 @@ package model
 
 // SysLogLogin 系统登录日志表
 type SysLogLogin struct {
-	ID            int64  `json:"id" gorm:"column:id;primary_key"`            // 登录ID
+	ID            string `json:"id" gorm:"column:id;primary_key"`            // 登录ID
 	UserId        int64  `json:"userId" gorm:"column:user_id"`               // 用户ID
 	UserName      string `json:"userName" gorm:"column:user_name"`           // 用户账号
 	LoginIp       string `json:"loginIp" gorm:"column:login_ip"`             // 登录IP地址

@@ -2,8 +2,8 @@ package model
 
 // SysUser 用户信息表
 type SysUser struct {
-	UserId     int64  `json:"userId" gorm:"column:user_id;primary_key"` // 用户ID
-	DeptId     int64  `json:"deptId" gorm:"column:dept_id"`             // 部门ID
+	UserId     string `json:"userId" gorm:"column:user_id;primary_key"` // 用户ID
+	DeptId     string `json:"deptId" gorm:"column:dept_id"`             // 部门ID
 	UserName   string `json:"userName" gorm:"column:user_name"`         // 用户账号
 	Email      string `json:"email" gorm:"column:email"`                // 用户邮箱
 	Phone      string `json:"phone" gorm:"column:phone"`                // 手机号码
@@ -25,8 +25,8 @@ type SysUser struct {
 
 	Dept    *SysDept   `json:"dept" gorm:"-"`              // 部门对象
 	Roles   []*SysRole `json:"roles" gorm:"-"`             // 角色对象组
-	RoleIds []int64    `json:"roleIds,omitempty" gorm:"-"` // 角色组
-	PostIds []int64    `json:"postIds,omitempty" gorm:"-"` // 岗位组
+	RoleIds []string   `json:"roleIds,omitempty" gorm:"-"` // 角色组
+	PostIds []string   `json:"postIds,omitempty" gorm:"-"` // 岗位组
 }
 
 // TableName 表名称

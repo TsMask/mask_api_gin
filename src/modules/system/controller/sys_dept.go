@@ -1,13 +1,13 @@
 package controller
 
 import (
-	"fmt"
 	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
-	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
+
+	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -30,8 +30,8 @@ type SysDeptController struct {
 // GET /list
 func (s SysDeptController) List(c *gin.Context) {
 	var query struct {
-		DeptId   int64  `form:"deptId"`   // 部门ID
-		ParentId int64  `form:"parentId"` // 父部门ID
+		DeptId   string `form:"deptId"`   // 部门ID
+		ParentId string `form:"parentId"` // 父部门ID
 		DeptName string `form:"deptName"` // 部门名称
 		Status   string `form:"status"`   // 部门状态（0正常 1停用）
 	}
@@ -55,9 +55,8 @@ func (s SysDeptController) List(c *gin.Context) {
 //
 // GET /:deptId
 func (s SysDeptController) Info(c *gin.Context) {
-	deptIdStr := c.Param("deptId")
-	deptId := parse.Number(deptIdStr)
-	if deptIdStr == "" || deptId <= 0 {
+	deptId := c.Param("deptId")
+	if deptId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -75,13 +74,13 @@ func (s SysDeptController) Info(c *gin.Context) {
 // POST /
 func (s SysDeptController) Add(c *gin.Context) {
 	var body model.SysDept
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DeptId != 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DeptId != "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 
 	// 父级ID不为0是要检查
-	if body.ParentId > 0 {
+	if body.ParentId != "0" {
 		deptParent := s.sysDeptService.FindById(body.ParentId)
 		if deptParent.DeptId != body.ParentId {
 			c.JSON(200, response.ErrMsg("没有权限访问部门数据！"))
@@ -97,13 +96,13 @@ func (s SysDeptController) Add(c *gin.Context) {
 			c.JSON(200, response.ErrMsg(msg))
 			return
 		}
-		body.Ancestors = fmt.Sprintf("%s,%d", deptParent.Ancestors, body.ParentId)
+		body.Ancestors = fmt.Sprintf("%s,%s", deptParent.Ancestors, body.ParentId)
 	} else {
 		body.Ancestors = "0"
 	}
 
 	// 检查同级下名称唯一
-	uniqueDeptName := s.sysDeptService.CheckUniqueParentIdByDeptName(body.ParentId, body.DeptName, 0)
+	uniqueDeptName := s.sysDeptService.CheckUniqueParentIdByDeptName(body.ParentId, body.DeptName, "")
 	if !uniqueDeptName {
 		msg := fmt.Sprintf("部门新增【%s】失败，部门名称已存在", body.DeptName)
 		c.JSON(200, response.ErrMsg(msg))
@@ -112,7 +111,7 @@ func (s SysDeptController) Add(c *gin.Context) {
 
 	body.CreateBy = ctx.LoginUserToUserName(c)
 	insertId := s.sysDeptService.Insert(body)
-	if insertId > 0 {
+	if insertId != "" {
 		c.JSON(200, response.OkData(insertId))
 		return
 	}
@@ -124,7 +123,7 @@ func (s SysDeptController) Add(c *gin.Context) {
 // PUT /
 func (s SysDeptController) Edit(c *gin.Context) {
 	var body model.SysDept
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DeptId <= 0 {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DeptId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -144,7 +143,7 @@ func (s SysDeptController) Edit(c *gin.Context) {
 	}
 
 	// 父级ID不为0是要检查
-	if body.ParentId != 0 {
+	if body.ParentId != "0" {
 		deptParent := s.sysDeptService.FindById(body.ParentId)
 		if deptParent.DeptId != body.ParentId {
 			c.JSON(200, response.ErrMsg("没有权限访问部门数据！"))
@@ -190,9 +189,8 @@ func (s SysDeptController) Edit(c *gin.Context) {
 //
 // DELETE /:deptId
 func (s SysDeptController) Remove(c *gin.Context) {
-	deptIdStr := c.Param("deptId")
-	deptId := parse.Number(deptIdStr)
-	if deptIdStr == "" || deptId <= 0 {
+	deptId := c.Param("deptId")
+	if deptId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -233,9 +231,8 @@ func (s SysDeptController) Remove(c *gin.Context) {
 //
 // GET /list/exclude/:deptId
 func (s SysDeptController) ExcludeChild(c *gin.Context) {
-	deptIdStr := c.Param("deptId")
-	deptId := parse.Number(deptIdStr)
-	if deptIdStr == "" || deptId <= 0 {
+	deptId := c.Param("deptId")
+	if deptId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
@@ -249,7 +246,7 @@ func (s SysDeptController) ExcludeChild(c *gin.Context) {
 		hasAncestor := false
 		ancestorList := strings.Split(dept.Ancestors, ",")
 		for _, ancestor := range ancestorList {
-			if parse.Number(ancestor) == deptId {
+			if ancestor == deptId {
 				hasAncestor = true
 				break
 			}
@@ -266,8 +263,8 @@ func (s SysDeptController) ExcludeChild(c *gin.Context) {
 // GET /tree
 func (s SysDeptController) Tree(c *gin.Context) {
 	var query struct {
-		DeptId     int64  `form:"deptId"`     // 部门ID
-		ParentId   int64  `form:"parentId"`   // 父部门ID
+		DeptId     string `form:"deptId"`     // 部门ID
+		ParentId   string `form:"parentId"`   // 父部门ID
 		DeptName   string `form:"deptName"`   // 部门名称
 		StatusFlag string `form:"statusFlag"` // 部门状态（0正常 1停用）
 	}
@@ -291,9 +288,8 @@ func (s SysDeptController) Tree(c *gin.Context) {
 //
 // GET /tree/role/:roleId
 func (s SysDeptController) TreeRole(c *gin.Context) {
-	roleIdStr := c.Param("roleId")
-	roleId := parse.Number(roleIdStr)
-	if roleIdStr == "" || roleId <= 0 {
+	roleId := c.Param("roleId")
+	if roleId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}

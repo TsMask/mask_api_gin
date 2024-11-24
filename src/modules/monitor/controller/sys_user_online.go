@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
 	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/response"
@@ -9,6 +8,8 @@ import (
 	"mask_api_gin/src/framework/vo"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/service"
+
+	"encoding/json"
 	"sort"
 	"strings"
 
@@ -31,7 +32,7 @@ type SysUserOnlineController struct {
 //
 // GET /list
 func (s SysUserOnlineController) List(c *gin.Context) {
-	ipaddr := c.Query("ipaddr")
+	loginIp := c.Query("loginIp")
 	userName := c.Query("userName")
 
 	// 获取所有在线用户key
@@ -72,15 +73,15 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 
 	// 根据查询条件过滤
 	filteredUserOnline := make([]model.SysUserOnline, 0)
-	if ipaddr != "" && userName != "" {
+	if loginIp != "" && userName != "" {
 		for _, o := range userOnline {
-			if strings.Contains(o.LoginIp, ipaddr) && strings.Contains(o.UserName, userName) {
+			if strings.Contains(o.LoginIp, loginIp) && strings.Contains(o.UserName, userName) {
 				filteredUserOnline = append(filteredUserOnline, o)
 			}
 		}
-	} else if ipaddr != "" {
+	} else if loginIp != "" {
 		for _, o := range userOnline {
-			if strings.Contains(o.LoginIp, ipaddr) {
+			if strings.Contains(o.LoginIp, loginIp) {
 				filteredUserOnline = append(filteredUserOnline, o)
 			}
 		}

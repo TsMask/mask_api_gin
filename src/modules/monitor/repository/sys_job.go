@@ -4,6 +4,7 @@ import (
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/monitor/model"
+
 	"time"
 )
 
@@ -76,7 +77,7 @@ func (r SysJob) Select(sysJob model.SysJob) []model.SysJob {
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysJob) SelectByIds(jobIds []int64) []model.SysJob {
+func (r SysJob) SelectByIds(jobIds []string) []model.SysJob {
 	rows := []model.SysJob{}
 	if len(jobIds) <= 0 {
 		return rows
@@ -93,21 +94,25 @@ func (r SysJob) SelectByIds(jobIds []int64) []model.SysJob {
 }
 
 // Insert 新增信息 返回新增数据ID
-func (r SysJob) Insert(sysJob model.SysJob) int64 {
+func (r SysJob) Insert(sysJob model.SysJob) string {
 	if sysJob.CreateBy != "" {
-		sysJob.CreateTime = time.Now().UnixMilli()
+		ms := time.Now().UnixMilli()
+		sysJob.UpdateBy = sysJob.CreateBy
+		sysJob.UpdateTime = ms
+		sysJob.CreateTime = ms
+
 	}
 	// 执行插入
 	if err := db.DB("").Create(&sysJob).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
-		return 0
+		return ""
 	}
 	return sysJob.JobId
 }
 
 // Update 修改信息
 func (r SysJob) Update(sysJob model.SysJob) int64 {
-	if sysJob.JobId <= 0 {
+	if sysJob.JobId == "" {
 		return 0
 	}
 	if sysJob.UpdateBy != "" {
@@ -125,7 +130,7 @@ func (r SysJob) Update(sysJob model.SysJob) int64 {
 }
 
 // DeleteByIds 批量删除信息
-func (r SysJob) DeleteByIds(jobIds []int64) int64 {
+func (r SysJob) DeleteByIds(jobIds []string) int64 {
 	if len(jobIds) <= 0 {
 		return 0
 	}
@@ -138,7 +143,7 @@ func (r SysJob) DeleteByIds(jobIds []int64) int64 {
 }
 
 // CheckUniqueJob 校验信息是否唯一
-func (r SysJob) CheckUniqueJob(sysJob model.SysJob) int64 {
+func (r SysJob) CheckUniqueJob(sysJob model.SysJob) string {
 	tx := db.DB("").Model(&model.SysJob{})
 	// 查询条件拼接
 	if sysJob.JobName != "" {
@@ -149,7 +154,7 @@ func (r SysJob) CheckUniqueJob(sysJob model.SysJob) int64 {
 	}
 
 	// 查询数据
-	var id int64 = 0
+	var id string = ""
 	if err := tx.Select("job_id").Limit(1).Find(&id).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return id

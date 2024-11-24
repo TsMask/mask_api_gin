@@ -2,7 +2,7 @@ package model
 
 // SysRole 角色信息表
 type SysRole struct {
-	RoleId            int64  `json:"roleId" gorm:"column:role_id;primary_key"`            // 角色ID
+	RoleId            string `json:"roleId" gorm:"column:role_id;primary_key"`            // 角色ID
 	RoleName          string `json:"roleName" gorm:"column:role_name" binding:"required"` // 角色名称
 	RoleKey           string `json:"roleKey" gorm:"column:role_key" binding:"required"`   // 角色键值
 	RoleSort          int64  `json:"roleSort" gorm:"column:role_sort"`                    // 显示顺序
@@ -19,8 +19,8 @@ type SysRole struct {
 
 	// ====== 非数据库字段属性 ======
 
-	MenuIds []int64 `json:"menuIds,omitempty" gorm:"-"` // 菜单组
-	DeptIds []int64 `json:"deptIds,omitempty" gorm:"-"` // 部门组（数据权限）
+	MenuIds []string `json:"menuIds,omitempty" gorm:"-"` // 菜单组
+	DeptIds []string `json:"deptIds,omitempty" gorm:"-"` // 部门组（数据权限）
 }
 
 // TableName 表名称

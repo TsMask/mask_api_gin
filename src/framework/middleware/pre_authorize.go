@@ -1,11 +1,12 @@
 package middleware
 
 import (
-	"fmt"
 	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/token"
+
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -39,7 +40,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 
 		// 获取缓存的用户信息
 		loginUser := token.LoginUser(claims)
-		if loginUser.UserId <= 0 {
+		if loginUser.UserId == "" {
 			c.JSON(401, response.CodeMsg(401, "无效身份授权"))
 			c.Abort() // 停止执行后续的处理函数
 			return

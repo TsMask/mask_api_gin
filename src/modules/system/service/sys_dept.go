@@ -1,12 +1,12 @@
 package service
 
 import (
-	"fmt"
 	constSystem "mask_api_gin/src/framework/constants/system"
-	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
+
+	"fmt"
 	"strings"
 )
 
@@ -30,12 +30,12 @@ func (s SysDept) Find(sysDept model.SysDept, dataScopeSQL string) []model.SysDep
 }
 
 // FindById 根据ID查询信息
-func (s SysDept) FindById(deptId int64) model.SysDept {
+func (s SysDept) FindById(deptId string) model.SysDept {
 	return s.sysDeptRepository.SelectById(deptId)
 }
 
 // Insert 新增信息
-func (s SysDept) Insert(sysDept model.SysDept) int64 {
+func (s SysDept) Insert(sysDept model.SysDept) string {
 	return s.sysDeptRepository.Insert(sysDept)
 }
 
@@ -45,7 +45,7 @@ func (s SysDept) Update(sysDept model.SysDept) int64 {
 	parentDept := s.sysDeptRepository.SelectById(sysDept.ParentId)
 	// 上级与当前部门祖级列表更新
 	if parentDept.DeptId == sysDept.ParentId && dept.DeptId == sysDept.DeptId {
-		newAncestors := fmt.Sprintf("%s,%d", parentDept.Ancestors, parentDept.DeptId)
+		newAncestors := fmt.Sprintf("%s,%s", parentDept.Ancestors, parentDept.DeptId)
 		oldAncestors := dept.Ancestors
 		// 祖级列表不一致时更新
 		if newAncestors != oldAncestors {
@@ -65,16 +65,12 @@ func (s SysDept) updateDeptStatusNormal(ancestors string) int64 {
 	if ancestors == "" || ancestors == "0" {
 		return 0
 	}
-	deptIds := make([]int64, 0)
-	deptIdStrArr := strings.Split(ancestors, ",")
-	for _, v := range deptIdStrArr {
-		deptIds = append(deptIds, parse.Number(v))
-	}
+	deptIds := strings.Split(ancestors, ",")
 	return s.sysDeptRepository.UpdateDeptStatusNormal(deptIds)
 }
 
 // updateDeptChildren 修改子元素关系
-func (s SysDept) updateDeptChildren(deptId int64, newAncestors, oldAncestors string) int64 {
+func (s SysDept) updateDeptChildren(deptId string, newAncestors, oldAncestors string) int64 {
 	arr := s.sysDeptRepository.SelectChildrenDeptById(deptId)
 	if len(arr) == 0 {
 		return 0
@@ -89,14 +85,14 @@ func (s SysDept) updateDeptChildren(deptId int64, newAncestors, oldAncestors str
 }
 
 // DeleteById 删除信息
-func (s SysDept) DeleteById(deptId int64) int64 {
-	s.sysRoleDeptRepository.DeleteByDeptIds([]int64{deptId}) // 删除角色与部门关联
+func (s SysDept) DeleteById(deptId string) int64 {
+	s.sysRoleDeptRepository.DeleteByDeptIds([]string{deptId}) // 删除角色与部门关联
 	return s.sysDeptRepository.DeleteById(deptId)
 }
 
 // FindDeptIdsByRoleId 根据角色ID查询包含的部门ID TODO
-func (s SysDept) FindDeptIdsByRoleId(roleId int64) []string {
-	roles := s.sysRoleRepository.SelectByIds([]int64{roleId})
+func (s SysDept) FindDeptIdsByRoleId(roleId string) []string {
+	roles := s.sysRoleRepository.SelectByIds([]string{roleId})
 	if len(roles) == 0 {
 		return []string{}
 	}
@@ -111,17 +107,17 @@ func (s SysDept) FindDeptIdsByRoleId(roleId int64) []string {
 }
 
 // ExistChildrenByDeptId 部门下存在子节点数量
-func (s SysDept) ExistChildrenByDeptId(deptId int64) int64 {
+func (s SysDept) ExistChildrenByDeptId(deptId string) int64 {
 	return s.sysDeptRepository.ExistChildrenByDeptId(deptId)
 }
 
 // ExistUserByDeptId 部门下存在用户数量
-func (s SysDept) ExistUserByDeptId(deptId int64) int64 {
+func (s SysDept) ExistUserByDeptId(deptId string) int64 {
 	return s.sysDeptRepository.ExistUserByDeptId(deptId)
 }
 
 // CheckUniqueParentIdByDeptName 检查同级下部门名称唯一
-func (s SysDept) CheckUniqueParentIdByDeptName(parentId int64, deptName string, deptId int64) bool {
+func (s SysDept) CheckUniqueParentIdByDeptName(parentId string, deptName string, deptId string) bool {
 	uniqueId := s.sysDeptRepository.CheckUnique(model.SysDept{
 		DeptName: deptName,
 		ParentId: parentId,
@@ -129,7 +125,7 @@ func (s SysDept) CheckUniqueParentIdByDeptName(parentId int64, deptName string, 
 	if uniqueId == deptId {
 		return true
 	}
-	return uniqueId == 0
+	return uniqueId == ""
 }
 
 // BuildTreeSelect 查询部门树状结构 TODO
@@ -146,9 +142,9 @@ func (s SysDept) BuildTreeSelect(sysDept model.SysDept, dataScopeSQL string) []v
 // parseDataToTree 将数据解析为树结构，构建前端所需要下拉树结构
 func (s SysDept) parseDataToTree(arr []model.SysDept) []model.SysDept {
 	// 节点分组
-	nodesMap := make(map[int64][]model.SysDept)
+	nodesMap := make(map[string][]model.SysDept)
 	// 节点id
-	treeIds := make([]int64, 0)
+	treeIds := make([]string, 0)
 	// 树节点
 	tree := make([]model.SysDept, 0)
 
@@ -188,7 +184,7 @@ func (s SysDept) parseDataToTree(arr []model.SysDept) []model.SysDept {
 }
 
 // parseDataToTreeComponent 递归函数处理子节点
-func (s SysDept) parseDataToTreeComponent(node model.SysDept, nodesMap *map[int64][]model.SysDept) model.SysDept {
+func (s SysDept) parseDataToTreeComponent(node model.SysDept, nodesMap *map[string][]model.SysDept) model.SysDept {
 	id := node.DeptId
 	children, ok := (*nodesMap)[id]
 	if ok {

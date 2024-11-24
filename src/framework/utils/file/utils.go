@@ -1,13 +1,14 @@
 package file
 
 import (
-	"fmt"
-	"io"
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/generate"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
+
+	"fmt"
+	"io"
 	"mime/multipart"
 	"os"
 	"path/filepath"

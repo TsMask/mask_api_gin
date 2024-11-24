@@ -1,11 +1,12 @@
 package service
 
 import (
-	"fmt"
 	constSystem "mask_api_gin/src/framework/constants/system"
 	"mask_api_gin/src/framework/cron"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/repository"
+
+	"fmt"
 )
 
 // NewSysJob  服务层实例化
@@ -29,20 +30,20 @@ func (s SysJob) Find(sysJob model.SysJob) []model.SysJob {
 }
 
 // FindById 通过ID查询
-func (s SysJob) FindById(jobId int64) model.SysJob {
-	if jobId == 0 {
+func (s SysJob) FindById(jobId string) model.SysJob {
+	if jobId == "" {
 		return model.SysJob{}
 	}
-	if jobs := s.sysJobRepository.SelectByIds([]int64{jobId}); len(jobs) > 0 {
+	if jobs := s.sysJobRepository.SelectByIds([]string{jobId}); len(jobs) > 0 {
 		return jobs[0]
 	}
 	return model.SysJob{}
 }
 
 // Insert 新增调度任务信息
-func (s SysJob) Insert(sysJob model.SysJob) int64 {
+func (s SysJob) Insert(sysJob model.SysJob) string {
 	insertId := s.sysJobRepository.Insert(sysJob)
-	if insertId == 0 && sysJob.StatusFlag == constSystem.STATUS_YES {
+	if insertId != "" && sysJob.StatusFlag == constSystem.STATUS_YES {
 		sysJob.JobId = insertId
 		s.insertQueueJob(sysJob, true)
 	}
@@ -66,7 +67,7 @@ func (s SysJob) Update(sysJob model.SysJob) int64 {
 }
 
 // DeleteByIds 批量删除
-func (s SysJob) DeleteByIds(jobIds []int64) (int64, error) {
+func (s SysJob) DeleteByIds(jobIds []string) (int64, error) {
 	// 检查是否存在
 	jobs := s.sysJobRepository.SelectByIds(jobIds)
 	if len(jobs) <= 0 {
@@ -83,7 +84,7 @@ func (s SysJob) DeleteByIds(jobIds []int64) (int64, error) {
 }
 
 // CheckUniqueByJobName 校验调度任务名称和组是否唯一
-func (s SysJob) CheckUniqueByJobName(jobName, jobGroup string, jobId int64) bool {
+func (s SysJob) CheckUniqueByJobName(jobName, jobGroup, jobId string) bool {
 	uniqueId := s.sysJobRepository.CheckUniqueJob(model.SysJob{
 		JobName:  jobName,
 		JobGroup: jobGroup,
@@ -91,7 +92,7 @@ func (s SysJob) CheckUniqueByJobName(jobName, jobGroup string, jobId int64) bool
 	if uniqueId == jobId {
 		return true
 	}
-	return uniqueId == 0
+	return uniqueId == ""
 }
 
 // Run 立即运行一次调度任务
