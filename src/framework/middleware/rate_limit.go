@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/ip2region"
 	"mask_api_gin/src/framework/response"
@@ -58,7 +58,7 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 		lastDotIndex := strings.LastIndex(funcName, "/")
 		funcName = funcName[lastDotIndex+1:]
 		// 生成限流key
-		limitKey := constCacheKey.RATE_LIMIT_KEY + funcName
+		limitKey := constants.CACHE_RATE_LIMIT + funcName
 
 		// 用户
 		if option.Type == LIMIT_USER {
@@ -68,13 +68,13 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 				c.Abort() // 停止执行后续的处理函数
 				return
 			}
-			limitKey = fmt.Sprintf("%s%d:%s", constCacheKey.RATE_LIMIT_KEY, loginUser.UserId, funcName)
+			limitKey = fmt.Sprintf("%s%s:%s", constants.CACHE_RATE_LIMIT, loginUser.UserId, funcName)
 		}
 
 		// IP
 		if option.Type == LIMIT_IP {
 			clientIP := ip2region.ClientIP(c.ClientIP())
-			limitKey = constCacheKey.RATE_LIMIT_KEY + clientIP + ":" + funcName
+			limitKey = constants.CACHE_RATE_LIMIT + clientIP + ":" + funcName
 		}
 
 		// 在Redis查询并记录请求次数

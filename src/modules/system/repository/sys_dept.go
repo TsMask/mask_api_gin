@@ -91,6 +91,7 @@ func (r SysDept) Update(sysDept model.SysDept) int64 {
 	tx := db.DB("").Model(&model.SysDept{})
 	// 构建查询条件
 	tx = tx.Where("dept_id = ?", sysDept.DeptId)
+	tx = tx.Omit("dept_id", "del_flag", "create_by", "create_time")
 	// 执行更新
 	if err := tx.Updates(sysDept).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())

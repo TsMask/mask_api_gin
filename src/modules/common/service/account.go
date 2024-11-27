@@ -1,15 +1,15 @@
 package service
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/config"
-	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
-	constSystem "mask_api_gin/src/framework/constants/system"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/vo"
 	systemService "mask_api_gin/src/modules/system/service"
+
+	"fmt"
 	"time"
 )
 
@@ -39,7 +39,7 @@ func (s Account) ValidateCaptcha(code, uuid string) error {
 	if code == "" || uuid == "" {
 		return fmt.Errorf("captcha empty")
 	}
-	verifyKey := constCacheKey.CAPTCHA_CODE_KEY + uuid
+	verifyKey := constants.CACHE_CAPTCHA_CODE + uuid
 	captcha, _ := redis.Get("", verifyKey)
 	if captcha == "" {
 		return fmt.Errorf("captcha expire")
@@ -60,10 +60,10 @@ func (s Account) ByUsername(username, password string) (vo.LoginUser, error) {
 	if sysUser.UserName != username {
 		return loginUser, fmt.Errorf("user does not exist or password is incorrect")
 	}
-	if sysUser.DelFlag == constSystem.STATUS_YES {
+	if sysUser.DelFlag == constants.STATUS_YES {
 		return loginUser, fmt.Errorf("sorry, your account has been deleted. Sorry, your account has been deleted")
 	}
-	if sysUser.StatusFlag == constSystem.STATUS_NO {
+	if sysUser.StatusFlag == constants.STATUS_NO {
 		return loginUser, fmt.Errorf("sorry, your account has been disabled")
 	}
 
@@ -89,7 +89,7 @@ func (s Account) ByUsername(username, password string) (vo.LoginUser, error) {
 	loginUser.User = sysUser
 	// 用户权限组标识
 	if config.IsSysAdmin(sysUser.UserId) {
-		loginUser.Permissions = []string{constSystem.PERMISSION_SYSTEM}
+		loginUser.Permissions = []string{constants.SYS_PERMISSION_SYSTEM}
 	} else {
 		perms := s.sysMenuService.FindPermsByUserId(sysUser.UserId)
 		loginUser.Permissions = parse.RemoveDuplicates(perms)
@@ -109,7 +109,7 @@ func (s Account) UpdateLoginDateAndIP(loginUser *vo.LoginUser) bool {
 
 // CleanLoginRecordCache 清除错误记录次数
 func (s Account) CleanLoginRecordCache(userId string) bool {
-	cacheKey := fmt.Sprintf("%s%d", constCacheKey.PWD_ERR_COUNT_KEY, userId)
+	cacheKey := fmt.Sprintf("%s%s", constants.CACHE_PWD_ERR_COUNT, userId)
 	hasKey, err := redis.Has("", cacheKey)
 	if hasKey > 0 && err == nil {
 		return redis.Del("", cacheKey) == nil
@@ -123,7 +123,7 @@ func (s Account) passwordRetryCount(userId string) (string, int64, time.Duration
 	maxRetryCount := config.Get("user.password.maxRetryCount").(int)
 	lockTime := config.Get("user.password.lockTime").(int)
 	// 验证缓存记录次数
-	retryKey := fmt.Sprintf("%s%d", constCacheKey.PWD_ERR_COUNT_KEY, userId)
+	retryKey := fmt.Sprintf("%s%s", constants.CACHE_PWD_ERR_COUNT, userId)
 	retryCount, err := redis.Get("", retryKey)
 	if retryCount == "" || err != nil {
 		retryCount = "0"
@@ -140,7 +140,7 @@ func (s Account) passwordRetryCount(userId string) (string, int64, time.Duration
 // RoleAndMenuPerms 角色和菜单数据权限
 func (s Account) RoleAndMenuPerms(userId string, isSysAdmin bool) ([]string, []string) {
 	if isSysAdmin {
-		return []string{constSystem.ROLE_SYSTEM_KEY}, []string{constSystem.PERMISSION_SYSTEM}
+		return []string{constants.SYS_ROLE_SYSTEM_KEY}, []string{constants.SYS_PERMISSION_SYSTEM}
 	}
 	// 角色key
 	var roleGroup []string

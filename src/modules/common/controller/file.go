@@ -3,7 +3,7 @@ package controller
 import (
 	"encoding/base64"
 	"fmt"
-	constUploadSubPath "mask_api_gin/src/framework/constants/upload_sub_path"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/file"
 	"net/url"
@@ -74,12 +74,12 @@ func (s *FileController) Upload(c *gin.Context) {
 	}
 	// 子路径需要在指定范围内
 	subPath := c.PostForm("subPath")
-	if _, ok := constUploadSubPath.UploadSubPath[subPath]; subPath != "" && !ok {
+	if _, ok := constants.UPLOAD_SUB_PATH[subPath]; subPath != "" && !ok {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 	if subPath == "" {
-		subPath = constUploadSubPath.COMMON
+		subPath = constants.UPLOAD_COMMON
 	}
 
 	// 上传文件转存
@@ -134,12 +134,12 @@ func (s *FileController) ChunkMerge(c *gin.Context) {
 		return
 	}
 	// 子路径需要在指定范围内
-	if _, ok := constUploadSubPath.UploadSubPath[body.SubPath]; body.SubPath != "" && !ok {
+	if _, ok := constants.UPLOAD_SUB_PATH[body.SubPath]; body.SubPath != "" && !ok {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
 	if body.SubPath == "" {
-		body.SubPath = constUploadSubPath.COMMON
+		body.SubPath = constants.UPLOAD_COMMON
 	}
 
 	// 切片文件合并

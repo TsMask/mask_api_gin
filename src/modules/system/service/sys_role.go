@@ -1,7 +1,7 @@
 package service
 
 import (
-	constRoleDataScope "mask_api_gin/src/framework/constants/role_data_scope"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 
@@ -25,7 +25,7 @@ type SysRole struct {
 }
 
 // FindByPage 分页查询列表数据
-func (r SysRole) FindByPage(query map[string]any, dataScopeSQL string) ([]model.SysRole, int64) {
+func (r SysRole) FindByPage(query map[string]string, dataScopeSQL string) ([]model.SysRole, int64) {
 	return r.sysRoleRepository.SelectByPage(query, dataScopeSQL)
 }
 
@@ -143,7 +143,7 @@ func (r SysRole) UpdateAndDataScope(sysRole model.SysRole) int64 {
 		// 删除角色与部门关联
 		r.sysRoleDeptRepository.DeleteByRoleIds([]string{sysRole.RoleId})
 		// 新增角色和部门信息
-		if sysRole.DataScope == constRoleDataScope.CUSTOM && len(sysRole.DeptIds) > 0 {
+		if sysRole.DataScope == constants.ROLE_SCOPE_CUSTOM && len(sysRole.DeptIds) > 0 {
 			arr := make([]model.SysRoleDept, 0)
 			for _, deptId := range sysRole.DeptIds {
 				if deptId == "" {

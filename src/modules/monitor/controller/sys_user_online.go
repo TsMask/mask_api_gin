@@ -1,7 +1,7 @@
 package controller
 
 import (
-	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/parse"
@@ -36,7 +36,7 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 	userName := c.Query("userName")
 
 	// 获取所有在线用户key
-	keys, _ := redis.GetKeys("", constCacheKey.LOGIN_TOKEN_KEY+"*")
+	keys, _ := redis.GetKeys("", constants.CACHE_LOGIN_TOKEN+"*")
 
 	// 分批获取
 	arr := make([]string, 0)
@@ -120,7 +120,7 @@ func (s SysUserOnlineController) Logout(c *gin.Context) {
 	ids := strings.Split(tokenIdStr, ",")
 	uniqueIDs := parse.RemoveDuplicates(ids)
 	for _, v := range uniqueIDs {
-		key := constCacheKey.LOGIN_TOKEN_KEY + v
+		key := constants.CACHE_LOGIN_TOKEN + v
 		if err := redis.Del("", key); err != nil {
 			c.JSON(200, response.ErrMsg(err.Error()))
 			return

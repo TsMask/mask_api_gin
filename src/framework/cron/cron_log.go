@@ -1,7 +1,7 @@
 package cron
 
 import (
-	constSystem "mask_api_gin/src/framework/constants/system"
+	"mask_api_gin/src/framework/constants"
 	monitorModel "mask_api_gin/src/modules/monitor/model"
 	monitorRepository "mask_api_gin/src/modules/monitor/repository"
 
@@ -38,7 +38,7 @@ func (clog) Error(err error, msg string, keysAndValues ...any) {
 				Data:      data,
 				Result:    err.Error(),
 			}
-			jobLog.SaveLog(constSystem.STATUS_NO)
+			jobLog.SaveLog(constants.STATUS_NO)
 		}
 	}
 }
@@ -61,7 +61,7 @@ func (clog) Completed(result any, msg string, keysAndValues ...any) {
 				Data:      data,
 				Result:    result,
 			}
-			jobLog.SaveLog(constSystem.STATUS_YES)
+			jobLog.SaveLog(constants.STATUS_YES)
 		}
 	}
 }
@@ -79,13 +79,13 @@ func (jl *jobLogData) SaveLog(statusFlag string) {
 	sysJob := jl.Data.SysJob
 
 	// 任务日志不需要记录
-	if sysJob.SaveLog == "" || sysJob.SaveLog == constSystem.STATUS_NO {
+	if sysJob.SaveLog == "" || sysJob.SaveLog == constants.STATUS_NO {
 		return
 	}
 
 	// 结果信息key的Name
 	resultName := "failed"
-	if statusFlag == constSystem.STATUS_YES {
+	if statusFlag == constants.STATUS_YES {
 		resultName = "completed"
 	}
 

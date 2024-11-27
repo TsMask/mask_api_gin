@@ -15,7 +15,7 @@ var NewSysJob = &SysJob{}
 type SysJob struct{}
 
 // SelectByPage 分页查询集合
-func (r SysJob) SelectByPage(query map[string]any) ([]model.SysJob, int64) {
+func (r SysJob) SelectByPage(query map[string]string) ([]model.SysJob, int64) {
 	tx := db.DB("").Model(&model.SysJob{})
 	// 查询条件拼接
 	if v, ok := query["jobName"]; ok && v != "" {
@@ -121,6 +121,7 @@ func (r SysJob) Update(sysJob model.SysJob) int64 {
 	tx := db.DB("").Model(&model.SysJob{})
 	// 构建查询条件
 	tx = tx.Where("job_id = ?", sysJob.JobId)
+	tx = tx.Omit("config_id", "create_by", "create_time")
 	// 执行更新
 	if err := tx.Updates(sysJob).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())

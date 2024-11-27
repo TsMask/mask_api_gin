@@ -3,7 +3,6 @@ package repository
 import (
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/modules/system/model"
 
 	"fmt"
@@ -17,7 +16,7 @@ var NewSysLogLogin = &SysLogLogin{}
 type SysLogLogin struct{}
 
 // SelectByPage 分页查询集合
-func (r SysLogLogin) SelectByPage(query map[string]any) ([]model.SysLogLogin, int64) {
+func (r SysLogLogin) SelectByPage(query map[string]string) ([]model.SysLogLogin, int64) {
 	tx := db.DB("").Model(&model.SysLogLogin{})
 	// 查询条件拼接
 	if v, ok := query["loginIp"]; ok && v != "" {
@@ -30,18 +29,20 @@ func (r SysLogLogin) SelectByPage(query map[string]any) ([]model.SysLogLogin, in
 		tx = tx.Where("status_flag = ?", v)
 	}
 	if v, ok := query["beginTime"]; ok && v != "" {
-		tx = tx.Where("login_time >= ?", v)
+		if len(v) == 10 {
+			v = fmt.Sprintf("%s000", v)
+			tx = tx.Where("login_time >= ?", v)
+		} else if len(v) == 13 {
+			tx = tx.Where("login_time >= ?", v)
+		}
 	}
 	if v, ok := query["endTime"]; ok && v != "" {
-		tx = tx.Where("login_time <= ?", v)
-	}
-	if v, ok := query["params[beginTime]"]; ok && v != "" {
-		beginDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
-		tx = tx.Where("login_time >= ?", beginDate.UnixMilli())
-	}
-	if v, ok := query["params[endTime]"]; ok && v != "" {
-		endDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
-		tx = tx.Where("login_time <= ?", endDate.UnixMilli())
+		if len(v) == 10 {
+			v = fmt.Sprintf("%s000", v)
+			tx = tx.Where("login_time <= ?", v)
+		} else if len(v) == 13 {
+			tx = tx.Where("login_time <= ?", v)
+		}
 	}
 
 	// 查询结果

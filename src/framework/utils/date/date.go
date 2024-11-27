@@ -43,6 +43,9 @@ func ParseDateToStr(data any, formatStr string) string {
 	if !ok {
 		switch v := data.(type) {
 		case int64:
+			if v <= 1e9 || v >= 1e13 {
+				return ""
+			}
 			if v >= 1e12 {
 				t = time.UnixMilli(v)
 			} else if v >= 1e9 {

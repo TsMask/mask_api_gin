@@ -2,13 +2,13 @@ package controller
 
 import (
 	"mask_api_gin/src/framework/config"
-	constCachekey "mask_api_gin/src/framework/constants/cache_key"
-	constCaptcha "mask_api_gin/src/framework/constants/captcha"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/parse"
 	systemService "mask_api_gin/src/modules/system/service"
+
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -51,7 +51,7 @@ func (s *CaptchaController) Image(c *gin.Context) {
 
 	// 从数据库配置获取验证码类型 math 数值计算 char 字符验证
 	captchaType := s.sysConfigService.FindValueByKey("sys.account.captchaType")
-	if captchaType == constCaptcha.TYPE_MATH {
+	if captchaType == constants.CAPTCHA_TYPE_MATH {
 		math := config.Get("mathCaptcha").(map[string]any)
 		driverCaptcha := &base64Captcha.DriverMath{
 			//Height png height in pixel.
@@ -76,12 +76,12 @@ func (s *CaptchaController) Image(c *gin.Context) {
 		} else {
 			data["uuid"] = id
 			data["img"] = item.EncodeB64string()
-			expiration := constCaptcha.EXPIRATION * time.Second
-			verifyKey = constCachekey.CAPTCHA_CODE_KEY + id
+			expiration := constants.CAPTCHA_EXPIRATION * time.Second
+			verifyKey = constants.CACHE_CAPTCHA_CODE + id
 			_ = redis.SetByExpire("", verifyKey, answer, expiration)
 		}
 	}
-	if captchaType == constCaptcha.TYPE_CHAR {
+	if captchaType == constants.CAPTCHA_TYPE_CHAR {
 		char := config.Get("charCaptcha").(map[string]any)
 		driverCaptcha := &base64Captcha.DriverString{
 			//Height png height in pixel.
@@ -110,8 +110,8 @@ func (s *CaptchaController) Image(c *gin.Context) {
 		} else {
 			data["uuid"] = id
 			data["img"] = item.EncodeB64string()
-			expiration := constCaptcha.EXPIRATION * time.Second
-			verifyKey = constCachekey.CAPTCHA_CODE_KEY + id
+			expiration := constants.CAPTCHA_EXPIRATION * time.Second
+			verifyKey = constants.CACHE_CAPTCHA_CODE + id
 			_ = redis.SetByExpire("", verifyKey, answer, expiration)
 		}
 	}

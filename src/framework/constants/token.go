@@ -1,4 +1,4 @@
-package token
+package constants
 
 // 令牌常量信息
 

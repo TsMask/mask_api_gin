@@ -4,7 +4,6 @@ import (
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/crypto"
-	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 
@@ -19,7 +18,7 @@ var NewSysUser = &SysUser{}
 type SysUser struct{}
 
 // SelectByPage 分页查询集合
-func (r SysUser) SelectByPage(query map[string]any, dataScopeWhereSQL string) ([]model.SysUser, int64) {
+func (r SysUser) SelectByPage(query map[string]string, dataScopeWhereSQL string) ([]model.SysUser, int64) {
 	tx := db.DB("").Model(&model.SysUser{})
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
@@ -36,26 +35,28 @@ func (r SysUser) SelectByPage(query map[string]any, dataScopeWhereSQL string) ([
 		tx = tx.Where("status_flag = ?", v)
 	}
 	if v, ok := query["beginTime"]; ok && v != "" {
-		tx = tx.Where("login_time >= ?", v)
+		if len(v) == 10 {
+			v = fmt.Sprintf("%s000", v)
+			tx = tx.Where("login_time >= ?", v)
+		} else if len(v) == 13 {
+			tx = tx.Where("login_time >= ?", v)
+		}
 	}
 	if v, ok := query["endTime"]; ok && v != "" {
-		tx = tx.Where("login_time <= ?", v)
-	}
-	if v, ok := query["params[beginTime]"]; ok && v != "" {
-		beginDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
-		tx = tx.Where("login_time >= ?", beginDate.UnixMilli())
-	}
-	if v, ok := query["params[endTime]"]; ok && v != "" {
-		endDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
-		tx = tx.Where("login_time <= ?", endDate.UnixMilli())
-	}
-	if dataScopeWhereSQL != "" {
-		tx = tx.Where(dataScopeWhereSQL)
+		if len(v) == 10 {
+			v = fmt.Sprintf("%s000", v)
+			tx = tx.Where("login_time <= ?", v)
+		} else if len(v) == 13 {
+			tx = tx.Where("login_time <= ?", v)
+		}
 	}
 	if v, ok := query["deptId"]; ok && v != "" {
 		tx = tx.Where(`(dept_id = ? or dept_id in ( 
 		select t.dept_id from sys_dept t where find_in_set(?, ancestors) 
 		))`, v, v)
+	}
+	if dataScopeWhereSQL != "" {
+		tx = tx.Where(dataScopeWhereSQL)
 	}
 
 	// 查询结果
@@ -155,6 +156,7 @@ func (r SysUser) Update(sysUser model.SysUser) int64 {
 	tx := db.DB("").Model(&model.SysUser{})
 	// 构建查询条件
 	tx = tx.Where("user_id = ?", sysUser.UserId)
+	tx = tx.Omit("user_id", "del_flag", "create_by", "create_time")
 	// 执行更新
 	if err := tx.Updates(sysUser).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -221,7 +223,7 @@ func (r SysUser) SelectByUserName(userName string) model.SysUser {
 }
 
 // SelectAuthUsersByPage 分页查询集合By分配用户角色
-func (r SysUser) SelectAuthUsersByPage(query map[string]any, dataScopeWhereSQL string) ([]model.SysUser, int64) {
+func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeWhereSQL string) ([]model.SysUser, int64) {
 	tx := db.DB("").Model(&model.SysUser{})
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接

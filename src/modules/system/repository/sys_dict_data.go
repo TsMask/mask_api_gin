@@ -15,7 +15,7 @@ var NewSysDictData = &SysDictData{}
 type SysDictData struct{}
 
 // SelectByPage 分页查询集合
-func (r SysDictData) SelectByPage(query map[string]any) ([]model.SysDictData, int64) {
+func (r SysDictData) SelectByPage(query map[string]string) ([]model.SysDictData, int64) {
 	tx := db.DB("").Model(&model.SysDictData{})
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
@@ -117,6 +117,7 @@ func (r SysDictData) Update(sysDictData model.SysDictData) int64 {
 	tx := db.DB("").Model(&model.SysDictData{})
 	// 构建查询条件
 	tx = tx.Where("data_id = ?", sysDictData.DataId)
+	tx = tx.Omit("data_id", "del_flag", "create_by", "create_time")
 	// 执行更新
 	if err := tx.Updates(sysDictData).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())

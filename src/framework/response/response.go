@@ -7,7 +7,7 @@ const (
 	MSG_ERROR = "失败"
 
 	// CODE_SUCCESS 响应-msg正常成功
-	CODE_SUCCESS = 0
+	CODE_SUCCESS = 200
 	// MSG_SUCCCESS 响应-code正常成功
 	MSG_SUCCCESS = "成功"
 )

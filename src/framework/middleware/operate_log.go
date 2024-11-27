@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	constSystem "mask_api_gin/src/framework/constants/system"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
@@ -124,9 +124,9 @@ func OperateLog(options Options) gin.HandlerFunc {
 		// 响应状态
 		status := c.Writer.Status()
 		if status == 200 {
-			operaLog.StatusFlag = constSystem.STATUS_YES
+			operaLog.StatusFlag = constants.STATUS_YES
 		} else {
-			operaLog.StatusFlag = constSystem.STATUS_NO
+			operaLog.StatusFlag = constants.STATUS_NO
 		}
 
 		// 是否需要保存response，参数和值

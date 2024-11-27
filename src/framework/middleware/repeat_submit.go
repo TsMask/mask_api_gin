@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/ip2region"
 	"mask_api_gin/src/framework/logger"
@@ -42,7 +42,7 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 
 		// 唯一标识（指定key + 客户端IP + 请求地址）
 		clientIP := ip2region.ClientIP(c.ClientIP())
-		repeatKey := constCacheKey.REPEAT_SUBMIT_KEY + clientIP + ":" + c.Request.RequestURI
+		repeatKey := constants.CACHE_REPEAT_SUBMIT + clientIP + ":" + c.Request.RequestURI
 
 		// 在Redis查询并记录请求次数
 		repeatStr, _ := redis.Get("", repeatKey)

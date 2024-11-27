@@ -1,8 +1,7 @@
 package service
 
 import (
-	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
-	constSystem "mask_api_gin/src/framework/constants/system"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
@@ -24,7 +23,7 @@ type SysDictType struct {
 }
 
 // FindByPage 分页查询列表数据
-func (s SysDictType) FindByPage(query map[string]any) ([]model.SysDictType, int64) {
+func (s SysDictType) FindByPage(query map[string]string) ([]model.SysDictType, int64) {
 	return s.sysDictTypeRepository.SelectByPage(query)
 }
 
@@ -121,14 +120,14 @@ func (s SysDictType) CheckUniqueByType(dictType string, dictId string) bool {
 
 // getCacheKey 组装缓存key
 func (s SysDictType) getCacheKey(dictType string) string {
-	return constCacheKey.SYS_DICT_KEY + dictType
+	return constants.CACHE_SYS_DICT + dictType
 }
 
 // CacheLoad 加载字典缓存数据 传入*查询全部
 func (s SysDictType) CacheLoad(dictType string) {
 	sysDictData := model.SysDictData{
 		DictType:   dictType,
-		StatusFlag: constSystem.STATUS_YES,
+		StatusFlag: constants.STATUS_YES,
 	}
 
 	// 指定字典类型
@@ -182,7 +181,7 @@ func (s SysDictType) FindDataByType(dictType string) []model.SysDictData {
 		}
 	} else {
 		data = s.sysDictDataRepository.Select(model.SysDictData{
-			StatusFlag: constSystem.STATUS_YES,
+			StatusFlag: constants.STATUS_YES,
 			DictType:   dictType,
 		})
 		if len(data) > 0 {

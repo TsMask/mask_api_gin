@@ -3,7 +3,6 @@ package repository
 import (
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/modules/system/model"
 
 	"fmt"
@@ -17,7 +16,7 @@ var NewSysRole = &SysRole{}
 type SysRole struct{}
 
 // SelectByPage 分页查询集合
-func (r SysRole) SelectByPage(query map[string]any, dataScopeSQL string) ([]model.SysRole, int64) {
+func (r SysRole) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysRole, int64) {
 	tx := db.DB("").Model(&model.SysRole{})
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
@@ -31,18 +30,20 @@ func (r SysRole) SelectByPage(query map[string]any, dataScopeSQL string) ([]mode
 		tx = tx.Where("status_flag = ?", v)
 	}
 	if v, ok := query["beginTime"]; ok && v != "" {
-		tx = tx.Where("create_time >= ?", v)
+		if len(v) == 10 {
+			v = fmt.Sprintf("%s000", v)
+			tx = tx.Where("create_time >= ?", v)
+		} else if len(v) == 13 {
+			tx = tx.Where("create_time >= ?", v)
+		}
 	}
 	if v, ok := query["endTime"]; ok && v != "" {
-		tx = tx.Where("create_time <= ?", v)
-	}
-	if v, ok := query["params[beginTime]"]; ok && v != "" {
-		beginDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
-		tx = tx.Where("create_time >= ?", beginDate.UnixMilli())
-	}
-	if v, ok := query["params[endTime]"]; ok && v != "" {
-		endDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
-		tx = tx.Where("create_time <= ?", endDate.UnixMilli())
+		if len(v) == 10 {
+			v = fmt.Sprintf("%s000", v)
+			tx = tx.Where("create_time <= ?", v)
+		} else if len(v) == 13 {
+			tx = tx.Where("create_time <= ?", v)
+		}
 	}
 
 	if v, ok := query["deptId"]; ok && v != "" {
@@ -142,6 +143,7 @@ func (r SysRole) Update(sysRole model.SysRole) int64 {
 	tx := db.DB("").Model(&model.SysRole{})
 	// 构建查询条件
 	tx = tx.Where("role_id = ?", sysRole.RoleId)
+	tx = tx.Omit("role_id", "del_flag", "create_by", "create_time")
 	// 执行更新
 	if err := tx.Updates(sysRole).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())

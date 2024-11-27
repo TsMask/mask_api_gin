@@ -1,8 +1,7 @@
 package service
 
 import (
-	constMenu "mask_api_gin/src/framework/constants/menu"
-	constSystem "mask_api_gin/src/framework/constants/system"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/framework/vo"
@@ -206,7 +205,7 @@ func (s SysMenu) BuildRouteMenus(sysMenus []model.SysMenu, prefix string) []vo.R
 
 		// 子项菜单 目录类型 非路径链接
 		cMenus := item.Children
-		if len(cMenus) > 0 && item.MenuType == constMenu.TYPE_DIR && !regular.ValidHttp(item.MenuPath) {
+		if len(cMenus) > 0 && item.MenuType == constants.MENU_TYPE_DIR && !regular.ValidHttp(item.MenuPath) {
 			// 获取重定向地址
 			redirectPrefix, redirectPath := s.getRouteRedirect(
 				cMenus,
@@ -216,7 +215,7 @@ func (s SysMenu) BuildRouteMenus(sysMenus []model.SysMenu, prefix string) []vo.R
 			router.Redirect = redirectPath
 			// 子菜单进入递归
 			router.Children = s.BuildRouteMenus(cMenus, redirectPrefix)
-		} else if item.ParentId == "0" && item.FrameFlag == constSystem.STATUS_YES && item.MenuType == constMenu.TYPE_MENU {
+		} else if item.ParentId == "0" && item.FrameFlag == constants.STATUS_YES && item.MenuType == constants.MENU_TYPE_MENU {
 			// 父菜单 内部跳转 菜单类型
 			menuPath := fmt.Sprintf("/%s", item.MenuId)
 			childPath := menuPath + s.getRouterPath(item)
@@ -231,15 +230,15 @@ func (s SysMenu) BuildRouteMenus(sysMenus []model.SysMenu, prefix string) []vo.R
 			router.Name = fmt.Sprint(item.MenuId)
 			router.Path = menuPath
 			router.Redirect = childPath
-			router.Component = constMenu.COMPONENT_LAYOUT_BASIC
-		} else if item.ParentId == "0" && item.FrameFlag == constSystem.STATUS_YES && regular.ValidHttp(item.MenuPath) {
+			router.Component = constants.MENU_COMPONENT_LAYOUT_BASIC
+		} else if item.ParentId == "0" && item.FrameFlag == constants.STATUS_YES && regular.ValidHttp(item.MenuPath) {
 			// 父菜单 内部跳转 路径链接
 			menuPath := fmt.Sprintf("/%s", item.MenuId)
 			childPath := menuPath + s.getRouterPath(item)
 			children := vo.Router{
 				Name:      s.getRouteName(item),
 				Path:      childPath,
-				Component: constMenu.COMPONENT_LAYOUT_LINK,
+				Component: constants.MENU_COMPONENT_LAYOUT_LINK,
 				Meta:      s.getRouteMeta(item),
 			}
 			router.Meta.HideChildInMenu = true
@@ -247,7 +246,7 @@ func (s SysMenu) BuildRouteMenus(sysMenus []model.SysMenu, prefix string) []vo.R
 			router.Name = fmt.Sprint(item.MenuId)
 			router.Path = menuPath
 			router.Redirect = childPath
-			router.Component = constMenu.COMPONENT_LAYOUT_BASIC
+			router.Component = constants.MENU_COMPONENT_LAYOUT_BASIC
 		}
 
 		routers = append(routers, router)
@@ -276,13 +275,13 @@ func (s SysMenu) getRouterPath(sysMenu model.SysMenu) string {
 	}
 
 	// 路径链接 内部跳转
-	if regular.ValidHttp(routerPath) && sysMenu.FrameFlag == constSystem.STATUS_YES {
+	if regular.ValidHttp(routerPath) && sysMenu.FrameFlag == constants.STATUS_YES {
 		routerPath = regular.Replace(`/^http(s)?:\/\/+/`, routerPath, "")
 		routerPath = base64.StdEncoding.EncodeToString([]byte(routerPath))
 	}
 
 	// 父菜单 内部跳转
-	if sysMenu.ParentId == "0" && sysMenu.FrameFlag == constSystem.STATUS_YES {
+	if sysMenu.ParentId == "0" && sysMenu.FrameFlag == constants.STATUS_YES {
 		routerPath = "/" + routerPath
 	}
 
@@ -292,25 +291,25 @@ func (s SysMenu) getRouterPath(sysMenu model.SysMenu) string {
 // getComponent 获取组件信息
 func (s SysMenu) getComponent(sysMenu model.SysMenu) string {
 	// 内部跳转 路径链接
-	if sysMenu.FrameFlag == constSystem.STATUS_YES && regular.ValidHttp(sysMenu.MenuPath) {
-		return constMenu.COMPONENT_LAYOUT_LINK
+	if sysMenu.FrameFlag == constants.STATUS_YES && regular.ValidHttp(sysMenu.MenuPath) {
+		return constants.MENU_COMPONENT_LAYOUT_LINK
 	}
 
 	// 非父菜单 目录类型
-	if sysMenu.ParentId != "0" && sysMenu.MenuType == constMenu.TYPE_DIR {
-		return constMenu.COMPONENT_LAYOUT_BLANK
+	if sysMenu.ParentId != "0" && sysMenu.MenuType == constants.MENU_TYPE_DIR {
+		return constants.MENU_COMPONENT_LAYOUT_BLANK
 	}
 
 	// 组件路径 内部跳转 菜单类型
-	if sysMenu.Component != "" && sysMenu.FrameFlag == constSystem.STATUS_YES && sysMenu.MenuType == constMenu.TYPE_MENU {
+	if sysMenu.Component != "" && sysMenu.FrameFlag == constants.STATUS_YES && sysMenu.MenuType == constants.MENU_TYPE_MENU {
 		// 父菜单套外层布局
 		if sysMenu.ParentId == "0" {
-			return constMenu.COMPONENT_LAYOUT_BASIC
+			return constants.MENU_COMPONENT_LAYOUT_BASIC
 		}
 		return sysMenu.Component
 	}
 
-	return constMenu.COMPONENT_LAYOUT_BASIC
+	return constants.MENU_COMPONENT_LAYOUT_BASIC
 }
 
 // getRouteMeta 获取路由元信息
@@ -323,12 +322,12 @@ func (s SysMenu) getRouteMeta(sysMenu model.SysMenu) vo.RouterMeta {
 	}
 	meta.Title = sysMenu.MenuName
 	meta.HideChildInMenu = false
-	meta.HideInMenu = sysMenu.VisibleFlag == constSystem.STATUS_NO
-	meta.Cache = sysMenu.CacheFlag == constSystem.STATUS_YES
+	meta.HideInMenu = sysMenu.VisibleFlag == constants.STATUS_NO
+	meta.Cache = sysMenu.CacheFlag == constants.STATUS_YES
 	meta.Target = ""
 
 	// 路径链接 非内部跳转
-	if regular.ValidHttp(sysMenu.MenuPath) && sysMenu.FrameFlag == constSystem.STATUS_NO {
+	if regular.ValidHttp(sysMenu.MenuPath) && sysMenu.FrameFlag == constants.STATUS_NO {
 		meta.Target = "_blank"
 	}
 
@@ -346,7 +345,7 @@ func (s SysMenu) getRouteRedirect(cMenus []model.SysMenu, routerPath string, pre
 	// 重定向为首个显示并启用的子菜单
 	var firstChild *model.SysMenu
 	for _, item := range cMenus {
-		if item.FrameFlag == constSystem.STATUS_YES && item.VisibleFlag == constSystem.STATUS_YES {
+		if item.FrameFlag == constants.STATUS_YES && item.VisibleFlag == constants.STATUS_YES {
 			firstChild = &item
 			break
 		}
@@ -355,7 +354,7 @@ func (s SysMenu) getRouteRedirect(cMenus []model.SysMenu, routerPath string, pre
 	// 检查内嵌隐藏菜单是否可做重定向
 	if firstChild == nil {
 		for _, item := range cMenus {
-			if item.FrameFlag == constSystem.STATUS_YES && item.VisibleFlag == constSystem.STATUS_NO && strings.Contains(item.MenuPath, constMenu.PATH_INLINE) {
+			if item.FrameFlag == constants.STATUS_YES && item.VisibleFlag == constants.STATUS_NO && strings.Contains(item.MenuPath, constants.MENU_PATH_INLINE) {
 				firstChild = &item
 				break
 			}

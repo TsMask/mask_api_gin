@@ -95,6 +95,12 @@ func Connect() {
 		if err != nil {
 			logger.Fatalf("failed error ping database: %v", err)
 		}
+		// SetMaxIdleConns 用于设置连接池中空闲连接的最大数量。
+		sqlDB.SetMaxIdleConns(10)
+		// SetMaxOpenConns 设置打开数据库连接的最大数量。
+		sqlDB.SetMaxOpenConns(100)
+		// SetConnMaxLifetime 设置了连接可复用的最大时间。
+		sqlDB.SetConnMaxLifetime(time.Hour)
 		logger.Infof("database %s connection is successful.", key)
 		dbMap[key] = db
 	}

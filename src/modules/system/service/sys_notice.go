@@ -18,7 +18,7 @@ type SysNotice struct {
 }
 
 // FindByPage 分页查询列表数据
-func (s SysNotice) FindByPage(query map[string]any) ([]model.SysNotice, int64) {
+func (s SysNotice) FindByPage(query map[string]string) ([]model.SysNotice, int64) {
 	return s.sysNoticeRepository.SelectByPage(query)
 }
 

@@ -3,7 +3,6 @@ package repository
 import (
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/modules/system/model"
 
 	"fmt"
@@ -17,7 +16,7 @@ var NewSysConfig = &SysConfig{}
 type SysConfig struct{}
 
 // SelectByPage 分页查询集合
-func (r SysConfig) SelectByPage(query map[string]any) ([]model.SysConfig, int64) {
+func (r SysConfig) SelectByPage(query map[string]string) ([]model.SysConfig, int64) {
 	tx := db.DB("").Model(&model.SysConfig{})
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
@@ -31,18 +30,20 @@ func (r SysConfig) SelectByPage(query map[string]any) ([]model.SysConfig, int64)
 		tx = tx.Where("config_key like concat(?, '%')", v)
 	}
 	if v, ok := query["beginTime"]; ok && v != "" {
-		tx = tx.Where("create_time >= ?", v)
+		if len(v) == 10 {
+			v = fmt.Sprintf("%s000", v)
+			tx = tx.Where("create_time >= ?", v)
+		} else if len(v) == 13 {
+			tx = tx.Where("create_time >= ?", v)
+		}
 	}
 	if v, ok := query["endTime"]; ok && v != "" {
-		tx = tx.Where("create_time <= ?", v)
-	}
-	if v, ok := query["params[beginTime]"]; ok && v != "" {
-		beginDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
-		tx = tx.Where("create_time >= ?", beginDate.UnixMilli())
-	}
-	if v, ok := query["params[endTime]"]; ok && v != "" {
-		endDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
-		tx = tx.Where("create_time <= ?", endDate.UnixMilli())
+		if len(v) == 10 {
+			v = fmt.Sprintf("%s000", v)
+			tx = tx.Where("create_time <= ?", v)
+		} else if len(v) == 13 {
+			tx = tx.Where("create_time <= ?", v)
+		}
 	}
 
 	// 查询结果
@@ -136,6 +137,7 @@ func (r SysConfig) Update(sysConfig model.SysConfig) int64 {
 	tx := db.DB("").Model(&model.SysConfig{})
 	// 构建查询条件
 	tx = tx.Where("config_id = ?", sysConfig.ConfigId)
+	tx = tx.Omit("config_id", "del_flag", "create_by", "create_time")
 	// 执行更新
 	if err := tx.Updates(sysConfig).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())

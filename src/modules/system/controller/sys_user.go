@@ -2,7 +2,7 @@ package controller
 
 import (
 	"mask_api_gin/src/framework/config"
-	constSystem "mask_api_gin/src/framework/constants/system"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/date"
@@ -527,9 +527,9 @@ func (s SysUserController) Import(c *gin.Context) {
 				break
 			}
 		}
-		sysUserStatus := constSystem.STATUS_NO
+		sysUserStatus := constants.STATUS_NO
 		if row["G"] == "正常" {
-			sysUserStatus = constSystem.STATUS_YES
+			sysUserStatus = constants.STATUS_YES
 		}
 
 		// 验证是否存在这个用户

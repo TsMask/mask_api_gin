@@ -20,7 +20,7 @@ type SysDictData struct {
 }
 
 // FindByPage 分页查询列表数据
-func (s SysDictData) FindByPage(query map[string]any) ([]model.SysDictData, int64) {
+func (s SysDictData) FindByPage(query map[string]string) ([]model.SysDictData, int64) {
 	return s.sysDictDataRepository.SelectByPage(query)
 }
 

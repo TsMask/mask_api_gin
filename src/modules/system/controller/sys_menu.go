@@ -2,8 +2,7 @@ package controller
 
 import (
 	"mask_api_gin/src/framework/config"
-	constMenu "mask_api_gin/src/framework/constants/menu"
-	constSystem "mask_api_gin/src/framework/constants/system"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/regular"
@@ -76,7 +75,7 @@ func (s SysMenuController) Add(c *gin.Context) {
 	}
 
 	// 目录和菜单检查地址唯一
-	if constMenu.TYPE_DIR == body.MenuType || constMenu.TYPE_MENU == body.MenuType {
+	if constants.MENU_TYPE_DIR == body.MenuType || constants.MENU_TYPE_MENU == body.MenuType {
 		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentId, body.MenuPath, "")
 		if !uniqueMenuPath {
 			msg := fmt.Sprintf("菜单新增【%s】失败，菜单路由地址已存在", body.MenuName)
@@ -94,7 +93,7 @@ func (s SysMenuController) Add(c *gin.Context) {
 	}
 
 	// 外链菜单需要符合网站http(s)开头
-	if body.FrameFlag == constSystem.STATUS_NO && !regular.ValidHttp(body.MenuPath) {
+	if body.FrameFlag == constants.STATUS_NO && !regular.ValidHttp(body.MenuPath) {
 		msg := fmt.Sprintf("菜单新增【%s】失败，非内部地址必须以http(s)://开头", body.MenuName)
 		c.JSON(200, response.ErrMsg(msg))
 		return
@@ -140,14 +139,14 @@ func (s SysMenuController) Edit(c *gin.Context) {
 			return
 		}
 		// 禁用菜单时检查父菜单是否使用
-		if body.StatusFlag == constSystem.STATUS_YES && menuParent.StatusFlag == constSystem.STATUS_NO {
+		if body.StatusFlag == constants.STATUS_YES && menuParent.StatusFlag == constants.STATUS_NO {
 			c.JSON(200, response.ErrMsg("上级菜单未启用！"))
 			return
 		}
 	}
 
 	// 目录和菜单检查地址唯一
-	if constMenu.TYPE_DIR == body.MenuType || constMenu.TYPE_MENU == body.MenuType {
+	if constants.MENU_TYPE_DIR == body.MenuType || constants.MENU_TYPE_MENU == body.MenuType {
 		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentId, body.MenuPath, body.MenuId)
 		if !uniqueMenuPath {
 			msg := fmt.Sprintf("菜单修改【%s】失败，菜单路由地址已存在", body.MenuName)
@@ -165,15 +164,15 @@ func (s SysMenuController) Edit(c *gin.Context) {
 	}
 
 	// 外链菜单需要符合网站http(s)开头
-	if body.FrameFlag == constSystem.STATUS_NO && !regular.ValidHttp(body.MenuPath) {
+	if body.FrameFlag == constants.STATUS_NO && !regular.ValidHttp(body.MenuPath) {
 		msg := fmt.Sprintf("菜单修改【%s】失败，非内部地址必须以http(s)://开头", body.MenuName)
 		c.JSON(200, response.ErrMsg(msg))
 		return
 	}
 
 	// 禁用菜单时检查子菜单是否使用
-	if body.StatusFlag == constSystem.STATUS_NO {
-		hasStatus := s.sysMenuService.ExistChildrenByMenuIdAndStatus(body.MenuId, constSystem.STATUS_YES)
+	if body.StatusFlag == constants.STATUS_NO {
+		hasStatus := s.sysMenuService.ExistChildrenByMenuIdAndStatus(body.MenuId, constants.STATUS_YES)
 		if hasStatus > 0 {
 			msg := fmt.Sprintf("不允许禁用，存在使用子菜单数：%d", hasStatus)
 			c.JSON(200, response.ErrMsg(msg))

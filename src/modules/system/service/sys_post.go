@@ -20,7 +20,7 @@ type SysPost struct {
 }
 
 // FindByPage 分页查询列表数据
-func (s SysPost) FindByPage(query map[string]any) ([]model.SysPost, int64) {
+func (s SysPost) FindByPage(query map[string]string) ([]model.SysPost, int64) {
 	return s.sysPostRepository.SelectByPage(query)
 }
 

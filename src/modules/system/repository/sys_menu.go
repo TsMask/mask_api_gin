@@ -1,7 +1,7 @@
 package repository
 
 import (
-	constMenu "mask_api_gin/src/framework/constants/menu"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
@@ -78,7 +78,7 @@ func (r SysMenu) Insert(sysMenu model.SysMenu) string {
 	}
 
 	// 根据菜单类型重置参数
-	if sysMenu.MenuType == constMenu.TYPE_BUTTON {
+	if sysMenu.MenuType == constants.MENU_TYPE_BUTTON {
 		sysMenu.Component = ""
 		sysMenu.Perms = ""
 		sysMenu.Icon = "#"
@@ -86,7 +86,7 @@ func (r SysMenu) Insert(sysMenu model.SysMenu) string {
 		sysMenu.CacheFlag = "1"
 		sysMenu.VisibleFlag = "1"
 		sysMenu.StatusFlag = "1"
-	} else if sysMenu.MenuType == constMenu.TYPE_DIR {
+	} else if sysMenu.MenuType == constants.MENU_TYPE_DIR {
 		sysMenu.Component = ""
 		sysMenu.Perms = ""
 	}
@@ -112,7 +112,7 @@ func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
 	}
 
 	// 根据菜单类型重置参数
-	if sysMenu.MenuType == constMenu.TYPE_BUTTON {
+	if sysMenu.MenuType == constants.MENU_TYPE_BUTTON {
 		sysMenu.Component = ""
 		sysMenu.Perms = ""
 		sysMenu.Icon = "#"
@@ -120,7 +120,7 @@ func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
 		sysMenu.CacheFlag = "1"
 		sysMenu.VisibleFlag = "1"
 		sysMenu.StatusFlag = "1"
-	} else if sysMenu.MenuType == constMenu.TYPE_DIR {
+	} else if sysMenu.MenuType == constants.MENU_TYPE_DIR {
 		sysMenu.Component = ""
 		sysMenu.Perms = ""
 	}
@@ -128,6 +128,7 @@ func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
 	tx := db.DB("").Model(&model.SysMenu{})
 	// 构建查询条件
 	tx = tx.Where("menu_id = ?", sysMenu.MenuId)
+	tx = tx.Omit("menu_id", "del_flag", "create_by", "create_time")
 	// 执行更新
 	if err := tx.Updates(sysMenu).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -162,7 +163,7 @@ func (r SysMenu) ExistChildrenByMenuIdAndStatus(menuId string, statusFlag string
 	tx = tx.Where("parent_id = ? and del_flag = '0'", menuId)
 	if statusFlag != "" {
 		tx = tx.Where("status_flag = ?", statusFlag)
-		tx = tx.Where("menu_type in ?", []string{constMenu.TYPE_DIR, constMenu.TYPE_MENU})
+		tx = tx.Where("menu_type in ?", []string{constants.MENU_TYPE_DIR, constants.MENU_TYPE_MENU})
 	}
 	// 查询数据
 	var count int64 = 0
@@ -257,14 +258,14 @@ func (r SysMenu) SelectTreeByUserId(userId string) []model.SysMenu {
 	tx = tx.Where("del_flag = '0'")
 	// 管理员全部菜单
 	if userId == "0" {
-		tx = tx.Where("menu_type in ? and status_flag = '1'", []string{constMenu.TYPE_DIR, constMenu.TYPE_MENU})
+		tx = tx.Where("menu_type in ? and status_flag = '1'", []string{constants.MENU_TYPE_DIR, constants.MENU_TYPE_MENU})
 	} else {
 		// 用户ID权限
 		tx = tx.Where(`menu_type in ? and status_flag = '1' 
 		and menu_id in (
 		select menu_id from sys_role_menu where role_id in (
 		select role_id from sys_user_role where user_id = ?
-		))`, []string{constMenu.TYPE_DIR, constMenu.TYPE_MENU}, userId)
+		))`, []string{constants.MENU_TYPE_DIR, constants.MENU_TYPE_MENU}, userId)
 	}
 
 	// 查询数据

@@ -16,7 +16,7 @@ type SysLogOperate struct {
 }
 
 // FindByPage 分页查询列表数据
-func (s SysLogOperate) FindByPage(query map[string]any) ([]model.SysLogOperate, int64) {
+func (s SysLogOperate) FindByPage(query map[string]string) ([]model.SysLogOperate, int64) {
 	return s.SysLogOperate.SelectByPage(query)
 }
 

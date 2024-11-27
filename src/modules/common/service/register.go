@@ -1,13 +1,13 @@
 package service
 
 import (
-	"fmt"
-	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
-	constSystem "mask_api_gin/src/framework/constants/system"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/utils/parse"
 	systemModel "mask_api_gin/src/modules/system/model"
 	systemService "mask_api_gin/src/modules/system/service"
+
+	"fmt"
 )
 
 // NewRegister 实例化服务层
@@ -34,7 +34,7 @@ func (s Register) ValidateCaptcha(code, uuid string) error {
 	if code == "" || uuid == "" {
 		return fmt.Errorf("captcha empty")
 	}
-	verifyKey := constCacheKey.CAPTCHA_CODE_KEY + uuid
+	verifyKey := constants.CACHE_CAPTCHA_CODE + uuid
 	captcha, _ := redis.Get("", verifyKey)
 	if captcha == "" {
 		return fmt.Errorf("captcha expire")
@@ -63,12 +63,12 @@ func (s Register) ByUserName(username, password string) (string, error) {
 
 	sysUser := systemModel.SysUser{
 		UserName:   username,
-		NickName:   username,               // 昵称使用名称账号
-		Passwd:     password,               // 原始密码
-		Sex:        "0",                    // 性别未选择
-		StatusFlag: constSystem.STATUS_YES, // 账号状态激活
-		DeptId:     "100",                  // 归属部门为根节点
-		CreateBy:   "register",             // 创建来源
+		NickName:   username,             // 昵称使用名称账号
+		Passwd:     password,             // 原始密码
+		Sex:        "0",                  // 性别未选择
+		StatusFlag: constants.STATUS_YES, // 账号状态激活
+		DeptId:     "100",                // 归属部门为根节点
+		CreateBy:   "register",           // 创建来源
 	}
 
 	// 新增用户的角色管理

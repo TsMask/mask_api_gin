@@ -1,7 +1,7 @@
 package file
 
 import (
-	constUploadSubPath "mask_api_gin/src/framework/constants/upload_sub_path"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 
@@ -114,7 +114,7 @@ func WriteSheet(headerCells map[string]string, dataCells []map[string]any, fileN
 
 	// 上传资源路径
 	_, dir := resourceUpload()
-	filePath := filepath.Join(constUploadSubPath.EXPORT, date.ParseDatePath(time.Now()))
+	filePath := filepath.Join(constants.UPLOAD_EXPORT, date.ParseDatePath(time.Now()))
 	saveFilePath := filepath.Join(dir, filePath, fileName)
 
 	// 创建文件目录

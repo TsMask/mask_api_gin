@@ -1,16 +1,16 @@
 package controller
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/config"
-	constSystem "mask_api_gin/src/framework/constants/system"
-	constToken "mask_api_gin/src/framework/constants/token"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/response"
 	ctxUtils "mask_api_gin/src/framework/utils/ctx"
 	tokenUtils "mask_api_gin/src/framework/utils/token"
 	commonModel "mask_api_gin/src/modules/common/model"
 	commonService "mask_api_gin/src/modules/common/service"
 	systemService "mask_api_gin/src/modules/system/service"
+
+	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -48,7 +48,7 @@ func (s AccountController) Login(c *gin.Context) {
 	if err := s.accountService.ValidateCaptcha(loginBody.Code, loginBody.UUID); err != nil {
 		msg := fmt.Sprintf("%s code: %s", err.Error(), loginBody.Code)
 		s.sysLogLoginService.Insert(
-			loginBody.Username, constSystem.STATUS_NO, msg,
+			loginBody.Username, constants.STATUS_NO, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
 		c.JSON(400, response.CodeMsg(40012, err.Error()))
@@ -70,14 +70,14 @@ func (s AccountController) Login(c *gin.Context) {
 	} else {
 		s.accountService.UpdateLoginDateAndIP(&loginUser)
 		s.sysLogLoginService.Insert(
-			loginBody.Username, constSystem.STATUS_YES, "登录成功",
+			loginBody.Username, constants.STATUS_YES, "登录成功",
 			[4]string{ipaddr, location, os, browser},
 		)
 	}
 
 	c.JSON(200, response.OkData(map[string]any{
 		"accessToken": tokenStr,
-		"tokenType":   strings.TrimRight(constToken.HEADER_PREFIX, " "),
+		"tokenType":   strings.TrimRight(constants.HEADER_PREFIX, " "),
 		"expiresIn":   (loginUser.ExpireTime - loginUser.LoginTime) / 1000,
 		"userId":      loginUser.UserId,
 	}))
@@ -130,7 +130,7 @@ func (s AccountController) Logout(c *gin.Context) {
 			os, browser := ctxUtils.UaOsBrowser(c)
 			// 创建系统访问记录
 			s.sysLogLoginService.Insert(
-				userName, constSystem.STATUS_YES, "退出成功",
+				userName, constants.STATUS_YES, "退出成功",
 				[4]string{ipaddr, location, os, browser},
 			)
 		}

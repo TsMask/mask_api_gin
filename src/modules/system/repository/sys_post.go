@@ -15,7 +15,7 @@ var NewSysPost = &SysPost{}
 type SysPost struct{}
 
 // SelectByPage 分页查询集合
-func (r SysPost) SelectByPage(query map[string]any) ([]model.SysPost, int64) {
+func (r SysPost) SelectByPage(query map[string]string) ([]model.SysPost, int64) {
 	tx := db.DB("").Model(&model.SysPost{})
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
@@ -117,6 +117,7 @@ func (r SysPost) Update(sysPost model.SysPost) int64 {
 	tx := db.DB("").Model(&model.SysPost{})
 	// 构建查询条件
 	tx = tx.Where("post_id = ?", sysPost.PostId)
+	tx = tx.Omit("post_id", "del_flag", "create_by", "create_time")
 	// 执行更新
 	if err := tx.Updates(sysPost).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())

@@ -2,8 +2,7 @@ package ctx
 
 import (
 	"mask_api_gin/src/framework/config"
-	constRoleDataScope "mask_api_gin/src/framework/constants/role_data_scope"
-	constSystem "mask_api_gin/src/framework/constants/system"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/vo"
 
 	"fmt"
@@ -14,8 +13,8 @@ import (
 
 // LoginUser 登录用户信息
 func LoginUser(c *gin.Context) (vo.LoginUser, error) {
-	value, exists := c.Get(constSystem.CTX_LOGIN_USER)
-	if exists {
+	value, exists := c.Get(constants.CTX_LOGIN_USER)
+	if exists && value != nil {
 		return value.(vo.LoginUser), nil
 	}
 	return vo.LoginUser{}, fmt.Errorf("invalid login user information")
@@ -23,31 +22,28 @@ func LoginUser(c *gin.Context) (vo.LoginUser, error) {
 
 // LoginUserToUserID 登录用户信息-用户ID
 func LoginUserToUserID(c *gin.Context) string {
-	value, exists := c.Get(constSystem.CTX_LOGIN_USER)
-	if exists {
-		loginUser := value.(vo.LoginUser)
-		return loginUser.UserId
+	loginUser, err := LoginUser(c)
+	if err != nil {
+		return ""
 	}
-	return ""
+	return loginUser.UserId
 }
 
 // LoginUserToUserName 登录用户信息-用户名称
 func LoginUserToUserName(c *gin.Context) string {
-	value, exists := c.Get(constSystem.CTX_LOGIN_USER)
-	if exists {
-		loginUser := value.(vo.LoginUser)
-		return loginUser.User.UserName
+	loginUser, err := LoginUser(c)
+	if err != nil {
+		return ""
 	}
-	return ""
+	return loginUser.User.UserName
 }
 
 // LoginUserByContainRoles 登录用户信息-包含角色KEY
 func LoginUserByContainRoles(c *gin.Context, target string) bool {
-	value, exists := c.Get(constSystem.CTX_LOGIN_USER)
-	if !exists {
+	loginUser, err := LoginUser(c)
+	if err != nil {
 		return false
 	}
-	loginUser := value.(vo.LoginUser)
 	if config.IsSysAdmin(loginUser.UserId) {
 		return true
 	}
@@ -62,11 +58,10 @@ func LoginUserByContainRoles(c *gin.Context, target string) bool {
 
 // LoginUserByContainPerms 登录用户信息-包含权限标识
 func LoginUserByContainPerms(c *gin.Context, target string) bool {
-	value, exists := c.Get(constSystem.CTX_LOGIN_USER)
-	if !exists {
+	loginUser, err := LoginUser(c)
+	if err != nil {
 		return false
 	}
-	loginUser := value.(vo.LoginUser)
 	if config.IsSysAdmin(loginUser.UserId) {
 		return true
 	}
@@ -104,11 +99,11 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 	for _, role := range userInfo.Roles {
 		dataScope := role.DataScope
 
-		if constRoleDataScope.ALL == dataScope {
+		if constants.ROLE_SCOPE_ALL == dataScope {
 			break
 		}
 
-		if constRoleDataScope.CUSTOM != dataScope {
+		if constants.ROLE_SCOPE_CUSTOM != dataScope {
 			hasKey := false
 			for _, key := range scopeKeys {
 				if key == dataScope {
@@ -121,28 +116,28 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 			}
 		}
 
-		if constRoleDataScope.CUSTOM == dataScope {
-			sql := fmt.Sprintf(`%s.dept_id IN ( SELECT dept_id FROM sys_role_dept WHERE role_id = '%d' )`, deptAlias, role.RoleId)
+		if constants.ROLE_SCOPE_CUSTOM == dataScope {
+			sql := fmt.Sprintf(`%s.dept_id IN ( SELECT dept_id FROM sys_role_dept WHERE role_id = '%s' )`, deptAlias, role.RoleId)
 			conditions = append(conditions, sql)
 		}
 
-		if constRoleDataScope.DEPT == dataScope {
-			sql := fmt.Sprintf("%s.dept_id = %d", deptAlias, userInfo.DeptId)
+		if constants.ROLE_SCOPE_DEPT == dataScope {
+			sql := fmt.Sprintf("%s.dept_id = '%s'", deptAlias, userInfo.DeptId)
 			conditions = append(conditions, sql)
 		}
 
-		if constRoleDataScope.DEPT_CHILD == dataScope {
-			sql := fmt.Sprintf(`%s.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = '%d' or find_in_set('%d' , ancestors ) )`, deptAlias, userInfo.DeptId, userInfo.DeptId)
+		if constants.ROLE_SCOPE_DEPT_CHILD == dataScope {
+			sql := fmt.Sprintf(`%s.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = '%s' or find_in_set('%s' , ancestors ) )`, deptAlias, userInfo.DeptId, userInfo.DeptId)
 			conditions = append(conditions, sql)
 		}
 
-		if constRoleDataScope.SELF == dataScope {
+		if constants.ROLE_SCOPE_SELF == dataScope {
 			// 数据权限为仅本人且没有userAlias别名不查询任何数据
 			if userAlias == "" {
 				sql := fmt.Sprintf(`%s.dept_id = '0'`, deptAlias)
 				conditions = append(conditions, sql)
 			} else {
-				sql := fmt.Sprintf(`%s.user_id = '%d'`, userAlias, userInfo.UserId)
+				sql := fmt.Sprintf(`%s.user_id = '%s'`, userAlias, userInfo.UserId)
 				conditions = append(conditions, sql)
 			}
 		}

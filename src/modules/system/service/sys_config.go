@@ -1,7 +1,7 @@
 package service
 
 import (
-	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
@@ -20,7 +20,7 @@ type SysConfig struct {
 }
 
 // FindByPage 分页查询列表数据
-func (s SysConfig) FindByPage(query map[string]any) ([]model.SysConfig, int64) {
+func (s SysConfig) FindByPage(query map[string]string) ([]model.SysConfig, int64) {
 	return s.sysConfigRepository.SelectByPage(query)
 }
 
@@ -103,7 +103,7 @@ func (s SysConfig) CheckUniqueByKey(configKey string, configId string) bool {
 
 // getCacheKey 组装缓存key
 func (s SysConfig) getCacheKey(configKey string) string {
-	return constCacheKey.SYS_CONFIG_KEY + configKey
+	return constants.CACHE_SYS_CONFIG + configKey
 }
 
 // CacheLoad 加载参数缓存数据 传入*查询全部

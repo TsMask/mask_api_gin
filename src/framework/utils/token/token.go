@@ -2,8 +2,7 @@ package token
 
 import (
 	"mask_api_gin/src/framework/config"
-	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
-	constToken "mask_api_gin/src/framework/constants/token"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/generate"
@@ -24,13 +23,13 @@ func Remove(token string) string {
 		return ""
 	}
 	// 清除缓存KEY
-	uuid := claims[constToken.JWT_UUID].(string)
-	tokenKey := constCacheKey.LOGIN_TOKEN_KEY + uuid
+	uuid := claims[constants.JWT_UUID].(string)
+	tokenKey := constants.CACHE_LOGIN_TOKEN + uuid
 	hasKey, err := redis.Has("", tokenKey)
 	if hasKey > 0 && err == nil {
 		_ = redis.Del("", tokenKey)
 	}
-	return claims[constToken.JWT_USER_NAME].(string)
+	return claims[constants.JWT_USER_NAME].(string)
 }
 
 // Create 令牌生成
@@ -66,11 +65,11 @@ func Create(loginUser *vo.LoginUser, ilobArr [4]string) string {
 	}
 	// 生成令牌负荷绑定uuid标识
 	jwtToken := jwt.NewWithClaims(method, jwt.MapClaims{
-		constToken.JWT_UUID:      loginUser.UUID,
-		constToken.JWT_USER_ID:   loginUser.UserId,
-		constToken.JWT_USER_NAME: loginUser.User.UserName,
-		"exp":                    loginUser.ExpireTime,
-		"ait":                    loginUser.LoginTime,
+		constants.JWT_UUID:      loginUser.UUID,
+		constants.JWT_USER_ID:   loginUser.UserId,
+		constants.JWT_USER_NAME: loginUser.User.UserName,
+		"exp":                   loginUser.ExpireTime,
+		"ait":                   loginUser.LoginTime,
 	})
 
 	// 生成令牌设置密钥
@@ -93,7 +92,7 @@ func Cache(loginUser *vo.LoginUser) {
 	loginUser.ExpireTime = iatTimestamp + expTimestamp.Milliseconds()
 	loginUser.User.Passwd = ""
 	// 根据登录标识将loginUser缓存
-	tokenKey := constCacheKey.LOGIN_TOKEN_KEY + loginUser.UUID
+	tokenKey := constants.CACHE_LOGIN_TOKEN + loginUser.UUID
 	jsonBytes, err := json.Marshal(loginUser)
 	if err != nil {
 		return
@@ -138,8 +137,8 @@ func Verify(token string) (jwt.MapClaims, error) {
 // LoginUser 缓存的登录用户信息
 func LoginUser(claims jwt.MapClaims) vo.LoginUser {
 	loginUser := vo.LoginUser{}
-	uuid := claims[constToken.JWT_UUID].(string)
-	tokenKey := constCacheKey.LOGIN_TOKEN_KEY + uuid
+	uuid := claims[constants.JWT_UUID].(string)
+	tokenKey := constants.CACHE_LOGIN_TOKEN + uuid
 	hasKey, err := redis.Has("", tokenKey)
 	if hasKey > 0 && err == nil {
 		loginUserStr, err := redis.Get("", tokenKey)

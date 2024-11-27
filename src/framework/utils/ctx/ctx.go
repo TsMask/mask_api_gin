@@ -1,7 +1,7 @@
 package ctx
 
 import (
-	constToken "mask_api_gin/src/framework/constants/token"
+	"mask_api_gin/src/framework/constants"
 
 	"strings"
 
@@ -9,9 +9,9 @@ import (
 )
 
 // QueryMap Query参数转换Map
-func QueryMap(c *gin.Context) map[string]any {
+func QueryMap(c *gin.Context) map[string]string {
 	queryValues := c.Request.URL.Query()
-	queryParams := make(map[string]any, len(queryValues))
+	queryParams := make(map[string]string, len(queryValues))
 	for key, values := range queryValues {
 		queryParams[key] = values[0]
 	}
@@ -53,12 +53,12 @@ func RequestParamsMap(c *gin.Context) map[string]any {
 
 // Authorization 解析请求头
 func Authorization(c *gin.Context) string {
-	authHeader := c.GetHeader(constToken.HEADER_KEY)
+	authHeader := c.GetHeader(constants.HEADER_KEY)
 	if authHeader == "" {
 		return ""
 	}
 	// 拆分 Authorization 请求头，提取 JWT 令牌部分
-	tokenStr := strings.TrimPrefix(authHeader, constToken.HEADER_PREFIX)
+	tokenStr := strings.TrimPrefix(authHeader, constants.HEADER_PREFIX)
 	if len(tokenStr) > 64 {
 		return strings.TrimSpace(tokenStr) // 去除可能存在的空格
 	}

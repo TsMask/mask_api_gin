@@ -20,6 +20,6 @@ type IndexController struct{}
 //
 // GET /
 func (s *IndexController) Handler(c *gin.Context) {
-	str := "欢迎使用%s后台服务，当前版本：%s，请通过前台服务地址访问。"
+	str := "欢迎使用 %s 后台服务，当前版本：%s，请通过前台服务地址访问。"
 	c.JSON(200, response.OkMsg(fmt.Sprintf(str, config.Name, config.Version)))
 }

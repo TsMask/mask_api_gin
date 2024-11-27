@@ -8,13 +8,13 @@ import (
 
 // NewDemoORMService 实例化服务层
 // https://gorm.io/zh_CN/docs/query.html
-var NewDemoORMService = DemoORMService{}
+var NewDemoORMService = &DemoORMService{}
 
 // DemoORMService 测试ORM信息 服务层处理
 type DemoORMService struct{}
 
 // FindByPage 分页查询
-func (s *DemoORMService) FindByPage(query map[string]any) ([]model.DemoORM, int64) {
+func (s DemoORMService) FindByPage(query map[string]string) ([]model.DemoORM, int64) {
 	tx := db.DB("").Model(&model.DemoORM{})
 	// 查询条件拼接
 	if v, ok := query["title"]; ok && v != "" {
@@ -43,7 +43,7 @@ func (s *DemoORMService) FindByPage(query map[string]any) ([]model.DemoORM, int6
 }
 
 // Find 查询集合
-func (s *DemoORMService) Find(demoORM model.DemoORM) []model.DemoORM {
+func (s DemoORMService) Find(demoORM model.DemoORM) []model.DemoORM {
 	tx := db.DB("").Model(&model.DemoORM{})
 	// 查询条件拼接
 	if demoORM.Title != "" {
@@ -62,7 +62,7 @@ func (s *DemoORMService) Find(demoORM model.DemoORM) []model.DemoORM {
 }
 
 // FindById 通过ID查询
-func (s *DemoORMService) FindById(id string) model.DemoORM {
+func (s DemoORMService) FindById(id string) model.DemoORM {
 	item := model.DemoORM{}
 	if id == "" {
 		return item
@@ -78,9 +78,11 @@ func (s *DemoORMService) FindById(id string) model.DemoORM {
 }
 
 // Insert 新增
-func (s *DemoORMService) Insert(demoORM model.DemoORM) string {
+func (s DemoORMService) Insert(demoORM model.DemoORM) string {
 	demoORM.CreateBy = "system"
 	demoORM.CreateTime = time.Now().UnixMilli()
+	demoORM.UpdateBy = demoORM.CreateBy
+	demoORM.UpdateTime = demoORM.CreateTime
 	// 执行插入
 	if err := db.DB("").Create(&demoORM).Error; err != nil {
 		return ""
@@ -89,7 +91,7 @@ func (s *DemoORMService) Insert(demoORM model.DemoORM) string {
 }
 
 // Update 更新
-func (s *DemoORMService) Update(demoORM model.DemoORM) int64 {
+func (s DemoORMService) Update(demoORM model.DemoORM) int64 {
 	if demoORM.Id == "" {
 		return 0
 	}
@@ -111,14 +113,14 @@ func (s *DemoORMService) Update(demoORM model.DemoORM) int64 {
 	// 构建查询条件
 	tx = tx.Where("id = ?", item.Id)
 	// 执行更新
-	if err := tx.Updates(item).Error; err != nil {
+	if err := tx.Omit("id", "create_by", "create_time").Updates(item).Error; err != nil {
 		return 0
 	}
 	return tx.RowsAffected
 }
 
 // DeleteByIds 批量删除
-func (s *DemoORMService) DeleteByIds(ids []string) int64 {
+func (s DemoORMService) DeleteByIds(ids []string) int64 {
 	if len(ids) <= 0 {
 		return 0
 	}
@@ -132,7 +134,7 @@ func (s *DemoORMService) DeleteByIds(ids []string) int64 {
 }
 
 // Clean 清空测试ORM表
-func (s *DemoORMService) Clean() (int64, error) {
+func (s DemoORMService) Clean() (int64, error) {
 	var rows int64
 	err := db.DB("").Model(&model.DemoORM{}).Count(&rows).Error
 	if err != nil {

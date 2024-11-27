@@ -1,7 +1,7 @@
 package service
 
 import (
-	constSystem "mask_api_gin/src/framework/constants/system"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 
@@ -31,7 +31,7 @@ type SysUser struct {
 }
 
 // FindByPage 分页查询列表数据
-func (s SysUser) FindByPage(query map[string]any, dataScopeSQL string) ([]model.SysUser, int64) {
+func (s SysUser) FindByPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64) {
 	rows, total := s.sysUserRepository.SelectByPage(query, dataScopeSQL)
 	for i, v := range rows {
 		// 部门
@@ -102,7 +102,7 @@ func (s SysUser) insertUserRole(userId string, roleIds []string) int64 {
 	var arr []model.SysUserRole
 	for _, roleId := range roleIds {
 		// 系统管理员角色禁止操作，只能通过配置指定用户ID分配
-		if roleId == "" || roleId == constSystem.ROLE_SYSTEM_ID {
+		if roleId == "" || roleId == constants.SYS_ROLE_SYSTEM_ID {
 			continue
 		}
 		arr = append(arr, model.SysUserRole{
@@ -220,7 +220,7 @@ func (s SysUser) FindByUserName(userName string) model.SysUser {
 }
 
 // FindAuthUsersPage 根据条件分页查询分配用户角色列表
-func (s SysUser) FindAuthUsersPage(query map[string]any, dataScopeSQL string) ([]model.SysUser, int64) {
+func (s SysUser) FindAuthUsersPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64) {
 	rows, total := s.sysUserRepository.SelectAuthUsersByPage(query, dataScopeSQL)
 	for i, v := range rows {
 		// 部门

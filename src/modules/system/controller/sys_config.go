@@ -86,7 +86,7 @@ func (s SysConfigController) Add(c *gin.Context) {
 // PUT /
 func (s SysConfigController) Edit(c *gin.Context) {
 	var body model.SysConfig
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.ConfigId != "" {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.ConfigId == "" {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}

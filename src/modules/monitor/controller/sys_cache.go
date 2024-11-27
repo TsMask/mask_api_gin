@@ -1,7 +1,7 @@
 package controller
 
 import (
-	constCacheKey "mask_api_gin/src/framework/constants/cache_key"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/modules/monitor/model"
@@ -33,13 +33,13 @@ func (s SysCacheController) Info(c *gin.Context) {
 // GET /names
 func (s SysCacheController) Names(c *gin.Context) {
 	caches := []model.SysCache{
-		model.NewSysCacheNames("用户信息", constCacheKey.LOGIN_TOKEN_KEY),
-		model.NewSysCacheNames("配置信息", constCacheKey.SYS_CONFIG_KEY),
-		model.NewSysCacheNames("数据字典", constCacheKey.SYS_DICT_KEY),
-		model.NewSysCacheNames("验证码", constCacheKey.CAPTCHA_CODE_KEY),
-		model.NewSysCacheNames("防重提交", constCacheKey.REPEAT_SUBMIT_KEY),
-		model.NewSysCacheNames("限流处理", constCacheKey.RATE_LIMIT_KEY),
-		model.NewSysCacheNames("密码错误次数", constCacheKey.PWD_ERR_COUNT_KEY),
+		model.NewSysCacheNames("用户信息", constants.CACHE_LOGIN_TOKEN),
+		model.NewSysCacheNames("配置信息", constants.CACHE_SYS_CONFIG),
+		model.NewSysCacheNames("数据字典", constants.CACHE_SYS_DICT),
+		model.NewSysCacheNames("验证码", constants.CACHE_CAPTCHA_CODE),
+		model.NewSysCacheNames("防重提交", constants.CACHE_REPEAT_SUBMIT),
+		model.NewSysCacheNames("限流处理", constants.CACHE_RATE_LIMIT),
+		model.NewSysCacheNames("密码错误次数", constants.CACHE_PWD_ERR_COUNT),
 	}
 	c.JSON(200, response.OkData(caches))
 }
@@ -92,12 +92,12 @@ func (s SysCacheController) Value(c *gin.Context) {
 // DELETE /clean/names
 func (s SysCacheController) CleanNames(c *gin.Context) {
 	caches := []model.SysCache{
-		model.NewSysCacheNames("配置信息", constCacheKey.SYS_CONFIG_KEY),
-		model.NewSysCacheNames("数据字典", constCacheKey.SYS_DICT_KEY),
-		model.NewSysCacheNames("验证码", constCacheKey.CAPTCHA_CODE_KEY),
-		model.NewSysCacheNames("防重提交", constCacheKey.REPEAT_SUBMIT_KEY),
-		model.NewSysCacheNames("限流处理", constCacheKey.RATE_LIMIT_KEY),
-		model.NewSysCacheNames("密码错误次数", constCacheKey.PWD_ERR_COUNT_KEY),
+		model.NewSysCacheNames("配置信息", constants.CACHE_SYS_CONFIG),
+		model.NewSysCacheNames("数据字典", constants.CACHE_SYS_DICT),
+		model.NewSysCacheNames("验证码", constants.CACHE_CAPTCHA_CODE),
+		model.NewSysCacheNames("防重提交", constants.CACHE_REPEAT_SUBMIT),
+		model.NewSysCacheNames("限流处理", constants.CACHE_RATE_LIMIT),
+		model.NewSysCacheNames("密码错误次数", constants.CACHE_PWD_ERR_COUNT),
 	}
 	for _, v := range caches {
 		cacheKeys, err := redis.GetKeys("", v.CacheName+":*")
@@ -120,7 +120,7 @@ func (s SysCacheController) CleanKeys(c *gin.Context) {
 		c.JSON(400, response.CodeMsg(40010, "params error"))
 		return
 	}
-	if constCacheKey.LOGIN_TOKEN_KEY == query.CacheName {
+	if constants.CACHE_LOGIN_TOKEN == query.CacheName {
 		c.JSON(200, response.ErrMsg("不能删除用户信息缓存"))
 		return
 	}

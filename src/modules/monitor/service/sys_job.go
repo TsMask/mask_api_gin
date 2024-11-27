@@ -1,7 +1,7 @@
 package service
 
 import (
-	constSystem "mask_api_gin/src/framework/constants/system"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/cron"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/repository"
@@ -20,7 +20,7 @@ type SysJob struct {
 }
 
 // FindByPage 分页查询
-func (s SysJob) FindByPage(query map[string]any) ([]model.SysJob, int64) {
+func (s SysJob) FindByPage(query map[string]string) ([]model.SysJob, int64) {
 	return s.sysJobRepository.SelectByPage(query)
 }
 
@@ -43,7 +43,7 @@ func (s SysJob) FindById(jobId string) model.SysJob {
 // Insert 新增调度任务信息
 func (s SysJob) Insert(sysJob model.SysJob) string {
 	insertId := s.sysJobRepository.Insert(sysJob)
-	if insertId != "" && sysJob.StatusFlag == constSystem.STATUS_YES {
+	if insertId != "" && sysJob.StatusFlag == constants.STATUS_YES {
 		sysJob.JobId = insertId
 		s.insertQueueJob(sysJob, true)
 	}
@@ -55,11 +55,11 @@ func (s SysJob) Update(sysJob model.SysJob) int64 {
 	rows := s.sysJobRepository.Update(sysJob)
 	if rows > 0 {
 		//状态正常添加队列任务
-		if sysJob.StatusFlag == constSystem.STATUS_YES {
+		if sysJob.StatusFlag == constants.STATUS_YES {
 			s.insertQueueJob(sysJob, true)
 		}
 		// 状态禁用删除队列任务
-		if sysJob.StatusFlag == constSystem.STATUS_NO {
+		if sysJob.StatusFlag == constants.STATUS_NO {
 			s.deleteQueueJob(sysJob)
 		}
 	}
@@ -151,7 +151,7 @@ func (s SysJob) Reset() {
 	}
 	// 查询系统中定义状态为正常启用的任务
 	sysJobs := s.sysJobRepository.Select(model.SysJob{
-		StatusFlag: constSystem.STATUS_YES,
+		StatusFlag: constants.STATUS_YES,
 	})
 	for _, sysJob := range sysJobs {
 		for _, name := range queueNames {

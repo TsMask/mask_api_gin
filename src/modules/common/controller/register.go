@@ -1,14 +1,15 @@
 package controller
 
 import (
-	"fmt"
-	constSystem "mask_api_gin/src/framework/constants/system"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/regular"
 	commonModel "mask_api_gin/src/modules/common/model"
 	commonService "mask_api_gin/src/modules/common/service"
 	systemService "mask_api_gin/src/modules/system/service"
+
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -47,7 +48,7 @@ func (s *RegisterController) Register(c *gin.Context) {
 	if err != nil {
 		msg := err.Error() + " " + body.Code
 		s.sysLogLoginService.Insert(
-			body.Username, constSystem.STATUS_NO, msg,
+			body.Username, constants.STATUS_NO, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
 		c.JSON(400, response.CodeMsg(40012, err.Error()))
@@ -70,9 +71,9 @@ func (s *RegisterController) Register(c *gin.Context) {
 
 	userId, err := s.registerService.ByUserName(body.Username, body.Password)
 	if err == nil {
-		msg := fmt.Sprintf("%s 注册成功 %d", body.Username, userId)
+		msg := fmt.Sprintf("%s 注册成功 %s", body.Username, userId)
 		s.sysLogLoginService.Insert(
-			body.Username, constSystem.STATUS_YES, msg,
+			body.Username, constants.STATUS_YES, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
 		c.JSON(200, response.OkMsg("注册成功"))

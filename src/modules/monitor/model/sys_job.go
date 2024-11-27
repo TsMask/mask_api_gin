@@ -2,7 +2,7 @@ package model
 
 // SysJob 调度任务调度表
 type SysJob struct {
-	JobId          string `json:"jobId" gorm:"column:job_id;primary_key"`                          // 任务ID
+	JobId          string `json:"jobId" gorm:"column:job_id;primaryKey;type:int;autoIncrement"`    // 任务ID
 	JobName        string `json:"jobName" gorm:"column:job_name" binding:"required"`               // 任务名称
 	JobGroup       string `json:"jobGroup" gorm:"column:job_group" binding:"required"`             // 任务组名
 	InvokeTarget   string `json:"invokeTarget" gorm:"column:invoke_target" binding:"required"`     // 调用目标字符串

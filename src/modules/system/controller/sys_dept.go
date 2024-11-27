@@ -1,7 +1,7 @@
 package controller
 
 import (
-	constSystem "mask_api_gin/src/framework/constants/system"
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/modules/system/model"
@@ -86,12 +86,12 @@ func (s SysDeptController) Add(c *gin.Context) {
 			c.JSON(200, response.ErrMsg("没有权限访问部门数据！"))
 			return
 		}
-		if deptParent.StatusFlag == constSystem.STATUS_NO {
+		if deptParent.StatusFlag == constants.STATUS_NO {
 			msg := fmt.Sprintf("上级部门【%s】停用，不允许新增", deptParent.DeptName)
 			c.JSON(200, response.ErrMsg(msg))
 			return
 		}
-		if deptParent.DelFlag == constSystem.STATUS_YES {
+		if deptParent.DelFlag == constants.STATUS_YES {
 			msg := fmt.Sprintf("上级部门【%s】已删除，不允许新增", deptParent.DeptName)
 			c.JSON(200, response.ErrMsg(msg))
 			return
@@ -160,7 +160,7 @@ func (s SysDeptController) Edit(c *gin.Context) {
 	}
 
 	// 上级停用需要检查下级是否有在使用
-	if body.StatusFlag == constSystem.STATUS_NO {
+	if body.StatusFlag == constants.STATUS_NO {
 		hasChild := s.sysDeptService.ExistChildrenByDeptId(body.DeptId)
 		if hasChild > 0 {
 			msg := fmt.Sprintf("该部门包含未停用的子部门数量：%d", hasChild)

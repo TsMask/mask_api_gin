@@ -16,7 +16,7 @@ var NewSysJobLog = &SysJobLog{}
 type SysJobLog struct{}
 
 // SelectByPage 分页查询集合
-func (r SysJobLog) SelectByPage(query map[string]any) ([]model.SysJobLog, int64) {
+func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int64) {
 	tx := db.DB("").Model(&model.SysJobLog{})
 	// 查询条件拼接
 	if v, ok := query["jobName"]; ok && v != "" {
