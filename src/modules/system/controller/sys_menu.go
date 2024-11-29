@@ -52,7 +52,7 @@ func (s SysMenuController) List(c *gin.Context) {
 func (s SysMenuController) Info(c *gin.Context) {
 	menuId := c.Param("menuId")
 	if menuId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: menuId is empty"))
 		return
 	}
 
@@ -69,8 +69,13 @@ func (s SysMenuController) Info(c *gin.Context) {
 // POST /
 func (s SysMenuController) Add(c *gin.Context) {
 	var body model.SysMenu
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.MenuId != "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
+	if body.MenuId != "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: menuId not is empty"))
 		return
 	}
 
@@ -113,8 +118,13 @@ func (s SysMenuController) Add(c *gin.Context) {
 // PUT /
 func (s SysMenuController) Edit(c *gin.Context) {
 	var body model.SysMenu
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.MenuId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
+	if body.MenuId == "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: menuId is empty"))
 		return
 	}
 
@@ -208,7 +218,7 @@ func (s SysMenuController) Edit(c *gin.Context) {
 func (s SysMenuController) Remove(c *gin.Context) {
 	menuId := c.Param("menuId")
 	if menuId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: menuId is empty"))
 		return
 	}
 
@@ -271,7 +281,7 @@ func (s SysMenuController) Tree(c *gin.Context) {
 func (s SysMenuController) TreeRole(c *gin.Context) {
 	roleId := c.Param("roleId")
 	if roleId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: roleId is empty"))
 		return
 	}
 

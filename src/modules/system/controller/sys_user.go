@@ -55,7 +55,7 @@ func (s SysUserController) List(c *gin.Context) {
 func (s SysUserController) Info(c *gin.Context) {
 	userId := c.Param("userId")
 	if userId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: userId is empty"))
 		return
 	}
 
@@ -111,9 +111,12 @@ func (s SysUserController) Info(c *gin.Context) {
 // POST /
 func (s SysUserController) Add(c *gin.Context) {
 	var body model.SysUser
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.UserId != "" {
-		fmt.Println(err)
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		c.JSON(400, response.ErrMsg(response.FormatBindError(err)))
+		return
+	}
+	if body.UserId != "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: userId not is empty"))
 		return
 	}
 
@@ -122,7 +125,8 @@ func (s SysUserController) Add(c *gin.Context) {
 		Passwd string `json:"passwd" binding:"required"`
 	}
 	if err := c.ShouldBindBodyWithJSON(&bodyPasswd); err != nil {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
 	body.Passwd = bodyPasswd.Passwd
@@ -181,8 +185,13 @@ func (s SysUserController) Add(c *gin.Context) {
 // POST /
 func (s SysUserController) Edit(c *gin.Context) {
 	var body model.SysUser
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.UserId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
+	if body.UserId == "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: userId is empty"))
 		return
 	}
 
@@ -259,8 +268,8 @@ func (s SysUserController) Edit(c *gin.Context) {
 func (s SysUserController) Remove(c *gin.Context) {
 	userIdsStr := c.Param("userId")
 	userIds := parse.RemoveDuplicatesToArray(userIdsStr, ",")
-	if userIdsStr == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if userIdsStr == "" || len(userIds) <= 0 {
+		c.JSON(400, response.CodeMsg(40010, "bind err: userId is empty"))
 		return
 	}
 
@@ -296,7 +305,8 @@ func (s SysUserController) Passwd(c *gin.Context) {
 		Passwd string `json:"passwd" binding:"required"`
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
 
@@ -337,7 +347,8 @@ func (s SysUserController) Status(c *gin.Context) {
 		StatusFlag string `json:"statusFlag" binding:"required,oneof=0 1"`
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
 
@@ -476,7 +487,8 @@ func (s SysUserController) Import(c *gin.Context) {
 		Update   bool   `json:"update"`                      // 允许进行更新
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
 

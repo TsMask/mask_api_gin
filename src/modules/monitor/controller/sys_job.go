@@ -46,7 +46,7 @@ func (s SysJobController) List(c *gin.Context) {
 func (s SysJobController) Info(c *gin.Context) {
 	jobId := c.Param("jobId")
 	if jobId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: jobId is empty"))
 		return
 	}
 
@@ -63,8 +63,13 @@ func (s SysJobController) Info(c *gin.Context) {
 // POST /
 func (s SysJobController) Add(c *gin.Context) {
 	var body model.SysJob
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.JobId != "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
+	if body.JobId != "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: jobId not is empty"))
 		return
 	}
 
@@ -110,8 +115,13 @@ func (s SysJobController) Add(c *gin.Context) {
 // PUT /
 func (s SysJobController) Edit(c *gin.Context) {
 	var body model.SysJob
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.JobId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
+	if body.JobId == "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: jobId is empty"))
 		return
 	}
 
@@ -176,7 +186,7 @@ func (s SysJobController) Remove(c *gin.Context) {
 	jobIdStr := c.Param("jobId")
 	jobIds := parse.RemoveDuplicatesToArray(jobIdStr, ",")
 	if jobIdStr == "" || len(jobIds) == 0 {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: jobId is empty"))
 		return
 	}
 
@@ -195,10 +205,11 @@ func (s SysJobController) Remove(c *gin.Context) {
 func (s SysJobController) Status(c *gin.Context) {
 	var body struct {
 		JobId      string `json:"jobId" binding:"required"`
-		StatusFlag string `json:"statusFlag" binding:"required"`
+		StatusFlag string `json:"statusFlag" binding:"required,oneof=0 1 2"`
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
 
@@ -232,7 +243,7 @@ func (s SysJobController) Status(c *gin.Context) {
 func (s SysJobController) Run(c *gin.Context) {
 	jobId := c.Param("jobId")
 	if jobId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: jobId is empty"))
 		return
 	}
 

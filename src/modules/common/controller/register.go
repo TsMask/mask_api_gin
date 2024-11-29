@@ -34,7 +34,8 @@ type RegisterController struct {
 func (s *RegisterController) Register(c *gin.Context) {
 	var body commonModel.RegisterBody
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
 

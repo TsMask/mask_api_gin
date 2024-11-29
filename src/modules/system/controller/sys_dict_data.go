@@ -44,7 +44,7 @@ func (s SysDictDataController) List(c *gin.Context) {
 func (s SysDictDataController) Info(c *gin.Context) {
 	dataId := c.Param("dataId")
 	if dataId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: deptId is empty"))
 		return
 	}
 
@@ -61,8 +61,13 @@ func (s SysDictDataController) Info(c *gin.Context) {
 // POST /
 func (s SysDictDataController) Add(c *gin.Context) {
 	var body model.SysDictData
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DataId != "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
+	if body.DataId != "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: dataId not is empty"))
 		return
 	}
 
@@ -103,8 +108,13 @@ func (s SysDictDataController) Add(c *gin.Context) {
 // PUT /
 func (s SysDictDataController) Edit(c *gin.Context) {
 	var body model.SysDictData
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DataId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
+	if body.DataId == "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: dataId is empty"))
 		return
 	}
 
@@ -162,7 +172,7 @@ func (s SysDictDataController) Remove(c *gin.Context) {
 	dataIdsStr := c.Param("dataId")
 	dataIds := parse.RemoveDuplicatesToArray(dataIdsStr, ",")
 	if dataIdsStr == "" || len(dataIds) <= 0 {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: dataId is empty"))
 		return
 	}
 
@@ -181,7 +191,7 @@ func (s SysDictDataController) Remove(c *gin.Context) {
 func (s SysDictDataController) DictType(c *gin.Context) {
 	dictType := c.Param("dictType")
 	if dictType == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: dictType is empty"))
 		return
 	}
 

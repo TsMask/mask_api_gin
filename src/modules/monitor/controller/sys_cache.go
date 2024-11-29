@@ -6,6 +6,8 @@ import (
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/modules/monitor/model"
 
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -52,7 +54,8 @@ func (s SysCacheController) Keys(c *gin.Context) {
 		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
 
@@ -74,7 +77,8 @@ func (s SysCacheController) Value(c *gin.Context) {
 		CacheKey  string `form:"cacheKey" binding:"required"`  // 键名列表中得到的缓存键名
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
 
@@ -117,7 +121,8 @@ func (s SysCacheController) CleanKeys(c *gin.Context) {
 		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
 	if constants.CACHE_LOGIN_TOKEN == query.CacheName {
@@ -147,7 +152,8 @@ func (s SysCacheController) CleanValue(c *gin.Context) {
 		CacheKey  string `form:"cacheKey" binding:"required"`  // 键名列表中得到的缓存键名
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
 

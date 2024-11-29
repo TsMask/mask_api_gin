@@ -42,7 +42,7 @@ func (s SysConfigController) List(c *gin.Context) {
 func (s SysConfigController) Info(c *gin.Context) {
 	configId := c.Param("configId")
 	if configId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: configId is empty"))
 		return
 	}
 
@@ -59,8 +59,13 @@ func (s SysConfigController) Info(c *gin.Context) {
 // POST /
 func (s SysConfigController) Add(c *gin.Context) {
 	var body model.SysConfig
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.ConfigId != "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
+	if body.ConfigId != "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: configId not is empty"))
 		return
 	}
 
@@ -86,8 +91,13 @@ func (s SysConfigController) Add(c *gin.Context) {
 // PUT /
 func (s SysConfigController) Edit(c *gin.Context) {
 	var body model.SysConfig
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.ConfigId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
+	if body.ConfigId == "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: configId is empty"))
 		return
 	}
 
@@ -127,7 +137,7 @@ func (s SysConfigController) Remove(c *gin.Context) {
 	configIdStr := c.Param("configId")
 	configIds := parse.RemoveDuplicatesToArray(configIdStr, ",")
 	if configIdStr == "" || len(configIds) == 0 {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: configId is empty"))
 		return
 	}
 
@@ -155,7 +165,7 @@ func (s SysConfigController) Refresh(c *gin.Context) {
 func (s SysConfigController) ConfigKey(c *gin.Context) {
 	configKey := c.Param("configKey")
 	if configKey == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: configKey is empty"))
 		return
 	}
 	key := s.sysConfigService.FindValueByKey(configKey)

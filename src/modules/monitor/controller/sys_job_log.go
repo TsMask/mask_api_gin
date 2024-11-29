@@ -53,7 +53,7 @@ func (s SysJobLogController) List(c *gin.Context) {
 func (s SysJobLogController) Info(c *gin.Context) {
 	logId := c.Param("logId")
 	if logId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: logId is empty"))
 		return
 	}
 
@@ -72,7 +72,7 @@ func (s SysJobLogController) Remove(c *gin.Context) {
 	logIdStr := c.Param("logId")
 	logIds := parse.RemoveDuplicatesToArray(logIdStr, ",")
 	if logIdStr == "" || len(logIds) == 0 {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: logId is empty"))
 		return
 	}
 

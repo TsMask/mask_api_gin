@@ -42,7 +42,7 @@ func (s SysPostController) List(c *gin.Context) {
 func (s SysPostController) Info(c *gin.Context) {
 	postId := c.Param("postId")
 	if postId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: postId is empty"))
 		return
 	}
 
@@ -59,8 +59,13 @@ func (s SysPostController) Info(c *gin.Context) {
 // POST /
 func (s SysPostController) Add(c *gin.Context) {
 	var body model.SysPost
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.PostId != "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
+	if body.PostId != "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: postId not is empty"))
 		return
 	}
 
@@ -94,8 +99,13 @@ func (s SysPostController) Add(c *gin.Context) {
 // PUT /
 func (s SysPostController) Edit(c *gin.Context) {
 	var body model.SysPost
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.PostId <= "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
+	if body.PostId == "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: postId is empty"))
 		return
 	}
 
@@ -143,7 +153,7 @@ func (s SysPostController) Remove(c *gin.Context) {
 	postIdsStr := c.Param("postId")
 	postIds := parse.RemoveDuplicatesToArray(postIdsStr, ",")
 	if postIdsStr == "" || len(postIds) <= 0 {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: postId is empty"))
 		return
 	}
 

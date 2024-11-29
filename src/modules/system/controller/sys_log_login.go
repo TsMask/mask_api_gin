@@ -56,7 +56,7 @@ func (s SysLogLoginController) Clean(c *gin.Context) {
 func (s SysLogLoginController) Unlock(c *gin.Context) {
 	userId := c.Param("userId")
 	if userId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: userId is empty"))
 		return
 	}
 

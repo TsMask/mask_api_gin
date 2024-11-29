@@ -112,7 +112,7 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 func (s SysUserOnlineController) Logout(c *gin.Context) {
 	tokenIdStr := c.Param("tokenId")
 	if tokenIdStr == "" || strings.Contains(tokenIdStr, "*") {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: tokenId is empty"))
 		return
 	}
 

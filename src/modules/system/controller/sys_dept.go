@@ -36,7 +36,8 @@ func (s SysDeptController) List(c *gin.Context) {
 		Status   string `form:"status"`   // 部门状态（0正常 1停用）
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
 
@@ -57,7 +58,7 @@ func (s SysDeptController) List(c *gin.Context) {
 func (s SysDeptController) Info(c *gin.Context) {
 	deptId := c.Param("deptId")
 	if deptId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: deptId is empty"))
 		return
 	}
 
@@ -74,8 +75,13 @@ func (s SysDeptController) Info(c *gin.Context) {
 // POST /
 func (s SysDeptController) Add(c *gin.Context) {
 	var body model.SysDept
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DeptId != "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
+	if body.DeptId != "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: deptId not is empty"))
 		return
 	}
 
@@ -123,8 +129,13 @@ func (s SysDeptController) Add(c *gin.Context) {
 // PUT /
 func (s SysDeptController) Edit(c *gin.Context) {
 	var body model.SysDept
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.DeptId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
+	if body.DeptId == "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: deptId is empty"))
 		return
 	}
 
@@ -191,7 +202,7 @@ func (s SysDeptController) Edit(c *gin.Context) {
 func (s SysDeptController) Remove(c *gin.Context) {
 	deptId := c.Param("deptId")
 	if deptId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: deptId is empty"))
 		return
 	}
 
@@ -233,7 +244,7 @@ func (s SysDeptController) Remove(c *gin.Context) {
 func (s SysDeptController) ExcludeChild(c *gin.Context) {
 	deptId := c.Param("deptId")
 	if deptId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: deptId is empty"))
 		return
 	}
 
@@ -269,7 +280,8 @@ func (s SysDeptController) Tree(c *gin.Context) {
 		StatusFlag string `form:"statusFlag"` // 部门状态（0正常 1停用）
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
 
@@ -290,7 +302,7 @@ func (s SysDeptController) Tree(c *gin.Context) {
 func (s SysDeptController) TreeRole(c *gin.Context) {
 	roleId := c.Param("roleId")
 	if roleId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: roleId is empty"))
 		return
 	}
 

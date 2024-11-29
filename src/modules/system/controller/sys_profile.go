@@ -9,6 +9,8 @@ import (
 	"mask_api_gin/src/framework/utils/token"
 	"mask_api_gin/src/modules/system/service"
 
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -73,7 +75,8 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 		Avatar   string `json:"avatar"`                             // 头像地址
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
 
@@ -150,7 +153,8 @@ func (s SysProfileController) UpdatePasswd(c *gin.Context) {
 		NewPassword string `json:"newPassword" binding:"required"` // 新密码
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
 

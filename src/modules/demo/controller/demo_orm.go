@@ -1,12 +1,13 @@
 package controller
 
 import (
-	"fmt"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/demo/model"
 	"mask_api_gin/src/modules/demo/service"
+
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -57,7 +58,7 @@ func (s DemoORMController) All(c *gin.Context) {
 func (s DemoORMController) Info(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: id is empty"))
 		return
 	}
 
@@ -74,8 +75,13 @@ func (s DemoORMController) Info(c *gin.Context) {
 // POST /
 func (s DemoORMController) Add(c *gin.Context) {
 	var body model.DemoORM
-	if err := c.ShouldBindJSON(&body); err != nil || body.Id != "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
+	if body.Id != "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: id not is empty"))
 		return
 	}
 
@@ -92,8 +98,13 @@ func (s DemoORMController) Add(c *gin.Context) {
 // PUT /
 func (s DemoORMController) Edit(c *gin.Context) {
 	var body model.DemoORM
-	if err := c.ShouldBindJSON(&body); err != nil || body.Id == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
+	if body.Id == "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: id is empty"))
 		return
 	}
 
@@ -112,7 +123,7 @@ func (s DemoORMController) Remove(c *gin.Context) {
 	idStr := c.Param("id")
 	ids := parse.RemoveDuplicatesToArray(idStr, ",")
 	if idStr == "" || len(ids) <= 0 {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: id is empty"))
 		return
 	}
 

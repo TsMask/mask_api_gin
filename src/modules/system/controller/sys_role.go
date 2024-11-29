@@ -45,7 +45,7 @@ func (s SysRoleController) List(c *gin.Context) {
 func (s SysRoleController) Info(c *gin.Context) {
 	roleId := c.Param("roleId")
 	if roleId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: roleId is empty"))
 		return
 	}
 
@@ -62,8 +62,13 @@ func (s SysRoleController) Info(c *gin.Context) {
 // POST /
 func (s SysRoleController) Add(c *gin.Context) {
 	var body model.SysRole
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.RoleId != "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
+	if body.RoleId != "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: roleId not is empty"))
 		return
 	}
 
@@ -97,8 +102,13 @@ func (s SysRoleController) Add(c *gin.Context) {
 // PUT /
 func (s SysRoleController) Edit(c *gin.Context) {
 	var body model.SysRole
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil || body.RoleId != "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
+	if body.RoleId == "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: roleId is empty"))
 		return
 	}
 
@@ -147,7 +157,7 @@ func (s SysRoleController) Remove(c *gin.Context) {
 	roleIdsStr := c.Param("roleId")
 	roleIds := parse.RemoveDuplicatesToArray(roleIdsStr, ",")
 	if roleIdsStr == "" || len(roleIds) <= 0 {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: roleId is empty"))
 		return
 	}
 
@@ -177,7 +187,8 @@ func (s SysRoleController) Status(c *gin.Context) {
 		StatusFlag string `json:"statusFlag" binding:"required,oneof=0 1"` // 状态
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
 
@@ -222,7 +233,8 @@ func (s SysRoleController) DataScope(c *gin.Context) {
 		DeptCheckStrictly string   `json:"deptCheckStrictly" binding:"required,oneof=0 1"` // 部门树选择项是否关联显示（0：父子不互相关联显示 1：父子互相关联显示）
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
 
@@ -258,10 +270,9 @@ func (s SysRoleController) DataScope(c *gin.Context) {
 func (s SysRoleController) UserAuthList(c *gin.Context) {
 	roleId := c.Query("roleId")
 	if roleId == "" {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		c.JSON(400, response.CodeMsg(40010, "bind err: roleId is empty"))
 		return
 	}
-	query := ctx.QueryMap(c)
 
 	// 检查是否存在
 	role := s.sysRoleService.FindById(roleId)
@@ -270,6 +281,7 @@ func (s SysRoleController) UserAuthList(c *gin.Context) {
 		return
 	}
 
+	query := ctx.QueryMap(c)
 	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
 	rows, total := s.sysUserService.FindAuthUsersPage(query, dataScopeSQL)
 	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
@@ -284,10 +296,14 @@ func (s SysRoleController) UserAuthChecked(c *gin.Context) {
 		UserIds string `json:"userIds" binding:"required"` // 用户ID组
 		Auth    bool   `json:"auth"`                       // 选择操作 添加true 取消false
 	}
-	err := c.ShouldBindBodyWithJSON(&body)
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		return
+	}
 	userIds := parse.RemoveDuplicatesToArray(body.UserIds, ",")
-	if err != nil || len(userIds) <= 0 {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+	if len(userIds) <= 0 {
+		c.JSON(400, response.CodeMsg(40010, "bind err: userIds is empty"))
 		return
 	}
 

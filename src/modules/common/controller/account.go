@@ -36,7 +36,8 @@ type AccountController struct {
 func (s AccountController) Login(c *gin.Context) {
 	var loginBody commonModel.LoginBody
 	if err := c.ShouldBindJSON(&loginBody); err != nil {
-		c.JSON(400, response.CodeMsg(40010, "params error"))
+		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
+		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
 
