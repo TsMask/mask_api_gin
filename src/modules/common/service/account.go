@@ -88,7 +88,7 @@ func (s Account) ByUsername(username, password string) (vo.LoginUser, error) {
 	loginUser.DeptId = sysUser.DeptId
 	loginUser.User = sysUser
 	// 用户权限组标识
-	if config.IsSysAdmin(sysUser.UserId) {
+	if config.IsSystemUser(sysUser.UserId) {
 		loginUser.Permissions = []string{constants.SYS_PERMISSION_SYSTEM}
 	} else {
 		perms := s.sysMenuService.FindPermsByUserId(sysUser.UserId)
@@ -138,8 +138,8 @@ func (s Account) passwordRetryCount(userId string) (string, int64, time.Duration
 }
 
 // RoleAndMenuPerms 角色和菜单数据权限
-func (s Account) RoleAndMenuPerms(userId string, isSysAdmin bool) ([]string, []string) {
-	if isSysAdmin {
+func (s Account) RoleAndMenuPerms(userId string, isSystemUser bool) ([]string, []string) {
+	if isSystemUser {
 		return []string{constants.SYS_ROLE_SYSTEM_KEY}, []string{constants.SYS_PERMISSION_SYSTEM}
 	}
 	// 角色key
@@ -154,9 +154,9 @@ func (s Account) RoleAndMenuPerms(userId string, isSysAdmin bool) ([]string, []s
 }
 
 // RouteMenus 前端路由所需要的菜单
-func (s Account) RouteMenus(userId string, isSysAdmin bool) []vo.Router {
+func (s Account) RouteMenus(userId string, isSystemUser bool) []vo.Router {
 	var buildMenus []vo.Router
-	if isSysAdmin {
+	if isSystemUser {
 		menus := s.sysMenuService.BuildTreeMenusByUserId("0")
 		buildMenus = s.sysMenuService.BuildRouteMenus(menus, "")
 	} else {

@@ -95,8 +95,8 @@ func (s AccountController) Me(c *gin.Context) {
 	}
 
 	// 角色权限集合，系统管理员拥有所有权限
-	isSysAdmin := config.IsSysAdmin(loginUser.UserId)
-	roles, perms := s.accountService.RoleAndMenuPerms(loginUser.UserId, isSysAdmin)
+	isSystemUser := config.IsSystemUser(loginUser.UserId)
+	roles, perms := s.accountService.RoleAndMenuPerms(loginUser.UserId, isSystemUser)
 
 	c.JSON(200, response.OkData(map[string]any{
 		"user":        loginUser.User,
@@ -112,8 +112,8 @@ func (s AccountController) Router(c *gin.Context) {
 	userId := ctxUtils.LoginUserToUserID(c)
 
 	// 前端路由，系统管理员拥有所有
-	isSysAdmin := config.IsSysAdmin(userId)
-	buildMenus := s.accountService.RouteMenus(userId, isSysAdmin)
+	isSystemUser := config.IsSystemUser(userId)
+	buildMenus := s.accountService.RouteMenus(userId, isSystemUser)
 	c.JSON(200, response.OkData(buildMenus))
 }
 

@@ -143,13 +143,13 @@ func readExternalConfig(configPaht string) {
 	}
 }
 
-// IsSysAdmin 用户是否为系统管理员
-func IsSysAdmin(userId string) bool {
+// IsSystemUser 用户是否为系统管理员
+func IsSystemUser(userId string) bool {
 	if userId == "" {
 		return false
 	}
 	// 从配置中获取系统管理员ID列表
-	arr := Get("user.sysAdmin").([]any)
+	arr := Get("user.system").([]any)
 	for _, v := range arr {
 		if fmt.Sprint(v) == userId {
 			return true

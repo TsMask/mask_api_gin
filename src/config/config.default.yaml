@@ -168,7 +168,7 @@ user:
     # 密码锁定时间,单位分钟（默认10分钟）
     lockTime: 10
   # 设定为系统管理员的用户ID
-  sysAdmin:
+  system:
     - "1"
 
 # char 字符验证码配置

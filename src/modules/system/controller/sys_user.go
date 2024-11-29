@@ -196,7 +196,7 @@ func (s SysUserController) Edit(c *gin.Context) {
 	}
 
 	// 检查是否系统管理员用户
-	if config.IsSysAdmin(body.UserId) {
+	if config.IsSystemUser(body.UserId) {
 		c.JSON(200, response.ErrMsg("不允许操作系统管理员用户"))
 		return
 	}
@@ -281,7 +281,7 @@ func (s SysUserController) Remove(c *gin.Context) {
 			return
 		}
 		// 检查是否管理员用户
-		if config.IsSysAdmin(id) {
+		if config.IsSystemUser(id) {
 			c.JSON(200, response.ErrMsg("不允许操作系统管理员用户"))
 			return
 		}
@@ -311,7 +311,7 @@ func (s SysUserController) Passwd(c *gin.Context) {
 	}
 
 	// 检查是否系统管理员用户
-	if config.IsSysAdmin(body.UserId) {
+	if config.IsSystemUser(body.UserId) {
 		c.JSON(200, response.ErrMsg("不允许操作系统管理员用户"))
 		return
 	}
@@ -353,7 +353,7 @@ func (s SysUserController) Status(c *gin.Context) {
 	}
 
 	// 检查是否系统管理员用户
-	if config.IsSysAdmin(body.UserId) {
+	if config.IsSystemUser(body.UserId) {
 		c.JSON(200, response.ErrMsg("不允许操作系统管理员用户"))
 		return
 	}

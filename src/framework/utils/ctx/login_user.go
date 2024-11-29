@@ -44,7 +44,7 @@ func LoginUserByContainRoles(c *gin.Context, target string) bool {
 	if err != nil {
 		return false
 	}
-	if config.IsSysAdmin(loginUser.UserId) {
+	if config.IsSystemUser(loginUser.UserId) {
 		return true
 	}
 	roles := loginUser.User.Roles
@@ -62,7 +62,7 @@ func LoginUserByContainPerms(c *gin.Context, target string) bool {
 	if err != nil {
 		return false
 	}
-	if config.IsSysAdmin(loginUser.UserId) {
+	if config.IsSystemUser(loginUser.UserId) {
 		return true
 	}
 	perms := loginUser.Permissions
@@ -85,7 +85,7 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 	userInfo := loginUser.User
 
 	// 如果是系统管理员，则不过滤数据
-	if config.IsSysAdmin(userInfo.UserId) {
+	if config.IsSystemUser(userInfo.UserId) {
 		return dataScopeSQL
 	}
 	// 无用户角色

@@ -39,7 +39,7 @@ func (s SysMenuController) List(c *gin.Context) {
 	}
 
 	userId := ctx.LoginUserToUserID(c)
-	if config.IsSysAdmin(userId) {
+	if config.IsSystemUser(userId) {
 		userId = "0"
 	}
 	data := s.sysMenuService.Find(query, userId)
@@ -267,7 +267,7 @@ func (s SysMenuController) Tree(c *gin.Context) {
 	}
 
 	userId := ctx.LoginUserToUserID(c)
-	if config.IsSysAdmin(userId) {
+	if config.IsSystemUser(userId) {
 		userId = "0"
 	}
 	data := s.sysMenuService.BuildTreeSelectByUserId(query, userId)
@@ -294,7 +294,7 @@ func (s SysMenuController) TreeRole(c *gin.Context) {
 	}
 
 	userId := ctx.LoginUserToUserID(c)
-	if config.IsSysAdmin(userId) {
+	if config.IsSystemUser(userId) {
 		userId = "0"
 	}
 	menuTreeSelect := s.sysMenuService.BuildTreeSelectByUserId(query, userId)
