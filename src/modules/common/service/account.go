@@ -68,7 +68,7 @@ func (s Account) ByUsername(username, password string) (vo.LoginUser, error) {
 	}
 
 	// 检查密码重试次数
-	retryKey, retryCount, lockTime, err := s.passwordRetryCount(sysUser.UserId)
+	retryKey, retryCount, lockTime, err := s.passwordRetryCount(sysUser.UserName)
 	if err != nil {
 		return loginUser, err
 	}
@@ -76,7 +76,7 @@ func (s Account) ByUsername(username, password string) (vo.LoginUser, error) {
 	// 检验用户密码
 	compareBool := crypto.BcryptCompare(password, sysUser.Passwd)
 	if compareBool {
-		s.CleanLoginRecordCache(sysUser.UserId) // 清除错误记录次数
+		s.CleanLoginRecordCache(sysUser.UserName) // 清除错误记录次数
 	} else {
 		_ = redis.SetByExpire("", retryKey, retryCount+1, lockTime)
 		return loginUser, fmt.Errorf("user does not exist or password is incorrect")
@@ -108,8 +108,8 @@ func (s Account) UpdateLoginDateAndIP(loginUser *vo.LoginUser) bool {
 }
 
 // CleanLoginRecordCache 清除错误记录次数
-func (s Account) CleanLoginRecordCache(userId string) bool {
-	cacheKey := fmt.Sprintf("%s%s", constants.CACHE_PWD_ERR_COUNT, userId)
+func (s Account) CleanLoginRecordCache(userName string) bool {
+	cacheKey := fmt.Sprintf("%s%s", constants.CACHE_PWD_ERR_COUNT, userName)
 	hasKey, err := redis.Has("", cacheKey)
 	if hasKey > 0 && err == nil {
 		return redis.Del("", cacheKey) == nil
@@ -118,12 +118,12 @@ func (s Account) CleanLoginRecordCache(userId string) bool {
 }
 
 // passwordRetryCount 密码重试次数
-func (s Account) passwordRetryCount(userId string) (string, int64, time.Duration, error) {
+func (s Account) passwordRetryCount(userName string) (string, int64, time.Duration, error) {
 	// 验证登录次数和错误锁定时间
 	maxRetryCount := config.Get("user.password.maxRetryCount").(int)
 	lockTime := config.Get("user.password.lockTime").(int)
 	// 验证缓存记录次数
-	retryKey := fmt.Sprintf("%s%s", constants.CACHE_PWD_ERR_COUNT, userId)
+	retryKey := fmt.Sprintf("%s%s", constants.CACHE_PWD_ERR_COUNT, userName)
 	retryCount, err := redis.Get("", retryKey)
 	if retryCount == "" || err != nil {
 		retryCount = "0"

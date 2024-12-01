@@ -187,7 +187,7 @@ func Setup(router *gin.Engine) {
 			middleware.OperateLog(middleware.OptionNew("系统登录信息", middleware.BUSINESS_TYPE_CLEAN)),
 			controller.NewSysLogLogin.Clean,
 		)
-		sysLogLoginGroup.PUT("/unlock/:userId",
+		sysLogLoginGroup.PUT("/unlock/:userName",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:log:login:unlock"}}),
 			middleware.OperateLog(middleware.OptionNew("系统登录信息", middleware.BUSINESS_TYPE_OTHER)),
 			controller.NewSysLogLogin.Unlock,

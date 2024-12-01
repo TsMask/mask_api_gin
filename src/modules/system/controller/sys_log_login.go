@@ -52,15 +52,15 @@ func (s SysLogLoginController) Clean(c *gin.Context) {
 
 // Unlock 系统登录日志账户解锁
 //
-// PUT /unlock/:userId
+// PUT /unlock/:userName
 func (s SysLogLoginController) Unlock(c *gin.Context) {
-	userId := c.Param("userId")
-	if userId == "" {
-		c.JSON(400, response.CodeMsg(40010, "bind err: userId is empty"))
+	userName := c.Param("userName")
+	if userName == "" {
+		c.JSON(400, response.CodeMsg(40010, "bind err: userName is empty"))
 		return
 	}
 
-	ok := s.accountService.CleanLoginRecordCache(userId)
+	ok := s.accountService.CleanLoginRecordCache(userName)
 	if ok {
 		c.JSON(200, response.Ok(nil))
 		return

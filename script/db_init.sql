@@ -488,7 +488,6 @@ create table sys_log_operate (
 drop table if exists sys_log_login;
 create table sys_log_login (
   id             bigint         not null auto_increment   comment '登录ID',
-  user_id        bigint         not null                  comment '用户ID',
   user_name      varchar(32)    default ''                comment '用户账号',
   login_ip       varchar(128)   default ''                comment '登录IP地址',
   login_location varchar(32)    default ''                comment '登录地点',
