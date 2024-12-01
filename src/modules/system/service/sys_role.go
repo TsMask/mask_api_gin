@@ -31,7 +31,15 @@ func (r SysRole) FindByPage(query map[string]string, dataScopeSQL string) ([]mod
 
 // Find 查询列表数据
 func (r SysRole) Find(sysRole model.SysRole, dataScopeSQL string) []model.SysRole {
-	return r.sysRoleRepository.Select(sysRole, dataScopeSQL)
+	rows := r.sysRoleRepository.Select(sysRole, dataScopeSQL)
+	arr := make([]model.SysRole, 0)
+	for _, v := range rows {
+		if v.RoleId == constants.SYS_ROLE_SYSTEM_ID {
+			continue
+		}
+		arr = append(arr, v)
+	}
+	return arr
 }
 
 // FindById 通过ID查询信息
