@@ -15,7 +15,7 @@ var NewSysMenu = &SysMenu{}
 // SysMenu 菜单表 数据层处理
 type SysMenu struct{}
 
-// Select 查询集合 userId为0为管理员
+// Select 查询集合 userId为0为系统管理员
 func (r SysMenu) Select(sysMenu model.SysMenu, userId string) []model.SysMenu {
 	tx := db.DB("").Model(&model.SysMenu{})
 	tx = tx.Where("del_flag = '0'")
@@ -32,7 +32,10 @@ func (r SysMenu) Select(sysMenu model.SysMenu, userId string) []model.SysMenu {
 
 	// 个人菜单
 	if userId != "0" {
-		//
+		tx = tx.Where(`menu_id in (
+		select menu_id from sys_role_menu where role_id in (
+		select role_id from sys_user_role where user_id = ?
+		))`, userId)
 	}
 
 	// 查询数据
