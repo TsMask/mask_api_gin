@@ -23,9 +23,9 @@ func ValidHttp(s string) bool {
 
 // ValidUsername 判断是否为有效用户名格式
 //
-// 用户账号只能包含大写小写字母，数字，且不少于6位
+// 用户账号只能包含大写小写字母，数字，且不少于4位
 func ValidUsername(s string) bool {
-	pattern := `[a-zA-Z0-9]{6,}$`
+	pattern := `[a-z0-9A-Z]{3,}$`
 	return regexMatch(pattern, s)
 }
 
