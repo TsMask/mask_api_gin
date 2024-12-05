@@ -74,7 +74,7 @@ func (s Account) ByUsername(username, password string) (vo.LoginUser, error) {
 	}
 
 	// 检验用户密码
-	compareBool := crypto.BcryptCompare(password, sysUser.Passwd)
+	compareBool := crypto.BcryptCompare(password, sysUser.Password)
 	if compareBool {
 		s.CleanLoginRecordCache(sysUser.UserName) // 清除错误记录次数
 	} else {
@@ -101,7 +101,7 @@ func (s Account) ByUsername(username, password string) (vo.LoginUser, error) {
 func (s Account) UpdateLoginDateAndIP(loginUser *vo.LoginUser) bool {
 	sysUser := loginUser.User
 	user := s.sysUserService.FindById(sysUser.UserId)
-	user.Passwd = "" // 密码不更新
+	user.Password = "" // 密码不更新
 	user.LoginIp = sysUser.LoginIp
 	user.LoginTime = sysUser.LoginTime
 	return s.sysUserService.Update(user) > 0

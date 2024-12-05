@@ -129,7 +129,7 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 	userInfo.Email = body.Email
 	userInfo.Sex = body.Sex
 	userInfo.Avatar = body.Avatar
-	userInfo.Passwd = "" // 密码不更新
+	userInfo.Password = "" // 密码不更新
 	userInfo.UpdateBy = userInfo.UserName
 	rows := s.sysUserService.Update(userInfo)
 	if rows > 0 {
@@ -144,10 +144,10 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 	c.JSON(200, response.ErrMsg("上传图片异常"))
 }
 
-// UpdatePasswd 个人重置密码
+// UpdatePassword 个人重置密码
 //
-// PUT /passwd
-func (s SysProfileController) UpdatePasswd(c *gin.Context) {
+// PUT /password
+func (s SysProfileController) UpdatePassword(c *gin.Context) {
 	var body struct {
 		OldPassword string `json:"oldPassword" binding:"required"` // 旧密码
 		NewPassword string `json:"newPassword" binding:"required"` // 新密码
@@ -174,19 +174,19 @@ func (s SysProfileController) UpdatePasswd(c *gin.Context) {
 	}
 
 	// 检查匹配用户密码
-	oldCompare := crypto.BcryptCompare(body.OldPassword, userInfo.Passwd)
+	oldCompare := crypto.BcryptCompare(body.OldPassword, userInfo.Password)
 	if !oldCompare {
 		c.JSON(200, response.ErrMsg("修改密码失败，旧密码错误"))
 		return
 	}
-	newCompare := crypto.BcryptCompare(body.NewPassword, userInfo.Passwd)
+	newCompare := crypto.BcryptCompare(body.NewPassword, userInfo.Password)
 	if newCompare {
 		c.JSON(200, response.ErrMsg("新密码不能与旧密码相同"))
 		return
 	}
 
 	// 修改新密码
-	userInfo.Passwd = body.NewPassword
+	userInfo.Password = body.NewPassword
 	userInfo.UpdateBy = userInfo.UserName
 	rows := s.sysUserService.Update(userInfo)
 	if rows > 0 {

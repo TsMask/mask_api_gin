@@ -121,15 +121,15 @@ func (s SysUserController) Add(c *gin.Context) {
 	}
 
 	// 密码单独取，避免序列化输出
-	var bodyPasswd struct {
-		Passwd string `json:"passwd" binding:"required"`
+	var bodyPassword struct {
+		Password string `json:"password" binding:"required"`
 	}
-	if err := c.ShouldBindBodyWithJSON(&bodyPasswd); err != nil {
+	if err := c.ShouldBindBodyWithJSON(&bodyPassword); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
 		c.JSON(400, response.CodeMsg(40010, errMsgs))
 		return
 	}
-	body.Passwd = bodyPasswd.Passwd
+	body.Password = bodyPassword.Password
 
 	// 检查用户登录账号是否唯一
 	uniqueUserName := s.sysUserService.CheckUniqueByUserName(body.UserName, "")
@@ -252,7 +252,7 @@ func (s SysUserController) Edit(c *gin.Context) {
 	userInfo.DeptId = body.DeptId
 	userInfo.RoleIds = body.RoleIds
 	userInfo.PostIds = body.PostIds
-	userInfo.Passwd = "" // 忽略修改密码
+	userInfo.Password = "" // 忽略修改密码
 	userInfo.UpdateBy = ctx.LoginUserToUserName(c)
 	rows := s.sysUserService.UpdateUserAndRolePost(userInfo)
 	if rows > 0 {
@@ -296,13 +296,13 @@ func (s SysUserController) Remove(c *gin.Context) {
 	c.JSON(200, response.OkMsg(msg))
 }
 
-// Passwd 用户密码修改
+// Password 用户密码修改
 //
-// PUT /passwd
-func (s SysUserController) Passwd(c *gin.Context) {
+// PUT /password
+func (s SysUserController) Password(c *gin.Context) {
 	var body struct {
-		UserId string `json:"userId" binding:"required"`
-		Passwd string `json:"passwd" binding:"required"`
+		UserId   string `json:"userId" binding:"required"`
+		Password string `json:"password" binding:"required"`
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
@@ -323,12 +323,12 @@ func (s SysUserController) Passwd(c *gin.Context) {
 		return
 	}
 
-	if !regular.ValidPassword(body.Passwd) {
+	if !regular.ValidPassword(body.Password) {
 		c.JSON(200, response.ErrMsg("登录密码至少包含大小写字母、数字、特殊符号，且不少于6位"))
 		return
 	}
 
-	userInfo.Passwd = body.Passwd
+	userInfo.Password = body.Password
 	userInfo.UpdateBy = ctx.LoginUserToUserName(c)
 	rows := s.sysUserService.Update(userInfo)
 	if rows > 0 {
@@ -372,7 +372,7 @@ func (s SysUserController) Status(c *gin.Context) {
 	}
 
 	userInfo.StatusFlag = body.StatusFlag
-	userInfo.Passwd = "" // 密码不更新
+	userInfo.Password = "" // 密码不更新
 	userInfo.UpdateBy = ctx.LoginUserToUserName(c)
 	rows := s.sysUserService.Update(userInfo)
 	if rows > 0 {
@@ -546,7 +546,7 @@ func (s SysUserController) Import(c *gin.Context) {
 
 		// 验证是否存在这个用户
 		newSysUser := s.sysUserService.FindByUserName(row["B"])
-		newSysUser.Passwd = initPassword
+		newSysUser.Password = initPassword
 		newSysUser.UserName = row["B"]
 		newSysUser.NickName = row["C"]
 		newSysUser.Phone = row["E"]
@@ -610,7 +610,7 @@ func (s SysUserController) Import(c *gin.Context) {
 
 		// 如果用户已存在 同时 是否更新支持
 		if newSysUser.UserId != "" && body.Update {
-			newSysUser.Passwd = "" // 密码不更新
+			newSysUser.Password = "" // 密码不更新
 			newSysUser.UpdateBy = operaName
 			rows := s.sysUserService.Update(newSysUser)
 			if rows > 0 {

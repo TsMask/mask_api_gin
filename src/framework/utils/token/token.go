@@ -90,7 +90,7 @@ func Cache(loginUser *vo.LoginUser) {
 	iatTimestamp := time.Now().UnixMilli()
 	loginUser.LoginTime = iatTimestamp
 	loginUser.ExpireTime = iatTimestamp + expTimestamp.Milliseconds()
-	loginUser.User.Passwd = ""
+	loginUser.User.Password = ""
 	// 根据登录标识将loginUser缓存
 	tokenKey := constants.CACHE_LOGIN_TOKEN + loginUser.UUID
 	jsonBytes, err := json.Marshal(loginUser)

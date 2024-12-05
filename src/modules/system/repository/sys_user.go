@@ -125,8 +125,8 @@ func (r SysUser) SelectByIds(userIds []string) []model.SysUser {
 // Insert 新增信息
 func (r SysUser) Insert(sysUser model.SysUser) string {
 	sysUser.DelFlag = "0"
-	if sysUser.Passwd != "" {
-		sysUser.Passwd = crypto.BcryptHash(sysUser.Passwd)
+	if sysUser.Password != "" {
+		sysUser.Password = crypto.BcryptHash(sysUser.Password)
 	}
 	if sysUser.CreateBy != "" {
 		ms := time.Now().UnixMilli()
@@ -147,8 +147,8 @@ func (r SysUser) Update(sysUser model.SysUser) int64 {
 	if sysUser.UserId == "" {
 		return 0
 	}
-	if sysUser.Passwd != "" {
-		sysUser.Passwd = crypto.BcryptHash(sysUser.Passwd)
+	if sysUser.Password != "" {
+		sysUser.Password = crypto.BcryptHash(sysUser.Password)
 	}
 	if sysUser.UpdateBy != "" {
 		sysUser.UpdateTime = time.Now().UnixMilli()

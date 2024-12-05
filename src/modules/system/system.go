@@ -326,10 +326,10 @@ func Setup(router *gin.Engine) {
 			middleware.PreAuthorize(nil),
 			controller.NewSysProfile.UpdateProfile,
 		)
-		sysProfileGroup.PUT("/passwd",
+		sysProfileGroup.PUT("/password",
 			middleware.PreAuthorize(nil),
 			middleware.OperateLog(middleware.OptionNew("个人信息", middleware.BUSINESS_TYPE_UPDATE)),
-			controller.NewSysProfile.UpdatePasswd,
+			controller.NewSysProfile.UpdatePassword,
 		)
 	}
 
@@ -413,10 +413,10 @@ func Setup(router *gin.Engine) {
 			middleware.OperateLog(middleware.OptionNew("用户信息", middleware.BUSINESS_TYPE_DELETE)),
 			controller.NewSysUser.Remove,
 		)
-		sysUserGroup.PUT("/passwd",
+		sysUserGroup.PUT("/password",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:user:resetPwd"}}),
 			middleware.OperateLog(middleware.OptionNew("用户信息", middleware.BUSINESS_TYPE_UPDATE)),
-			controller.NewSysUser.Passwd,
+			controller.NewSysUser.Password,
 		)
 		sysUserGroup.PUT("/status",
 			middleware.RepeatSubmit(5),

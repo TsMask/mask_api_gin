@@ -150,7 +150,6 @@ func OperateLog(options Options) gin.HandlerFunc {
 
 // 敏感属性字段进行掩码
 var maskProperties = []string{
-	"passwd",
 	"password",
 	"oldPassword",
 	"newPassword",

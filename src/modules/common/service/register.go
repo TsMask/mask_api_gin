@@ -64,7 +64,7 @@ func (s Register) ByUserName(username, password string) (string, error) {
 	sysUser := systemModel.SysUser{
 		UserName:   username,
 		NickName:   username,             // 昵称使用名称账号
-		Passwd:     password,             // 原始密码
+		Password:   password,             // 原始密码
 		Sex:        "0",                  // 性别未选择
 		StatusFlag: constants.STATUS_YES, // 账号状态激活
 		DeptId:     "100",                // 归属部门为根节点

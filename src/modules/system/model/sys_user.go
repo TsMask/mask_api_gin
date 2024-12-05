@@ -10,7 +10,7 @@ type SysUser struct {
 	NickName   string `json:"nickName" gorm:"column:nick_name"`                               // 用户昵称
 	Sex        string `json:"sex" gorm:"column:sex"`                                          // 用户性别（0未选择 1男 2女）
 	Avatar     string `json:"avatar" gorm:"column:avatar"`                                    // 头像地址
-	Passwd     string `json:"-" gorm:"column:passwd"`                                         // 密码
+	Password   string `json:"-" gorm:"column:password"`                                       // 密码
 	StatusFlag string `json:"statusFlag" gorm:"column:status_flag"`                           // 账号状态（0停用 1正常）
 	DelFlag    string `json:"-" gorm:"column:del_flag"`                                       // 删除标记（0存在 1删除）
 	LoginIp    string `json:"loginIp" gorm:"column:login_ip"`                                 // 最后登录IP
