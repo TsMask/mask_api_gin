@@ -58,7 +58,7 @@ func (s *RegisterController) Register(c *gin.Context) {
 
 	// 判断必传参数
 	if !regular.ValidUsername(body.Username) {
-		c.JSON(200, response.ErrMsg("用户账号只能包含大写小写字母，数字，且不少于6位"))
+		c.JSON(200, response.ErrMsg("用户账号只能包含大写小写字母，数字，且不少于4位"))
 		return
 	}
 	if !regular.ValidPassword(body.Password) {

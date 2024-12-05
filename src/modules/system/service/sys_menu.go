@@ -193,7 +193,7 @@ func (s SysMenu) parseDataToTreeComponent(node model.SysMenu, nodesMap *map[stri
 
 // BuildRouteMenus 构建前端路由所需要的菜单
 func (s SysMenu) BuildRouteMenus(sysMenus []model.SysMenu, prefix string) []vo.Router {
-	var routers []vo.Router
+	routers := make([]vo.Router, 0)
 	for _, item := range sysMenus {
 		router := vo.Router{
 			Name:      s.getRouteName(item),
