@@ -213,7 +213,7 @@ func (r SysMenu) SelectPermsByUserId(userId string) []string {
 		Joins("left join sys_role_menu rm on m.menu_id = rm.menu_id").
 		Joins("left join sys_user_role ur on rm.role_id = ur.role_id").
 		Joins("left join sys_role r on r.role_id = ur.role_id").
-		Where("m.status = '1' and m.perms != '' and r.status = '1' and r.del_flag = '0'").
+		Where("m.status_flag = '1' and m.perms != '' and r.status_flag = '1' and r.del_flag = '0'").
 		Where("ur.user_id = ?", userId)
 
 	// 查询数据
