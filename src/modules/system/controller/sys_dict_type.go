@@ -178,7 +178,7 @@ func (s SysDictTypeController) Refresh(c *gin.Context) {
 //
 // GET /options
 func (s SysDictTypeController) Options(c *gin.Context) {
-	data := s.sysDictTypeService.Find(model.SysDictType{StatusFlag: "1"})
+	data := s.sysDictTypeService.Find(model.SysDictType{})
 
 	type labelValue struct {
 		Label string `json:"label"`

@@ -22,8 +22,8 @@ func (r SysDictData) SelectByPage(query map[string]string) ([]model.SysDictData,
 	if v, ok := query["dictType"]; ok && v != "" {
 		tx = tx.Where("dict_type = ?", v)
 	}
-	if v, ok := query["dictLabel"]; ok && v != "" {
-		tx = tx.Where("dict_label like concat(?, '%')", v)
+	if v, ok := query["dataLabel"]; ok && v != "" {
+		tx = tx.Where("data_label like concat(?, '%')", v)
 	}
 	if v, ok := query["statusFlag"]; ok && v != "" {
 		tx = tx.Where("status_flag = ?", v)
@@ -40,7 +40,8 @@ func (r SysDictData) SelectByPage(query map[string]string) ([]model.SysDictData,
 
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
-	err := tx.Limit(pageSize).Offset(pageSize * pageNum).Find(&rows).Error
+	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
+	err := tx.Order("data_sort asc").Find(&rows).Error
 	if err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows, total
@@ -54,7 +55,7 @@ func (r SysDictData) Select(sysDictData model.SysDictData) []model.SysDictData {
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysDictData.DataLabel != "" {
-		tx = tx.Where("dict_label like concat(?, '%')", sysDictData.DataLabel)
+		tx = tx.Where("data_label like concat(?, '%')", sysDictData.DataLabel)
 	}
 	if sysDictData.DictType != "" {
 		tx = tx.Where("dict_type = ?", sysDictData.DictType)
@@ -65,7 +66,7 @@ func (r SysDictData) Select(sysDictData model.SysDictData) []model.SysDictData {
 
 	// 查询数据
 	rows := []model.SysDictData{}
-	if err := tx.Find(&rows).Error; err != nil {
+	if err := tx.Order("data_sort asc").Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows
 	}
