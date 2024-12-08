@@ -63,7 +63,8 @@ func (r SysRole) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
-	err := tx.Limit(pageSize).Offset(pageSize * pageNum).Find(&rows).Error
+	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
+	err := tx.Order("role_sort asc").Find(&rows).Error
 	if err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows, total

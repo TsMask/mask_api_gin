@@ -35,7 +35,8 @@ func (s DemoORMService) FindByPage(query map[string]string) ([]model.DemoORM, in
 
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
-	err := tx.Limit(pageSize).Offset(pageSize * pageNum).Find(&rows).Error
+	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
+	err := tx.Find(&rows).Error
 	if err != nil {
 		return rows, total
 	}

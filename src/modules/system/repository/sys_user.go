@@ -70,7 +70,8 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeWhereSQL string)
 
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
-	err := tx.Limit(pageSize).Offset(pageSize * pageNum).Find(&rows).Error
+	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
+	err := tx.Find(&rows).Error
 	if err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows, total
@@ -269,7 +270,8 @@ func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeWhereSQ
 
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
-	err := tx.Limit(pageSize).Offset(pageSize * pageNum).Find(&rows).Error
+	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
+	err := tx.Find(&rows).Error
 	if err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows, total

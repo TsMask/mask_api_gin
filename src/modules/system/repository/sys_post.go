@@ -40,7 +40,8 @@ func (r SysPost) SelectByPage(query map[string]string) ([]model.SysPost, int64) 
 
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
-	err := tx.Limit(pageSize).Offset(pageSize * pageNum).Find(&rows).Error
+	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
+	err := tx.Order("post_sort asc").Find(&rows).Error
 	if err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows, total
