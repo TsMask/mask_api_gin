@@ -543,6 +543,10 @@ func (s SysUserController) Import(c *gin.Context) {
 		if row["G"] == "正常" {
 			sysUserStatus = constants.STATUS_YES
 		}
+		sysUserDeptId := "100"
+		if row["H"] != "" {
+			sysUserDeptId = row["H"]
+		}
 
 		// 验证是否存在这个用户
 		newSysUser := s.sysUserService.FindByUserName(row["B"])
@@ -553,6 +557,7 @@ func (s SysUserController) Import(c *gin.Context) {
 		newSysUser.Email = row["D"]
 		newSysUser.StatusFlag = sysUserStatus
 		newSysUser.Sex = sysUserSex
+		newSysUser.DeptId = sysUserDeptId
 
 		// 行用户编号
 		rowNo := row["A"]
