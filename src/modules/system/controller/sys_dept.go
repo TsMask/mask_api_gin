@@ -214,7 +214,7 @@ func (s SysDeptController) Remove(c *gin.Context) {
 	}
 
 	// 检查是否存在子部门
-	hasChild := s.sysDeptService.ExistUserByDeptId(deptId)
+	hasChild := s.sysDeptService.ExistChildrenByDeptId(deptId)
 	if hasChild > 0 {
 		msg := fmt.Sprintf("不允许删除，存在子部门数：%d", hasChild)
 		c.JSON(200, response.ErrMsg(msg))

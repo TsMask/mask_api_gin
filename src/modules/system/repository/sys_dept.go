@@ -107,7 +107,7 @@ func (r SysDept) DeleteById(deptId string) int64 {
 	}
 	tx := db.DB("").Model(&model.SysDept{})
 	// 构建查询条件
-	tx = tx.Where("dept_id in ?", deptId)
+	tx = tx.Where("dept_id = ?", deptId)
 	// 执行更新删除标记
 	if err := tx.Update("del_flag", "1").Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -143,7 +143,7 @@ func (r SysDept) ExistChildrenByDeptId(deptId string) int64 {
 		return 0
 	}
 	tx := db.DB("").Model(&model.SysDept{})
-	tx = tx.Where("del_flag = '0' and parent_id = ?", deptId)
+	tx = tx.Where("del_flag = '0' and status_flag = '1' and parent_id = ?", deptId)
 	// 查询数据
 	var count int64 = 0
 	if err := tx.Count(&count).Error; err != nil {
@@ -178,7 +178,7 @@ func (r SysDept) SelectDeptIdsByRoleId(roleId string, deptCheckStrictly bool) []
 	tx := db.DB("").Model(&model.SysDept{})
 	tx = tx.Where("del_flag = '0'")
 	tx = tx.Where("dept_id in (SELECT DISTINCT dept_id FROM sys_role_dept WHERE role_id = ?)", roleId)
-	// 展开
+	// 父子互相关联显示，取所有子节点
 	if deptCheckStrictly {
 		tx = tx.Where(`dept_id not in (
 		SELECT d.parent_id FROM sys_dept d 

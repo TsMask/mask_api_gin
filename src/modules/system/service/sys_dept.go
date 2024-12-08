@@ -90,20 +90,19 @@ func (s SysDept) DeleteById(deptId string) int64 {
 	return s.sysDeptRepository.DeleteById(deptId)
 }
 
-// FindDeptIdsByRoleId 根据角色ID查询包含的部门ID TODO
+// FindDeptIdsByRoleId 根据角色ID查询包含的部门ID
 func (s SysDept) FindDeptIdsByRoleId(roleId string) []string {
 	roles := s.sysRoleRepository.SelectByIds([]string{roleId})
-	if len(roles) == 0 {
-		return []string{}
+	if len(roles) > 0 {
+		role := roles[0]
+		if role.RoleId == roleId {
+			return s.sysDeptRepository.SelectDeptIdsByRoleId(
+				role.RoleId,
+				role.DeptCheckStrictly == "1",
+			)
+		}
 	}
-	role := roles[0]
-	if role.RoleId != roleId {
-		return []string{}
-	}
-	return s.sysDeptRepository.SelectDeptIdsByRoleId(
-		role.RoleId,
-		role.DeptCheckStrictly == "1",
-	)
+	return []string{}
 }
 
 // ExistChildrenByDeptId 部门下存在子节点数量
@@ -128,7 +127,7 @@ func (s SysDept) CheckUniqueParentIdByDeptName(parentId string, deptName string,
 	return uniqueId == ""
 }
 
-// BuildTreeSelect 查询部门树状结构 TODO
+// BuildTreeSelect 查询部门树状结构
 func (s SysDept) BuildTreeSelect(sysDept model.SysDept, dataScopeSQL string) []vo.TreeSelect {
 	arr := s.sysDeptRepository.Select(sysDept, dataScopeSQL)
 	treeArr := s.parseDataToTree(arr)
