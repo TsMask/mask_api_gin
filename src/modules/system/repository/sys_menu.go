@@ -83,14 +83,15 @@ func (r SysMenu) Insert(sysMenu model.SysMenu) string {
 	// 根据菜单类型重置参数
 	if sysMenu.MenuType == constants.MENU_TYPE_BUTTON {
 		sysMenu.Component = ""
-		sysMenu.Perms = ""
-		sysMenu.Icon = "#"
 		sysMenu.FrameFlag = "1"
 		sysMenu.CacheFlag = "1"
 		sysMenu.VisibleFlag = "1"
-		sysMenu.StatusFlag = "1"
+		sysMenu.MenuPath = ""
+		sysMenu.Icon = "#"
 	} else if sysMenu.MenuType == constants.MENU_TYPE_DIR {
 		sysMenu.Component = ""
+		sysMenu.FrameFlag = "1"
+		sysMenu.CacheFlag = "1"
 		sysMenu.Perms = ""
 	}
 
@@ -117,14 +118,15 @@ func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
 	// 根据菜单类型重置参数
 	if sysMenu.MenuType == constants.MENU_TYPE_BUTTON {
 		sysMenu.Component = ""
-		sysMenu.Perms = ""
-		sysMenu.Icon = "#"
 		sysMenu.FrameFlag = "1"
 		sysMenu.CacheFlag = "1"
 		sysMenu.VisibleFlag = "1"
-		sysMenu.StatusFlag = "1"
+		sysMenu.MenuPath = ""
+		sysMenu.Icon = "#"
 	} else if sysMenu.MenuType == constants.MENU_TYPE_DIR {
 		sysMenu.Component = ""
+		sysMenu.FrameFlag = "1"
+		sysMenu.CacheFlag = "1"
 		sysMenu.Perms = ""
 	}
 
@@ -224,7 +226,7 @@ func (r SysMenu) SelectPermsByUserId(userId string) []string {
 	return rows
 }
 
-// SelectByRoleId 根据角色ID查询菜单树信息 TODO
+// SelectByRoleId 根据角色ID查询菜单树信息
 func (r SysMenu) SelectByRoleId(roleId string, menuCheckStrictly bool) []string {
 	if roleId == "" {
 		return []string{}
@@ -233,7 +235,7 @@ func (r SysMenu) SelectByRoleId(roleId string, menuCheckStrictly bool) []string 
 	tx := db.DB("").Model(&model.SysMenu{})
 	tx = tx.Where("del_flag = '0'")
 	tx = tx.Where("menu_id in (select menu_id from sys_role_menu where role_id = ?)", roleId)
-	// 展开
+	// 父子互相关联显示，取所有子节点
 	if menuCheckStrictly {
 		tx = tx.Where(`menu_id not in (
 		select m.parent_id from sys_menu m 

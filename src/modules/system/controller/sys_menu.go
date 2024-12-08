@@ -34,7 +34,7 @@ func (s SysMenuController) List(c *gin.Context) {
 	if v, ok := c.GetQuery("menuName"); ok {
 		query.MenuName = v
 	}
-	if v, ok := c.GetQuery("status"); ok {
+	if v, ok := c.GetQuery("statusFlag"); ok {
 		query.StatusFlag = v
 	}
 

@@ -99,7 +99,7 @@ func (s SysMenu) FindPermsByUserId(userId string) []string {
 	return s.sysMenuRepository.SelectPermsByUserId(userId)
 }
 
-// FindByRoleId 根据角色ID查询菜单树信息 TODO
+// FindByRoleId 根据角色ID查询菜单树信息
 func (s SysMenu) FindByRoleId(roleId string) []string {
 	roles := s.sysRoleRepository.SelectByIds([]string{roleId})
 	if len(roles) > 0 {
