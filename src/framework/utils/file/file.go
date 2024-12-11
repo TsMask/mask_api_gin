@@ -139,7 +139,7 @@ func ChunkCheckFile(identifier, originalFileName string) ([]string, error) {
 	// 读取文件检查
 	err := isAllowWrite(originalFileName, []string{}, 0)
 	if err != nil {
-		return []string{}, err
+		return nil, err
 	}
 	// 上传资源路径
 	_, dir := resourceUpload()
@@ -147,7 +147,7 @@ func ChunkCheckFile(identifier, originalFileName string) ([]string, error) {
 	readPath := path.Join(dir, dirPath)
 	fileList, err := getDirFileNameList(readPath)
 	if err != nil {
-		return []string{}, fmt.Errorf("读取文件失败")
+		return []string{}, nil
 	}
 	return fileList, nil
 }
