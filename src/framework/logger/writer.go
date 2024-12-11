@@ -78,7 +78,7 @@ func NewLogger(env, fileDir, fileName string, level, maxDay, maxSize int) (*Logg
 func (l *Logger) checkFile() {
 	fileInfo, err := l.fileHandle.Stat()
 	if err != nil {
-		l.logger.Printf("Failed to get log file info: %v\n", err)
+		l.logger.Printf("failed to get log file info: %v\n", err)
 		return
 	}
 
@@ -111,7 +111,7 @@ func (l *Logger) rotateFile(timeFormat string) {
 	// 新文件句柄
 	fileHandle, err := os.OpenFile(oldFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		l.logger.Printf("Failed to open log file: %v\n", err)
+		l.logger.Printf("failed to open log file: %v\n", err)
 		return
 	}
 
@@ -191,6 +191,6 @@ func (l *Logger) Errorf(format string, args ...interface{}) {
 func (l *Logger) Close() {
 	err := l.fileHandle.Close()
 	if err != nil {
-		l.logger.Printf("Failed to close log file: %v\n", err)
+		l.logger.Printf("failed to close log file: %v\n", err)
 	}
 }

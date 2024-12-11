@@ -188,7 +188,7 @@ func GetKeys(source string, pattern string) ([]string, error) {
 		// 使用 SCAN 命令获取匹配的键
 		batchKeys, nextCursor, err := rdb.Scan(ctx, cursor, pattern, count).Result()
 		if err != nil {
-			logger.Errorf("Failed to scan keys: %v", err)
+			logger.Errorf("failed to scan keys: %v", err)
 			return keys, err
 		}
 		cursor = nextCursor
@@ -217,7 +217,7 @@ func GetBatch(source string, keys []string) ([]any, error) {
 	// 获取缓存数据
 	v, err := rdb.MGet(context.Background(), keys...).Result()
 	if err != nil || errors.Is(err, redis.Nil) {
-		logger.Errorf("Failed to get batch data: %v", err)
+		logger.Errorf("failed to get batch data: %v", err)
 		return result, err
 	}
 	return v, nil

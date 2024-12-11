@@ -220,7 +220,7 @@ func getFileSize(filePath string) int64 {
 	// 获取文件信息
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
-		logger.Errorf("Failed stat %s: %v", filePath, err)
+		logger.Errorf("failed stat %s: %v", filePath, err)
 		return -1
 	}
 	// 获取文件大小（字节数）
@@ -282,6 +282,7 @@ func getDirFileNameList(dirPath string) ([]string, error) {
 
 	dir, err := os.Open(dirPath)
 	if err != nil {
+		logger.Errorf("failed open %s: %v", dirPath, err)
 		return fileNames, err
 	}
 	defer func() {
@@ -290,6 +291,7 @@ func getDirFileNameList(dirPath string) ([]string, error) {
 
 	fileInfos, err := dir.Readdir(-1)
 	if err != nil {
+		logger.Errorf("failed readdir %s: %v", dirPath, err)
 		return fileNames, err
 	}
 
