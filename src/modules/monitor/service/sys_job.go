@@ -156,6 +156,7 @@ func (s SysJob) Reset() {
 	for _, sysJob := range sysJobs {
 		for _, name := range queueNames {
 			if name == sysJob.InvokeTarget {
+				s.deleteQueueJob(sysJob)
 				s.insertQueueJob(sysJob, true)
 			}
 		}
