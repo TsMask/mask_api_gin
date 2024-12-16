@@ -1,4 +1,4 @@
-package ctx
+package context
 
 import (
 	"mask_api_gin/src/framework/constants"

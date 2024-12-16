@@ -1,9 +1,9 @@
-package ctx
+package context
 
 import (
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/vo"
+	"mask_api_gin/src/framework/utils/token"
 
 	"fmt"
 	"strings"
@@ -12,12 +12,12 @@ import (
 )
 
 // LoginUser 登录用户信息
-func LoginUser(c *gin.Context) (vo.LoginUser, error) {
+func LoginUser(c *gin.Context) (token.LoginUser, error) {
 	value, exists := c.Get(constants.CTX_LOGIN_USER)
 	if exists && value != nil {
-		return value.(vo.LoginUser), nil
+		return value.(token.LoginUser), nil
 	}
-	return vo.LoginUser{}, fmt.Errorf("invalid login user information")
+	return token.LoginUser{}, fmt.Errorf("invalid login user information")
 }
 
 // LoginUserToUserID 登录用户信息-用户ID
