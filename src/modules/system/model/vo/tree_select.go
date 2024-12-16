@@ -1,6 +1,6 @@
 package vo
 
-import systemModel "mask_api_gin/src/modules/system/model"
+import "mask_api_gin/src/modules/system/model"
 
 // TreeSelect 树结构实体类
 type TreeSelect struct {
@@ -10,7 +10,7 @@ type TreeSelect struct {
 }
 
 // SysMenuTreeSelect 使用给定的 SysMenu 对象解析为 TreeSelect 对象
-func SysMenuTreeSelect(sysMenu systemModel.SysMenu) TreeSelect {
+func SysMenuTreeSelect(sysMenu model.SysMenu) TreeSelect {
 	t := TreeSelect{}
 	t.ID = sysMenu.MenuId
 	t.Label = sysMenu.MenuName
@@ -28,7 +28,7 @@ func SysMenuTreeSelect(sysMenu systemModel.SysMenu) TreeSelect {
 }
 
 // SysDeptTreeSelect 使用给定的 SysDept 对象解析为 TreeSelect 对象
-func SysDeptTreeSelect(sysDept systemModel.SysDept) TreeSelect {
+func SysDeptTreeSelect(sysDept model.SysDept) TreeSelect {
 	t := TreeSelect{}
 	t.ID = sysDept.DeptId
 	t.Label = sysDept.DeptName

@@ -6,7 +6,6 @@ import (
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/generate"
-	"mask_api_gin/src/framework/vo"
 
 	"encoding/json"
 	"fmt"
@@ -33,7 +32,7 @@ func Remove(token string) string {
 }
 
 // Create 令牌生成
-func Create(loginUser *vo.LoginUser, ilobArr [4]string) string {
+func Create(loginUser *LoginUser, ilobArr [4]string) string {
 	// 生成用户唯一token 32位
 	loginUser.UUID = generate.Code(32)
 	loginUser.LoginTime = time.Now().UnixMilli()
@@ -83,7 +82,7 @@ func Create(loginUser *vo.LoginUser, ilobArr [4]string) string {
 }
 
 // Cache 缓存登录用户信息
-func Cache(loginUser *vo.LoginUser) {
+func Cache(loginUser *LoginUser) {
 	// 计算配置的有效期
 	expTime := config.Get("jwt.expiresIn").(int)
 	expTimestamp := time.Duration(expTime) * time.Minute
@@ -101,7 +100,7 @@ func Cache(loginUser *vo.LoginUser) {
 }
 
 // RefreshIn 验证令牌有效期，相差不足xx分钟，自动刷新缓存
-func RefreshIn(loginUser *vo.LoginUser) {
+func RefreshIn(loginUser *LoginUser) {
 	// 相差不足xx分钟，自动刷新缓存
 	refreshTime := config.Get("jwt.refreshIn").(int)
 	refreshTimestamp := time.Duration(refreshTime) * time.Minute
@@ -134,9 +133,9 @@ func Verify(token string) (jwt.MapClaims, error) {
 	return nil, fmt.Errorf("token valid error")
 }
 
-// LoginUser 缓存的登录用户信息
-func LoginUser(claims jwt.MapClaims) vo.LoginUser {
-	loginUser := vo.LoginUser{}
+// UserInfo 缓存的登录用户信息
+func UserInfo(claims jwt.MapClaims) LoginUser {
+	loginUser := LoginUser{}
 	uuid := claims[constants.JWT_UUID].(string)
 	tokenKey := constants.CACHE_LOGIN_TOKEN + uuid
 	hasKey, err := redis.Has("", tokenKey)
