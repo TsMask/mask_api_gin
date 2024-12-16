@@ -3,8 +3,8 @@ package controller
 import (
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/context"
 	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
@@ -38,7 +38,7 @@ func (s SysMenuController) List(c *gin.Context) {
 		query.StatusFlag = v
 	}
 
-	userId := ctx.LoginUserToUserID(c)
+	userId := context.LoginUserToUserID(c)
 	if config.IsSystemUser(userId) {
 		userId = "0"
 	}
@@ -104,7 +104,7 @@ func (s SysMenuController) Add(c *gin.Context) {
 		return
 	}
 
-	body.CreateBy = ctx.LoginUserToUserName(c)
+	body.CreateBy = context.LoginUserToUserName(c)
 	insertId := s.sysMenuService.Insert(body)
 	if insertId != "" {
 		c.JSON(200, response.OkData(insertId))
@@ -203,7 +203,7 @@ func (s SysMenuController) Edit(c *gin.Context) {
 	menuInfo.Perms = body.Perms
 	menuInfo.Icon = body.Icon
 	menuInfo.Remark = body.Remark
-	menuInfo.UpdateBy = ctx.LoginUserToUserName(c)
+	menuInfo.UpdateBy = context.LoginUserToUserName(c)
 	rows := s.sysMenuService.Update(menuInfo)
 	if rows > 0 {
 		c.JSON(200, response.Ok(nil))
@@ -266,7 +266,7 @@ func (s SysMenuController) Tree(c *gin.Context) {
 		query.StatusFlag = v
 	}
 
-	userId := ctx.LoginUserToUserID(c)
+	userId := context.LoginUserToUserID(c)
 	if config.IsSystemUser(userId) {
 		userId = "0"
 	}
@@ -293,7 +293,7 @@ func (s SysMenuController) TreeRole(c *gin.Context) {
 		query.StatusFlag = v
 	}
 
-	userId := ctx.LoginUserToUserID(c)
+	userId := context.LoginUserToUserID(c)
 	if config.IsSystemUser(userId) {
 		userId = "0"
 	}

@@ -2,8 +2,8 @@ package controller
 
 import (
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/context"
 	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/regular"
 	commonModel "mask_api_gin/src/modules/common/model"
 	commonService "mask_api_gin/src/modules/common/service"
@@ -40,8 +40,8 @@ func (s *RegisterController) Register(c *gin.Context) {
 	}
 
 	// 当前请求信息
-	ipaddr, location := ctx.IPAddrLocation(c)
-	os, browser := ctx.UaOsBrowser(c)
+	ipaddr, location := context.IPAddrLocation(c)
+	os, browser := context.UaOsBrowser(c)
 
 	// 校验验证码
 	err := s.registerService.ValidateCaptcha(body.Code, body.UUID)

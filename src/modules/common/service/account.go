@@ -6,7 +6,8 @@ import (
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/vo"
+	"mask_api_gin/src/framework/utils/token"
+	"mask_api_gin/src/modules/system/model/vo"
 	systemService "mask_api_gin/src/modules/system/service"
 
 	"fmt"
@@ -52,8 +53,8 @@ func (s Account) ValidateCaptcha(code, uuid string) error {
 }
 
 // ByUsername 登录创建用户信息
-func (s Account) ByUsername(username, password string) (vo.LoginUser, error) {
-	var loginUser vo.LoginUser
+func (s Account) ByUsername(username, password string) (token.LoginUser, error) {
+	var loginUser token.LoginUser
 
 	// 查询用户登录账号
 	sysUser := s.sysUserService.FindByUserName(username)
@@ -83,7 +84,7 @@ func (s Account) ByUsername(username, password string) (vo.LoginUser, error) {
 	}
 
 	// 登录用户信息
-	loginUser = vo.LoginUser{}
+	loginUser = token.LoginUser{}
 	loginUser.UserId = sysUser.UserId
 	loginUser.DeptId = sysUser.DeptId
 	loginUser.User = sysUser
@@ -98,7 +99,7 @@ func (s Account) ByUsername(username, password string) (vo.LoginUser, error) {
 }
 
 // UpdateLoginDateAndIP 更新登录时间和IP
-func (s Account) UpdateLoginDateAndIP(loginUser *vo.LoginUser) bool {
+func (s Account) UpdateLoginDateAndIP(loginUser *token.LoginUser) bool {
 	sysUser := loginUser.User
 	user := s.sysUserService.FindById(sysUser.UserId)
 	user.Password = "" // 密码不更新

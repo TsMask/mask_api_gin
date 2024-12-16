@@ -2,10 +2,10 @@ package middleware
 
 import (
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/context"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/ip2region"
 	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/ctx"
 
 	"fmt"
 	"strings"
@@ -62,7 +62,7 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 
 		// 用户
 		if option.Type == LIMIT_USER {
-			loginUser, err := ctx.LoginUser(c)
+			loginUser, err := context.LoginUser(c)
 			if err != nil {
 				c.JSON(401, response.CodeMsg(40003, err.Error()))
 				c.Abort() // 停止执行后续的处理函数

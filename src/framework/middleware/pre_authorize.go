@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/context"
 	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/token"
 
 	"fmt"
@@ -23,7 +23,7 @@ import (
 func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 获取请求头标识信息
-		tokenStr := ctx.Authorization(c)
+		tokenStr := context.Authorization(c)
 		if tokenStr == "" {
 			c.JSON(401, response.CodeMsg(401, "无效身份授权"))
 			c.Abort() // 停止执行后续的处理函数
@@ -39,7 +39,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 		}
 
 		// 获取缓存的用户信息
-		loginUser := token.LoginUser(claims)
+		loginUser := token.UserInfo(claims)
 		if loginUser.UserId == "" {
 			c.JSON(401, response.CodeMsg(401, "无效身份授权"))
 			c.Abort() // 停止执行后续的处理函数

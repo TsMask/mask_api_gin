@@ -4,8 +4,8 @@ import (
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
-	"mask_api_gin/src/framework/vo"
 	"mask_api_gin/src/modules/system/model"
+	"mask_api_gin/src/modules/system/model/vo"
 	"mask_api_gin/src/modules/system/repository"
 
 	"encoding/base64"

@@ -3,9 +3,9 @@ package controller
 import (
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/context"
 	"mask_api_gin/src/framework/response"
-	ctxUtils "mask_api_gin/src/framework/utils/ctx"
-	tokenUtils "mask_api_gin/src/framework/utils/token"
+	"mask_api_gin/src/framework/utils/token"
 	commonModel "mask_api_gin/src/modules/common/model"
 	commonService "mask_api_gin/src/modules/common/service"
 	systemService "mask_api_gin/src/modules/system/service"
@@ -42,8 +42,8 @@ func (s AccountController) Login(c *gin.Context) {
 	}
 
 	// 当前请求信息
-	ipaddr, location := ctxUtils.IPAddrLocation(c)
-	os, browser := ctxUtils.UaOsBrowser(c)
+	ipaddr, location := context.IPAddrLocation(c)
+	os, browser := context.UaOsBrowser(c)
 
 	// 校验验证码 根据错误信息，创建系统访问记录
 	if err := s.accountService.ValidateCaptcha(loginBody.Code, loginBody.UUID); err != nil {
@@ -64,7 +64,7 @@ func (s AccountController) Login(c *gin.Context) {
 	}
 
 	// 生成令牌，创建系统访问记录
-	tokenStr := tokenUtils.Create(&loginUser, [4]string{ipaddr, location, os, browser})
+	tokenStr := token.Create(&loginUser, [4]string{ipaddr, location, os, browser})
 	if tokenStr == "" {
 		c.JSON(400, response.CodeMsg(40001, "token generation failed"))
 		return
@@ -88,7 +88,7 @@ func (s AccountController) Login(c *gin.Context) {
 //
 // GET /me
 func (s AccountController) Me(c *gin.Context) {
-	loginUser, err := ctxUtils.LoginUser(c)
+	loginUser, err := context.LoginUser(c)
 	if err != nil {
 		c.JSON(401, response.CodeMsg(40003, err.Error()))
 		return
@@ -109,7 +109,7 @@ func (s AccountController) Me(c *gin.Context) {
 //
 // GET /router
 func (s AccountController) Router(c *gin.Context) {
-	userId := ctxUtils.LoginUserToUserID(c)
+	userId := context.LoginUserToUserID(c)
 
 	// 前端路由，系统管理员拥有所有
 	isSystemUser := config.IsSystemUser(userId)
@@ -121,14 +121,14 @@ func (s AccountController) Router(c *gin.Context) {
 //
 // POST /logout
 func (s AccountController) Logout(c *gin.Context) {
-	tokenStr := ctxUtils.Authorization(c)
+	tokenStr := context.Authorization(c)
 	if tokenStr != "" {
 		// 存在token时记录退出信息
-		userName := tokenUtils.Remove(tokenStr)
+		userName := token.Remove(tokenStr)
 		if userName != "" {
 			// 当前请求信息
-			ipaddr, location := ctxUtils.IPAddrLocation(c)
-			os, browser := ctxUtils.UaOsBrowser(c)
+			ipaddr, location := context.IPAddrLocation(c)
+			os, browser := context.UaOsBrowser(c)
 			// 创建系统访问记录
 			s.sysLogLoginService.Insert(
 				userName, constants.STATUS_YES, "退出成功",

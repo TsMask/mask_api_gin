@@ -1,7 +1,7 @@
 package service
 
 import (
-	"mask_api_gin/src/framework/vo"
+	"mask_api_gin/src/framework/utils/token"
 	"mask_api_gin/src/modules/monitor/model"
 )
 
@@ -12,7 +12,7 @@ var NewSysUserOnline = &SysUserOnline{}
 type SysUserOnline struct{}
 
 // LoginUserToUserOnline 在线用户信息
-func (s SysUserOnline) LoginUserToUserOnline(loginUser vo.LoginUser) model.SysUserOnline {
+func (s SysUserOnline) LoginUserToUserOnline(loginUser token.LoginUser) model.SysUserOnline {
 	if loginUser.UserId == "" {
 		return model.SysUserOnline{}
 	}

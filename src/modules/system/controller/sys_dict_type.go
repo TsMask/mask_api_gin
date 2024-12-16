@@ -1,8 +1,8 @@
 package controller
 
 import (
+	"mask_api_gin/src/framework/context"
 	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
@@ -31,7 +31,7 @@ type SysDictTypeController struct {
 //
 // GET /list
 func (s SysDictTypeController) List(c *gin.Context) {
-	query := ctx.QueryMap(c)
+	query := context.QueryMap(c)
 	rows, total := s.sysDictTypeService.FindByPage(query)
 	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
@@ -85,7 +85,7 @@ func (s SysDictTypeController) Add(c *gin.Context) {
 		return
 	}
 
-	body.CreateBy = ctx.LoginUserToUserName(c)
+	body.CreateBy = context.LoginUserToUserName(c)
 	insertId := s.sysDictTypeService.Insert(body)
 	if insertId != "" {
 		c.JSON(200, response.OkData(insertId))
@@ -136,7 +136,7 @@ func (s SysDictTypeController) Edit(c *gin.Context) {
 	dictInfo.DictType = body.DictType
 	dictInfo.StatusFlag = body.StatusFlag
 	dictInfo.Remark = body.Remark
-	dictInfo.UpdateBy = ctx.LoginUserToUserName(c)
+	dictInfo.UpdateBy = context.LoginUserToUserName(c)
 	rows := s.sysDictTypeService.Update(dictInfo)
 	if rows > 0 {
 		c.JSON(200, response.Ok(nil))
@@ -201,7 +201,7 @@ func (s SysDictTypeController) Options(c *gin.Context) {
 // GET /export
 func (s SysDictTypeController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	query := ctx.QueryMap(c)
+	query := context.QueryMap(c)
 	rows, total := s.sysDictTypeService.FindByPage(query)
 	if total == 0 {
 		c.JSON(200, response.CodeMsg(40016, "export data record as empty"))

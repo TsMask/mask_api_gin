@@ -1,8 +1,8 @@
 package controller
 
 import (
+	"mask_api_gin/src/framework/context"
 	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
@@ -28,7 +28,7 @@ type SysNoticeController struct {
 //
 // GET /list
 func (s SysNoticeController) List(c *gin.Context) {
-	query := ctx.QueryMap(c)
+	query := context.QueryMap(c)
 	rows, total := s.sysNoticeService.FindByPage(query)
 	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
@@ -66,7 +66,7 @@ func (s SysNoticeController) Add(c *gin.Context) {
 		return
 	}
 
-	body.CreateBy = ctx.LoginUserToUserName(c)
+	body.CreateBy = context.LoginUserToUserName(c)
 	insertId := s.sysNoticeService.Insert(body)
 	if insertId != "" {
 		c.JSON(200, response.OkData(insertId))
@@ -102,7 +102,7 @@ func (s SysNoticeController) Edit(c *gin.Context) {
 	noticeInfo.NoticeContent = body.NoticeContent
 	noticeInfo.StatusFlag = body.StatusFlag
 	noticeInfo.Remark = body.Remark
-	noticeInfo.UpdateBy = ctx.LoginUserToUserName(c)
+	noticeInfo.UpdateBy = context.LoginUserToUserName(c)
 	rows := s.sysNoticeService.Update(noticeInfo)
 	if rows > 0 {
 		c.JSON(200, response.Ok(nil))

@@ -2,8 +2,8 @@ package controller
 
 import (
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/context"
 	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
@@ -33,8 +33,8 @@ type SysRoleController struct {
 //
 // GET /list
 func (s SysRoleController) List(c *gin.Context) {
-	query := ctx.QueryMap(c)
-	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")
+	query := context.QueryMap(c)
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "")
 	rows, total := s.sysRoleService.FindByPage(query, dataScopeSQL)
 	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
@@ -88,7 +88,7 @@ func (s SysRoleController) Add(c *gin.Context) {
 		return
 	}
 
-	body.CreateBy = ctx.LoginUserToUserName(c)
+	body.CreateBy = context.LoginUserToUserName(c)
 	insertId := s.sysRoleService.Insert(body)
 	if insertId != "" {
 		c.JSON(200, response.OkData(insertId))
@@ -141,7 +141,7 @@ func (s SysRoleController) Edit(c *gin.Context) {
 		return
 	}
 
-	body.UpdateBy = ctx.LoginUserToUserName(c)
+	body.UpdateBy = context.LoginUserToUserName(c)
 	rows := s.sysRoleService.Update(body)
 	if rows > 0 {
 		c.JSON(200, response.Ok(nil))
@@ -213,7 +213,7 @@ func (s SysRoleController) Status(c *gin.Context) {
 
 	// 更新状态不刷新缓存
 	role.StatusFlag = body.StatusFlag
-	role.UpdateBy = ctx.LoginUserToUserName(c)
+	role.UpdateBy = context.LoginUserToUserName(c)
 	rows := s.sysRoleService.Update(role)
 	if rows > 0 {
 		c.JSON(200, response.Ok(nil))
@@ -255,7 +255,7 @@ func (s SysRoleController) DataScope(c *gin.Context) {
 	roleInfo.DeptIds = body.DeptIds
 	roleInfo.DataScope = body.DataScope
 	roleInfo.DeptCheckStrictly = body.DeptCheckStrictly
-	roleInfo.UpdateBy = ctx.LoginUserToUserName(c)
+	roleInfo.UpdateBy = context.LoginUserToUserName(c)
 	rows := s.sysRoleService.UpdateAndDataScope(roleInfo)
 	if rows > 0 {
 		c.JSON(200, response.Ok(nil))
@@ -281,8 +281,8 @@ func (s SysRoleController) UserAuthList(c *gin.Context) {
 		return
 	}
 
-	query := ctx.QueryMap(c)
-	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
+	query := context.QueryMap(c)
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "u")
 	rows, total := s.sysUserService.FindAuthUsersPage(query, dataScopeSQL)
 	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
@@ -332,8 +332,8 @@ func (s SysRoleController) UserAuthChecked(c *gin.Context) {
 // GET /export
 func (s SysRoleController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	query := ctx.QueryMap(c)
-	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")
+	query := context.QueryMap(c)
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "")
 	rows, total := s.sysRoleService.FindByPage(query, dataScopeSQL)
 	if total == 0 {
 		c.JSON(200, response.CodeMsg(40016, "export data record as empty"))

@@ -1,9 +1,9 @@
 package controller
 
 import (
+	"mask_api_gin/src/framework/context"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/crypto"
-	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/framework/utils/token"
@@ -36,7 +36,7 @@ type SysProfileController struct {
 //
 // GET /
 func (s SysProfileController) Info(c *gin.Context) {
-	loginUser, err := ctx.LoginUser(c)
+	loginUser, err := context.LoginUser(c)
 	if err != nil {
 		c.JSON(401, response.CodeMsg(40003, err.Error()))
 		return
@@ -81,7 +81,7 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 	}
 
 	// 登录用户信息
-	loginUser, err := ctx.LoginUser(c)
+	loginUser, err := context.LoginUser(c)
 	if err != nil {
 		c.JSON(401, response.CodeMsg(40003, err.Error()))
 		return
@@ -159,7 +159,7 @@ func (s SysProfileController) UpdatePassword(c *gin.Context) {
 	}
 
 	// 登录用户信息
-	loginUser, err := ctx.LoginUser(c)
+	loginUser, err := context.LoginUser(c)
 	if err != nil {
 		c.JSON(401, response.CodeMsg(40003, err.Error()))
 		return

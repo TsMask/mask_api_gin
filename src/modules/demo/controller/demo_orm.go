@@ -1,8 +1,8 @@
 package controller
 
 import (
+	"mask_api_gin/src/framework/context"
 	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/demo/model"
 	"mask_api_gin/src/modules/demo/service"
@@ -28,7 +28,7 @@ type DemoORMController struct {
 //
 // GET /list
 func (s DemoORMController) List(c *gin.Context) {
-	query := ctx.QueryMap(c)
+	query := context.QueryMap(c)
 	rows, total := s.demoORMService.FindByPage(query)
 	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }

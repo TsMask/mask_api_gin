@@ -1,8 +1,8 @@
 package controller
 
 import (
+	"mask_api_gin/src/framework/context"
 	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/service"
@@ -30,7 +30,7 @@ type SysLogOperateController struct {
 //
 // GET /list
 func (s SysLogOperateController) List(c *gin.Context) {
-	query := ctx.QueryMap(c)
+	query := context.QueryMap(c)
 	rows, total := s.SysLogOperateService.FindByPage(query)
 	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
@@ -52,7 +52,7 @@ func (s SysLogOperateController) Clean(c *gin.Context) {
 // GET /export
 func (s SysLogOperateController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	query := ctx.QueryMap(c)
+	query := context.QueryMap(c)
 	rows, total := s.SysLogOperateService.FindByPage(query)
 	if total == 0 {
 		c.JSON(200, response.CodeMsg(40016, "export data record as empty"))

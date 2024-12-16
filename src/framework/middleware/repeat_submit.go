@@ -2,11 +2,11 @@ package middleware
 
 import (
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/context"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/ip2region"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/ctx"
 
 	"encoding/json"
 	"strconv"
@@ -33,7 +33,7 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 		}
 
 		// 提交参数
-		params := ctx.RequestParamsMap(c)
+		params := context.RequestParamsMap(c)
 		paramsJSONByte, err := json.Marshal(params)
 		if err != nil {
 			logger.Errorf("RepeatSubmit params json marshal err: %v", err)

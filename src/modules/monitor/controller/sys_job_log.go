@@ -1,8 +1,8 @@
 package controller
 
 import (
+	"mask_api_gin/src/framework/context"
 	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
@@ -37,7 +37,7 @@ type SysJobLogController struct {
 // GET /list
 func (s SysJobLogController) List(c *gin.Context) {
 	// 查询参数转换map
-	query := ctx.QueryMap(c)
+	query := context.QueryMap(c)
 	if jobId := c.Query("jobId"); jobId != "" && jobId != "0" {
 		job := s.sysJobService.FindById(jobId)
 		query["jobName"] = job.JobName
@@ -102,7 +102,7 @@ func (s SysJobLogController) Clean(c *gin.Context) {
 // GET /export
 func (s SysJobLogController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	query := ctx.QueryMap(c)
+	query := context.QueryMap(c)
 	if jobId := c.Query("jobId"); jobId != "" && jobId != "0" {
 		job := s.sysJobService.FindById(jobId)
 		query["jobName"] = job.JobName

@@ -3,8 +3,8 @@ package controller
 import (
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/context"
 	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
@@ -43,8 +43,8 @@ type SysUserController struct {
 //
 // GET /list
 func (s SysUserController) List(c *gin.Context) {
-	query := ctx.QueryMap(c)
-	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
+	query := context.QueryMap(c)
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "u")
 	rows, total := s.sysUserService.FindByPage(query, dataScopeSQL)
 	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
@@ -60,7 +60,7 @@ func (s SysUserController) Info(c *gin.Context) {
 	}
 
 	// 查询系统角色列表
-	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "u")
 	roles := s.sysRoleService.Find(model.SysRole{}, dataScopeSQL)
 	// 查询系统岗位列表
 	posts := s.sysPostService.Find(model.SysPost{})
@@ -171,7 +171,7 @@ func (s SysUserController) Add(c *gin.Context) {
 		}
 	}
 
-	body.CreateBy = ctx.LoginUserToUserName(c)
+	body.CreateBy = context.LoginUserToUserName(c)
 	insertId := s.sysUserService.Insert(body)
 	if insertId != "" {
 		c.JSON(200, response.OkData(insertId))
@@ -253,7 +253,7 @@ func (s SysUserController) Edit(c *gin.Context) {
 	userInfo.RoleIds = body.RoleIds
 	userInfo.PostIds = body.PostIds
 	userInfo.Password = "" // 忽略修改密码
-	userInfo.UpdateBy = ctx.LoginUserToUserName(c)
+	userInfo.UpdateBy = context.LoginUserToUserName(c)
 	rows := s.sysUserService.UpdateUserAndRolePost(userInfo)
 	if rows > 0 {
 		c.JSON(200, response.Ok(nil))
@@ -273,7 +273,7 @@ func (s SysUserController) Remove(c *gin.Context) {
 		return
 	}
 
-	loginUserID := ctx.LoginUserToUserID(c)
+	loginUserID := context.LoginUserToUserID(c)
 	for _, id := range userIds {
 		// 不能删除自己
 		if id == loginUserID {
@@ -329,7 +329,7 @@ func (s SysUserController) Password(c *gin.Context) {
 	}
 
 	userInfo.Password = body.Password
-	userInfo.UpdateBy = ctx.LoginUserToUserName(c)
+	userInfo.UpdateBy = context.LoginUserToUserName(c)
 	rows := s.sysUserService.Update(userInfo)
 	if rows > 0 {
 		c.JSON(200, response.Ok(nil))
@@ -373,7 +373,7 @@ func (s SysUserController) Status(c *gin.Context) {
 
 	userInfo.StatusFlag = body.StatusFlag
 	userInfo.Password = "" // 密码不更新
-	userInfo.UpdateBy = ctx.LoginUserToUserName(c)
+	userInfo.UpdateBy = context.LoginUserToUserName(c)
 	rows := s.sysUserService.Update(userInfo)
 	if rows > 0 {
 		c.JSON(200, response.Ok(nil))
@@ -387,8 +387,8 @@ func (s SysUserController) Status(c *gin.Context) {
 // GET /export
 func (s SysUserController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	queryMap := ctx.QueryMap(c)
-	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "u")
+	queryMap := context.QueryMap(c)
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "u")
 	rows, total := s.sysUserService.FindByPage(queryMap, dataScopeSQL)
 	if total == 0 {
 		c.JSON(200, response.CodeMsg(40016, "export data record as empty"))
@@ -502,7 +502,7 @@ func (s SysUserController) Import(c *gin.Context) {
 	}
 
 	// 获取操作人名称
-	operaName := ctx.LoginUserToUserName(c)
+	operaName := context.LoginUserToUserName(c)
 	// 读取默认初始密码
 	initPassword := s.sysConfigService.FindValueByKey("sys.user.initPassword")
 	// 读取用户性别字典数据

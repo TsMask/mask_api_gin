@@ -2,8 +2,8 @@ package controller
 
 import (
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/context"
 	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/ctx"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 
@@ -47,7 +47,7 @@ func (s SysDeptController) List(c *gin.Context) {
 		DeptName:   query.DeptName,
 		StatusFlag: query.Status,
 	}
-	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "")
 	data := s.sysDeptService.Find(SysDeptController, dataScopeSQL)
 	c.JSON(200, response.OkData(data))
 }
@@ -115,7 +115,7 @@ func (s SysDeptController) Add(c *gin.Context) {
 		return
 	}
 
-	body.CreateBy = ctx.LoginUserToUserName(c)
+	body.CreateBy = context.LoginUserToUserName(c)
 	insertId := s.sysDeptService.Insert(body)
 	if insertId != "" {
 		c.JSON(200, response.OkData(insertId))
@@ -187,7 +187,7 @@ func (s SysDeptController) Edit(c *gin.Context) {
 	deptInfo.Phone = body.Phone
 	deptInfo.Email = body.Email
 	deptInfo.StatusFlag = body.StatusFlag
-	deptInfo.UpdateBy = ctx.LoginUserToUserName(c)
+	deptInfo.UpdateBy = context.LoginUserToUserName(c)
 	rows := s.sysDeptService.Update(deptInfo)
 	if rows > 0 {
 		c.JSON(200, response.Ok(nil))
@@ -248,7 +248,7 @@ func (s SysDeptController) ExcludeChild(c *gin.Context) {
 		return
 	}
 
-	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "")
 	data := s.sysDeptService.Find(model.SysDept{}, dataScopeSQL)
 
 	// 过滤排除节点
@@ -291,7 +291,7 @@ func (s SysDeptController) Tree(c *gin.Context) {
 		DeptName:   query.DeptName,
 		StatusFlag: query.StatusFlag,
 	}
-	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "")
 	data := s.sysDeptService.BuildTreeSelect(sysDept, dataScopeSQL)
 	c.JSON(200, response.OkData(data))
 }
@@ -306,7 +306,7 @@ func (s SysDeptController) TreeRole(c *gin.Context) {
 		return
 	}
 
-	dataScopeSQL := ctx.LoginUserToDataScopeSQL(c, "d", "")
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "")
 	deptTreeSelect := s.sysDeptService.BuildTreeSelect(model.SysDept{}, dataScopeSQL)
 	checkedKeys := s.sysDeptService.FindDeptIdsByRoleId(roleId)
 	c.JSON(200, response.OkData(map[string]any{

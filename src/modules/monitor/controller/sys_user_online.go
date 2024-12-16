@@ -5,7 +5,7 @@ import (
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/response"
 	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/vo"
+	"mask_api_gin/src/framework/utils/token"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/service"
 
@@ -59,7 +59,7 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 			continue
 		}
 
-		var loginUser vo.LoginUser
+		var loginUser token.LoginUser
 		err := json.Unmarshal([]byte(str), &loginUser)
 		if err != nil {
 			continue
