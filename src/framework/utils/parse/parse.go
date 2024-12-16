@@ -101,7 +101,7 @@ func Bit(bit float64) string {
 
 // CronExpression 解析 Cron 表达式，返回下一次执行的时间戳（毫秒）
 //
-// 【*/5 * * * * ?】 6个参数
+// "*/5 * * * * ?" 6个参数
 func CronExpression(expression string) int64 {
 	specParser := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
 	schedule, err := specParser.Parse(expression)

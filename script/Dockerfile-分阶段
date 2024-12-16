@@ -24,6 +24,7 @@ COPY ./src ./src
 COPY ./go.sum ./
 COPY ./go.mod ./
 COPY ./main.go ./
+COPY ./src/config/config.prod.yaml ./config.yaml
 
 ## 安装程序依赖，需要编译
 RUN go mod download
@@ -49,12 +50,13 @@ ENV TZ="Asia/Shanghai"
 
 ## 将第一阶段必要文件复制到
 COPY --from=builder /mask_api/app .
+COPY --from=builder /mask_api/config.yaml .
 
 ## 暴露端口要与程序端口一致
 EXPOSE 6275
 
 ## 程序启动命令
-CMD ["./app", "--env", "prod"]
+CMD ["./app", "--config", "./config.yaml"]
 
 # 构建
 # docker build --build-arg NAME=mask_api --build-arg VERSION=0.0.1 -t mask_api:0.0.1 .
