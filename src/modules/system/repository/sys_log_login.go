@@ -38,7 +38,7 @@ func (r SysLogLogin) SelectByPage(query map[string]string) ([]model.SysLogLogin,
 	}
 	if v, ok := query["endTime"]; ok && v != "" {
 		if len(v) == 10 {
-			v = fmt.Sprintf("%s000", v)
+			v = fmt.Sprintf("%s999", v)
 			tx = tx.Where("login_time <= ?", v)
 		} else if len(v) == 13 {
 			tx = tx.Where("login_time <= ?", v)
@@ -77,8 +77,11 @@ func (r SysLogLogin) Insert(sysLogLogin model.SysLogLogin) string {
 }
 
 // Clean 清空信息
-func (r SysLogLogin) Clean() error {
-	sql := "truncate table sys_log_login"
-	_, err := db.ExecDB("", sql, []any{})
-	return err
+func (r SysLogLogin) Clean() int64 {
+	tx := db.DB("").Delete(&model.SysLogLogin{})
+	if err := tx.Error; err != nil {
+		logger.Errorf("delete err => %v", err.Error())
+		return 0
+	}
+	return tx.RowsAffected
 }

@@ -44,7 +44,7 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeWhereSQL string)
 	}
 	if v, ok := query["endTime"]; ok && v != "" {
 		if len(v) == 10 {
-			v = fmt.Sprintf("%s000", v)
+			v = fmt.Sprintf("%s999", v)
 			tx = tx.Where("login_time <= ?", v)
 		} else if len(v) == 13 {
 			tx = tx.Where("login_time <= ?", v)

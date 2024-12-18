@@ -36,6 +36,6 @@ func (s SysJobLog) RemoveByIds(logIds []string) int64 {
 }
 
 // Clean 清空
-func (s SysJobLog) Clean() error {
+func (s SysJobLog) Clean() int64 {
 	return s.sysJobLogRepository.Clean()
 }

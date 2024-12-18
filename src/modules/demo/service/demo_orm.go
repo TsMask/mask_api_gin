@@ -3,6 +3,7 @@ package service
 import (
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/modules/demo/model"
+
 	"time"
 )
 
@@ -135,13 +136,10 @@ func (s DemoORMService) DeleteByIds(ids []string) int64 {
 }
 
 // Clean 清空测试ORM表
-func (s DemoORMService) Clean() (int64, error) {
-	var rows int64
-	err := db.DB("").Model(&model.DemoORM{}).Count(&rows).Error
-	if err != nil {
-		return 0, err
+func (s DemoORMService) Clean() int64 {
+	tx := db.DB("").Delete(&model.DemoORM{})
+	if err := tx.Error; err != nil {
+		return 0
 	}
-	// 原生SQL清空表
-	db.DB("").Exec("TRUNCATE TABLE demo_orm")
-	return rows, nil
+	return tx.RowsAffected
 }

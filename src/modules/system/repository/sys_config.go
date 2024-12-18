@@ -39,7 +39,7 @@ func (r SysConfig) SelectByPage(query map[string]string) ([]model.SysConfig, int
 	}
 	if v, ok := query["endTime"]; ok && v != "" {
 		if len(v) == 10 {
-			v = fmt.Sprintf("%s000", v)
+			v = fmt.Sprintf("%s999", v)
 			tx = tx.Where("create_time <= ?", v)
 		} else if len(v) == 13 {
 			tx = tx.Where("create_time <= ?", v)

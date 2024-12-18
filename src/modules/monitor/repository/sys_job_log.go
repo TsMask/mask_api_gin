@@ -3,7 +3,6 @@ package repository
 import (
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/modules/monitor/model"
 
 	"fmt"
@@ -32,18 +31,20 @@ func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int
 		tx = tx.Where("invoke_target like concat(?, '%')", v)
 	}
 	if v, ok := query["beginTime"]; ok && v != "" {
-		tx = tx.Where("create_time >= ?", v)
+		if len(v) == 10 {
+			v = fmt.Sprintf("%s000", v)
+			tx = tx.Where("create_time >= ?", v)
+		} else if len(v) == 13 {
+			tx = tx.Where("create_time >= ?", v)
+		}
 	}
 	if v, ok := query["endTime"]; ok && v != "" {
-		tx = tx.Where("create_time <= ?", v)
-	}
-	if v, ok := query["params[beginTime]"]; ok && v != "" {
-		beginDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
-		tx = tx.Where("create_time >= ?", beginDate.UnixMilli())
-	}
-	if v, ok := query["params[endTime]"]; ok && v != "" {
-		endDate := date.ParseStrToDate(fmt.Sprint(v), date.YYYY_MM_DD)
-		tx = tx.Where("create_time <= ?", endDate.UnixMilli())
+		if len(v) == 10 {
+			v = fmt.Sprintf("%s999", v)
+			tx = tx.Where("create_time <= ?", v)
+		} else if len(v) == 13 {
+			tx = tx.Where("create_time <= ?", v)
+		}
 	}
 
 	// 查询结果
@@ -133,8 +134,11 @@ func (r SysJobLog) DeleteByIds(logIds []string) int64 {
 }
 
 // Clean 清空集合数据
-func (r SysJobLog) Clean() error {
-	sql := "truncate table sys_job_log"
-	_, err := db.ExecDB("", sql, nil)
-	return err
+func (r SysJobLog) Clean() int64 {
+	tx := db.DB("").Delete(&model.SysJobLog{})
+	if err := tx.Error; err != nil {
+		logger.Errorf("delete err => %v", err.Error())
+		return 0
+	}
+	return tx.RowsAffected
 }

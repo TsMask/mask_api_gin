@@ -42,12 +42,8 @@ func (s SysLogLoginController) List(c *gin.Context) {
 //
 // DELETE /clean
 func (s SysLogLoginController) Clean(c *gin.Context) {
-	err := s.sysLogLoginService.Clean()
-	if err != nil {
-		c.JSON(200, response.ErrMsg(err.Error()))
-		return
-	}
-	c.JSON(200, response.Ok(nil))
+	rows := s.sysLogLoginService.Clean()
+	c.JSON(200, response.OkData(rows))
 }
 
 // Unlock 系统登录日志账户解锁

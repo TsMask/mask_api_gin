@@ -140,10 +140,6 @@ func (s DemoORMController) Remove(c *gin.Context) {
 //
 // DELETE /clean
 func (s DemoORMController) Clean(c *gin.Context) {
-	_, err := s.demoORMService.Clean()
-	if err != nil {
-		c.JSON(200, response.ErrMsg(err.Error()))
-		return
-	}
-	c.JSON(200, response.Ok(nil))
+	rows := s.demoORMService.Clean()
+	c.JSON(200, response.OkData(rows))
 }

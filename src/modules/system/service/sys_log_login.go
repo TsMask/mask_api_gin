@@ -35,6 +35,6 @@ func (s SysLogLogin) Insert(userName, status, msg string, ilobArr [4]string) str
 }
 
 // Clean 清空系统登录日志
-func (s SysLogLogin) Clean() error {
+func (s SysLogLogin) Clean() int64 {
 	return s.SysLogLogin.Clean()
 }

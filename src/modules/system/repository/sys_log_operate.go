@@ -44,7 +44,7 @@ func (r SysLogOperate) SelectByPage(query map[string]string) ([]model.SysLogOper
 	}
 	if v, ok := query["endTime"]; ok && v != "" {
 		if len(v) == 10 {
-			v = fmt.Sprintf("%s000", v)
+			v = fmt.Sprintf("%s999", v)
 			tx = tx.Where("opera_time <= ?", v)
 		} else if len(v) == 13 {
 			tx = tx.Where("opera_time <= ?", v)
@@ -85,8 +85,11 @@ func (r SysLogOperate) Insert(sysLogOperate model.SysLogOperate) string {
 }
 
 // Clean 清空信息
-func (r SysLogOperate) Clean() error {
-	sql := "truncate table sys_log_operate"
-	_, err := db.ExecDB("", sql, []any{})
-	return err
+func (r SysLogOperate) Clean() int64 {
+	tx := db.DB("").Delete(&model.SysLogOperate{})
+	if err := tx.Error; err != nil {
+		logger.Errorf("delete err => %v", err.Error())
+		return 0
+	}
+	return tx.RowsAffected
 }

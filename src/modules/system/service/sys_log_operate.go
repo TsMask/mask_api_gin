@@ -26,6 +26,6 @@ func (s SysLogOperate) Insert(SysLogOperate model.SysLogOperate) string {
 }
 
 // Clean 清空操作日志
-func (s SysLogOperate) Clean() error {
+func (s SysLogOperate) Clean() int64 {
 	return s.SysLogOperate.Clean()
 }

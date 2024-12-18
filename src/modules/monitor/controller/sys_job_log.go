@@ -89,12 +89,8 @@ func (s SysJobLogController) Remove(c *gin.Context) {
 //
 // DELETE /clean
 func (s SysJobLogController) Clean(c *gin.Context) {
-	err := s.sysJobLogService.Clean()
-	if err != nil {
-		c.JSON(200, response.ErrMsg(err.Error()))
-		return
-	}
-	c.JSON(200, response.Ok(nil))
+	rows := s.sysJobLogService.Clean()
+	c.JSON(200, response.OkData(rows))
 }
 
 // Export 导出调度任务日志信息

@@ -232,22 +232,23 @@ func (r SysDept) UpdateDeptChildren(arr []model.SysDept) int64 {
 		return 0
 	}
 
-	// 更新条件拼接
+	// 构建查询条件
 	var conditions []string
-	var params []any
+	var deptIds []any
 	for _, dept := range arr {
 		caseSql := fmt.Sprintf("WHEN dept_id = '%s' THEN '%s'", dept.DeptId, dept.Ancestors)
 		conditions = append(conditions, caseSql)
-		params = append(params, dept.DeptId)
+		deptIds = append(deptIds, dept.DeptId)
 	}
-
 	cases := strings.Join(conditions, " ")
-	placeholders := db.KeyPlaceholderByQuery(len(params))
-	sql := fmt.Sprintf("update sys_dept set ancestors = CASE %s END where dept_id in (%s)", cases, placeholders)
-	results, err := db.ExecDB("", sql, params)
-	if err != nil {
-		logger.Errorf("delete err => %v", err)
+	casesVal := fmt.Sprintf("CASE %s END", cases)
+
+	// 执行更新操作
+	tx := db.DB("").Model(&model.SysDept{})
+	tx = tx.Update("ancestors", casesVal)
+	if err := tx.Where("dept_id in ?", deptIds).Error; err != nil {
+		logger.Errorf("update err => %v", err.Error())
 		return 0
 	}
-	return results
+	return tx.RowsAffected
 }
