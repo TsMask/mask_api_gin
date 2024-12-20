@@ -41,8 +41,9 @@ docker run -d \
 --restart=always \
 -p 8080:6275 \
 -e TZ="Asia/Shanghai" \
+-v <主机路径>/config.yaml:/app/config.yaml \
 -m 512M \
---name mask_api_000400 \
+--name mask_api_001 \
 mask_api:0.0.1
 
 ```
