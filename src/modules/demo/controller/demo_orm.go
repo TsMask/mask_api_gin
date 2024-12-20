@@ -19,7 +19,7 @@ var NewDemoORM = &DemoORMController{
 
 // DemoORMController 测试ORM 控制层处理
 //
-// PATH /demo
+// PATH /demo/orm
 type DemoORMController struct {
 	demoORMService *service.DemoORMService // 测试ORM信息服务
 }
