@@ -18,7 +18,7 @@ var NewSysUser = &SysUser{}
 type SysUser struct{}
 
 // SelectByPage 分页查询集合
-func (r SysUser) SelectByPage(query map[string]string, dataScopeWhereSQL string) ([]model.SysUser, int64) {
+func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64) {
 	tx := db.DB("").Model(&model.SysUser{})
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
@@ -55,8 +55,8 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeWhereSQL string)
 		select t.dept_id from sys_dept t where find_in_set(?, ancestors) 
 		))`, v, v)
 	}
-	if dataScopeWhereSQL != "" {
-		tx = tx.Where(dataScopeWhereSQL)
+	if dataScopeSQL != "" {
+		tx = tx.Where(dataScopeSQL)
 	}
 
 	// 查询结果
@@ -224,7 +224,7 @@ func (r SysUser) SelectByUserName(userName string) model.SysUser {
 }
 
 // SelectAuthUsersByPage 分页查询集合By分配用户角色
-func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeWhereSQL string) ([]model.SysUser, int64) {
+func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64) {
 	tx := db.DB("").Model(&model.SysUser{})
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
@@ -236,9 +236,6 @@ func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeWhereSQ
 	}
 	if v, ok := query["statusFlag"]; ok && v != "" {
 		tx = tx.Where("status_flag = ?", v)
-	}
-	if dataScopeWhereSQL != "" {
-		tx = tx.Where(dataScopeWhereSQL)
 	}
 
 	// 分配角色的用户
@@ -257,6 +254,9 @@ func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeWhereSQ
 				and ur.role_id = ?
 			)`, roleId)
 		}
+	}
+	if dataScopeSQL != "" {
+		tx = tx.Where(dataScopeSQL)
 	}
 
 	// 查询结果

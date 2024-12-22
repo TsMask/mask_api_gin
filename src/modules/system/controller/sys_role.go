@@ -281,7 +281,8 @@ func (s SysRoleController) UserAuthList(c *gin.Context) {
 	}
 
 	query := context.QueryMap(c)
-	rows, total := s.sysUserService.FindAuthUsersPage(query)
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
+	rows, total := s.sysUserService.FindAuthUsersPage(query, dataScopeSQL)
 	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
 

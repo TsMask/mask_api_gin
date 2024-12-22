@@ -47,7 +47,7 @@ func (s SysDeptController) List(c *gin.Context) {
 		DeptName:   query.DeptName,
 		StatusFlag: query.Status,
 	}
-	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "")
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "sys_dept", "")
 	data := s.sysDeptService.Find(SysDeptController, dataScopeSQL)
 	c.JSON(200, response.OkData(data))
 }
@@ -248,7 +248,7 @@ func (s SysDeptController) ExcludeChild(c *gin.Context) {
 		return
 	}
 
-	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "")
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "sys_dept", "")
 	data := s.sysDeptService.Find(model.SysDept{}, dataScopeSQL)
 
 	// 过滤排除节点
@@ -291,7 +291,7 @@ func (s SysDeptController) Tree(c *gin.Context) {
 		DeptName:   query.DeptName,
 		StatusFlag: query.StatusFlag,
 	}
-	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "")
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "sys_dept", "")
 	data := s.sysDeptService.BuildTreeSelect(sysDept, dataScopeSQL)
 	c.JSON(200, response.OkData(data))
 }
@@ -306,7 +306,7 @@ func (s SysDeptController) TreeRole(c *gin.Context) {
 		return
 	}
 
-	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "")
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "sys_dept", "")
 	deptTreeSelect := s.sysDeptService.BuildTreeSelect(model.SysDept{}, dataScopeSQL)
 	checkedKeys := s.sysDeptService.FindDeptIdsByRoleId(roleId)
 	c.JSON(200, response.OkData(map[string]any{

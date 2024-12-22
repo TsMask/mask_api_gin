@@ -43,9 +43,9 @@ type SysUserController struct {
 //
 // GET /list
 func (s SysUserController) List(c *gin.Context) {
-	query := context.QueryMap(c)
-	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "u")
-	rows, total := s.sysUserService.FindByPage(query, dataScopeSQL)
+	queryMap := context.QueryMap(c)
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
+	rows, total := s.sysUserService.FindByPage(queryMap, dataScopeSQL)
 	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
@@ -60,8 +60,7 @@ func (s SysUserController) Info(c *gin.Context) {
 	}
 
 	// 查询系统角色列表
-	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "u")
-	roles := s.sysRoleService.Find(model.SysRole{}, dataScopeSQL)
+	roles := s.sysRoleService.Find(model.SysRole{})
 	// 查询系统岗位列表
 	posts := s.sysPostService.Find(model.SysPost{})
 
@@ -171,8 +170,22 @@ func (s SysUserController) Add(c *gin.Context) {
 		}
 	}
 
-	body.CreateBy = context.LoginUserToUserName(c)
-	insertId := s.sysUserService.Insert(body)
+	userInfo := model.SysUser{
+		UserName:   body.UserName,
+		Password:   body.Password,
+		NickName:   body.NickName,
+		Email:      body.Email,
+		Phone:      body.Phone,
+		Sex:        body.Sex,
+		StatusFlag: body.StatusFlag,
+		Remark:     body.Remark,
+		DeptId:     body.DeptId,  // 部门ID
+		RoleIds:    body.RoleIds, // 角色ID组
+		PostIds:    body.PostIds, // 岗位ID组
+		Avatar:     body.Avatar,
+		CreateBy:   context.LoginUserToUserName(c),
+	}
+	insertId := s.sysUserService.Insert(userInfo)
 	if insertId != "" {
 		c.JSON(200, response.OkData(insertId))
 		return
@@ -388,7 +401,7 @@ func (s SysUserController) Status(c *gin.Context) {
 func (s SysUserController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	queryMap := context.QueryMap(c)
-	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "u")
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
 	rows, total := s.sysUserService.FindByPage(queryMap, dataScopeSQL)
 	if total == 0 {
 		c.JSON(200, response.CodeMsg(40016, "export data record as empty"))
