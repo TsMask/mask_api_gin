@@ -34,8 +34,7 @@ type SysRoleController struct {
 // GET /list
 func (s SysRoleController) List(c *gin.Context) {
 	query := context.QueryMap(c)
-	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "")
-	rows, total := s.sysRoleService.FindByPage(query, dataScopeSQL)
+	rows, total := s.sysRoleService.FindByPage(query)
 	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
@@ -282,8 +281,7 @@ func (s SysRoleController) UserAuthList(c *gin.Context) {
 	}
 
 	query := context.QueryMap(c)
-	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "u")
-	rows, total := s.sysUserService.FindAuthUsersPage(query, dataScopeSQL)
+	rows, total := s.sysUserService.FindAuthUsersPage(query)
 	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
@@ -333,8 +331,7 @@ func (s SysRoleController) UserAuthChecked(c *gin.Context) {
 func (s SysRoleController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := context.QueryMap(c)
-	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "d", "")
-	rows, total := s.sysRoleService.FindByPage(query, dataScopeSQL)
+	rows, total := s.sysRoleService.FindByPage(query)
 	if total == 0 {
 		c.JSON(200, response.CodeMsg(40016, "export data record as empty"))
 		return

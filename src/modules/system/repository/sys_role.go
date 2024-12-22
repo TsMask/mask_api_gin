@@ -16,7 +16,7 @@ var NewSysRole = &SysRole{}
 type SysRole struct{}
 
 // SelectByPage 分页查询集合
-func (r SysRole) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysRole, int64) {
+func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64) {
 	tx := db.DB("").Model(&model.SysRole{})
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
@@ -45,10 +45,10 @@ func (r SysRole) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 			tx = tx.Where("create_time <= ?", v)
 		}
 	}
-
 	if v, ok := query["deptId"]; ok && v != "" {
-		tx = tx.Where(`(dept_id = ? or dept_id in ( 
-		select t.dept_id from sys_dept t where find_in_set(?, ancestors)
+		tx = tx.Where(`role_id in ( 
+		select distinct role_id from sys_role_dept where sys_role_dept.dept_id IN ( 
+		SELECT dept_id FROM sys_dept WHERE dept_id = ? or find_in_set(? , ancestors ) 
 		))`, v, v)
 	}
 
@@ -73,7 +73,7 @@ func (r SysRole) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 }
 
 // Select 查询集合
-func (r SysRole) Select(sysRole model.SysRole, dataScopeWhereSQL string) []model.SysRole {
+func (r SysRole) Select(sysRole model.SysRole) []model.SysRole {
 	tx := db.DB("").Model(&model.SysRole{})
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
@@ -85,9 +85,6 @@ func (r SysRole) Select(sysRole model.SysRole, dataScopeWhereSQL string) []model
 	}
 	if sysRole.StatusFlag != "" {
 		tx = tx.Where("status_flag = ?", sysRole.StatusFlag)
-	}
-	if dataScopeWhereSQL != "" {
-		tx = tx.Where(dataScopeWhereSQL)
 	}
 
 	// 查询数据

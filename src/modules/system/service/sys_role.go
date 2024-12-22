@@ -25,13 +25,13 @@ type SysRole struct {
 }
 
 // FindByPage 分页查询列表数据
-func (r SysRole) FindByPage(query map[string]string, dataScopeSQL string) ([]model.SysRole, int64) {
-	return r.sysRoleRepository.SelectByPage(query, dataScopeSQL)
+func (r SysRole) FindByPage(query map[string]string) ([]model.SysRole, int64) {
+	return r.sysRoleRepository.SelectByPage(query)
 }
 
 // Find 查询列表数据
-func (r SysRole) Find(sysRole model.SysRole, dataScopeSQL string) []model.SysRole {
-	rows := r.sysRoleRepository.Select(sysRole, dataScopeSQL)
+func (r SysRole) Find(sysRole model.SysRole) []model.SysRole {
+	rows := r.sysRoleRepository.Select(sysRole)
 	arr := make([]model.SysRole, 0)
 	for _, v := range rows {
 		if v.RoleId == constants.SYS_ROLE_SYSTEM_ID {
