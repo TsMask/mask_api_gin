@@ -16,7 +16,7 @@ var NewSysLogOperate = &SysLogOperate{}
 type SysLogOperate struct{}
 
 // SelectByPage 分页查询集合
-func (r SysLogOperate) SelectByPage(query map[string]string) ([]model.SysLogOperate, int64) {
+func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysLogOperate, int64) {
 	tx := db.DB("").Model(&model.SysLogOperate{})
 	// 查询条件拼接
 	if v, ok := query["title"]; ok && v != "" {
@@ -49,6 +49,10 @@ func (r SysLogOperate) SelectByPage(query map[string]string) ([]model.SysLogOper
 		} else if len(v) == 13 {
 			tx = tx.Where("opera_time <= ?", v)
 		}
+	}
+	if dataScopeSQL != "" {
+		dataScopeSQL = fmt.Sprintf("select distinct user_name from sys_user where %s", dataScopeSQL)
+		tx = tx.Where(fmt.Sprintf("opera_by in ( %s )", dataScopeSQL))
 	}
 
 	// 查询结果

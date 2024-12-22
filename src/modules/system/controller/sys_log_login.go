@@ -34,7 +34,8 @@ type SysLogLoginController struct {
 // GET /list
 func (s SysLogLoginController) List(c *gin.Context) {
 	query := context.QueryMap(c)
-	rows, total := s.sysLogLoginService.FindByPage(query)
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
+	rows, total := s.sysLogLoginService.FindByPage(query, dataScopeSQL)
 	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
@@ -70,7 +71,8 @@ func (s SysLogLoginController) Unlock(c *gin.Context) {
 func (s SysLogLoginController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := context.QueryMap(c)
-	rows, total := s.sysLogLoginService.FindByPage(query)
+	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
+	rows, total := s.sysLogLoginService.FindByPage(query, dataScopeSQL)
 	if total == 0 {
 		c.JSON(200, response.CodeMsg(40016, "export data record as empty"))
 		return

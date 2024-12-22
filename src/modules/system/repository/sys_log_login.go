@@ -16,7 +16,7 @@ var NewSysLogLogin = &SysLogLogin{}
 type SysLogLogin struct{}
 
 // SelectByPage 分页查询集合
-func (r SysLogLogin) SelectByPage(query map[string]string) ([]model.SysLogLogin, int64) {
+func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysLogLogin, int64) {
 	tx := db.DB("").Model(&model.SysLogLogin{})
 	// 查询条件拼接
 	if v, ok := query["loginIp"]; ok && v != "" {
@@ -43,6 +43,10 @@ func (r SysLogLogin) SelectByPage(query map[string]string) ([]model.SysLogLogin,
 		} else if len(v) == 13 {
 			tx = tx.Where("login_time <= ?", v)
 		}
+	}
+	if dataScopeSQL != "" {
+		dataScopeSQL = fmt.Sprintf("select distinct user_name from sys_user where %s", dataScopeSQL)
+		tx = tx.Where(fmt.Sprintf("user_name in ( %s )", dataScopeSQL))
 	}
 
 	// 查询结果
