@@ -117,7 +117,13 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 		}
 
 		if constants.ROLE_SCOPE_CUSTOM == dataScope {
-			sql := fmt.Sprintf(`%s.dept_id IN ( SELECT dept_id FROM sys_role_dept WHERE role_id = '%s' )`, deptAlias, role.RoleId)
+			sql := fmt.Sprintf(`%s.dept_id IN ( 
+			SELECT dept_id FROM sys_role_dept WHERE role_id = '%s' 
+			) AND %s.dept_id NOT IN ( 
+			SELECT d.parent_id FROM sys_dept d 
+			INNER JOIN sys_role_dept rd ON rd.dept_id = d.dept_id 
+			AND rd.role_id = '%s'
+			)`, deptAlias, role.RoleId, deptAlias, role.RoleId)
 			conditions = append(conditions, sql)
 		}
 
@@ -127,17 +133,16 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 		}
 
 		if constants.ROLE_SCOPE_DEPT_CHILD == dataScope {
-			sql := fmt.Sprintf(`%s.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = '%s' or find_in_set('%s' , ancestors ) )`, deptAlias, userInfo.DeptId, userInfo.DeptId)
+			sql := fmt.Sprintf("%s.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = '%s' or find_in_set('%s' , ancestors ) )", deptAlias, userInfo.DeptId, userInfo.DeptId)
 			conditions = append(conditions, sql)
 		}
 
 		if constants.ROLE_SCOPE_SELF == dataScope {
-			// 数据权限为仅本人且没有userAlias别名不查询任何数据
 			if userAlias == "" {
-				sql := fmt.Sprintf(`%s.dept_id = '0'`, deptAlias)
+				sql := fmt.Sprintf("%s.dept_id = '%s'", deptAlias, userInfo.DeptId)
 				conditions = append(conditions, sql)
 			} else {
-				sql := fmt.Sprintf(`%s.user_id = '%s'`, userAlias, userInfo.UserId)
+				sql := fmt.Sprintf("%s.user_id = '%s'", userAlias, userInfo.UserId)
 				conditions = append(conditions, sql)
 			}
 		}
@@ -148,7 +153,7 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 
 	// 构建查询条件语句
 	if len(conditions) > 0 {
-		dataScopeSQL = fmt.Sprintf(" AND ( %s ) ", strings.Join(conditions, " OR "))
+		dataScopeSQL = fmt.Sprintf(" ( %s ) ", strings.Join(conditions, " OR "))
 	}
 	return dataScopeSQL
 }
