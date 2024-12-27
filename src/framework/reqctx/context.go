@@ -1,11 +1,11 @@
-package context
+package reqctx
 
 import (
-	"mask_api_gin/src/framework/constants"
-
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
+	"mask_api_gin/src/framework/constants"
 )
 
 // QueryMap Query参数转换Map

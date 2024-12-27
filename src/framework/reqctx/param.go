@@ -1,10 +1,10 @@
-package context
+package reqctx
 
 import (
+	"github.com/gin-gonic/gin"
+
 	"mask_api_gin/src/framework/ip2region"
 	"mask_api_gin/src/framework/utils/ua"
-
-	"github.com/gin-gonic/gin"
 )
 
 // IPAddrLocation 解析ip地址

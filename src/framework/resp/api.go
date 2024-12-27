@@ -1,4 +1,4 @@
-package response
+package resp
 
 const (
 	// CODE_ERROOR 响应-code错误失败
