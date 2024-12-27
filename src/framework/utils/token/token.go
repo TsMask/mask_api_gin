@@ -1,17 +1,17 @@
 package token
 
 import (
-	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/database/redis"
-	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/generate"
-
 	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+
+	"mask_api_gin/src/framework/config"
+	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/database/redis"
+	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/utils/generate"
 )
 
 // Remove 清除登录用户信息UUID

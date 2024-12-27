@@ -1,13 +1,13 @@
 package monitor
 
 import (
+	"github.com/gin-gonic/gin"
+
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/middleware"
 	"mask_api_gin/src/modules/monitor/controller"
 	"mask_api_gin/src/modules/monitor/processor"
 	"mask_api_gin/src/modules/monitor/service"
-
-	"github.com/gin-gonic/gin"
 )
 
 // Setup 模块路由注册

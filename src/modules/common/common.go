@@ -1,11 +1,11 @@
 package common
 
 import (
+	"github.com/gin-gonic/gin"
+
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/middleware"
 	"mask_api_gin/src/modules/common/controller"
-
-	"github.com/gin-gonic/gin"
 )
 
 // Setup 模块路由注册

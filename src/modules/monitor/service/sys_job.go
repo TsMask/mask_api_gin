@@ -1,22 +1,27 @@
 package service
 
 import (
+	"fmt"
+	"strconv"
+
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/cron"
+	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/repository"
-
-	"fmt"
+	systemService "mask_api_gin/src/modules/system/service"
 )
 
 // NewSysJob  服务层实例化
 var NewSysJob = &SysJob{
-	sysJobRepository: repository.NewSysJob,
+	sysJobRepository:   repository.NewSysJob,
+	sysDictTypeService: systemService.NewSysDictType,
 }
 
 // SysJob 调度任务 服务层处理
 type SysJob struct {
-	sysJobRepository *repository.SysJob // 调度任务数据信息
+	sysJobRepository   *repository.SysJob         // 调度任务数据信息
+	sysDictTypeService *systemService.SysDictType // 字典类型服务
 }
 
 // FindByPage 分页查询
@@ -161,4 +166,66 @@ func (s SysJob) Reset() {
 			}
 		}
 	}
+}
+
+// ExportData 导出数据表格
+func (s SysJob) ExportData(rows []model.SysJob, fileName string) (string, error) {
+	// 第一行表头标题
+	headerCells := map[string]string{
+		"A1": "任务编号",
+		"B1": "任务名称",
+		"C1": "任务组名",
+		"D1": "调用目标",
+		"E1": "传入参数",
+		"F1": "执行表达式",
+		"G1": "出错策略",
+		"H1": "并发执行",
+		"I1": "任务状态",
+		"J1": "备注说明",
+	}
+	// 读取任务组名字典数据
+	dictSysJobGroup := s.sysDictTypeService.FindDataByType("sys_job_group")
+	// 从第二行开始的数据
+	dataCells := make([]map[string]any, 0)
+	for i, row := range rows {
+		idx := strconv.Itoa(i + 2)
+		// 任务组名
+		sysJobGroup := ""
+		for _, v := range dictSysJobGroup {
+			if row.JobGroup == v.DataValue {
+				sysJobGroup = v.DataLabel
+				break
+			}
+		}
+		misfirePolicy := "放弃执行"
+		if row.MisfirePolicy == "1" {
+			misfirePolicy = "立即执行"
+		} else if row.MisfirePolicy == "2" {
+			misfirePolicy = "执行一次"
+		}
+		concurrent := "禁止"
+		if row.Concurrent == "1" {
+			concurrent = "允许"
+		}
+		// 状态
+		statusValue := "失败"
+		if row.StatusFlag == "1" {
+			statusValue = "成功"
+		}
+		dataCells = append(dataCells, map[string]any{
+			"A" + idx: row.JobId,
+			"B" + idx: row.JobName,
+			"C" + idx: sysJobGroup,
+			"D" + idx: row.InvokeTarget,
+			"E" + idx: row.TargetParams,
+			"F" + idx: row.CronExpression,
+			"G" + idx: misfirePolicy,
+			"H" + idx: concurrent,
+			"I" + idx: statusValue,
+			"J" + idx: row.Remark,
+		})
+	}
+
+	// 导出数据表格
+	return file.WriteSheet(headerCells, dataCells, fileName, "")
 }

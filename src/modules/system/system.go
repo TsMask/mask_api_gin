@@ -1,12 +1,12 @@
 package system
 
 import (
+	"github.com/gin-gonic/gin"
+
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/middleware"
 	"mask_api_gin/src/modules/system/controller"
 	"mask_api_gin/src/modules/system/service"
-
-	"github.com/gin-gonic/gin"
 )
 
 // Setup 模块路由注册
@@ -48,7 +48,14 @@ func Setup(router *gin.Engine) {
 			middleware.OperateLog(middleware.OptionNew("参数配置信息", middleware.BUSINESS_TYPE_OTHER)),
 			controller.NewSysConfig.Refresh,
 		)
-		sysConfigGroup.GET("/config-key/:configKey", controller.NewSysConfig.ConfigKey)
+		sysConfigGroup.GET("/config-key/:configKey",
+			middleware.RateLimit(middleware.LimitOption{
+				Time:  120,
+				Count: 15,
+				Type:  middleware.LIMIT_IP,
+			}),
+			controller.NewSysConfig.ConfigKey,
+		)
 		sysConfigGroup.GET("/export",
 			middleware.PreAuthorize(map[string][]string{"hasPerms": {"system:config:export"}}),
 			middleware.OperateLog(middleware.OptionNew("参数配置信息", middleware.BUSINESS_TYPE_EXPORT)),

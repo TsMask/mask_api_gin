@@ -1,19 +1,19 @@
 package controller
 
 import (
-	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/database/redis"
-	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/token"
-	"mask_api_gin/src/modules/monitor/model"
-	"mask_api_gin/src/modules/monitor/service"
-
 	"encoding/json"
 	"sort"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
+	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/database/redis"
+	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/framework/utils/parse"
+	"mask_api_gin/src/framework/utils/token"
+	"mask_api_gin/src/modules/monitor/model"
+	"mask_api_gin/src/modules/monitor/service"
 )
 
 // NewSysUserOnline 实例化控制层 SysUserOnlineController 结构体
@@ -100,7 +100,7 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 		return filteredUserOnline[j].LoginTime > filteredUserOnline[i].LoginTime
 	})
 
-	c.JSON(200, response.OkData(map[string]any{
+	c.JSON(200, resp.OkData(map[string]any{
 		"total": len(filteredUserOnline),
 		"rows":  filteredUserOnline,
 	}))
@@ -112,7 +112,7 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 func (s SysUserOnlineController) Logout(c *gin.Context) {
 	tokenIdStr := c.Param("tokenId")
 	if tokenIdStr == "" || strings.Contains(tokenIdStr, "*") {
-		c.JSON(400, response.CodeMsg(40010, "bind err: tokenId is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: tokenId is empty"))
 		return
 	}
 
@@ -122,10 +122,10 @@ func (s SysUserOnlineController) Logout(c *gin.Context) {
 	for _, v := range uniqueIDs {
 		key := constants.CACHE_LOGIN_TOKEN + v
 		if err := redis.Del("", key); err != nil {
-			c.JSON(200, response.ErrMsg(err.Error()))
+			c.JSON(200, resp.ErrMsg(err.Error()))
 			return
 		}
 	}
 
-	c.JSON(200, response.Ok(nil))
+	c.JSON(200, resp.Ok(nil))
 }

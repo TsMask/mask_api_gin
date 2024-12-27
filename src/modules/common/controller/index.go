@@ -2,10 +2,11 @@ package controller
 
 import (
 	"fmt"
-	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/response"
 
 	"github.com/gin-gonic/gin"
+
+	"mask_api_gin/src/framework/config"
+	"mask_api_gin/src/framework/resp"
 )
 
 // NewIndex 实例化控制层
@@ -21,5 +22,5 @@ type IndexController struct{}
 // GET /
 func (s *IndexController) Handler(c *gin.Context) {
 	str := "欢迎使用 %s 后台服务，当前版本：%s，请通过前台服务地址访问。"
-	c.JSON(200, response.OkMsg(fmt.Sprintf(str, config.Name, config.Version)))
+	c.JSON(200, resp.OkMsg(fmt.Sprintf(str, config.Name, config.Version)))
 }

@@ -1,10 +1,10 @@
 package service
 
 import (
+	"fmt"
+
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
-
-	"fmt"
 )
 
 // NewSysNotice 实例化服务层

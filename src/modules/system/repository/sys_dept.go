@@ -1,13 +1,13 @@
 package repository
 
 import (
-	"mask_api_gin/src/framework/database/db"
-	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/modules/system/model"
-
 	"fmt"
 	"strings"
 	"time"
+
+	"mask_api_gin/src/framework/database/db"
+	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/modules/system/model"
 )
 
 // NewSysDept 实例化数据层

@@ -1,17 +1,17 @@
 package controller
 
 import (
-	"mask_api_gin/src/framework/context"
-	"mask_api_gin/src/framework/response"
+	"fmt"
+
+	"github.com/gin-gonic/gin"
+
+	"mask_api_gin/src/framework/reqctx"
+	"mask_api_gin/src/framework/resp"
 	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/framework/utils/token"
 	"mask_api_gin/src/modules/system/service"
-
-	"fmt"
-
-	"github.com/gin-gonic/gin"
 )
 
 // NewSysProfile 实例化控制层
@@ -36,9 +36,9 @@ type SysProfileController struct {
 //
 // GET /
 func (s SysProfileController) Info(c *gin.Context) {
-	loginUser, err := context.LoginUser(c)
+	loginUser, err := reqctx.LoginUser(c)
 	if err != nil {
-		c.JSON(401, response.CodeMsg(40003, err.Error()))
+		c.JSON(401, resp.CodeMsg(40003, err.Error()))
 		return
 	}
 
@@ -56,7 +56,7 @@ func (s SysProfileController) Info(c *gin.Context) {
 		postGroup = append(postGroup, post.PostName)
 	}
 
-	c.JSON(200, response.OkData(map[string]any{
+	c.JSON(200, resp.OkData(map[string]any{
 		"user":      loginUser.User,
 		"roleGroup": parse.RemoveDuplicates(roleGroup),
 		"postGroup": parse.RemoveDuplicates(postGroup),
@@ -75,15 +75,15 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 		Avatar   string `json:"avatar"`                             // 头像地址
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
-		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
 
 	// 登录用户信息
-	loginUser, err := context.LoginUser(c)
+	loginUser, err := reqctx.LoginUser(c)
 	if err != nil {
-		c.JSON(401, response.CodeMsg(40003, err.Error()))
+		c.JSON(401, resp.CodeMsg(40003, err.Error()))
 		return
 	}
 	userId := loginUser.UserId
@@ -93,11 +93,11 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 		if regular.ValidMobile(body.Phone) {
 			uniquePhone := s.sysUserService.CheckUniqueByPhone(body.Phone, userId)
 			if !uniquePhone {
-				c.JSON(200, response.CodeMsg(40018, "抱歉，手机号码已存在"))
+				c.JSON(200, resp.CodeMsg(40018, "抱歉，手机号码已存在"))
 				return
 			}
 		} else {
-			c.JSON(200, response.CodeMsg(40018, "抱歉，手机号码格式错误"))
+			c.JSON(200, resp.CodeMsg(40018, "抱歉，手机号码格式错误"))
 			return
 		}
 	}
@@ -107,11 +107,11 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 		if regular.ValidEmail(body.Email) {
 			uniqueEmail := s.sysUserService.CheckUniqueByEmail(body.Email, userId)
 			if !uniqueEmail {
-				c.JSON(200, response.CodeMsg(40019, "抱歉，邮箱已存在"))
+				c.JSON(200, resp.CodeMsg(40019, "抱歉，邮箱已存在"))
 				return
 			}
 		} else {
-			c.JSON(200, response.CodeMsg(40019, "抱歉，邮箱格式错误"))
+			c.JSON(200, resp.CodeMsg(40019, "抱歉，邮箱格式错误"))
 			return
 		}
 	}
@@ -119,7 +119,7 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 	// 查询当前登录用户信息
 	userInfo := s.sysUserService.FindById(userId)
 	if userInfo.UserId != userId {
-		c.JSON(200, response.ErrMsg("没有权限访问用户数据！"))
+		c.JSON(200, resp.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
 
@@ -138,10 +138,10 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 		// 刷新令牌信息
 		token.Cache(&loginUser)
 
-		c.JSON(200, response.Ok(nil))
+		c.JSON(200, resp.Ok(nil))
 		return
 	}
-	c.JSON(200, response.ErrMsg("上传图片异常"))
+	c.JSON(200, resp.ErrMsg("上传图片异常"))
 }
 
 // UpdatePassword 个人重置密码
@@ -153,15 +153,15 @@ func (s SysProfileController) UpdatePassword(c *gin.Context) {
 		NewPassword string `json:"newPassword" binding:"required"` // 新密码
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
-		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
 
 	// 登录用户信息
-	loginUser, err := context.LoginUser(c)
+	loginUser, err := reqctx.LoginUser(c)
 	if err != nil {
-		c.JSON(401, response.CodeMsg(40003, err.Error()))
+		c.JSON(401, resp.CodeMsg(40003, err.Error()))
 		return
 	}
 	userId := loginUser.UserId
@@ -169,19 +169,19 @@ func (s SysProfileController) UpdatePassword(c *gin.Context) {
 	// 查询当前登录用户信息得到密码值
 	userInfo := s.sysUserService.FindById(userId)
 	if userInfo.UserId != userId {
-		c.JSON(200, response.ErrMsg("没有权限访问用户数据！"))
+		c.JSON(200, resp.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
 
 	// 检查匹配用户密码
 	oldCompare := crypto.BcryptCompare(body.OldPassword, userInfo.Password)
 	if !oldCompare {
-		c.JSON(200, response.ErrMsg("修改密码失败，旧密码错误"))
+		c.JSON(200, resp.ErrMsg("修改密码失败，旧密码错误"))
 		return
 	}
 	newCompare := crypto.BcryptCompare(body.NewPassword, userInfo.Password)
 	if newCompare {
-		c.JSON(200, response.ErrMsg("新密码不能与旧密码相同"))
+		c.JSON(200, resp.ErrMsg("新密码不能与旧密码相同"))
 		return
 	}
 
@@ -190,8 +190,8 @@ func (s SysProfileController) UpdatePassword(c *gin.Context) {
 	userInfo.UpdateBy = userInfo.UserName
 	rows := s.sysUserService.Update(userInfo)
 	if rows > 0 {
-		c.JSON(200, response.Ok(nil))
+		c.JSON(200, resp.Ok(nil))
 		return
 	}
-	c.JSON(200, response.Err(nil))
+	c.JSON(200, resp.Err(nil))
 }

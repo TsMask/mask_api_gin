@@ -1,11 +1,12 @@
 package service
 
 import (
+	"fmt"
+
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
-
-	"fmt"
 )
 
 // NewSysRole 实例化服务层
@@ -187,4 +188,43 @@ func (r SysRole) InsertAuthUsers(roleId string, userIds []string) int64 {
 // DeleteAuthUsers 批量取消授权用户角色
 func (r SysRole) DeleteAuthUsers(roleId string, userIds []string) int64 {
 	return r.sysUserRoleRepository.DeleteByRoleId(roleId, userIds)
+}
+
+// ExportData 导出数据表格
+func (s SysRole) ExportData(rows []model.SysRole, fileName string) (string, error) {
+	// 第一行表头标题
+	headerCells := map[string]string{
+		"A1": "角色序号",
+		"B1": "角色名称",
+		"C1": "角色权限",
+		"D1": "角色排序",
+		"E1": "数据范围",
+		"F1": "角色状态",
+	}
+	// 从第二行开始的数据
+	dataCells := make([]map[string]any, 0)
+	for i, row := range rows {
+		idx := fmt.Sprintf("%d", i+2)
+		// 数据范围
+		dataScope := "空"
+		if v, ok := constants.ROLE_SCOPE_DATA[row.DataScope]; ok {
+			dataScope = v
+		}
+		// 角色状态
+		statusValue := "停用"
+		if row.StatusFlag == "1" {
+			statusValue = "正常"
+		}
+		dataCells = append(dataCells, map[string]any{
+			"A" + idx: row.RoleId,
+			"B" + idx: row.RoleName,
+			"C" + idx: row.RoleKey,
+			"D" + idx: row.RoleSort,
+			"E" + idx: dataScope,
+			"F" + idx: statusValue,
+		})
+	}
+
+	// 导出数据表格
+	return file.WriteSheet(headerCells, dataCells, fileName, "")
 }

@@ -1,6 +1,9 @@
 package service
 
 import (
+	"fmt"
+	"time"
+
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
@@ -9,9 +12,6 @@ import (
 	"mask_api_gin/src/framework/utils/token"
 	"mask_api_gin/src/modules/system/model/vo"
 	systemService "mask_api_gin/src/modules/system/service"
-
-	"fmt"
-	"time"
 )
 
 // NewAccount 实例化服务层

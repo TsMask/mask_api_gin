@@ -1,11 +1,11 @@
 package repository
 
 import (
+	"time"
+
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/monitor/model"
-
-	"time"
 )
 
 // NewSysJob 实例化数据层

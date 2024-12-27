@@ -1,9 +1,9 @@
 package date
 
 import (
-	"mask_api_gin/src/framework/logger"
-
 	"time"
+
+	"mask_api_gin/src/framework/logger"
 )
 
 const (

@@ -1,10 +1,10 @@
 package foo
 
 import (
+	"time"
+
 	"mask_api_gin/src/framework/cron"
 	"mask_api_gin/src/framework/logger"
-
-	"time"
 )
 
 var NewProcessor = &Processor{

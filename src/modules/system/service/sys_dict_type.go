@@ -1,13 +1,15 @@
 package service
 
 import (
-	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/database/redis"
-	"mask_api_gin/src/modules/system/model"
-	"mask_api_gin/src/modules/system/repository"
-
 	"encoding/json"
 	"fmt"
+	"strconv"
+
+	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/database/redis"
+	"mask_api_gin/src/framework/utils/file"
+	"mask_api_gin/src/modules/system/model"
+	"mask_api_gin/src/modules/system/repository"
 )
 
 // NewSysDictType 实例化服务层
@@ -191,4 +193,33 @@ func (s SysDictType) FindDataByType(dictType string) []model.SysDictData {
 		}
 	}
 	return data
+}
+
+// ExportData 导出数据表格
+func (s SysDictType) ExportData(rows []model.SysDictType, fileName string) (string, error) {
+	// 第一行表头标题
+	headerCells := map[string]string{
+		"A1": "字典编号",
+		"B1": "字典名称",
+		"C1": "字典类型",
+		"D1": "字典状态",
+	}
+	// 从第二行开始的数据
+	dataCells := make([]map[string]any, 0)
+	for i, row := range rows {
+		idx := strconv.Itoa(i + 2)
+		statusValue := "停用"
+		if row.StatusFlag == "1" {
+			statusValue = "正常"
+		}
+		dataCells = append(dataCells, map[string]any{
+			"A" + idx: row.DictId,
+			"B" + idx: row.DictName,
+			"C" + idx: row.DictType,
+			"D" + idx: statusValue,
+		})
+	}
+
+	// 导出数据表格
+	return file.WriteSheet(headerCells, dataCells, fileName, "")
 }

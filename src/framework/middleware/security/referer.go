@@ -2,7 +2,7 @@ package security
 
 import (
 	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/response"
+	"mask_api_gin/src/framework/resp"
 
 	"net/url"
 
@@ -42,14 +42,14 @@ func referer(c *gin.Context) {
 
 	referer := c.GetHeader("Referer")
 	if referer == "" {
-		c.AbortWithStatusJSON(200, response.ErrMsg("无效 Referer 未知"))
+		c.AbortWithStatusJSON(200, resp.ErrMsg("无效 Referer 未知"))
 		return
 	}
 
 	// 获取host
 	u, err := url.Parse(referer)
 	if err != nil {
-		c.AbortWithStatusJSON(200, response.ErrMsg("无效 Referer 未知"))
+		c.AbortWithStatusJSON(200, resp.ErrMsg("无效 Referer 未知"))
 		return
 	}
 	host := u.Host
@@ -70,7 +70,7 @@ func referer(c *gin.Context) {
 		}
 	}
 	if !ok {
-		c.AbortWithStatusJSON(200, response.ErrMsg("无效 Referer "+host))
+		c.AbortWithStatusJSON(200, resp.ErrMsg("无效 Referer "+host))
 		return
 	}
 }

@@ -1,12 +1,12 @@
 package repository
 
 import (
+	"time"
+
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
-
-	"time"
 )
 
 // NewSysMenu 实例化数据层

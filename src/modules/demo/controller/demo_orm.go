@@ -1,15 +1,15 @@
 package controller
 
 import (
-	"mask_api_gin/src/framework/context"
-	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/modules/demo/model"
-	"mask_api_gin/src/modules/demo/service"
-
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+
+	"mask_api_gin/src/framework/reqctx"
+	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/framework/utils/parse"
+	"mask_api_gin/src/modules/demo/model"
+	"mask_api_gin/src/modules/demo/service"
 )
 
 // NewDemoORM 实例化控制层
@@ -28,9 +28,9 @@ type DemoORMController struct {
 //
 // GET /list
 func (s DemoORMController) List(c *gin.Context) {
-	query := context.QueryMap(c)
+	query := reqctx.QueryMap(c)
 	rows, total := s.demoORMService.FindByPage(query)
-	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
+	c.JSON(200, resp.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // All 列表无分页
@@ -49,7 +49,7 @@ func (s DemoORMController) All(c *gin.Context) {
 	}
 
 	data := s.demoORMService.Find(demoORM)
-	c.JSON(200, response.OkData(data))
+	c.JSON(200, resp.OkData(data))
 }
 
 // Info 信息
@@ -58,16 +58,16 @@ func (s DemoORMController) All(c *gin.Context) {
 func (s DemoORMController) Info(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		c.JSON(400, response.CodeMsg(40010, "bind err: id is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: id is empty"))
 		return
 	}
 
 	data := s.demoORMService.FindById(id)
 	if data.Id == id {
-		c.JSON(200, response.OkData(data))
+		c.JSON(200, resp.OkData(data))
 		return
 	}
-	c.JSON(200, response.Err(nil))
+	c.JSON(200, resp.Err(nil))
 }
 
 // Add 新增
@@ -76,21 +76,21 @@ func (s DemoORMController) Info(c *gin.Context) {
 func (s DemoORMController) Add(c *gin.Context) {
 	var body model.DemoORM
 	if err := c.ShouldBindJSON(&body); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
-		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
 	if body.Id != "" {
-		c.JSON(400, response.CodeMsg(40010, "bind err: id not is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: id not is empty"))
 		return
 	}
 
 	InsertId := s.demoORMService.Insert(body)
 	if InsertId != "" {
-		c.JSON(200, response.OkData(InsertId))
+		c.JSON(200, resp.OkData(InsertId))
 		return
 	}
-	c.JSON(200, response.Err(nil))
+	c.JSON(200, resp.Err(nil))
 }
 
 // Edit 更新
@@ -99,21 +99,21 @@ func (s DemoORMController) Add(c *gin.Context) {
 func (s DemoORMController) Edit(c *gin.Context) {
 	var body model.DemoORM
 	if err := c.ShouldBindJSON(&body); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
-		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
 	if body.Id == "" {
-		c.JSON(400, response.CodeMsg(40010, "bind err: id is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: id is empty"))
 		return
 	}
 
 	rowsAffected := s.demoORMService.Update(body)
 	if rowsAffected > 0 {
-		c.JSON(200, response.Ok(nil))
+		c.JSON(200, resp.Ok(nil))
 		return
 	}
-	c.JSON(200, response.Err(nil))
+	c.JSON(200, resp.Err(nil))
 }
 
 // Remove 删除
@@ -123,17 +123,17 @@ func (s DemoORMController) Remove(c *gin.Context) {
 	idStr := c.Param("id")
 	ids := parse.RemoveDuplicatesToArray(idStr, ",")
 	if idStr == "" || len(ids) <= 0 {
-		c.JSON(400, response.CodeMsg(40010, "bind err: id is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: id is empty"))
 		return
 	}
 
 	rows := s.demoORMService.DeleteByIds(ids)
 	if rows > 0 {
 		msg := fmt.Sprintf("删除成功：%d", rows)
-		c.JSON(200, response.OkMsg(msg))
+		c.JSON(200, resp.OkMsg(msg))
 		return
 	}
-	c.JSON(200, response.Err(nil))
+	c.JSON(200, resp.Err(nil))
 }
 
 // Clean 清空
@@ -141,5 +141,5 @@ func (s DemoORMController) Remove(c *gin.Context) {
 // DELETE /clean
 func (s DemoORMController) Clean(c *gin.Context) {
 	rows := s.demoORMService.Clean()
-	c.JSON(200, response.OkData(rows))
+	c.JSON(200, resp.OkData(rows))
 }

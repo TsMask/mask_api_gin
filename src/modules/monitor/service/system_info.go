@@ -1,9 +1,6 @@
 package service
 
 import (
-	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/utils/parse"
-
 	"context"
 	"fmt"
 	"os"
@@ -16,6 +13,9 @@ import (
 	"github.com/shirou/gopsutil/v4/host"
 	"github.com/shirou/gopsutil/v4/mem"
 	"github.com/shirou/gopsutil/v4/net"
+
+	"mask_api_gin/src/framework/config"
+	"mask_api_gin/src/framework/utils/parse"
 )
 
 // NewSystemInfo 服务层实例化

@@ -1,22 +1,22 @@
 package controller
 
 import (
-	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/context"
-	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/regular"
-	commonModel "mask_api_gin/src/modules/common/model"
-	commonService "mask_api_gin/src/modules/common/service"
-	systemService "mask_api_gin/src/modules/system/service"
-
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+
+	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/reqctx"
+	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/framework/utils/regular"
+	"mask_api_gin/src/modules/common/model"
+	"mask_api_gin/src/modules/common/service"
+	systemService "mask_api_gin/src/modules/system/service"
 )
 
 // NewRegister 实例化控制层
 var NewRegister = &RegisterController{
-	registerService:    commonService.NewRegister,
+	registerService:    service.NewRegister,
 	sysLogLoginService: systemService.NewSysLogLogin,
 }
 
@@ -24,7 +24,7 @@ var NewRegister = &RegisterController{
 //
 // PATH /
 type RegisterController struct {
-	registerService    *commonService.Register    // 账号注册操作服务
+	registerService    *service.Register          // 账号注册操作服务
 	sysLogLoginService *systemService.SysLogLogin // 系统登录访问服务
 }
 
@@ -32,16 +32,16 @@ type RegisterController struct {
 //
 // POST /register
 func (s *RegisterController) Register(c *gin.Context) {
-	var body commonModel.RegisterBody
+	var body model.RegisterBody
 	if err := c.ShouldBindJSON(&body); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
-		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
 
 	// 当前请求信息
-	ipaddr, location := context.IPAddrLocation(c)
-	os, browser := context.UaOsBrowser(c)
+	ipaddr, location := reqctx.IPAddrLocation(c)
+	os, browser := reqctx.UaOsBrowser(c)
 
 	// 校验验证码
 	err := s.registerService.ValidateCaptcha(body.Code, body.UUID)
@@ -52,21 +52,21 @@ func (s *RegisterController) Register(c *gin.Context) {
 			body.Username, constants.STATUS_NO, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
-		c.JSON(400, response.CodeMsg(40012, err.Error()))
+		c.JSON(400, resp.CodeMsg(40012, err.Error()))
 		return
 	}
 
 	// 判断必传参数
 	if !regular.ValidUsername(body.Username) {
-		c.JSON(200, response.ErrMsg("用户账号只能包含大写小写字母，数字，且不少于4位"))
+		c.JSON(200, resp.ErrMsg("用户账号只能包含大写小写字母，数字，且不少于4位"))
 		return
 	}
 	if !regular.ValidPassword(body.Password) {
-		c.JSON(200, response.ErrMsg("登录密码至少包含大小写字母、数字、特殊符号，且不少于6位"))
+		c.JSON(200, resp.ErrMsg("登录密码至少包含大小写字母、数字、特殊符号，且不少于6位"))
 		return
 	}
 	if body.Password != body.ConfirmPassword {
-		c.JSON(200, response.ErrMsg("用户确认输入密码不一致"))
+		c.JSON(200, resp.ErrMsg("用户确认输入密码不一致"))
 		return
 	}
 
@@ -77,8 +77,8 @@ func (s *RegisterController) Register(c *gin.Context) {
 			body.Username, constants.STATUS_YES, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
-		c.JSON(200, response.OkMsg("注册成功"))
+		c.JSON(200, resp.OkMsg("注册成功"))
 		return
 	}
-	c.JSON(200, response.ErrMsg(err.Error()))
+	c.JSON(200, resp.ErrMsg(err.Error()))
 }

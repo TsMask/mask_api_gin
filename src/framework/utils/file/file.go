@@ -1,9 +1,6 @@
 package file
 
 import (
-	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/utils/date"
-
 	"fmt"
 	"mime/multipart"
 	"path"
@@ -11,33 +8,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
-)
 
-// TransferUploadFile 上传资源文件转存
-//
-// subPath 子路径，默认 UploadSubPath.DEFAULT
-//
-// allowExt 允许上传拓展类型（含“.”)，如 ['.png','.jpg']
-func TransferUploadFile(file *multipart.FileHeader, subPath string, allowExt []string) (string, error) {
-	// 上传文件检查
-	err := isAllowWrite(file.Filename, allowExt, file.Size)
-	if err != nil {
-		return "", err
-	}
-	// 上传资源路径
-	prefix, dir := resourceUpload()
-	// 新文件名称并组装文件地址
-	fileName := generateFileName(file.Filename)
-	filePath := filepath.Join(subPath, date.ParseDatePath(time.Now()))
-	writePathFile := filepath.Join(dir, filePath, fileName)
-	// 存入新文件路径
-	err = transferToNewFile(file, writePathFile)
-	if err != nil {
-		return "", err
-	}
-	urlPath := filepath.Join(prefix, filePath, fileName)
-	return filepath.ToSlash(urlPath), nil
-}
+	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/utils/date"
+)
 
 // ReadUploadFileStream 上传资源文件读取
 //
@@ -101,6 +75,32 @@ func ReadUploadFileStream(filePath, headerRange string) (map[string]any, error) 
 	}
 	result["data"] = byteArr
 	return result, nil
+}
+
+// TransferUploadFile 上传资源文件转存
+//
+// subPath 子路径，默认 UploadSubPath.DEFAULT
+//
+// allowExt 允许上传拓展类型（含“.”)，如 ['.png','.jpg']
+func TransferUploadFile(file *multipart.FileHeader, subPath string, allowExt []string) (string, error) {
+	// 上传文件检查
+	err := isAllowWrite(file.Filename, allowExt, file.Size)
+	if err != nil {
+		return "", err
+	}
+	// 上传资源路径
+	prefix, dir := resourceUpload()
+	// 新文件名称并组装文件地址
+	fileName := generateFileName(file.Filename)
+	filePath := filepath.Join(subPath, date.ParseDatePath(time.Now()))
+	writePathFile := filepath.Join(dir, filePath, fileName)
+	// 存入新文件路径
+	err = transferToNewFile(file, writePathFile)
+	if err != nil {
+		return "", err
+	}
+	urlPath := filepath.Join(prefix, filePath, fileName)
+	return filepath.ToSlash(urlPath), nil
 }
 
 // TransferChunkUploadFile 上传资源切片文件转存
@@ -182,10 +182,10 @@ func ChunkMergeFile(identifier, originalFileName, subPath string) (string, error
 	return filepath.ToSlash(urlPath), nil
 }
 
-// ParseUploadFilePath  上传资源本地绝对资源路径
+// ParseUploadFileAbsPath  上传资源本地绝对资源路径
 //
 // filePath 上传文件路径
-func ParseUploadFilePath(filePath string) string {
+func ParseUploadFileAbsPath(filePath string) string {
 	prefix, dir := resourceUpload()
 	absPath := strings.Replace(filePath, prefix, dir, 1)
 	return filepath.ToSlash(absPath)

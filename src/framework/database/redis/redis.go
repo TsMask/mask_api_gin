@@ -1,9 +1,6 @@
 package redis
 
 import (
-	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/logger"
-
 	"context"
 	"errors"
 	"fmt"
@@ -11,6 +8,9 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+
+	"mask_api_gin/src/framework/config"
+	"mask_api_gin/src/framework/logger"
 )
 
 // Redis连接实例

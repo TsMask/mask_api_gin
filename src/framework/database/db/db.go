@@ -1,10 +1,6 @@
 package db
 
 import (
-	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/parse"
-
 	"fmt"
 	"log"
 	"os"
@@ -14,6 +10,10 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	gormLog "gorm.io/gorm/logger"
+
+	"mask_api_gin/src/framework/config"
+	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/utils/parse"
 )
 
 // 数据库连接实例

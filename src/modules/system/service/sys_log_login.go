@@ -1,8 +1,11 @@
 package service
 
 import (
+	"mask_api_gin/src/framework/utils/date"
+	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
+	"strconv"
 )
 
 // NewSysLogLogin 实例化服务层
@@ -37,4 +40,44 @@ func (s SysLogLogin) Insert(userName, status, msg string, ilobArr [4]string) str
 // Clean 清空系统登录日志
 func (s SysLogLogin) Clean() int64 {
 	return s.SysLogLogin.Clean()
+}
+
+// ExportData 导出数据表格
+func (s SysLogLogin) ExportData(rows []model.SysLogLogin, fileName string) (string, error) {
+	// 第一行表头标题
+	headerCells := map[string]string{
+		"A1": "序号",
+		"B1": "用户账号",
+		"C1": "登录状态",
+		"D1": "登录地址",
+		"E1": "登录地点",
+		"F1": "浏览器",
+		"G1": "操作系统",
+		"H1": "提示消息",
+		"I1": "访问时间",
+	}
+	// 从第二行开始的数据
+	dataCells := make([]map[string]any, 0)
+	for i, row := range rows {
+		idx := strconv.Itoa(i + 2)
+		// 状态
+		statusValue := "失败"
+		if row.StatusFlag == "1" {
+			statusValue = "成功"
+		}
+		dataCells = append(dataCells, map[string]any{
+			"A" + idx: row.ID,
+			"B" + idx: row.UserName,
+			"C" + idx: statusValue,
+			"D" + idx: row.LoginIp,
+			"E" + idx: row.LoginLocation,
+			"F" + idx: row.Browser,
+			"G" + idx: row.OS,
+			"H" + idx: row.Msg,
+			"I" + idx: date.ParseDateToStr(row.LoginTime, date.YYYY_MM_DD_HH_MM_SS),
+		})
+	}
+
+	// 导出数据表格
+	return file.WriteSheet(headerCells, dataCells, fileName, "")
 }

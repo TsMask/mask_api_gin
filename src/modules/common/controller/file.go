@@ -3,13 +3,14 @@ package controller
 import (
 	"encoding/base64"
 	"fmt"
-	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/file"
 	"net/url"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
+
+	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/framework/utils/file"
 )
 
 // NewFile 实例化控制层
@@ -26,13 +27,13 @@ type FileController struct{}
 func (s *FileController) Download(c *gin.Context) {
 	filePath := c.Param("filePath")
 	if len(filePath) < 8 {
-		c.JSON(400, response.CodeMsg(40010, "bind err: filePath not is base64 string"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: filePath not is base64 string"))
 		return
 	}
 	// base64解析出地址
 	decodedBytes, err := base64.StdEncoding.DecodeString(filePath)
 	if err != nil {
-		c.JSON(400, response.CodeMsg(40010, "decode err: filePath not is base64 string"))
+		c.JSON(400, resp.CodeMsg(40010, "decode err: filePath not is base64 string"))
 		return
 	}
 	routerPath := string(decodedBytes)
@@ -41,7 +42,7 @@ func (s *FileController) Download(c *gin.Context) {
 	headerRange := c.GetHeader("Range")
 	resultMap, err := file.ReadUploadFileStream(routerPath, headerRange)
 	if err != nil {
-		c.JSON(200, response.ErrMsg(err.Error()))
+		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 
@@ -69,13 +70,13 @@ func (s *FileController) Upload(c *gin.Context) {
 	// 上传的文件
 	formFile, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(400, response.CodeMsg(40010, "bind err: file is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: file is empty"))
 		return
 	}
 	// 子路径需要在指定范围内
 	subPath := c.PostForm("subPath")
 	if _, ok := constants.UPLOAD_SUB_PATH[subPath]; subPath != "" && !ok {
-		c.JSON(400, response.CodeMsg(40010, "bind err: subPath not in range"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: subPath not in range"))
 		return
 	}
 	if subPath == "" {
@@ -85,11 +86,11 @@ func (s *FileController) Upload(c *gin.Context) {
 	// 上传文件转存
 	uploadFilePath, err := file.TransferUploadFile(formFile, subPath, nil)
 	if err != nil {
-		c.JSON(200, response.ErrMsg(err.Error()))
+		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 
-	c.JSON(200, response.OkData(map[string]string{
+	c.JSON(200, resp.OkData(map[string]string{
 		"url":              "http://" + c.Request.Host + uploadFilePath,
 		"filePath":         uploadFilePath,
 		"newFileName":      filepath.Base(uploadFilePath),
@@ -106,18 +107,18 @@ func (s *FileController) ChunkCheck(c *gin.Context) {
 		FileName   string `json:"fileName" binding:"required"`   // 文件名
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
-		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
 
 	// 读取标识目录
 	chunks, err := file.ChunkCheckFile(body.Identifier, body.FileName)
 	if err != nil {
-		c.JSON(200, response.ErrMsg(err.Error()))
+		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
-	c.JSON(200, response.OkData(chunks))
+	c.JSON(200, resp.OkData(chunks))
 }
 
 // ChunkMerge 切片文件合并
@@ -130,13 +131,13 @@ func (s *FileController) ChunkMerge(c *gin.Context) {
 		SubPath    string `json:"subPath"`                       // 子路径类型
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
-		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
 	// 子路径需要在指定范围内
 	if _, ok := constants.UPLOAD_SUB_PATH[body.SubPath]; body.SubPath != "" && !ok {
-		c.JSON(400, response.CodeMsg(40010, "bind err: subPath not in range"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: subPath not in range"))
 		return
 	}
 	if body.SubPath == "" {
@@ -146,11 +147,11 @@ func (s *FileController) ChunkMerge(c *gin.Context) {
 	// 切片文件合并
 	mergeFilePath, err := file.ChunkMergeFile(body.Identifier, body.FileName, body.SubPath)
 	if err != nil {
-		c.JSON(200, response.ErrMsg(err.Error()))
+		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 
-	c.JSON(200, response.OkData(map[string]string{
+	c.JSON(200, resp.OkData(map[string]string{
 		"url":              "http://" + c.Request.Host + mergeFilePath,
 		"filePath":         mergeFilePath,
 		"newFileName":      filepath.Base(mergeFilePath),
@@ -165,7 +166,7 @@ func (s *FileController) ChunkUpload(c *gin.Context) {
 	// 上传的文件
 	formFile, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(400, response.CodeMsg(40010, "bind err: file is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: file is empty"))
 		return
 	}
 	// 切片编号
@@ -173,15 +174,15 @@ func (s *FileController) ChunkUpload(c *gin.Context) {
 	// 切片唯一标识
 	identifier := c.PostForm("identifier")
 	if index == "" || identifier == "" {
-		c.JSON(400, response.CodeMsg(40010, "bind err: index and identifier must be set"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: index and identifier must be set"))
 		return
 	}
 
 	// 上传文件转存
 	chunkFilePath, err := file.TransferChunkUploadFile(formFile, index, identifier)
 	if err != nil {
-		c.JSON(200, response.ErrMsg(err.Error()))
+		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
-	c.JSON(206, response.OkData(chunkFilePath))
+	c.JSON(206, resp.OkData(chunkFilePath))
 }

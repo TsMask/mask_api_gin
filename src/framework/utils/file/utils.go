@@ -1,12 +1,6 @@
 package file
 
 import (
-	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/generate"
-	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/regular"
-
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -15,6 +9,12 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"mask_api_gin/src/framework/config"
+	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/utils/generate"
+	"mask_api_gin/src/framework/utils/parse"
+	"mask_api_gin/src/framework/utils/regular"
 )
 
 // 文件上传路径 prefix, dir

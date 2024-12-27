@@ -2,11 +2,11 @@ package middleware
 
 import (
 	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/context"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/ip2region"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/response"
+	"mask_api_gin/src/framework/reqctx"
+	"mask_api_gin/src/framework/resp"
 
 	"encoding/json"
 	"strconv"
@@ -33,7 +33,7 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 		}
 
 		// 提交参数
-		params := context.RequestParamsMap(c)
+		params := reqctx.RequestParamsMap(c)
 		paramsJSONByte, err := json.Marshal(params)
 		if err != nil {
 			logger.Errorf("RepeatSubmit params json marshal err: %v", err)
@@ -60,7 +60,7 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 
 			// 小于间隔时间且参数内容一致
 			if compareTime < interval && compareParams {
-				c.JSON(200, response.ErrMsg("不允许重复提交，请稍候再试"))
+				c.JSON(200, resp.ErrMsg("不允许重复提交，请稍候再试"))
 				c.Abort()
 				return
 			}

@@ -1,13 +1,13 @@
 package catch
 
 import (
-	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/response"
-
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+
+	"mask_api_gin/src/framework/config"
+	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/resp"
 )
 
 // ErrorCatch 全局异常捕获
@@ -20,14 +20,14 @@ func ErrorCatch() gin.HandlerFunc {
 
 				// 返回错误响应给客户端
 				if config.Env() == "prod" {
-					c.JSON(500, response.CodeMsg(50000, "internal error"))
+					c.JSON(500, resp.CodeMsg(50000, "internal error"))
 				} else {
 					// 通过实现 error 接口的 Error() 方法自定义错误类型进行捕获
 					switch v := err.(type) {
 					case error:
-						c.JSON(500, response.CodeMsg(50000, v.Error()))
+						c.JSON(500, resp.CodeMsg(50000, v.Error()))
 					default:
-						c.JSON(500, response.CodeMsg(50000, fmt.Sprint(err)))
+						c.JSON(500, resp.CodeMsg(50000, fmt.Sprint(err)))
 					}
 				}
 

@@ -1,14 +1,14 @@
 package controller
 
 import (
-	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/database/redis"
-	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/modules/monitor/model"
-
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+
+	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/database/redis"
+	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/modules/monitor/model"
 )
 
 // NewSysCache 实例化控制层
@@ -23,7 +23,7 @@ type SysCacheController struct{}
 //
 // GET /
 func (s SysCacheController) Info(c *gin.Context) {
-	c.JSON(200, response.OkData(map[string]any{
+	c.JSON(200, resp.OkData(map[string]any{
 		"info":         redis.Info(""),
 		"dbSize":       redis.KeySize(""),
 		"commandStats": redis.CommandStats(""),
@@ -43,7 +43,7 @@ func (s SysCacheController) Names(c *gin.Context) {
 		model.NewSysCacheNames("限流处理", constants.CACHE_RATE_LIMIT),
 		model.NewSysCacheNames("密码错误次数", constants.CACHE_PWD_ERR_COUNT),
 	}
-	c.JSON(200, response.OkData(caches))
+	c.JSON(200, resp.OkData(caches))
 }
 
 // Keys 缓存名称下键名列表
@@ -54,8 +54,8 @@ func (s SysCacheController) Keys(c *gin.Context) {
 		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
-		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
 
@@ -65,7 +65,7 @@ func (s SysCacheController) Keys(c *gin.Context) {
 		caches = append(caches, model.NewSysCacheKeys(query.CacheName, key))
 	}
 
-	c.JSON(200, response.OkData(caches))
+	c.JSON(200, resp.OkData(caches))
 }
 
 // Value 缓存内容信息
@@ -77,18 +77,18 @@ func (s SysCacheController) Value(c *gin.Context) {
 		CacheKey  string `form:"cacheKey" binding:"required"`  // 键名列表中得到的缓存键名
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
-		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
 
 	cacheValue, err := redis.Get("", query.CacheName+":"+query.CacheKey)
 	if err != nil {
-		c.JSON(200, response.ErrMsg(err.Error()))
+		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 	sysCache := model.NewSysCacheValue(query.CacheName, query.CacheKey, cacheValue)
-	c.JSON(200, response.OkData(sysCache))
+	c.JSON(200, resp.OkData(sysCache))
 }
 
 // CleanNames 缓存名称列表安全删除
@@ -110,7 +110,7 @@ func (s SysCacheController) CleanNames(c *gin.Context) {
 		}
 		_ = redis.DelKeys("", cacheKeys)
 	}
-	c.JSON(200, response.Ok(nil))
+	c.JSON(200, resp.Ok(nil))
 }
 
 // CleanKeys 缓存名称下键名删除
@@ -121,26 +121,26 @@ func (s SysCacheController) CleanKeys(c *gin.Context) {
 		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
-		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
 	if constants.CACHE_LOGIN_TOKEN == query.CacheName {
-		c.JSON(200, response.ErrMsg("不能删除用户信息缓存"))
+		c.JSON(200, resp.ErrMsg("不能删除用户信息缓存"))
 		return
 	}
 
 	cacheKeys, err := redis.GetKeys("", query.CacheName+":*")
 	if err != nil {
-		c.JSON(200, response.ErrMsg(err.Error()))
+		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 
 	if err = redis.DelKeys("", cacheKeys); err != nil {
-		c.JSON(200, response.ErrMsg(err.Error()))
+		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
-	c.JSON(200, response.Ok(nil))
+	c.JSON(200, resp.Ok(nil))
 }
 
 // CleanValue 缓存内容删除
@@ -152,14 +152,14 @@ func (s SysCacheController) CleanValue(c *gin.Context) {
 		CacheKey  string `form:"cacheKey" binding:"required"`  // 键名列表中得到的缓存键名
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
-		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
 
 	if err := redis.Del("", query.CacheName+":"+query.CacheKey); err != nil {
-		c.JSON(200, response.ErrMsg(err.Error()))
+		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
-	c.JSON(200, response.Ok(nil))
+	c.JSON(200, resp.Ok(nil))
 }

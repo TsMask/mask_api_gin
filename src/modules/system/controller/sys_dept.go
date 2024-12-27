@@ -1,16 +1,16 @@
 package controller
 
 import (
-	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/context"
-	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/modules/system/model"
-	"mask_api_gin/src/modules/system/service"
-
 	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
+	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/reqctx"
+	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/modules/system/model"
+	"mask_api_gin/src/modules/system/service"
 )
 
 // NewSysDept 实例化控制层
@@ -36,8 +36,8 @@ func (s SysDeptController) List(c *gin.Context) {
 		Status   string `form:"status"`   // 部门状态（0正常 1停用）
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
-		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
 
@@ -47,9 +47,9 @@ func (s SysDeptController) List(c *gin.Context) {
 		DeptName:   query.DeptName,
 		StatusFlag: query.Status,
 	}
-	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "sys_dept", "")
+	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_dept", "")
 	data := s.sysDeptService.Find(SysDeptController, dataScopeSQL)
-	c.JSON(200, response.OkData(data))
+	c.JSON(200, resp.OkData(data))
 }
 
 // Info 部门信息
@@ -58,16 +58,16 @@ func (s SysDeptController) List(c *gin.Context) {
 func (s SysDeptController) Info(c *gin.Context) {
 	deptId := c.Param("deptId")
 	if deptId == "" {
-		c.JSON(400, response.CodeMsg(40010, "bind err: deptId is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: deptId is empty"))
 		return
 	}
 
 	data := s.sysDeptService.FindById(deptId)
 	if data.DeptId == deptId {
-		c.JSON(200, response.OkData(data))
+		c.JSON(200, resp.OkData(data))
 		return
 	}
-	c.JSON(200, response.Err(nil))
+	c.JSON(200, resp.Err(nil))
 }
 
 // Add 部门新增
@@ -76,12 +76,12 @@ func (s SysDeptController) Info(c *gin.Context) {
 func (s SysDeptController) Add(c *gin.Context) {
 	var body model.SysDept
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
-		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
 	if body.DeptId != "" {
-		c.JSON(400, response.CodeMsg(40010, "bind err: deptId not is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: deptId not is empty"))
 		return
 	}
 
@@ -89,17 +89,17 @@ func (s SysDeptController) Add(c *gin.Context) {
 	if body.ParentId != "0" {
 		deptParent := s.sysDeptService.FindById(body.ParentId)
 		if deptParent.DeptId != body.ParentId {
-			c.JSON(200, response.ErrMsg("没有权限访问部门数据！"))
+			c.JSON(200, resp.ErrMsg("没有权限访问部门数据！"))
 			return
 		}
 		if deptParent.StatusFlag == constants.STATUS_NO {
 			msg := fmt.Sprintf("上级部门【%s】停用，不允许新增", deptParent.DeptName)
-			c.JSON(200, response.ErrMsg(msg))
+			c.JSON(200, resp.ErrMsg(msg))
 			return
 		}
 		if deptParent.DelFlag == constants.STATUS_YES {
 			msg := fmt.Sprintf("上级部门【%s】已删除，不允许新增", deptParent.DeptName)
-			c.JSON(200, response.ErrMsg(msg))
+			c.JSON(200, resp.ErrMsg(msg))
 			return
 		}
 		body.Ancestors = fmt.Sprintf("%s,%s", deptParent.Ancestors, body.ParentId)
@@ -111,17 +111,17 @@ func (s SysDeptController) Add(c *gin.Context) {
 	uniqueDeptName := s.sysDeptService.CheckUniqueParentIdByDeptName(body.ParentId, body.DeptName, "")
 	if !uniqueDeptName {
 		msg := fmt.Sprintf("部门新增【%s】失败，部门名称已存在", body.DeptName)
-		c.JSON(200, response.ErrMsg(msg))
+		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
-	body.CreateBy = context.LoginUserToUserName(c)
+	body.CreateBy = reqctx.LoginUserToUserName(c)
 	insertId := s.sysDeptService.Insert(body)
 	if insertId != "" {
-		c.JSON(200, response.OkData(insertId))
+		c.JSON(200, resp.OkData(insertId))
 		return
 	}
-	c.JSON(200, response.Err(nil))
+	c.JSON(200, resp.Err(nil))
 }
 
 // Edit 部门修改
@@ -130,26 +130,26 @@ func (s SysDeptController) Add(c *gin.Context) {
 func (s SysDeptController) Edit(c *gin.Context) {
 	var body model.SysDept
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
-		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
 	if body.DeptId == "" {
-		c.JSON(400, response.CodeMsg(40010, "bind err: deptId is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: deptId is empty"))
 		return
 	}
 
 	// 上级部门不能选自己
 	if body.DeptId == body.ParentId {
 		msg := fmt.Sprintf("部门修改【%s】失败，上级部门不能是自己", body.DeptName)
-		c.JSON(200, response.ErrMsg(msg))
+		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
 	// 检查数据是否存在
 	deptInfo := s.sysDeptService.FindById(body.DeptId)
 	if deptInfo.DeptId != body.DeptId {
-		c.JSON(200, response.ErrMsg("没有权限访问部门数据！"))
+		c.JSON(200, resp.ErrMsg("没有权限访问部门数据！"))
 		return
 	}
 
@@ -157,7 +157,7 @@ func (s SysDeptController) Edit(c *gin.Context) {
 	if body.ParentId != "0" {
 		deptParent := s.sysDeptService.FindById(body.ParentId)
 		if deptParent.DeptId != body.ParentId {
-			c.JSON(200, response.ErrMsg("没有权限访问部门数据！"))
+			c.JSON(200, resp.ErrMsg("没有权限访问部门数据！"))
 			return
 		}
 	}
@@ -166,7 +166,7 @@ func (s SysDeptController) Edit(c *gin.Context) {
 	uniqueDeptName := s.sysDeptService.CheckUniqueParentIdByDeptName(body.ParentId, body.DeptName, body.DeptId)
 	if !uniqueDeptName {
 		msg := fmt.Sprintf("部门修改【%s】失败，部门名称已存在", body.DeptName)
-		c.JSON(200, response.ErrMsg(msg))
+		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
@@ -175,7 +175,7 @@ func (s SysDeptController) Edit(c *gin.Context) {
 		hasChild := s.sysDeptService.ExistChildrenByDeptId(body.DeptId)
 		if hasChild > 0 {
 			msg := fmt.Sprintf("该部门包含未停用的子部门数量：%d", hasChild)
-			c.JSON(200, response.ErrMsg(msg))
+			c.JSON(200, resp.ErrMsg(msg))
 			return
 		}
 	}
@@ -187,13 +187,13 @@ func (s SysDeptController) Edit(c *gin.Context) {
 	deptInfo.Phone = body.Phone
 	deptInfo.Email = body.Email
 	deptInfo.StatusFlag = body.StatusFlag
-	deptInfo.UpdateBy = context.LoginUserToUserName(c)
+	deptInfo.UpdateBy = reqctx.LoginUserToUserName(c)
 	rows := s.sysDeptService.Update(deptInfo)
 	if rows > 0 {
-		c.JSON(200, response.Ok(nil))
+		c.JSON(200, resp.Ok(nil))
 		return
 	}
-	c.JSON(200, response.Err(nil))
+	c.JSON(200, resp.Err(nil))
 }
 
 // Remove 部门删除
@@ -202,14 +202,14 @@ func (s SysDeptController) Edit(c *gin.Context) {
 func (s SysDeptController) Remove(c *gin.Context) {
 	deptId := c.Param("deptId")
 	if deptId == "" {
-		c.JSON(400, response.CodeMsg(40010, "bind err: deptId is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: deptId is empty"))
 		return
 	}
 
 	// 检查数据是否存在
 	dept := s.sysDeptService.FindById(deptId)
 	if dept.DeptId != deptId {
-		c.JSON(200, response.ErrMsg("没有权限访问部门数据！"))
+		c.JSON(200, resp.ErrMsg("没有权限访问部门数据！"))
 		return
 	}
 
@@ -217,7 +217,7 @@ func (s SysDeptController) Remove(c *gin.Context) {
 	hasChild := s.sysDeptService.ExistChildrenByDeptId(deptId)
 	if hasChild > 0 {
 		msg := fmt.Sprintf("不允许删除，存在子部门数：%d", hasChild)
-		c.JSON(200, response.ErrMsg(msg))
+		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
@@ -225,17 +225,17 @@ func (s SysDeptController) Remove(c *gin.Context) {
 	existUser := s.sysDeptService.ExistUserByDeptId(deptId)
 	if existUser > 0 {
 		msg := fmt.Sprintf("不允许删除，部门已分配给用户数：%d", existUser)
-		c.JSON(200, response.ErrMsg(msg))
+		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
 	rows := s.sysDeptService.DeleteById(deptId)
 	if rows > 0 {
 		msg := fmt.Sprintf("删除成功：%d", rows)
-		c.JSON(200, response.OkMsg(msg))
+		c.JSON(200, resp.OkMsg(msg))
 		return
 	}
-	c.JSON(200, response.Err(nil))
+	c.JSON(200, resp.Err(nil))
 }
 
 // ExcludeChild 部门列表（排除节点）
@@ -244,11 +244,11 @@ func (s SysDeptController) Remove(c *gin.Context) {
 func (s SysDeptController) ExcludeChild(c *gin.Context) {
 	deptId := c.Param("deptId")
 	if deptId == "" {
-		c.JSON(400, response.CodeMsg(40010, "bind err: deptId is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: deptId is empty"))
 		return
 	}
 
-	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "sys_dept", "")
+	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_dept", "")
 	data := s.sysDeptService.Find(model.SysDept{}, dataScopeSQL)
 
 	// 过滤排除节点
@@ -266,7 +266,7 @@ func (s SysDeptController) ExcludeChild(c *gin.Context) {
 			filtered = append(filtered, dept)
 		}
 	}
-	c.JSON(200, response.OkData(filtered))
+	c.JSON(200, resp.OkData(filtered))
 }
 
 // Tree 部门树结构列表
@@ -280,8 +280,8 @@ func (s SysDeptController) Tree(c *gin.Context) {
 		StatusFlag string `form:"statusFlag"` // 部门状态（0正常 1停用）
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
-		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
 
@@ -291,9 +291,9 @@ func (s SysDeptController) Tree(c *gin.Context) {
 		DeptName:   query.DeptName,
 		StatusFlag: query.StatusFlag,
 	}
-	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "sys_dept", "")
+	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_dept", "")
 	data := s.sysDeptService.BuildTreeSelect(sysDept, dataScopeSQL)
-	c.JSON(200, response.OkData(data))
+	c.JSON(200, resp.OkData(data))
 }
 
 // TreeRole 部门树结构列表（指定角色）
@@ -302,14 +302,14 @@ func (s SysDeptController) Tree(c *gin.Context) {
 func (s SysDeptController) TreeRole(c *gin.Context) {
 	roleId := c.Param("roleId")
 	if roleId == "" {
-		c.JSON(400, response.CodeMsg(40010, "bind err: roleId is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: roleId is empty"))
 		return
 	}
 
-	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "sys_dept", "")
+	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_dept", "")
 	deptTreeSelect := s.sysDeptService.BuildTreeSelect(model.SysDept{}, dataScopeSQL)
 	checkedKeys := s.sysDeptService.FindDeptIdsByRoleId(roleId)
-	c.JSON(200, response.OkData(map[string]any{
+	c.JSON(200, resp.OkData(map[string]any{
 		"depts":       deptTreeSelect,
 		"checkedKeys": checkedKeys,
 	}))

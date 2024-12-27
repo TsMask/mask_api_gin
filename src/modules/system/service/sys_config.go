@@ -1,12 +1,14 @@
 package service
 
 import (
+	"fmt"
+	"strconv"
+
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
+	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
-
-	"fmt"
 )
 
 // NewSysConfig 实例化服务层
@@ -135,4 +137,35 @@ func (s SysConfig) CacheClean(configKey string) bool {
 		return false
 	}
 	return redis.DelKeys("", keys) == nil
+}
+
+// ExportData 导出数据表格
+func (s SysConfig) ExportData(rows []model.SysConfig, fileName string) (string, error) {
+	// 第一行表头标题
+	headerCells := map[string]string{
+		"A1": "参数编号",
+		"B1": "参数名称",
+		"C1": "参数键名",
+		"D1": "参数键值",
+		"E1": "系统内置",
+	}
+	// 从第二行开始的数据
+	dataCells := make([]map[string]any, 0)
+	for i, row := range rows {
+		idx := strconv.Itoa(i + 2)
+		typeValue := "否"
+		if row.ConfigType == "Y" {
+			typeValue = "是"
+		}
+		dataCells = append(dataCells, map[string]any{
+			"A" + idx: row.ConfigId,
+			"B" + idx: row.ConfigName,
+			"C" + idx: row.ConfigKey,
+			"D" + idx: row.ConfigValue,
+			"E" + idx: typeValue,
+		})
+	}
+
+	// 导出数据表格
+	return file.WriteSheet(headerCells, dataCells, fileName, "")
 }

@@ -1,16 +1,16 @@
 package src
 
 import (
+	"fmt"
+
+	"github.com/gin-gonic/gin"
+
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/engine"
 	"mask_api_gin/src/modules/common"
 	"mask_api_gin/src/modules/demo"
 	"mask_api_gin/src/modules/monitor"
 	"mask_api_gin/src/modules/system"
-
-	"fmt"
-
-	"github.com/gin-gonic/gin"
 )
 
 // RunServer 运行服务程序

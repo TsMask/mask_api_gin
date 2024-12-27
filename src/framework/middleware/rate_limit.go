@@ -2,10 +2,10 @@ package middleware
 
 import (
 	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/context"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/ip2region"
-	"mask_api_gin/src/framework/response"
+	"mask_api_gin/src/framework/reqctx"
+	"mask_api_gin/src/framework/resp"
 
 	"fmt"
 	"strings"
@@ -62,9 +62,9 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 
 		// 用户
 		if option.Type == LIMIT_USER {
-			loginUser, err := context.LoginUser(c)
+			loginUser, err := reqctx.LoginUser(c)
 			if err != nil {
-				c.JSON(401, response.CodeMsg(40003, err.Error()))
+				c.JSON(401, resp.CodeMsg(40003, err.Error()))
 				c.Abort() // 停止执行后续的处理函数
 				return
 			}
@@ -80,13 +80,13 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 		// 在Redis查询并记录请求次数
 		rateCount, err := redis.RateLimit("", limitKey, option.Time, option.Count)
 		if err != nil {
-			c.JSON(200, response.CodeMsg(4013, "访问过于频繁，请稍候再试"))
+			c.JSON(200, resp.CodeMsg(4013, "访问过于频繁，请稍候再试"))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
 		rateTime, err := redis.GetExpire("", limitKey)
 		if err != nil {
-			c.JSON(200, response.CodeMsg(4013, "访问过于频繁，请稍候再试"))
+			c.JSON(200, resp.CodeMsg(4013, "访问过于频繁，请稍候再试"))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
@@ -97,7 +97,7 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 		c.Header("X-RateLimit-Reset", fmt.Sprintf("%d", time.Now().Unix()+rateTime)) // 重置时间戳
 
 		if rateCount >= option.Count {
-			c.JSON(200, response.CodeMsg(4013, "访问过于频繁，请稍候再试"))
+			c.JSON(200, resp.CodeMsg(4013, "访问过于频繁，请稍候再试"))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}

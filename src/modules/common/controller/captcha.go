@@ -1,18 +1,18 @@
 package controller
 
 import (
-	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/database/redis"
-	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/parse"
-	systemService "mask_api_gin/src/modules/system/service"
-
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mojocn/base64Captcha"
+
+	"mask_api_gin/src/framework/config"
+	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/database/redis"
+	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/framework/utils/parse"
+	systemService "mask_api_gin/src/modules/system/service"
 )
 
 // NewCaptcha 实例化控制层
@@ -35,7 +35,7 @@ func (s *CaptchaController) Image(c *gin.Context) {
 	captchaEnabledStr := s.sysConfigService.FindValueByKey("sys.account.captchaEnabled")
 	captchaEnabled := parse.Boolean(captchaEnabledStr)
 	if !captchaEnabled {
-		c.JSON(200, response.OkData(map[string]any{
+		c.JSON(200, resp.OkData(map[string]any{
 			"enabled": captchaEnabled,
 		}))
 		return
@@ -120,8 +120,8 @@ func (s *CaptchaController) Image(c *gin.Context) {
 	if config.Env() == "local" {
 		text, _ := redis.Get("", verifyKey)
 		data["text"] = text
-		c.JSON(200, response.OkData(data))
+		c.JSON(200, resp.OkData(data))
 		return
 	}
-	c.JSON(200, response.OkData(data))
+	c.JSON(200, resp.OkData(data))
 }

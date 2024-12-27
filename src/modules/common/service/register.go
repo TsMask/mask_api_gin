@@ -1,13 +1,13 @@
 package service
 
 import (
+	"fmt"
+
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/utils/parse"
 	systemModel "mask_api_gin/src/modules/system/model"
 	systemService "mask_api_gin/src/modules/system/service"
-
-	"fmt"
 )
 
 // NewRegister 实例化服务层

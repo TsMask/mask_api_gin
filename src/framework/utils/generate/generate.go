@@ -1,13 +1,13 @@
 package generate
 
 import (
-	"mask_api_gin/src/framework/logger"
-
 	"crypto/rand"
 	"math/big"
 	"strings"
 
 	nanoid "github.com/matoous/go-nanoid/v2"
+
+	"mask_api_gin/src/framework/logger"
 )
 
 // Code 生成随机Code

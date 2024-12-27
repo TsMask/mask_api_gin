@@ -1,10 +1,10 @@
 package demo
 
 import (
+	"github.com/gin-gonic/gin"
+
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/demo/controller"
-
-	"github.com/gin-gonic/gin"
 )
 
 // Setup 模块路由注册

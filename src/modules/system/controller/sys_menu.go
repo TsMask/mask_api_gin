@@ -3,8 +3,8 @@ package controller
 import (
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/context"
-	"mask_api_gin/src/framework/response"
+	"mask_api_gin/src/framework/reqctx"
+	"mask_api_gin/src/framework/resp"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
@@ -38,12 +38,12 @@ func (s SysMenuController) List(c *gin.Context) {
 		query.StatusFlag = v
 	}
 
-	userId := context.LoginUserToUserID(c)
+	userId := reqctx.LoginUserToUserID(c)
 	if config.IsSystemUser(userId) {
 		userId = "0"
 	}
 	data := s.sysMenuService.Find(query, userId)
-	c.JSON(200, response.OkData(data))
+	c.JSON(200, resp.OkData(data))
 }
 
 // Info 菜单信息
@@ -52,16 +52,16 @@ func (s SysMenuController) List(c *gin.Context) {
 func (s SysMenuController) Info(c *gin.Context) {
 	menuId := c.Param("menuId")
 	if menuId == "" {
-		c.JSON(400, response.CodeMsg(40010, "bind err: menuId is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: menuId is empty"))
 		return
 	}
 
 	data := s.sysMenuService.FindById(menuId)
 	if data.MenuId == menuId {
-		c.JSON(200, response.OkData(data))
+		c.JSON(200, resp.OkData(data))
 		return
 	}
-	c.JSON(200, response.Err(nil))
+	c.JSON(200, resp.Err(nil))
 }
 
 // Add 菜单新增
@@ -70,12 +70,12 @@ func (s SysMenuController) Info(c *gin.Context) {
 func (s SysMenuController) Add(c *gin.Context) {
 	var body model.SysMenu
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
-		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
 	if body.MenuId != "" {
-		c.JSON(400, response.CodeMsg(40010, "bind err: menuId not is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: menuId not is empty"))
 		return
 	}
 
@@ -84,7 +84,7 @@ func (s SysMenuController) Add(c *gin.Context) {
 		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentId, body.MenuPath, "")
 		if !uniqueMenuPath {
 			msg := fmt.Sprintf("菜单新增【%s】失败，菜单路由地址已存在", body.MenuName)
-			c.JSON(200, response.ErrMsg(msg))
+			c.JSON(200, resp.ErrMsg(msg))
 			return
 		}
 	}
@@ -93,24 +93,24 @@ func (s SysMenuController) Add(c *gin.Context) {
 	uniqueMenuName := s.sysMenuService.CheckUniqueParentIdByMenuName(body.ParentId, body.MenuName, "")
 	if !uniqueMenuName {
 		msg := fmt.Sprintf("菜单新增【%s】失败，菜单名称已存在", body.MenuName)
-		c.JSON(200, response.ErrMsg(msg))
+		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
 	// 外链菜单需要符合网站http(s)开头
 	if body.FrameFlag == constants.STATUS_NO && !regular.ValidHttp(body.MenuPath) {
 		msg := fmt.Sprintf("菜单新增【%s】失败，非内部地址必须以http(s)://开头", body.MenuName)
-		c.JSON(200, response.ErrMsg(msg))
+		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
-	body.CreateBy = context.LoginUserToUserName(c)
+	body.CreateBy = reqctx.LoginUserToUserName(c)
 	insertId := s.sysMenuService.Insert(body)
 	if insertId != "" {
-		c.JSON(200, response.OkData(insertId))
+		c.JSON(200, resp.OkData(insertId))
 		return
 	}
-	c.JSON(200, response.Err(nil))
+	c.JSON(200, resp.Err(nil))
 }
 
 // Edit 菜单修改
@@ -119,38 +119,38 @@ func (s SysMenuController) Add(c *gin.Context) {
 func (s SysMenuController) Edit(c *gin.Context) {
 	var body model.SysMenu
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", response.FormatBindError(err))
-		c.JSON(400, response.CodeMsg(40010, errMsgs))
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
 	if body.MenuId == "" {
-		c.JSON(400, response.CodeMsg(40010, "bind err: menuId is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: menuId is empty"))
 		return
 	}
 
 	// 上级菜单不能选自己
 	if body.MenuId == body.ParentId {
 		msg := fmt.Sprintf("菜单修改【%s】失败，上级菜单不能选择自己", body.MenuName)
-		c.JSON(200, response.ErrMsg(msg))
+		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
 	// 检查数据是否存在
 	menuInfo := s.sysMenuService.FindById(body.MenuId)
 	if menuInfo.MenuId != body.MenuId {
-		c.JSON(200, response.ErrMsg("没有权限访问菜单数据"))
+		c.JSON(200, resp.ErrMsg("没有权限访问菜单数据"))
 		return
 	}
 	// 父级ID不为0是要检查
 	if body.ParentId != "0" {
 		menuParent := s.sysMenuService.FindById(body.ParentId)
 		if menuParent.MenuId != body.ParentId {
-			c.JSON(200, response.ErrMsg("没有权限访问菜单数据"))
+			c.JSON(200, resp.ErrMsg("没有权限访问菜单数据"))
 			return
 		}
 		// 禁用菜单时检查父菜单是否使用
 		if body.StatusFlag == constants.STATUS_YES && menuParent.StatusFlag == constants.STATUS_NO {
-			c.JSON(200, response.ErrMsg("上级菜单未启用！"))
+			c.JSON(200, resp.ErrMsg("上级菜单未启用！"))
 			return
 		}
 	}
@@ -160,7 +160,7 @@ func (s SysMenuController) Edit(c *gin.Context) {
 		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentId, body.MenuPath, body.MenuId)
 		if !uniqueMenuPath {
 			msg := fmt.Sprintf("菜单修改【%s】失败，菜单路由地址已存在", body.MenuName)
-			c.JSON(200, response.ErrMsg(msg))
+			c.JSON(200, resp.ErrMsg(msg))
 			return
 		}
 	}
@@ -169,14 +169,14 @@ func (s SysMenuController) Edit(c *gin.Context) {
 	uniqueMenuName := s.sysMenuService.CheckUniqueParentIdByMenuName(body.ParentId, body.MenuName, body.MenuId)
 	if !uniqueMenuName {
 		msg := fmt.Sprintf("菜单修改【%s】失败，菜单名称已存在", body.MenuName)
-		c.JSON(200, response.ErrMsg(msg))
+		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
 	// 外链菜单需要符合网站http(s)开头
 	if body.FrameFlag == constants.STATUS_NO && !regular.ValidHttp(body.MenuPath) {
 		msg := fmt.Sprintf("菜单修改【%s】失败，非内部地址必须以http(s)://开头", body.MenuName)
-		c.JSON(200, response.ErrMsg(msg))
+		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
@@ -185,7 +185,7 @@ func (s SysMenuController) Edit(c *gin.Context) {
 		hasStatus := s.sysMenuService.ExistChildrenByMenuIdAndStatus(body.MenuId, constants.STATUS_YES)
 		if hasStatus > 0 {
 			msg := fmt.Sprintf("不允许禁用，存在使用子菜单数：%d", hasStatus)
-			c.JSON(200, response.ErrMsg(msg))
+			c.JSON(200, resp.ErrMsg(msg))
 			return
 		}
 	}
@@ -203,13 +203,13 @@ func (s SysMenuController) Edit(c *gin.Context) {
 	menuInfo.Perms = body.Perms
 	menuInfo.Icon = body.Icon
 	menuInfo.Remark = body.Remark
-	menuInfo.UpdateBy = context.LoginUserToUserName(c)
+	menuInfo.UpdateBy = reqctx.LoginUserToUserName(c)
 	rows := s.sysMenuService.Update(menuInfo)
 	if rows > 0 {
-		c.JSON(200, response.Ok(nil))
+		c.JSON(200, resp.Ok(nil))
 		return
 	}
-	c.JSON(200, response.Err(nil))
+	c.JSON(200, resp.Err(nil))
 }
 
 // Remove 菜单删除
@@ -218,14 +218,14 @@ func (s SysMenuController) Edit(c *gin.Context) {
 func (s SysMenuController) Remove(c *gin.Context) {
 	menuId := c.Param("menuId")
 	if menuId == "" {
-		c.JSON(400, response.CodeMsg(40010, "bind err: menuId is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: menuId is empty"))
 		return
 	}
 
 	// 检查数据是否存在
 	menu := s.sysMenuService.FindById(menuId)
 	if menu.MenuId != menuId {
-		c.JSON(200, response.ErrMsg("没有权限访问菜单数据！"))
+		c.JSON(200, resp.ErrMsg("没有权限访问菜单数据！"))
 		return
 	}
 
@@ -233,7 +233,7 @@ func (s SysMenuController) Remove(c *gin.Context) {
 	hasChild := s.sysMenuService.ExistChildrenByMenuIdAndStatus(menuId, "")
 	if hasChild > 0 {
 		msg := fmt.Sprintf("不允许删除，存在子菜单数：%d", hasChild)
-		c.JSON(200, response.ErrMsg(msg))
+		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
@@ -241,17 +241,17 @@ func (s SysMenuController) Remove(c *gin.Context) {
 	existRole := s.sysMenuService.ExistRoleByMenuId(menuId)
 	if existRole > 0 {
 		msg := fmt.Sprintf("不允许删除，菜单已分配给角色数：%d", existRole)
-		c.JSON(200, response.ErrMsg(msg))
+		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
 	rows := s.sysMenuService.DeleteById(menuId)
 	if rows > 0 {
 		msg := fmt.Sprintf("删除成功：%d", rows)
-		c.JSON(200, response.OkMsg(msg))
+		c.JSON(200, resp.OkMsg(msg))
 		return
 	}
-	c.JSON(200, response.Err(nil))
+	c.JSON(200, resp.Err(nil))
 }
 
 // Tree 菜单树结构列表
@@ -266,12 +266,12 @@ func (s SysMenuController) Tree(c *gin.Context) {
 		query.StatusFlag = v
 	}
 
-	userId := context.LoginUserToUserID(c)
+	userId := reqctx.LoginUserToUserID(c)
 	if config.IsSystemUser(userId) {
 		userId = "0"
 	}
 	data := s.sysMenuService.BuildTreeSelectByUserId(query, userId)
-	c.JSON(200, response.OkData(data))
+	c.JSON(200, resp.OkData(data))
 
 }
 
@@ -281,7 +281,7 @@ func (s SysMenuController) Tree(c *gin.Context) {
 func (s SysMenuController) TreeRole(c *gin.Context) {
 	roleId := c.Param("roleId")
 	if roleId == "" {
-		c.JSON(400, response.CodeMsg(40010, "bind err: roleId is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: roleId is empty"))
 		return
 	}
 
@@ -293,13 +293,13 @@ func (s SysMenuController) TreeRole(c *gin.Context) {
 		query.StatusFlag = v
 	}
 
-	userId := context.LoginUserToUserID(c)
+	userId := reqctx.LoginUserToUserID(c)
 	if config.IsSystemUser(userId) {
 		userId = "0"
 	}
 	menuTreeSelect := s.sysMenuService.BuildTreeSelectByUserId(query, userId)
 	checkedKeys := s.sysMenuService.FindByRoleId(roleId)
-	c.JSON(200, response.OkData(map[string]any{
+	c.JSON(200, resp.OkData(map[string]any{
 		"menus":       menuTreeSelect,
 		"checkedKeys": checkedKeys,
 	}))

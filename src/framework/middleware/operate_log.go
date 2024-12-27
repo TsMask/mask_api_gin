@@ -1,13 +1,6 @@
 package middleware
 
 import (
-	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/context"
-	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/modules/system/model"
-	"mask_api_gin/src/modules/system/service"
-
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -15,6 +8,13 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/reqctx"
+	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/framework/utils/parse"
+	"mask_api_gin/src/modules/system/model"
+	"mask_api_gin/src/modules/system/service"
 )
 
 const (
@@ -83,12 +83,12 @@ func OperateLog(options Options) gin.HandlerFunc {
 		funcName = funcName[lastDotIndex+1:]
 
 		// 解析ip地址
-		ipaddr, location := context.IPAddrLocation(c)
+		ipaddr, location := reqctx.IPAddrLocation(c)
 
 		// 获取登录用户信息
-		loginUser, err := context.LoginUser(c)
+		loginUser, err := reqctx.LoginUser(c)
 		if err != nil {
-			c.JSON(401, response.CodeMsg(401, "无效身份授权"))
+			c.JSON(401, resp.CodeMsg(401, "无效身份授权"))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
@@ -107,7 +107,7 @@ func OperateLog(options Options) gin.HandlerFunc {
 
 		// 是否需要保存request，参数和值
 		if options.IsSaveRequestData {
-			params := context.RequestParamsMap(c)
+			params := reqctx.RequestParamsMap(c)
 			// 敏感属性字段进行掩码
 			processSensitiveFields(params)
 			jsonStr, _ := json.Marshal(params)

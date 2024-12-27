@@ -1,18 +1,15 @@
 package controller
 
 import (
-	"mask_api_gin/src/framework/context"
-	"mask_api_gin/src/framework/response"
-	"mask_api_gin/src/framework/utils/date"
-	"mask_api_gin/src/framework/utils/file"
-	commonService "mask_api_gin/src/modules/common/service"
-	"mask_api_gin/src/modules/system/service"
-
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"mask_api_gin/src/framework/reqctx"
+	"mask_api_gin/src/framework/resp"
+	commonService "mask_api_gin/src/modules/common/service"
+	"mask_api_gin/src/modules/system/service"
 )
 
 // NewSysLogLogin 实例化控制层
@@ -33,10 +30,10 @@ type SysLogLoginController struct {
 //
 // GET /list
 func (s SysLogLoginController) List(c *gin.Context) {
-	query := context.QueryMap(c)
-	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
+	query := reqctx.QueryMap(c)
+	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
 	rows, total := s.sysLogLoginService.FindByPage(query, dataScopeSQL)
-	c.JSON(200, response.OkData(map[string]any{"rows": rows, "total": total}))
+	c.JSON(200, resp.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
 // Clean 系统登录日志清空
@@ -44,7 +41,7 @@ func (s SysLogLoginController) List(c *gin.Context) {
 // DELETE /clean
 func (s SysLogLoginController) Clean(c *gin.Context) {
 	rows := s.sysLogLoginService.Clean()
-	c.JSON(200, response.OkData(rows))
+	c.JSON(200, resp.OkData(rows))
 }
 
 // Unlock 系统登录日志账户解锁
@@ -53,16 +50,16 @@ func (s SysLogLoginController) Clean(c *gin.Context) {
 func (s SysLogLoginController) Unlock(c *gin.Context) {
 	userName := c.Param("userName")
 	if userName == "" {
-		c.JSON(400, response.CodeMsg(40010, "bind err: userName is empty"))
+		c.JSON(400, resp.CodeMsg(40010, "bind err: userName is empty"))
 		return
 	}
 
 	ok := s.accountService.CleanLoginRecordCache(userName)
 	if ok {
-		c.JSON(200, response.Ok(nil))
+		c.JSON(200, resp.Ok(nil))
 		return
 	}
-	c.JSON(200, response.Err(nil))
+	c.JSON(200, resp.Err(nil))
 }
 
 // Export 导出系统登录日志信息
@@ -70,54 +67,20 @@ func (s SysLogLoginController) Unlock(c *gin.Context) {
 // GET /export
 func (s SysLogLoginController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
-	query := context.QueryMap(c)
-	dataScopeSQL := context.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
+	query := reqctx.QueryMap(c)
+	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
 	rows, total := s.sysLogLoginService.FindByPage(query, dataScopeSQL)
 	if total == 0 {
-		c.JSON(200, response.CodeMsg(40016, "export data record as empty"))
+		c.JSON(200, resp.CodeMsg(40016, "export data record as empty"))
 		return
 	}
 
 	// 导出文件名称
 	fileName := fmt.Sprintf("sys_log_login_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
-	// 第一行表头标题
-	headerCells := map[string]string{
-		"A1": "序号",
-		"B1": "用户账号",
-		"C1": "登录状态",
-		"D1": "登录地址",
-		"E1": "登录地点",
-		"F1": "浏览器",
-		"G1": "操作系统",
-		"H1": "提示消息",
-		"I1": "访问时间",
-	}
-	// 从第二行开始的数据
-	dataCells := make([]map[string]any, 0)
-	for i, row := range rows {
-		idx := strconv.Itoa(i + 2)
-		// 状态
-		statusValue := "失败"
-		if row.StatusFlag == "1" {
-			statusValue = "成功"
-		}
-		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.ID,
-			"B" + idx: row.UserName,
-			"C" + idx: statusValue,
-			"D" + idx: row.LoginIp,
-			"E" + idx: row.LoginLocation,
-			"F" + idx: row.Browser,
-			"G" + idx: row.OS,
-			"H" + idx: row.Msg,
-			"I" + idx: date.ParseDateToStr(row.LoginTime, date.YYYY_MM_DD_HH_MM_SS),
-		})
-	}
-
 	// 导出数据表格
-	saveFilePath, err := file.WriteSheet(headerCells, dataCells, fileName, "")
+	saveFilePath, err := s.sysLogLoginService.ExportData(rows, fileName)
 	if err != nil {
-		c.JSON(200, response.ErrMsg(err.Error()))
+		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 
