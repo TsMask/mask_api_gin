@@ -139,7 +139,7 @@ func (s Account) passwordRetryCount(userName string) (string, int64, time.Durati
 }
 
 // RoleAndMenuPerms 角色和菜单数据权限
-func (s Account) RoleAndMenuPerms(userId string, isSystemUser bool) ([]string, []string) {
+func (s Account) RoleAndMenuPerms(userId int64, isSystemUser bool) ([]string, []string) {
 	if isSystemUser {
 		return []string{constants.SYS_ROLE_SYSTEM_KEY}, []string{constants.SYS_PERMISSION_SYSTEM}
 	}
@@ -155,10 +155,10 @@ func (s Account) RoleAndMenuPerms(userId string, isSystemUser bool) ([]string, [
 }
 
 // RouteMenus 前端路由所需要的菜单
-func (s Account) RouteMenus(userId string, isSystemUser bool) []vo.Router {
+func (s Account) RouteMenus(userId int64, isSystemUser bool) []vo.Router {
 	var buildMenus []vo.Router
 	if isSystemUser {
-		menus := s.sysMenuService.BuildTreeMenusByUserId("0")
+		menus := s.sysMenuService.BuildTreeMenusByUserId(0)
 		buildMenus = s.sysMenuService.BuildRouteMenus(menus, "")
 	} else {
 		menus := s.sysMenuService.BuildTreeMenusByUserId(userId)

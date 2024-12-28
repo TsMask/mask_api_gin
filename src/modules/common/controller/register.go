@@ -72,7 +72,7 @@ func (s *RegisterController) Register(c *gin.Context) {
 
 	userId, err := s.registerService.ByUserName(body.Username, body.Password)
 	if err == nil {
-		msg := fmt.Sprintf("%s 注册成功 %s", body.Username, userId)
+		msg := fmt.Sprintf("%s 注册成功 %d", body.Username, userId)
 		s.sysLogLoginService.Insert(
 			body.Username, constants.STATUS_YES, msg,
 			[4]string{ipaddr, location, os, browser},

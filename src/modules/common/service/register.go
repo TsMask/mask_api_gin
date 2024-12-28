@@ -47,18 +47,18 @@ func (s Register) ValidateCaptcha(code, uuid string) error {
 }
 
 // ByUserName 账号注册
-func (s Register) ByUserName(username, password string) (string, error) {
+func (s Register) ByUserName(username, password string) (int64, error) {
 	// 是否开启用户注册功能 true开启，false关闭
 	registerUserStr := s.sysConfigService.FindValueByKey("sys.account.registerUser")
 	captchaEnabled := parse.Boolean(registerUserStr)
 	if !captchaEnabled {
-		return "", fmt.Errorf("很抱歉，系统已关闭外部用户注册通道")
+		return 0, fmt.Errorf("很抱歉，系统已关闭外部用户注册通道")
 	}
 
 	// 检查用户登录账号是否唯一
-	uniqueUserName := s.sysUserService.CheckUniqueByUserName(username, "")
+	uniqueUserName := s.sysUserService.CheckUniqueByUserName(username, 0)
 	if !uniqueUserName {
-		return "", fmt.Errorf("注册用户【%s】失败，注册账号已存在", username)
+		return 0, fmt.Errorf("注册用户【%s】失败，注册账号已存在", username)
 	}
 
 	sysUser := systemModel.SysUser{
@@ -67,7 +67,7 @@ func (s Register) ByUserName(username, password string) (string, error) {
 		Password:   password,             // 原始密码
 		Sex:        "0",                  // 性别未选择
 		StatusFlag: constants.STATUS_YES, // 账号状态激活
-		DeptId:     "100",                // 归属部门为根节点
+		DeptId:     100,                  // 归属部门为根节点
 		CreateBy:   "register",           // 创建来源
 	}
 
@@ -77,18 +77,18 @@ func (s Register) ByUserName(username, password string) (string, error) {
 	sysUser.PostIds = s.registerPostInit()
 
 	insertId := s.sysUserService.Insert(sysUser)
-	if insertId != "" {
+	if insertId > 0 {
 		return insertId, nil
 	}
-	return "", fmt.Errorf("注册用户【%s】失败，请联系系统管理人员", username)
+	return 0, fmt.Errorf("注册用户【%s】失败，请联系系统管理人员", username)
 }
 
 // registerRoleInit 注册初始角色
-func (s Register) registerRoleInit() []string {
-	return []string{}
+func (s Register) registerRoleInit() []int64 {
+	return []int64{}
 }
 
 // registerPostInit 注册初始岗位
-func (s Register) registerPostInit() []string {
-	return []string{}
+func (s Register) registerPostInit() []int64 {
+	return []int64{}
 }
