@@ -46,8 +46,8 @@ func (s SysUserController) List(c *gin.Context) {
 //
 // GET /:userId
 func (s SysUserController) Info(c *gin.Context) {
-	userId := c.Param("userId")
-	if userId == "" {
+	userId := parse.Number(c.Param("userId"))
+	if userId < 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: userId is empty"))
 		return
 	}
@@ -58,7 +58,7 @@ func (s SysUserController) Info(c *gin.Context) {
 	posts := s.sysPostService.Find(model.SysPost{})
 
 	// 新增用户时，用户ID为0
-	if userId == "0" {
+	if userId == 0 {
 		c.JSON(200, resp.OkData(map[string]any{
 			"user":    map[string]any{},
 			"roleIds": []string{},
@@ -77,13 +77,13 @@ func (s SysUserController) Info(c *gin.Context) {
 	}
 
 	// 角色ID组
-	roleIds := make([]string, 0)
+	roleIds := make([]int64, 0)
 	for _, r := range userInfo.Roles {
 		roleIds = append(roleIds, r.RoleId)
 	}
 
 	// 岗位ID组
-	postIds := make([]string, 0)
+	postIds := make([]int64, 0)
 	userPosts := s.sysPostService.FindByUserId(userId)
 	for _, p := range userPosts {
 		postIds = append(postIds, p.PostId)
@@ -107,7 +107,7 @@ func (s SysUserController) Add(c *gin.Context) {
 		c.JSON(400, resp.ErrMsg(resp.FormatBindError(err)))
 		return
 	}
-	if body.UserId != "" {
+	if body.UserId > 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: userId not is empty"))
 		return
 	}
@@ -124,7 +124,7 @@ func (s SysUserController) Add(c *gin.Context) {
 	body.Password = bodyPassword.Password
 
 	// 检查用户登录账号是否唯一
-	uniqueUserName := s.sysUserService.CheckUniqueByUserName(body.UserName, "")
+	uniqueUserName := s.sysUserService.CheckUniqueByUserName(body.UserName, 0)
 	if !uniqueUserName {
 		msg := fmt.Sprintf("新增用户【%s】失败，登录账号已存在", body.UserName)
 		c.JSON(200, resp.ErrMsg(msg))
@@ -134,7 +134,7 @@ func (s SysUserController) Add(c *gin.Context) {
 	// 检查手机号码格式并判断是否唯一
 	if body.Phone != "" {
 		if regular.ValidMobile(body.Phone) {
-			uniquePhone := s.sysUserService.CheckUniqueByPhone(body.Phone, "")
+			uniquePhone := s.sysUserService.CheckUniqueByPhone(body.Phone, 0)
 			if !uniquePhone {
 				msg := fmt.Sprintf("新增用户【%s】失败，手机号码已存在", body.UserName)
 				c.JSON(200, resp.ErrMsg(msg))
@@ -150,7 +150,7 @@ func (s SysUserController) Add(c *gin.Context) {
 	// 检查邮箱格式并判断是否唯一
 	if body.Email != "" {
 		if regular.ValidEmail(body.Email) {
-			uniqueEmail := s.sysUserService.CheckUniqueByEmail(body.Email, "")
+			uniqueEmail := s.sysUserService.CheckUniqueByEmail(body.Email, 0)
 			if !uniqueEmail {
 				msg := fmt.Sprintf("新增用户【%s】失败，邮箱已存在", body.UserName)
 				c.JSON(200, resp.ErrMsg(msg))
@@ -179,7 +179,7 @@ func (s SysUserController) Add(c *gin.Context) {
 		CreateBy:   reqctx.LoginUserToUserName(c),
 	}
 	insertId := s.sysUserService.Insert(userInfo)
-	if insertId != "" {
+	if insertId > 0 {
 		c.JSON(200, resp.OkData(insertId))
 		return
 	}
@@ -196,7 +196,7 @@ func (s SysUserController) Edit(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.UserId == "" {
+	if body.UserId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: userId is empty"))
 		return
 	}
@@ -273,10 +273,16 @@ func (s SysUserController) Edit(c *gin.Context) {
 // DELETE /:userId
 func (s SysUserController) Remove(c *gin.Context) {
 	userIdsStr := c.Param("userId")
-	userIds := parse.RemoveDuplicatesToArray(userIdsStr, ",")
-	if userIdsStr == "" || len(userIds) <= 0 {
+	arr := parse.RemoveDuplicatesToArray(userIdsStr, ",")
+	if userIdsStr == "" || len(arr) <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: userId is empty"))
 		return
+	}
+
+	// 转换成int64数组类型
+	userIds := make([]int64, 0)
+	for _, v := range arr {
+		userIds = append(userIds, parse.Number(v))
 	}
 
 	loginUserID := reqctx.LoginUserToUserID(c)
@@ -307,7 +313,7 @@ func (s SysUserController) Remove(c *gin.Context) {
 // PUT /password
 func (s SysUserController) Password(c *gin.Context) {
 	var body struct {
-		UserId   string `json:"userId" binding:"required"`
+		UserId   int64  `json:"userId" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
@@ -349,7 +355,7 @@ func (s SysUserController) Password(c *gin.Context) {
 // PUT /status
 func (s SysUserController) Status(c *gin.Context) {
 	var body struct {
-		UserId     string `json:"userId" binding:"required"`
+		UserId     int64  `json:"userId" binding:"required"`
 		StatusFlag string `json:"statusFlag" binding:"required,oneof=0 1"`
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {

@@ -41,8 +41,8 @@ func (s SysRoleController) List(c *gin.Context) {
 //
 // GET /:roleId
 func (s SysRoleController) Info(c *gin.Context) {
-	roleId := c.Param("roleId")
-	if roleId == "" {
+	roleId := parse.Number(c.Param("roleId"))
+	if roleId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: roleId is empty"))
 		return
 	}
@@ -65,13 +65,13 @@ func (s SysRoleController) Add(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.RoleId != "" {
+	if body.RoleId > 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: roleId not is empty"))
 		return
 	}
 
 	// 判断角色名称是否唯一
-	uniqueRoleName := s.sysRoleService.CheckUniqueByName(body.RoleName, "")
+	uniqueRoleName := s.sysRoleService.CheckUniqueByName(body.RoleName, 0)
 	if !uniqueRoleName {
 		msg := fmt.Sprintf("角色新增【%s】失败，角色名称已存在", body.RoleName)
 		c.JSON(200, resp.ErrMsg(msg))
@@ -79,7 +79,7 @@ func (s SysRoleController) Add(c *gin.Context) {
 	}
 
 	// 判断角色键值是否唯一
-	uniqueRoleKey := s.sysRoleService.CheckUniqueByKey(body.RoleKey, "")
+	uniqueRoleKey := s.sysRoleService.CheckUniqueByKey(body.RoleKey, 0)
 	if !uniqueRoleKey {
 		msg := fmt.Sprintf("角色新增【%s】失败，角色键值已存在", body.RoleName)
 		c.JSON(200, resp.ErrMsg(msg))
@@ -88,7 +88,7 @@ func (s SysRoleController) Add(c *gin.Context) {
 
 	body.CreateBy = reqctx.LoginUserToUserName(c)
 	insertId := s.sysRoleService.Insert(body)
-	if insertId != "" {
+	if insertId > 0 {
 		c.JSON(200, resp.OkData(insertId))
 		return
 	}
@@ -105,7 +105,7 @@ func (s SysRoleController) Edit(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.RoleId == "" {
+	if body.RoleId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: roleId is empty"))
 		return
 	}
@@ -153,10 +153,16 @@ func (s SysRoleController) Edit(c *gin.Context) {
 // DELETE /:roleId
 func (s SysRoleController) Remove(c *gin.Context) {
 	roleIdsStr := c.Param("roleId")
-	roleIds := parse.RemoveDuplicatesToArray(roleIdsStr, ",")
-	if roleIdsStr == "" || len(roleIds) <= 0 {
+	arr := parse.RemoveDuplicatesToArray(roleIdsStr, ",")
+	if roleIdsStr == "" || len(arr) <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: roleId is empty"))
 		return
+	}
+
+	// 转换成int64数组类型
+	roleIds := make([]int64, 0)
+	for _, v := range arr {
+		roleIds = append(roleIds, parse.Number(v))
 	}
 
 	// 检查是否系统管理员角色
@@ -181,7 +187,7 @@ func (s SysRoleController) Remove(c *gin.Context) {
 // PUT /status
 func (s SysRoleController) Status(c *gin.Context) {
 	var body struct {
-		RoleID     string `json:"roleId" binding:"required"`               // 角色ID
+		RoleID     int64  `json:"roleId" binding:"required"`               // 角色ID
 		StatusFlag string `json:"statusFlag" binding:"required,oneof=0 1"` // 状态
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
@@ -225,10 +231,10 @@ func (s SysRoleController) Status(c *gin.Context) {
 // PUT /data-scope
 func (s SysRoleController) DataScope(c *gin.Context) {
 	var body struct {
-		RoleId            string   `json:"roleId" binding:"required"`                      // 角色ID
-		DeptIds           []string `json:"deptIds"`                                        // 部门组（数据权限）
-		DataScope         string   `json:"dataScope" binding:"required,oneof=1 2 3 4 5"`   // 数据范围（1：全部数据权限 2：自定数据权限 3：本部门数据权限 4：本部门及以下数据权限 5：仅本人数据权限）
-		DeptCheckStrictly string   `json:"deptCheckStrictly" binding:"required,oneof=0 1"` // 部门树选择项是否关联显示（0：父子不互相关联显示 1：父子互相关联显示）
+		RoleId            int64   `json:"roleId" binding:"required"`                      // 角色ID
+		DeptIds           []int64 `json:"deptIds"`                                        // 部门组（数据权限）
+		DataScope         string  `json:"dataScope" binding:"required,oneof=1 2 3 4 5"`   // 数据范围（1：全部数据权限 2：自定数据权限 3：本部门数据权限 4：本部门及以下数据权限 5：仅本人数据权限）
+		DeptCheckStrictly string  `json:"deptCheckStrictly" binding:"required,oneof=0 1"` // 部门树选择项是否关联显示（0：父子不互相关联显示 1：父子互相关联显示）
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
@@ -264,10 +270,10 @@ func (s SysRoleController) DataScope(c *gin.Context) {
 
 // UserAuthList 角色分配用户列表
 //
-// GET /user/list
+// GET /user/list?roleId=xxxx
 func (s SysRoleController) UserAuthList(c *gin.Context) {
-	roleId := c.Query("roleId")
-	if roleId == "" {
+	roleId := parse.Number(c.Query("roleId"))
+	if roleId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: roleId is empty"))
 		return
 	}
@@ -290,17 +296,16 @@ func (s SysRoleController) UserAuthList(c *gin.Context) {
 // PUT /user/auth
 func (s SysRoleController) UserAuthChecked(c *gin.Context) {
 	var body struct {
-		RoleId  string `json:"roleId" binding:"required"`  // 角色ID
-		UserIds string `json:"userIds" binding:"required"` // 用户ID组
-		Auth    bool   `json:"auth"`                       // 选择操作 添加true 取消false
+		RoleId  int64   `json:"roleId" binding:"required"`  // 角色ID
+		UserIds []int64 `json:"userIds" binding:"required"` // 用户ID组
+		Auth    bool    `json:"auth" binding:"required"`    // 选择操作 添加true 取消false
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	userIds := parse.RemoveDuplicatesToArray(body.UserIds, ",")
-	if len(userIds) <= 0 {
+	if len(body.UserIds) <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: userIds is empty"))
 		return
 	}
@@ -314,9 +319,9 @@ func (s SysRoleController) UserAuthChecked(c *gin.Context) {
 
 	var rows int64
 	if body.Auth {
-		rows = s.sysRoleService.InsertAuthUsers(body.RoleId, userIds)
+		rows = s.sysRoleService.InsertAuthUsers(body.RoleId, body.UserIds)
 	} else {
-		rows = s.sysRoleService.DeleteAuthUsers(body.RoleId, userIds)
+		rows = s.sysRoleService.DeleteAuthUsers(body.RoleId, body.UserIds)
 	}
 	if rows > 0 {
 		c.JSON(200, resp.Ok(nil))

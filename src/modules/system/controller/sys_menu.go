@@ -1,17 +1,18 @@
 package controller
 
 import (
+	"fmt"
+
+	"github.com/gin-gonic/gin"
+
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/reqctx"
 	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
-
-	"fmt"
-
-	"github.com/gin-gonic/gin"
 )
 
 // NewSysMenu 实例化控制层
@@ -40,7 +41,7 @@ func (s SysMenuController) List(c *gin.Context) {
 
 	userId := reqctx.LoginUserToUserID(c)
 	if config.IsSystemUser(userId) {
-		userId = "0"
+		userId = 0
 	}
 	data := s.sysMenuService.Find(query, userId)
 	c.JSON(200, resp.OkData(data))
@@ -50,8 +51,8 @@ func (s SysMenuController) List(c *gin.Context) {
 //
 // GET /:menuId
 func (s SysMenuController) Info(c *gin.Context) {
-	menuId := c.Param("menuId")
-	if menuId == "" {
+	menuId := parse.Number(c.Param("menuId"))
+	if menuId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: menuId is empty"))
 		return
 	}
@@ -74,14 +75,14 @@ func (s SysMenuController) Add(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.MenuId != "" {
+	if body.MenuId > 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: menuId not is empty"))
 		return
 	}
 
 	// 目录和菜单检查地址唯一
 	if constants.MENU_TYPE_DIR == body.MenuType || constants.MENU_TYPE_MENU == body.MenuType {
-		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentId, body.MenuPath, "")
+		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentId, body.MenuPath, 0)
 		if !uniqueMenuPath {
 			msg := fmt.Sprintf("菜单新增【%s】失败，菜单路由地址已存在", body.MenuName)
 			c.JSON(200, resp.ErrMsg(msg))
@@ -90,7 +91,7 @@ func (s SysMenuController) Add(c *gin.Context) {
 	}
 
 	// 检查名称唯一
-	uniqueMenuName := s.sysMenuService.CheckUniqueParentIdByMenuName(body.ParentId, body.MenuName, "")
+	uniqueMenuName := s.sysMenuService.CheckUniqueParentIdByMenuName(body.ParentId, body.MenuName, 0)
 	if !uniqueMenuName {
 		msg := fmt.Sprintf("菜单新增【%s】失败，菜单名称已存在", body.MenuName)
 		c.JSON(200, resp.ErrMsg(msg))
@@ -106,7 +107,7 @@ func (s SysMenuController) Add(c *gin.Context) {
 
 	body.CreateBy = reqctx.LoginUserToUserName(c)
 	insertId := s.sysMenuService.Insert(body)
-	if insertId != "" {
+	if insertId > 0 {
 		c.JSON(200, resp.OkData(insertId))
 		return
 	}
@@ -123,7 +124,7 @@ func (s SysMenuController) Edit(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.MenuId == "" {
+	if body.MenuId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: menuId is empty"))
 		return
 	}
@@ -142,7 +143,7 @@ func (s SysMenuController) Edit(c *gin.Context) {
 		return
 	}
 	// 父级ID不为0是要检查
-	if body.ParentId != "0" {
+	if body.ParentId > 0 {
 		menuParent := s.sysMenuService.FindById(body.ParentId)
 		if menuParent.MenuId != body.ParentId {
 			c.JSON(200, resp.ErrMsg("没有权限访问菜单数据"))
@@ -216,8 +217,8 @@ func (s SysMenuController) Edit(c *gin.Context) {
 //
 // DELETE /:menuId
 func (s SysMenuController) Remove(c *gin.Context) {
-	menuId := c.Param("menuId")
-	if menuId == "" {
+	menuId := parse.Number(c.Param("menuId"))
+	if menuId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: menuId is empty"))
 		return
 	}
@@ -268,7 +269,7 @@ func (s SysMenuController) Tree(c *gin.Context) {
 
 	userId := reqctx.LoginUserToUserID(c)
 	if config.IsSystemUser(userId) {
-		userId = "0"
+		userId = 0
 	}
 	data := s.sysMenuService.BuildTreeSelectByUserId(query, userId)
 	c.JSON(200, resp.OkData(data))
@@ -279,8 +280,8 @@ func (s SysMenuController) Tree(c *gin.Context) {
 //
 // GET /tree/role/:roleId
 func (s SysMenuController) TreeRole(c *gin.Context) {
-	roleId := c.Param("roleId")
-	if roleId == "" {
+	roleId := parse.Number(c.Param("roleId"))
+	if roleId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: roleId is empty"))
 		return
 	}
@@ -295,7 +296,7 @@ func (s SysMenuController) TreeRole(c *gin.Context) {
 
 	userId := reqctx.LoginUserToUserID(c)
 	if config.IsSystemUser(userId) {
-		userId = "0"
+		userId = 0
 	}
 	menuTreeSelect := s.sysMenuService.BuildTreeSelectByUserId(query, userId)
 	checkedKeys := s.sysMenuService.FindByRoleId(roleId)

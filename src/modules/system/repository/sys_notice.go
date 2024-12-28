@@ -97,7 +97,7 @@ func (r SysNotice) Select(sysNotice model.SysNotice) []model.SysNotice {
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysNotice) SelectByIds(noticeIds []string) []model.SysNotice {
+func (r SysNotice) SelectByIds(noticeIds []int64) []model.SysNotice {
 	rows := []model.SysNotice{}
 	if len(noticeIds) <= 0 {
 		return rows
@@ -114,7 +114,7 @@ func (r SysNotice) SelectByIds(noticeIds []string) []model.SysNotice {
 }
 
 // Insert 新增信息 返回新增数据ID
-func (r SysNotice) Insert(sysNotice model.SysNotice) string {
+func (r SysNotice) Insert(sysNotice model.SysNotice) int64 {
 	sysNotice.DelFlag = "0"
 	if sysNotice.CreateBy != "" {
 		ms := time.Now().UnixMilli()
@@ -125,14 +125,14 @@ func (r SysNotice) Insert(sysNotice model.SysNotice) string {
 	// 执行插入
 	if err := db.DB("").Create(&sysNotice).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
-		return ""
+		return 0
 	}
 	return sysNotice.NoticeId
 }
 
 // Update 修改信息 返回受影响行数
 func (r SysNotice) Update(sysNotice model.SysNotice) int64 {
-	if sysNotice.NoticeId == "" {
+	if sysNotice.NoticeId <= 0 {
 		return 0
 	}
 	if sysNotice.UpdateBy != "" {
@@ -151,7 +151,7 @@ func (r SysNotice) Update(sysNotice model.SysNotice) int64 {
 }
 
 // DeleteByIds 批量删除信息 返回受影响行数
-func (r SysNotice) DeleteByIds(noticeIds []string) int64 {
+func (r SysNotice) DeleteByIds(noticeIds []int64) int64 {
 	if len(noticeIds) <= 0 {
 		return 0
 	}

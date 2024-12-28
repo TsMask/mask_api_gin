@@ -21,10 +21,10 @@ func (r SysDept) Select(sysDept model.SysDept, dataScopeSQL string) []model.SysD
 	tx := db.DB("").Model(&model.SysDept{})
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
-	if sysDept.DeptId != "" {
+	if sysDept.DeptId > 0 {
 		tx = tx.Where("dept_id = ?", sysDept.DeptId)
 	}
-	if sysDept.ParentId != "" {
+	if sysDept.ParentId > 0 {
 		tx = tx.Where("parent_id = ?", sysDept.ParentId)
 	}
 	if sysDept.DeptName != "" {
@@ -47,8 +47,8 @@ func (r SysDept) Select(sysDept model.SysDept, dataScopeSQL string) []model.SysD
 }
 
 // SelectById 通过ID查询信息
-func (r SysDept) SelectById(deptId string) model.SysDept {
-	if deptId == "" {
+func (r SysDept) SelectById(deptId int64) model.SysDept {
+	if deptId <= 0 {
 		return model.SysDept{}
 	}
 	tx := db.DB("").Model(&model.SysDept{})
@@ -64,7 +64,7 @@ func (r SysDept) SelectById(deptId string) model.SysDept {
 }
 
 // Insert 新增信息 返回新增数据ID
-func (r SysDept) Insert(sysDept model.SysDept) string {
+func (r SysDept) Insert(sysDept model.SysDept) int64 {
 	sysDept.DelFlag = "0"
 	if sysDept.CreateBy != "" {
 		ms := time.Now().UnixMilli()
@@ -75,14 +75,14 @@ func (r SysDept) Insert(sysDept model.SysDept) string {
 	// 执行插入
 	if err := db.DB("").Create(&sysDept).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
-		return ""
+		return 0
 	}
 	return sysDept.DeptId
 }
 
 // Update 修改信息 返回受影响行数
 func (r SysDept) Update(sysDept model.SysDept) int64 {
-	if sysDept.DeptId == "" {
+	if sysDept.DeptId <= 0 {
 		return 0
 	}
 	if sysDept.UpdateBy != "" {
@@ -101,8 +101,8 @@ func (r SysDept) Update(sysDept model.SysDept) int64 {
 }
 
 // DeleteById 删除信息 返回受影响行数
-func (r SysDept) DeleteById(deptId string) int64 {
-	if deptId == "" {
+func (r SysDept) DeleteById(deptId int64) int64 {
+	if deptId <= 0 {
 		return 0
 	}
 	tx := db.DB("").Model(&model.SysDept{})
@@ -117,19 +117,19 @@ func (r SysDept) DeleteById(deptId string) int64 {
 }
 
 // CheckUnique 检查信息是否唯一 返回数据ID
-func (r SysDept) CheckUnique(sysDept model.SysDept) string {
+func (r SysDept) CheckUnique(sysDept model.SysDept) int64 {
 	tx := db.DB("").Model(&model.SysDept{})
 	tx = tx.Where("del_flag = 0")
 	// 查询条件拼接
 	if sysDept.DeptName != "" {
 		tx = tx.Where("dept_name = ?", sysDept.DeptName)
 	}
-	if sysDept.ParentId != "" {
+	if sysDept.ParentId > 0 {
 		tx = tx.Where("parent_id = ?", sysDept.ParentId)
 	}
 
 	// 查询数据
-	var id string = ""
+	var id int64 = 0
 	if err := tx.Select("dept_id").Limit(1).Find(&id).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return id
@@ -138,8 +138,8 @@ func (r SysDept) CheckUnique(sysDept model.SysDept) string {
 }
 
 // ExistChildrenByDeptId 存在子节点数量
-func (r SysDept) ExistChildrenByDeptId(deptId string) int64 {
-	if deptId == "" {
+func (r SysDept) ExistChildrenByDeptId(deptId int64) int64 {
+	if deptId <= 0 {
 		return 0
 	}
 	tx := db.DB("").Model(&model.SysDept{})
@@ -154,8 +154,8 @@ func (r SysDept) ExistChildrenByDeptId(deptId string) int64 {
 }
 
 // ExistUserByDeptId 存在用户使用数量
-func (r SysDept) ExistUserByDeptId(deptId string) int64 {
-	if deptId == "" {
+func (r SysDept) ExistUserByDeptId(deptId int64) int64 {
+	if deptId <= 0 {
 		return 0
 	}
 	tx := db.DB("").Model(&model.SysUser{})
@@ -170,9 +170,9 @@ func (r SysDept) ExistUserByDeptId(deptId string) int64 {
 }
 
 // SelectDeptIdsByRoleId 通过角色ID查询包含的部门ID
-func (r SysDept) SelectDeptIdsByRoleId(roleId string, deptCheckStrictly bool) []string {
-	if roleId == "" {
-		return []string{}
+func (r SysDept) SelectDeptIdsByRoleId(roleId int64, deptCheckStrictly bool) []int64 {
+	if roleId <= 0 {
+		return []int64{}
 	}
 
 	tx := db.DB("").Model(&model.SysDept{})
@@ -188,7 +188,7 @@ func (r SysDept) SelectDeptIdsByRoleId(roleId string, deptCheckStrictly bool) []
 	}
 
 	// 查询数据
-	rows := []string{}
+	rows := []int64{}
 	if err := tx.Distinct("dept_id").Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows
@@ -197,7 +197,7 @@ func (r SysDept) SelectDeptIdsByRoleId(roleId string, deptCheckStrictly bool) []
 }
 
 // SelectChildrenDeptById 根据ID查询所有子部门
-func (r SysDept) SelectChildrenDeptById(deptId string) []model.SysDept {
+func (r SysDept) SelectChildrenDeptById(deptId int64) []model.SysDept {
 	tx := db.DB("").Model(&model.SysDept{})
 	tx = tx.Where("del_flag = 0")
 	tx = tx.Where("find_in_set(?, ancestors)", deptId)
@@ -211,7 +211,7 @@ func (r SysDept) SelectChildrenDeptById(deptId string) []model.SysDept {
 }
 
 // UpdateDeptStatusNormal 修改所在部门正常状态
-func (r SysDept) UpdateDeptStatusNormal(deptIds []string) int64 {
+func (r SysDept) UpdateDeptStatusNormal(deptIds []int64) int64 {
 	if len(deptIds) <= 0 {
 		return 0
 	}
@@ -236,7 +236,7 @@ func (r SysDept) UpdateDeptChildren(arr []model.SysDept) int64 {
 	var conditions []string
 	var deptIds []any
 	for _, dept := range arr {
-		caseSql := fmt.Sprintf("WHEN dept_id = '%s' THEN '%s'", dept.DeptId, dept.Ancestors)
+		caseSql := fmt.Sprintf("WHEN dept_id = %d THEN '%s'", dept.DeptId, dept.Ancestors)
 		conditions = append(conditions, caseSql)
 		deptIds = append(deptIds, dept.DeptId)
 	}

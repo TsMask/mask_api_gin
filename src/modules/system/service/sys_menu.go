@@ -28,16 +28,16 @@ type SysMenu struct {
 }
 
 // Find 查询数据
-func (s SysMenu) Find(sysMenu model.SysMenu, userId string) []model.SysMenu {
+func (s SysMenu) Find(sysMenu model.SysMenu, userId int64) []model.SysMenu {
 	return s.sysMenuRepository.Select(sysMenu, userId)
 }
 
 // FindById 通过ID查询信息
-func (s SysMenu) FindById(menuId string) model.SysMenu {
-	if menuId == "" {
+func (s SysMenu) FindById(menuId int64) model.SysMenu {
+	if menuId <= 0 {
 		return model.SysMenu{}
 	}
-	menus := s.sysMenuRepository.SelectByIds([]string{menuId})
+	menus := s.sysMenuRepository.SelectByIds([]int64{menuId})
 	if len(menus) > 0 {
 		return menus[0]
 	}
@@ -45,7 +45,7 @@ func (s SysMenu) FindById(menuId string) model.SysMenu {
 }
 
 // Insert 新增信息
-func (s SysMenu) Insert(sysMenu model.SysMenu) string {
+func (s SysMenu) Insert(sysMenu model.SysMenu) int64 {
 	return s.sysMenuRepository.Insert(sysMenu)
 }
 
@@ -55,23 +55,23 @@ func (s SysMenu) Update(sysMenu model.SysMenu) int64 {
 }
 
 // DeleteById 删除信息
-func (s SysMenu) DeleteById(menuId string) int64 {
-	s.sysRoleMenuRepository.DeleteByMenuIds([]string{menuId}) // 删除菜单与角色关联
+func (s SysMenu) DeleteById(menuId int64) int64 {
+	s.sysRoleMenuRepository.DeleteByMenuIds([]int64{menuId}) // 删除菜单与角色关联
 	return s.sysMenuRepository.DeleteById(menuId)
 }
 
 // ExistChildrenByMenuIdAndStatus 菜单下同状态存在子节点数量
-func (s SysMenu) ExistChildrenByMenuIdAndStatus(menuId string, status string) int64 {
+func (s SysMenu) ExistChildrenByMenuIdAndStatus(menuId int64, status string) int64 {
 	return s.sysMenuRepository.ExistChildrenByMenuIdAndStatus(menuId, status)
 }
 
 // ExistRoleByMenuId 菜单分配给的角色数量
-func (s SysMenu) ExistRoleByMenuId(menuId string) int64 {
+func (s SysMenu) ExistRoleByMenuId(menuId int64) int64 {
 	return s.sysRoleMenuRepository.ExistRoleByMenuId(menuId)
 }
 
 // CheckUniqueParentIdByMenuName 检查同级下菜单名称是否唯一
-func (s SysMenu) CheckUniqueParentIdByMenuName(parentId string, menuName string, menuId string) bool {
+func (s SysMenu) CheckUniqueParentIdByMenuName(parentId int64, menuName string, menuId int64) bool {
 	uniqueId := s.sysMenuRepository.CheckUnique(model.SysMenu{
 		MenuName: menuName,
 		ParentId: parentId,
@@ -79,11 +79,11 @@ func (s SysMenu) CheckUniqueParentIdByMenuName(parentId string, menuName string,
 	if uniqueId == menuId {
 		return true
 	}
-	return uniqueId == ""
+	return uniqueId == 0
 }
 
 // CheckUniqueParentIdByMenuPath 检查同级下路由地址是否唯一（针对目录和菜单）
-func (s SysMenu) CheckUniqueParentIdByMenuPath(parentId string, path string, menuId string) bool {
+func (s SysMenu) CheckUniqueParentIdByMenuPath(parentId int64, path string, menuId int64) bool {
 	uniqueId := s.sysMenuRepository.CheckUnique(model.SysMenu{
 		MenuPath: path,
 		ParentId: parentId,
@@ -91,17 +91,17 @@ func (s SysMenu) CheckUniqueParentIdByMenuPath(parentId string, path string, men
 	if uniqueId == menuId {
 		return true
 	}
-	return uniqueId == ""
+	return uniqueId == 0
 }
 
 // FindPermsByUserId 根据用户ID查询权限标识
-func (s SysMenu) FindPermsByUserId(userId string) []string {
+func (s SysMenu) FindPermsByUserId(userId int64) []string {
 	return s.sysMenuRepository.SelectPermsByUserId(userId)
 }
 
 // FindByRoleId 根据角色ID查询菜单树信息
-func (s SysMenu) FindByRoleId(roleId string) []string {
-	roles := s.sysRoleRepository.SelectByIds([]string{roleId})
+func (s SysMenu) FindByRoleId(roleId int64) []int64 {
+	roles := s.sysRoleRepository.SelectByIds([]int64{roleId})
 	if len(roles) > 0 {
 		role := roles[0]
 		if role.RoleId == roleId {
@@ -111,17 +111,17 @@ func (s SysMenu) FindByRoleId(roleId string) []string {
 			)
 		}
 	}
-	return []string{}
+	return []int64{}
 }
 
 // BuildTreeMenusByUserId 根据用户ID查询菜单树状嵌套
-func (s SysMenu) BuildTreeMenusByUserId(userId string) []model.SysMenu {
+func (s SysMenu) BuildTreeMenusByUserId(userId int64) []model.SysMenu {
 	sysMenus := s.sysMenuRepository.SelectTreeByUserId(userId)
 	return s.parseDataToTree(sysMenus)
 }
 
 // BuildTreeSelectByUserId 根据用户ID查询菜单树状结构
-func (s SysMenu) BuildTreeSelectByUserId(sysMenu model.SysMenu, userId string) []vo.TreeSelect {
+func (s SysMenu) BuildTreeSelectByUserId(sysMenu model.SysMenu, userId int64) []vo.TreeSelect {
 	sysMenus := s.sysMenuRepository.Select(sysMenu, userId)
 	menus := s.parseDataToTree(sysMenus)
 	tree := make([]vo.TreeSelect, 0)
@@ -134,9 +134,9 @@ func (s SysMenu) BuildTreeSelectByUserId(sysMenu model.SysMenu, userId string) [
 // parseDataToTree 将数据解析为树结构，构建前端所需要下拉树结构
 func (s SysMenu) parseDataToTree(sysMenus []model.SysMenu) []model.SysMenu {
 	// 节点分组
-	nodesMap := make(map[string][]model.SysMenu)
+	nodesMap := make(map[int64][]model.SysMenu)
 	// 节点id
-	var treeIds []string
+	var treeIds []int64
 	// 树节点
 	var tree []model.SysMenu
 
@@ -176,10 +176,8 @@ func (s SysMenu) parseDataToTree(sysMenus []model.SysMenu) []model.SysMenu {
 }
 
 // parseDataToTreeComponent 递归函数处理子节点
-func (s SysMenu) parseDataToTreeComponent(node model.SysMenu, nodesMap *map[string][]model.SysMenu) model.SysMenu {
-	id := node.MenuId
-	children, ok := (*nodesMap)[id]
-	if ok {
+func (s SysMenu) parseDataToTreeComponent(node model.SysMenu, nodesMap *map[int64][]model.SysMenu) model.SysMenu {
+	if children, ok := (*nodesMap)[node.MenuId]; ok {
 		node.Children = children
 	}
 	if len(node.Children) > 0 {
@@ -215,9 +213,9 @@ func (s SysMenu) BuildRouteMenus(sysMenus []model.SysMenu, prefix string) []vo.R
 			router.Redirect = redirectPath
 			// 子菜单进入递归
 			router.Children = s.BuildRouteMenus(cMenus, redirectPrefix)
-		} else if item.ParentId == "0" && item.FrameFlag == constants.STATUS_YES && item.MenuType == constants.MENU_TYPE_MENU {
+		} else if item.ParentId == 0 && item.FrameFlag == constants.STATUS_YES && item.MenuType == constants.MENU_TYPE_MENU {
 			// 父菜单 内部跳转 菜单类型
-			menuPath := fmt.Sprintf("/%s", item.MenuId)
+			menuPath := fmt.Sprintf("/%d", item.MenuId)
 			childPath := menuPath + s.getRouterPath(item)
 			children := vo.Router{
 				Name:      s.getRouteName(item),
@@ -231,9 +229,9 @@ func (s SysMenu) BuildRouteMenus(sysMenus []model.SysMenu, prefix string) []vo.R
 			router.Path = menuPath
 			router.Redirect = childPath
 			router.Component = constants.MENU_COMPONENT_LAYOUT_BASIC
-		} else if item.ParentId == "0" && item.FrameFlag == constants.STATUS_YES && regular.ValidHttp(item.MenuPath) {
+		} else if item.ParentId == 0 && item.FrameFlag == constants.STATUS_YES && regular.ValidHttp(item.MenuPath) {
 			// 父菜单 内部跳转 路径链接
-			menuPath := fmt.Sprintf("/%s", item.MenuId)
+			menuPath := fmt.Sprintf("/%d", item.MenuId)
 			childPath := menuPath + s.getRouterPath(item)
 			children := vo.Router{
 				Name:      s.getRouteName(item),
@@ -262,7 +260,7 @@ func (s SysMenu) getRouteName(sysMenu model.SysMenu) string {
 		routerName = routerName[:5] + "Link"
 	}
 	// 拼上菜单ID防止name重名
-	return fmt.Sprintf("%s_%s", routerName, sysMenu.MenuId)
+	return fmt.Sprintf("%s_%d", routerName, sysMenu.MenuId)
 }
 
 // getRouterPath 获取路由地址
@@ -281,7 +279,7 @@ func (s SysMenu) getRouterPath(sysMenu model.SysMenu) string {
 	}
 
 	// 父菜单 内部跳转
-	if sysMenu.ParentId == "0" && sysMenu.FrameFlag == constants.STATUS_YES {
+	if sysMenu.ParentId == 0 && sysMenu.FrameFlag == constants.STATUS_YES {
 		routerPath = "/" + routerPath
 	}
 
@@ -296,14 +294,14 @@ func (s SysMenu) getComponent(sysMenu model.SysMenu) string {
 	}
 
 	// 非父菜单 目录类型
-	if sysMenu.ParentId != "0" && sysMenu.MenuType == constants.MENU_TYPE_DIR {
+	if sysMenu.ParentId > 0 && sysMenu.MenuType == constants.MENU_TYPE_DIR {
 		return constants.MENU_COMPONENT_LAYOUT_BLANK
 	}
 
 	// 组件路径 内部跳转 菜单类型
 	if sysMenu.Component != "" && sysMenu.FrameFlag == constants.STATUS_YES && sysMenu.MenuType == constants.MENU_TYPE_MENU {
 		// 父菜单套外层布局
-		if sysMenu.ParentId == "0" {
+		if sysMenu.ParentId == 0 {
 			return constants.MENU_COMPONENT_LAYOUT_BASIC
 		}
 		return sysMenu.Component

@@ -38,8 +38,8 @@ func (s SysDictTypeController) List(c *gin.Context) {
 //
 // GET /:dictId
 func (s SysDictTypeController) Info(c *gin.Context) {
-	dictId := c.Param("dictId")
-	if dictId == "" {
+	dictId := parse.Number(c.Param("dictId"))
+	if dictId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: dictId is empty"))
 		return
 	}
@@ -62,13 +62,13 @@ func (s SysDictTypeController) Add(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.DictId != "" {
+	if body.DictId > 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: dictId not is empty"))
 		return
 	}
 
 	// 检查字典名称唯一
-	uniqueDictName := s.sysDictTypeService.CheckUniqueByName(body.DictName, "")
+	uniqueDictName := s.sysDictTypeService.CheckUniqueByName(body.DictName, 0)
 	if !uniqueDictName {
 		msg := fmt.Sprintf("字典新增【%s】失败，字典名称已存在", body.DictName)
 		c.JSON(200, resp.ErrMsg(msg))
@@ -76,7 +76,7 @@ func (s SysDictTypeController) Add(c *gin.Context) {
 	}
 
 	// 检查字典类型唯一
-	uniqueDictType := s.sysDictTypeService.CheckUniqueByType(body.DictType, "")
+	uniqueDictType := s.sysDictTypeService.CheckUniqueByType(body.DictType, 0)
 	if !uniqueDictType {
 		msg := fmt.Sprintf("字典新增【%s】失败，字典类型已存在", body.DictType)
 		c.JSON(200, resp.ErrMsg(msg))
@@ -85,7 +85,7 @@ func (s SysDictTypeController) Add(c *gin.Context) {
 
 	body.CreateBy = reqctx.LoginUserToUserName(c)
 	insertId := s.sysDictTypeService.Insert(body)
-	if insertId != "" {
+	if insertId > 0 {
 		c.JSON(200, resp.OkData(insertId))
 		return
 	}
@@ -102,7 +102,7 @@ func (s SysDictTypeController) Edit(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.DictId == "" {
+	if body.DictId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: dictId is empty"))
 		return
 	}
@@ -148,10 +148,16 @@ func (s SysDictTypeController) Edit(c *gin.Context) {
 // DELETE /:dictId
 func (s SysDictTypeController) Remove(c *gin.Context) {
 	dictIdStr := c.Param("dictId")
-	dictIds := parse.RemoveDuplicatesToArray(dictIdStr, ",")
-	if dictIdStr == "" || len(dictIds) <= 0 {
+	arr := parse.RemoveDuplicatesToArray(dictIdStr, ",")
+	if dictIdStr == "" || len(arr) <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: dictId not is empty"))
 		return
+	}
+
+	// 转换成int64数组类型
+	dictIds := make([]int64, 0)
+	for _, v := range arr {
+		dictIds = append(dictIds, parse.Number(v))
 	}
 
 	rows, err := s.sysDictTypeService.DeleteByIds(dictIds)

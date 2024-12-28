@@ -70,12 +70,12 @@ func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) 
 }
 
 // Insert 新增信息 返回新增的数据ID
-func (r SysLogLogin) Insert(sysLogLogin model.SysLogLogin) string {
+func (r SysLogLogin) Insert(sysLogLogin model.SysLogLogin) int64 {
 	sysLogLogin.LoginTime = time.Now().UnixMilli()
 	// 执行插入
 	if err := db.DB("").Create(&sysLogLogin).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
-		return ""
+		return 0
 	}
 	return sysLogLogin.ID
 }

@@ -38,8 +38,8 @@ func (s SysPostController) List(c *gin.Context) {
 //
 // GET /:postId
 func (s SysPostController) Info(c *gin.Context) {
-	postId := c.Param("postId")
-	if postId == "" {
+	postId := parse.Number(c.Param("postId"))
+	if postId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: postId is empty"))
 		return
 	}
@@ -62,13 +62,13 @@ func (s SysPostController) Add(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.PostId != "" {
+	if body.PostId > 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: postId not is empty"))
 		return
 	}
 
 	// 检查名称唯一
-	uniquePostName := s.sysPostService.CheckUniqueByName(body.PostName, "")
+	uniquePostName := s.sysPostService.CheckUniqueByName(body.PostName, 0)
 	if !uniquePostName {
 		msg := fmt.Sprintf("岗位新增【%s】失败，岗位名称已存在", body.PostName)
 		c.JSON(200, resp.ErrMsg(msg))
@@ -76,7 +76,7 @@ func (s SysPostController) Add(c *gin.Context) {
 	}
 
 	// 检查编码属性值唯一
-	uniquePostCode := s.sysPostService.CheckUniqueByCode(body.PostCode, "")
+	uniquePostCode := s.sysPostService.CheckUniqueByCode(body.PostCode, 0)
 	if !uniquePostCode {
 		msg := fmt.Sprintf("岗位新增【%s】失败，岗位编码已存在", body.PostCode)
 		c.JSON(200, resp.ErrMsg(msg))
@@ -85,7 +85,7 @@ func (s SysPostController) Add(c *gin.Context) {
 
 	body.CreateBy = reqctx.LoginUserToUserName(c)
 	insertId := s.sysPostService.Insert(body)
-	if insertId != "" {
+	if insertId > 0 {
 		c.JSON(200, resp.OkData(insertId))
 		return
 	}
@@ -102,7 +102,7 @@ func (s SysPostController) Edit(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.PostId == "" {
+	if body.PostId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: postId is empty"))
 		return
 	}
@@ -149,10 +149,16 @@ func (s SysPostController) Edit(c *gin.Context) {
 // DELETE /:postId
 func (s SysPostController) Remove(c *gin.Context) {
 	postIdsStr := c.Param("postId")
-	postIds := parse.RemoveDuplicatesToArray(postIdsStr, ",")
-	if postIdsStr == "" || len(postIds) <= 0 {
+	arr := parse.RemoveDuplicatesToArray(postIdsStr, ",")
+	if postIdsStr == "" || len(arr) <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: postId is empty"))
 		return
+	}
+
+	// 转换成int64数组类型
+	postIds := make([]int64, 0)
+	for _, v := range arr {
+		postIds = append(postIds, parse.Number(v))
 	}
 
 	rows, err := s.sysPostService.DeleteByIds(postIds)

@@ -24,7 +24,7 @@ func (s SysLogOperate) FindByPage(query map[string]string, dataScopeSQL string) 
 }
 
 // Insert 新增信息
-func (s SysLogOperate) Insert(SysLogOperate model.SysLogOperate) string {
+func (s SysLogOperate) Insert(SysLogOperate model.SysLogOperate) int64 {
 	return s.SysLogOperate.Insert(SysLogOperate)
 }
 

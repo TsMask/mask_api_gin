@@ -24,7 +24,7 @@ func (s SysLogLogin) FindByPage(query map[string]string, dataScopeSQL string) ([
 }
 
 // Insert 新增信息
-func (s SysLogLogin) Insert(userName, status, msg string, ilobArr [4]string) string {
+func (s SysLogLogin) Insert(userName, status, msg string, ilobArr [4]string) int64 {
 	sysSysLogLogin := model.SysLogLogin{
 		LoginIp:       ilobArr[0],
 		LoginLocation: ilobArr[1],

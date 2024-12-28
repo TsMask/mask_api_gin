@@ -93,7 +93,7 @@ func (r SysUser) Select(sysUser model.SysUser) []model.SysUser {
 	if sysUser.StatusFlag != "" {
 		tx = tx.Where("status_flag = ?", sysUser.StatusFlag)
 	}
-	if sysUser.UserId != "" {
+	if sysUser.UserId <= 0 {
 		tx = tx.Where("user_id = ?", sysUser.UserId)
 	}
 
@@ -107,7 +107,7 @@ func (r SysUser) Select(sysUser model.SysUser) []model.SysUser {
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysUser) SelectByIds(userIds []string) []model.SysUser {
+func (r SysUser) SelectByIds(userIds []int64) []model.SysUser {
 	rows := []model.SysUser{}
 	if len(userIds) <= 0 {
 		return rows
@@ -124,7 +124,7 @@ func (r SysUser) SelectByIds(userIds []string) []model.SysUser {
 }
 
 // Insert 新增信息
-func (r SysUser) Insert(sysUser model.SysUser) string {
+func (r SysUser) Insert(sysUser model.SysUser) int64 {
 	sysUser.DelFlag = "0"
 	if sysUser.Password != "" {
 		sysUser.Password = crypto.BcryptHash(sysUser.Password)
@@ -138,14 +138,14 @@ func (r SysUser) Insert(sysUser model.SysUser) string {
 	// 执行插入
 	if err := db.DB("").Create(&sysUser).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
-		return ""
+		return 0
 	}
 	return sysUser.UserId
 }
 
 // Update 修改信息
 func (r SysUser) Update(sysUser model.SysUser) int64 {
-	if sysUser.UserId == "" {
+	if sysUser.UserId <= 0 {
 		return 0
 	}
 	if sysUser.Password != "" {
@@ -167,7 +167,7 @@ func (r SysUser) Update(sysUser model.SysUser) int64 {
 }
 
 // DeleteByIds 批量删除信息
-func (r SysUser) DeleteByIds(userIds []string) int64 {
+func (r SysUser) DeleteByIds(userIds []int64) int64 {
 	if len(userIds) <= 0 {
 		return 0
 	}
@@ -183,7 +183,7 @@ func (r SysUser) DeleteByIds(userIds []string) int64 {
 }
 
 // CheckUnique 检查信息是否唯一
-func (r SysUser) CheckUnique(sysUser model.SysUser) string {
+func (r SysUser) CheckUnique(sysUser model.SysUser) int64 {
 	tx := db.DB("").Model(&model.SysUser{})
 	tx = tx.Where("del_flag = 0")
 	// 查询条件拼接
@@ -198,7 +198,7 @@ func (r SysUser) CheckUnique(sysUser model.SysUser) string {
 	}
 
 	// 查询数据
-	var id string = ""
+	var id int64 = 0
 	if err := tx.Select("user_id").Limit(1).Find(&id).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return id

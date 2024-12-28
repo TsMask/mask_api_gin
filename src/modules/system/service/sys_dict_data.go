@@ -32,11 +32,11 @@ func (s SysDictData) Find(sysDictData model.SysDictData) []model.SysDictData {
 }
 
 // FindById 通过ID查询信息
-func (s SysDictData) FindById(dictId string) model.SysDictData {
-	if dictId == "" {
+func (s SysDictData) FindById(dictId int64) model.SysDictData {
+	if dictId <= 0 {
 		return model.SysDictData{}
 	}
-	arr := s.sysDictDataRepository.SelectByIds([]string{dictId})
+	arr := s.sysDictDataRepository.SelectByIds([]int64{dictId})
 	if len(arr) > 0 {
 		return arr[0]
 	}
@@ -49,9 +49,9 @@ func (s SysDictData) FindByType(dictType string) []model.SysDictData {
 }
 
 // Insert 新增信息
-func (s SysDictData) Insert(sysDictData model.SysDictData) string {
+func (s SysDictData) Insert(sysDictData model.SysDictData) int64 {
 	insertId := s.sysDictDataRepository.Insert(sysDictData)
-	if insertId != "" {
+	if insertId > 0 {
 		s.sysDictTypeService.CacheLoad(sysDictData.DictType)
 	}
 	return insertId
@@ -67,7 +67,7 @@ func (s SysDictData) Update(sysDictData model.SysDictData) int64 {
 }
 
 // DeleteByIds 批量删除信息
-func (s SysDictData) DeleteByIds(dictIds []string) (int64, error) {
+func (s SysDictData) DeleteByIds(dictIds []int64) (int64, error) {
 	// 检查是否存在
 	arr := s.sysDictDataRepository.SelectByIds(dictIds)
 	if len(arr) <= 0 {
@@ -86,7 +86,7 @@ func (s SysDictData) DeleteByIds(dictIds []string) (int64, error) {
 }
 
 // CheckUniqueTypeByLabel 检查同字典类型下字典标签是否唯一
-func (s SysDictData) CheckUniqueTypeByLabel(dictType, dictLabel string, dataId string) bool {
+func (s SysDictData) CheckUniqueTypeByLabel(dictType, dictLabel string, dataId int64) bool {
 	uniqueId := s.sysDictDataRepository.CheckUnique(model.SysDictData{
 		DictType:  dictType,
 		DataLabel: dictLabel,
@@ -94,11 +94,11 @@ func (s SysDictData) CheckUniqueTypeByLabel(dictType, dictLabel string, dataId s
 	if uniqueId == dataId {
 		return true
 	}
-	return uniqueId == ""
+	return uniqueId == 0
 }
 
 // CheckUniqueTypeByValue 检查同字典类型下字典键值是否唯一
-func (s SysDictData) CheckUniqueTypeByValue(dictType, dictValue string, dataId string) bool {
+func (s SysDictData) CheckUniqueTypeByValue(dictType, dictValue string, dataId int64) bool {
 	uniqueId := s.sysDictDataRepository.CheckUnique(model.SysDictData{
 		DictType:  dictType,
 		DataValue: dictValue,
@@ -106,7 +106,7 @@ func (s SysDictData) CheckUniqueTypeByValue(dictType, dictValue string, dataId s
 	if uniqueId == dataId {
 		return true
 	}
-	return uniqueId == ""
+	return uniqueId == 0
 }
 
 // ExportData 导出数据表格

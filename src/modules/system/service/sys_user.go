@@ -7,6 +7,7 @@ import (
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
+	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
@@ -45,7 +46,7 @@ func (s SysUser) FindByPage(query map[string]string, dataScopeSQL string) ([]mod
 		rows[i].Dept = &deptInfo
 		// 角色
 		roleArr := s.sysRoleRepository.SelectByUserId(v.UserId)
-		roleIds := make([]string, 0)
+		roleIds := make([]int64, 0)
 		roles := make([]*model.SysRole, 0)
 		for _, role := range roleArr {
 			roles = append(roles, &role)
@@ -63,12 +64,12 @@ func (s SysUser) Find(sysUser model.SysUser) []model.SysUser {
 }
 
 // FindById 通过ID查询信息
-func (s SysUser) FindById(userId string) model.SysUser {
+func (s SysUser) FindById(userId int64) model.SysUser {
 	userInfo := model.SysUser{}
-	if userId == "" {
+	if userId <= 0 {
 		return userInfo
 	}
-	users := s.sysUserRepository.SelectByIds([]string{userId})
+	users := s.sysUserRepository.SelectByIds([]int64{userId})
 	if len(users) > 0 {
 		userInfo = users[0]
 		// 部门
@@ -76,7 +77,7 @@ func (s SysUser) FindById(userId string) model.SysUser {
 		userInfo.Dept = &deptInfo
 		// 角色
 		roleArr := s.sysRoleRepository.SelectByUserId(userInfo.UserId)
-		roleIds := make([]string, 0)
+		roleIds := make([]int64, 0)
 		roles := make([]*model.SysRole, 0)
 		for _, role := range roleArr {
 			roles = append(roles, &role)
@@ -89,10 +90,10 @@ func (s SysUser) FindById(userId string) model.SysUser {
 }
 
 // Insert 新增信息
-func (s SysUser) Insert(sysUser model.SysUser) string {
+func (s SysUser) Insert(sysUser model.SysUser) int64 {
 	// 新增用户信息
 	insertId := s.sysUserRepository.Insert(sysUser)
-	if insertId != "" {
+	if insertId > 0 {
 		s.insertUserRole(insertId, sysUser.RoleIds) // 新增用户角色信息
 		s.insertUserPost(insertId, sysUser.PostIds) // 新增用户岗位信息
 	}
@@ -100,15 +101,15 @@ func (s SysUser) Insert(sysUser model.SysUser) string {
 }
 
 // insertUserRole 新增用户角色信息
-func (s SysUser) insertUserRole(userId string, roleIds []string) int64 {
-	if userId == "" || len(roleIds) <= 0 {
+func (s SysUser) insertUserRole(userId int64, roleIds []int64) int64 {
+	if userId <= 0 || len(roleIds) <= 0 {
 		return 0
 	}
 
 	var arr []model.SysUserRole
 	for _, roleId := range roleIds {
 		// 系统管理员角色禁止操作，只能通过配置指定用户ID分配
-		if roleId == "" || roleId == constants.SYS_ROLE_SYSTEM_ID {
+		if roleId <= 0 || roleId == constants.SYS_ROLE_SYSTEM_ID {
 			continue
 		}
 		arr = append(arr, model.SysUserRole{
@@ -120,14 +121,14 @@ func (s SysUser) insertUserRole(userId string, roleIds []string) int64 {
 }
 
 // insertUserPost 新增用户岗位信息
-func (s SysUser) insertUserPost(userId string, postIds []string) int64 {
-	if userId == "" || len(postIds) <= 0 {
+func (s SysUser) insertUserPost(userId int64, postIds []int64) int64 {
+	if userId <= 0 || len(postIds) <= 0 {
 		return 0
 	}
 
 	var arr []model.SysUserPost
 	for _, postId := range postIds {
-		if postId == "" {
+		if postId <= 0 {
 			continue
 		}
 		arr = append(arr, model.SysUserPost{
@@ -146,18 +147,18 @@ func (s SysUser) Update(sysUser model.SysUser) int64 {
 // UpdateUserAndRolePost 修改用户信息同时更新角色和岗位
 func (s SysUser) UpdateUserAndRolePost(sysUser model.SysUser) int64 {
 	// 删除用户与角色关联
-	s.sysUserRoleRepository.DeleteByUserIds([]string{sysUser.UserId})
+	s.sysUserRoleRepository.DeleteByUserIds([]int64{sysUser.UserId})
 	// 新增用户角色信息
 	s.insertUserRole(sysUser.UserId, sysUser.RoleIds)
 	// 删除用户与岗位关联
-	s.sysUserPostRepository.DeleteByUserIds([]string{sysUser.UserId})
+	s.sysUserPostRepository.DeleteByUserIds([]int64{sysUser.UserId})
 	// 新增用户岗位信息
 	s.insertUserPost(sysUser.UserId, sysUser.PostIds)
 	return s.sysUserRepository.Update(sysUser)
 }
 
 // DeleteByIds 批量删除信息
-func (s SysUser) DeleteByIds(userIds []string) (int64, error) {
+func (s SysUser) DeleteByIds(userIds []int64) (int64, error) {
 	// 检查是否存在
 	users := s.sysUserRepository.SelectByIds(userIds)
 	if len(users) <= 0 {
@@ -172,36 +173,36 @@ func (s SysUser) DeleteByIds(userIds []string) (int64, error) {
 }
 
 // CheckUniqueByUserName 检查用户名称是否唯一
-func (s SysUser) CheckUniqueByUserName(userName string, userId string) bool {
+func (s SysUser) CheckUniqueByUserName(userName string, userId int64) bool {
 	uniqueId := s.sysUserRepository.CheckUnique(model.SysUser{
 		UserName: userName,
 	})
 	if uniqueId == userId {
 		return true
 	}
-	return uniqueId == ""
+	return uniqueId == 0
 }
 
 // CheckUniqueByPhone 检查手机号码是否唯一
-func (s SysUser) CheckUniqueByPhone(phone string, userId string) bool {
+func (s SysUser) CheckUniqueByPhone(phone string, userId int64) bool {
 	uniqueId := s.sysUserRepository.CheckUnique(model.SysUser{
 		Phone: phone,
 	})
 	if uniqueId == userId {
 		return true
 	}
-	return uniqueId == ""
+	return uniqueId == 0
 }
 
 // CheckUniqueByEmail 检查Email是否唯一
-func (s SysUser) CheckUniqueByEmail(email string, userId string) bool {
+func (s SysUser) CheckUniqueByEmail(email string, userId int64) bool {
 	uniqueId := s.sysUserRepository.CheckUnique(model.SysUser{
 		Email: email,
 	})
 	if uniqueId == userId {
 		return true
 	}
-	return uniqueId == ""
+	return uniqueId == 0
 }
 
 // FindByUserName 通过用户名查询用户信息
@@ -213,7 +214,7 @@ func (s SysUser) FindByUserName(userName string) model.SysUser {
 		userinfo.Dept = &deptInfo
 		// 角色
 		roleArr := s.sysRoleRepository.SelectByUserId(userinfo.UserId)
-		roleIds := make([]string, 0)
+		roleIds := make([]int64, 0)
 		roles := make([]*model.SysRole, 0)
 		for _, role := range roleArr {
 			roles = append(roles, &role)
@@ -234,7 +235,7 @@ func (s SysUser) FindAuthUsersPage(query map[string]string, dataScopeSQL string)
 		rows[i].Dept = &deptInfo
 		// 角色
 		roleArr := s.sysRoleRepository.SelectByUserId(v.UserId)
-		roleIds := make([]string, 0)
+		roleIds := make([]int64, 0)
 		roles := make([]*model.SysRole, 0)
 		for _, role := range roleArr {
 			roles = append(roles, &role)
@@ -344,9 +345,9 @@ func (s SysUser) ImportData(rows []map[string]string, operaName string, updateSu
 		if row["G"] == "正常" {
 			sysUserStatus = constants.STATUS_YES
 		}
-		sysUserDeptId := "100"
+		var sysUserDeptId int64 = 100
 		if row["H"] != "" {
-			sysUserDeptId = row["H"]
+			sysUserDeptId = parse.Number(row["H"])
 		}
 
 		// 验证是否存在这个用户
@@ -366,7 +367,7 @@ func (s SysUser) ImportData(rows []map[string]string, operaName string, updateSu
 		// 检查手机号码格式并判断是否唯一
 		if newSysUser.Phone != "" {
 			if regular.ValidMobile(newSysUser.Phone) {
-				uniquePhone := s.CheckUniqueByPhone(newSysUser.Phone, "")
+				uniquePhone := s.CheckUniqueByPhone(newSysUser.Phone, newSysUser.UserId)
 				if !uniquePhone {
 					msg := fmt.Sprintf("用户编号：%s 手机号码：%s 已存在", rowNo, newSysUser.Phone)
 					failureNum++
@@ -384,7 +385,7 @@ func (s SysUser) ImportData(rows []map[string]string, operaName string, updateSu
 		// 检查邮箱格式并判断是否唯一
 		if newSysUser.Email != "" {
 			if regular.ValidEmail(newSysUser.Email) {
-				uniqueEmail := s.CheckUniqueByEmail(newSysUser.Email, "")
+				uniqueEmail := s.CheckUniqueByEmail(newSysUser.Email, newSysUser.UserId)
 				if !uniqueEmail {
 					msg := fmt.Sprintf("用户编号：%s 用户邮箱：%s 已存在", rowNo, newSysUser.Email)
 					failureNum++
@@ -399,10 +400,9 @@ func (s SysUser) ImportData(rows []map[string]string, operaName string, updateSu
 			}
 		}
 
-		if newSysUser.UserId == "" {
+		if newSysUser.UserId <= 0 {
 			newSysUser.CreateBy = operaName
-			insertId := s.Insert(newSysUser)
-			if insertId != "" {
+			if s.Insert(newSysUser) > 0 {
 				msg := fmt.Sprintf("用户编号：%s 登录名称：%s 导入成功", rowNo, newSysUser.UserName)
 				successNum++
 				successMsgArr = append(successMsgArr, msg)
@@ -415,7 +415,7 @@ func (s SysUser) ImportData(rows []map[string]string, operaName string, updateSu
 		}
 
 		// 如果用户已存在 同时 是否更新支持
-		if newSysUser.UserId != "" && updateSupport {
+		if newSysUser.UserId > 0 && updateSupport {
 			newSysUser.Password = "" // 密码不更新
 			newSysUser.UpdateBy = operaName
 			rows := s.Update(newSysUser)

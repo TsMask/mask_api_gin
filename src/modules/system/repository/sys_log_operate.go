@@ -76,14 +76,14 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 }
 
 // Insert 新增信息
-func (r SysLogOperate) Insert(sysLogOperate model.SysLogOperate) string {
+func (r SysLogOperate) Insert(sysLogOperate model.SysLogOperate) int64 {
 	if sysLogOperate.OperaBy != "" {
 		sysLogOperate.OperaTime = time.Now().UnixMilli()
 	}
 	// 执行插入
 	if err := db.DB("").Create(&sysLogOperate).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
-		return ""
+		return 0
 	}
 	return sysLogOperate.ID
 }

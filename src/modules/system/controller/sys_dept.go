@@ -9,6 +9,7 @@ import (
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/reqctx"
 	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 )
@@ -30,8 +31,8 @@ type SysDeptController struct {
 // GET /list
 func (s SysDeptController) List(c *gin.Context) {
 	var query struct {
-		DeptId   string `form:"deptId"`   // 部门ID
-		ParentId string `form:"parentId"` // 父部门ID
+		DeptId   int64  `form:"deptId"`   // 部门ID
+		ParentId int64  `form:"parentId"` // 父部门ID
 		DeptName string `form:"deptName"` // 部门名称
 		Status   string `form:"status"`   // 部门状态（0正常 1停用）
 	}
@@ -56,8 +57,8 @@ func (s SysDeptController) List(c *gin.Context) {
 //
 // GET /:deptId
 func (s SysDeptController) Info(c *gin.Context) {
-	deptId := c.Param("deptId")
-	if deptId == "" {
+	deptId := parse.Number(c.Param("deptId"))
+	if deptId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: deptId is empty"))
 		return
 	}
@@ -80,13 +81,13 @@ func (s SysDeptController) Add(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.DeptId != "" {
+	if body.DeptId > 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: deptId not is empty"))
 		return
 	}
 
 	// 父级ID不为0是要检查
-	if body.ParentId != "0" {
+	if body.ParentId > 0 {
 		deptParent := s.sysDeptService.FindById(body.ParentId)
 		if deptParent.DeptId != body.ParentId {
 			c.JSON(200, resp.ErrMsg("没有权限访问部门数据！"))
@@ -102,13 +103,13 @@ func (s SysDeptController) Add(c *gin.Context) {
 			c.JSON(200, resp.ErrMsg(msg))
 			return
 		}
-		body.Ancestors = fmt.Sprintf("%s,%s", deptParent.Ancestors, body.ParentId)
+		body.Ancestors = fmt.Sprintf("%s,%d", deptParent.Ancestors, body.ParentId)
 	} else {
 		body.Ancestors = "0"
 	}
 
 	// 检查同级下名称唯一
-	uniqueDeptName := s.sysDeptService.CheckUniqueParentIdByDeptName(body.ParentId, body.DeptName, "")
+	uniqueDeptName := s.sysDeptService.CheckUniqueParentIdByDeptName(body.ParentId, body.DeptName, 0)
 	if !uniqueDeptName {
 		msg := fmt.Sprintf("部门新增【%s】失败，部门名称已存在", body.DeptName)
 		c.JSON(200, resp.ErrMsg(msg))
@@ -117,7 +118,7 @@ func (s SysDeptController) Add(c *gin.Context) {
 
 	body.CreateBy = reqctx.LoginUserToUserName(c)
 	insertId := s.sysDeptService.Insert(body)
-	if insertId != "" {
+	if insertId > 0 {
 		c.JSON(200, resp.OkData(insertId))
 		return
 	}
@@ -134,7 +135,7 @@ func (s SysDeptController) Edit(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.DeptId == "" {
+	if body.DeptId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: deptId is empty"))
 		return
 	}
@@ -154,7 +155,7 @@ func (s SysDeptController) Edit(c *gin.Context) {
 	}
 
 	// 父级ID不为0是要检查
-	if body.ParentId != "0" {
+	if body.ParentId > 0 {
 		deptParent := s.sysDeptService.FindById(body.ParentId)
 		if deptParent.DeptId != body.ParentId {
 			c.JSON(200, resp.ErrMsg("没有权限访问部门数据！"))
@@ -200,8 +201,8 @@ func (s SysDeptController) Edit(c *gin.Context) {
 //
 // DELETE /:deptId
 func (s SysDeptController) Remove(c *gin.Context) {
-	deptId := c.Param("deptId")
-	if deptId == "" {
+	deptId := parse.Number(c.Param("deptId"))
+	if deptId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: deptId is empty"))
 		return
 	}
@@ -242,27 +243,23 @@ func (s SysDeptController) Remove(c *gin.Context) {
 //
 // GET /list/exclude/:deptId
 func (s SysDeptController) ExcludeChild(c *gin.Context) {
-	deptId := c.Param("deptId")
-	if deptId == "" {
+	deptIdStr := c.Param("deptId")
+	if deptIdStr == "" {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: deptId is empty"))
 		return
 	}
-
+	deptId := parse.Number(deptIdStr)
 	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_dept", "")
 	data := s.sysDeptService.Find(model.SysDept{}, dataScopeSQL)
 
 	// 过滤排除节点
 	filtered := make([]model.SysDept, 0)
 	for _, dept := range data {
-		hasAncestor := false
-		ancestorList := strings.Split(dept.Ancestors, ",")
-		for _, ancestor := range ancestorList {
-			if ancestor == deptId {
-				hasAncestor = true
-				break
-			}
+		if dept.DeptId == deptId {
+			continue
 		}
-		if !(dept.DeptId == deptId || hasAncestor) {
+		// 如果当前部门的ancestors不包含要排除的deptId，则添加到filtered中
+		if !strings.Contains(dept.Ancestors, deptIdStr) {
 			filtered = append(filtered, dept)
 		}
 	}
@@ -274,8 +271,8 @@ func (s SysDeptController) ExcludeChild(c *gin.Context) {
 // GET /tree
 func (s SysDeptController) Tree(c *gin.Context) {
 	var query struct {
-		DeptId     string `form:"deptId"`     // 部门ID
-		ParentId   string `form:"parentId"`   // 父部门ID
+		DeptId     int64  `form:"deptId"`     // 部门ID
+		ParentId   int64  `form:"parentId"`   // 父部门ID
 		DeptName   string `form:"deptName"`   // 部门名称
 		StatusFlag string `form:"statusFlag"` // 部门状态（0正常 1停用）
 	}
@@ -300,8 +297,8 @@ func (s SysDeptController) Tree(c *gin.Context) {
 //
 // GET /tree/role/:roleId
 func (s SysDeptController) TreeRole(c *gin.Context) {
-	roleId := c.Param("roleId")
-	if roleId == "" {
+	roleId := parse.Number(c.Param("roleId"))
+	if roleId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: roleId is empty"))
 		return
 	}

@@ -37,8 +37,8 @@ func (s SysNoticeController) List(c *gin.Context) {
 //
 // GET /:noticeId
 func (s SysNoticeController) Info(c *gin.Context) {
-	noticeId := c.Param("noticeId")
-	if noticeId == "" {
+	noticeId := parse.Number(c.Param("noticeId"))
+	if noticeId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: noticeId is empty"))
 		return
 	}
@@ -61,14 +61,14 @@ func (s SysNoticeController) Add(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.NoticeId != "" {
+	if body.NoticeId > 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: noticeId not is empty"))
 		return
 	}
 
 	body.CreateBy = reqctx.LoginUserToUserName(c)
 	insertId := s.sysNoticeService.Insert(body)
-	if insertId != "" {
+	if insertId > 0 {
 		c.JSON(200, resp.OkData(insertId))
 		return
 	}
@@ -85,7 +85,7 @@ func (s SysNoticeController) Edit(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.NoticeId == "" {
+	if body.NoticeId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: noticeId is empty"))
 		return
 	}
@@ -116,10 +116,16 @@ func (s SysNoticeController) Edit(c *gin.Context) {
 // DELETE /:noticeId
 func (s SysNoticeController) Remove(c *gin.Context) {
 	noticeIdsStr := c.Param("noticeId")
-	noticeIds := parse.RemoveDuplicatesToArray(noticeIdsStr, ",")
-	if noticeIdsStr == "" || len(noticeIds) <= 0 {
+	arr := parse.RemoveDuplicatesToArray(noticeIdsStr, ",")
+	if noticeIdsStr == "" || len(arr) <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: noticeId is empty"))
 		return
+	}
+
+	// 转换成int64数组类型
+	noticeIds := make([]int64, 0)
+	for _, v := range arr {
+		noticeIds = append(noticeIds, parse.Number(v))
 	}
 
 	rows, err := s.sysNoticeService.DeleteByIds(noticeIds)

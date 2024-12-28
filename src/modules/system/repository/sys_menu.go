@@ -16,7 +16,7 @@ var NewSysMenu = &SysMenu{}
 type SysMenu struct{}
 
 // Select 查询集合 userId为0为系统管理员
-func (r SysMenu) Select(sysMenu model.SysMenu, userId string) []model.SysMenu {
+func (r SysMenu) Select(sysMenu model.SysMenu, userId int64) []model.SysMenu {
 	tx := db.DB("").Model(&model.SysMenu{})
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
@@ -31,7 +31,7 @@ func (r SysMenu) Select(sysMenu model.SysMenu, userId string) []model.SysMenu {
 	}
 
 	// 个人菜单
-	if userId != "0" {
+	if userId > 0 {
 		tx = tx.Where(`menu_id in (
 		select menu_id from sys_role_menu where role_id in (
 		select role_id from sys_user_role where user_id = ?
@@ -48,7 +48,7 @@ func (r SysMenu) Select(sysMenu model.SysMenu, userId string) []model.SysMenu {
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysMenu) SelectByIds(menuIds []string) []model.SysMenu {
+func (r SysMenu) SelectByIds(menuIds []int64) []model.SysMenu {
 	rows := []model.SysMenu{}
 	if len(menuIds) <= 0 {
 		return rows
@@ -65,10 +65,10 @@ func (r SysMenu) SelectByIds(menuIds []string) []model.SysMenu {
 }
 
 // Insert 新增信息
-func (r SysMenu) Insert(sysMenu model.SysMenu) string {
+func (r SysMenu) Insert(sysMenu model.SysMenu) int64 {
 	sysMenu.DelFlag = "0"
-	if sysMenu.MenuId != "" {
-		return ""
+	if sysMenu.MenuId <= 0 {
+		return 0
 	}
 	if sysMenu.Icon == "" {
 		sysMenu.Icon = "#"
@@ -98,14 +98,14 @@ func (r SysMenu) Insert(sysMenu model.SysMenu) string {
 	// 执行插入
 	if err := db.DB("").Create(&sysMenu).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
-		return ""
+		return 0
 	}
 	return sysMenu.MenuId
 }
 
 // Update 修改信息
 func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
-	if sysMenu.MenuId == "" {
+	if sysMenu.MenuId <= 0 {
 		return 0
 	}
 	if sysMenu.Icon == "" {
@@ -143,8 +143,8 @@ func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
 }
 
 // DeleteById 删除信息 返回受影响行数
-func (r SysMenu) DeleteById(menuId string) int64 {
-	if menuId == "" {
+func (r SysMenu) DeleteById(menuId int64) int64 {
+	if menuId <= 0 {
 		return 0
 	}
 	tx := db.DB("").Model(&model.SysMenu{})
@@ -159,8 +159,8 @@ func (r SysMenu) DeleteById(menuId string) int64 {
 }
 
 // ExistChildrenByMenuIdAndStatus 菜单下同状态存在子节点数量
-func (r SysMenu) ExistChildrenByMenuIdAndStatus(menuId string, statusFlag string) int64 {
-	if menuId == "" {
+func (r SysMenu) ExistChildrenByMenuIdAndStatus(menuId int64, statusFlag string) int64 {
+	if menuId <= 0 {
 		return 0
 	}
 	tx := db.DB("").Model(&model.SysMenu{})
@@ -180,11 +180,11 @@ func (r SysMenu) ExistChildrenByMenuIdAndStatus(menuId string, statusFlag string
 }
 
 // CheckUnique 检查信息是否唯一
-func (r SysMenu) CheckUnique(sysMenu model.SysMenu) string {
+func (r SysMenu) CheckUnique(sysMenu model.SysMenu) int64 {
 	tx := db.DB("").Model(&model.SysMenu{})
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
-	if sysMenu.ParentId != "" {
+	if sysMenu.ParentId <= 0 {
 		tx = tx.Where("parent_id = ?", sysMenu.ParentId)
 	}
 	if sysMenu.MenuName != "" {
@@ -195,7 +195,7 @@ func (r SysMenu) CheckUnique(sysMenu model.SysMenu) string {
 	}
 
 	// 查询数据
-	var id string = ""
+	var id int64 = 0
 	if err := tx.Select("menu_id").Limit(1).Find(&id).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return id
@@ -204,9 +204,9 @@ func (r SysMenu) CheckUnique(sysMenu model.SysMenu) string {
 }
 
 // SelectPermsByUserId 根据用户ID查询权限标识
-func (r SysMenu) SelectPermsByUserId(userId string) []string {
+func (r SysMenu) SelectPermsByUserId(userId int64) []string {
 	rows := []string{}
-	if userId == "" {
+	if userId <= 0 {
 		return rows
 	}
 	tx := db.DB("").Table("sys_menu m")
@@ -227,9 +227,9 @@ func (r SysMenu) SelectPermsByUserId(userId string) []string {
 }
 
 // SelectByRoleId 根据角色ID查询菜单树信息
-func (r SysMenu) SelectByRoleId(roleId string, menuCheckStrictly bool) []string {
-	if roleId == "" {
-		return []string{}
+func (r SysMenu) SelectByRoleId(roleId int64, menuCheckStrictly bool) []int64 {
+	if roleId <= 0 {
+		return []int64{}
 	}
 
 	tx := db.DB("").Model(&model.SysMenu{})
@@ -245,7 +245,7 @@ func (r SysMenu) SelectByRoleId(roleId string, menuCheckStrictly bool) []string 
 	}
 
 	// 查询数据
-	rows := []string{}
+	rows := []int64{}
 	if err := tx.Distinct("menu_id").Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows
@@ -254,15 +254,15 @@ func (r SysMenu) SelectByRoleId(roleId string, menuCheckStrictly bool) []string 
 }
 
 // SelectTreeByUserId 根据用户ID查询菜单 0为管理员查询全部菜单，其他为用户ID查询权限
-func (r SysMenu) SelectTreeByUserId(userId string) []model.SysMenu {
-	if userId == "" {
+func (r SysMenu) SelectTreeByUserId(userId int64) []model.SysMenu {
+	if userId <= 0 {
 		return []model.SysMenu{}
 	}
 
 	tx := db.DB("").Model(&model.SysMenu{})
 	tx = tx.Where("del_flag = '0'")
 	// 管理员全部菜单
-	if userId == "0" {
+	if userId == 0 {
 		tx = tx.Where("menu_type in ? and status_flag = '1'", []string{constants.MENU_TYPE_DIR, constants.MENU_TYPE_MENU})
 	} else {
 		// 用户ID权限

@@ -38,8 +38,8 @@ func (s SysConfigController) List(c *gin.Context) {
 //
 // GET /:configId
 func (s SysConfigController) Info(c *gin.Context) {
-	configId := c.Param("configId")
-	if configId == "" {
+	configId := parse.Number(c.Param("configId"))
+	if configId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: configId is empty"))
 		return
 	}
@@ -62,13 +62,13 @@ func (s SysConfigController) Add(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.ConfigId != "" {
+	if body.ConfigId > 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: configId not is empty"))
 		return
 	}
 
 	// 检查属性值唯一
-	uniqueConfigKey := s.sysConfigService.CheckUniqueByKey(body.ConfigKey, "")
+	uniqueConfigKey := s.sysConfigService.CheckUniqueByKey(body.ConfigKey, 0)
 	if !uniqueConfigKey {
 		msg := fmt.Sprintf("参数配置新增【%s】失败，参数键名已存在", body.ConfigKey)
 		c.JSON(200, resp.ErrMsg(msg))
@@ -77,7 +77,7 @@ func (s SysConfigController) Add(c *gin.Context) {
 
 	body.CreateBy = reqctx.LoginUserToUserName(c)
 	insertId := s.sysConfigService.Insert(body)
-	if insertId != "" {
+	if insertId > 0 {
 		c.JSON(200, resp.OkData(insertId))
 		return
 	}
@@ -94,7 +94,7 @@ func (s SysConfigController) Edit(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.ConfigId == "" {
+	if body.ConfigId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: configId is empty"))
 		return
 	}
@@ -133,10 +133,16 @@ func (s SysConfigController) Edit(c *gin.Context) {
 // DELETE /:configId
 func (s SysConfigController) Remove(c *gin.Context) {
 	configIdStr := c.Param("configId")
-	configIds := parse.RemoveDuplicatesToArray(configIdStr, ",")
-	if configIdStr == "" || len(configIds) == 0 {
+	arr := parse.RemoveDuplicatesToArray(configIdStr, ",")
+	if configIdStr == "" || len(arr) == 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: configId is empty"))
 		return
+	}
+
+	// 转换成int64数组类型
+	configIds := make([]int64, 0)
+	for _, v := range arr {
+		configIds = append(configIds, parse.Number(v))
 	}
 
 	rows, err := s.sysConfigService.DeleteByIds(configIds)
