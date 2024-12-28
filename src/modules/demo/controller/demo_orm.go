@@ -56,8 +56,8 @@ func (s DemoORMController) All(c *gin.Context) {
 //
 // GET /:id
 func (s DemoORMController) Info(c *gin.Context) {
-	id := c.Param("id")
-	if id == "" {
+	id := parse.Number(c.Param("id"))
+	if id <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: id is empty"))
 		return
 	}
@@ -80,13 +80,13 @@ func (s DemoORMController) Add(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.Id != "" {
+	if body.Id > 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: id not is empty"))
 		return
 	}
 
 	InsertId := s.demoORMService.Insert(body)
-	if InsertId != "" {
+	if InsertId > 0 {
 		c.JSON(200, resp.OkData(InsertId))
 		return
 	}
@@ -103,7 +103,7 @@ func (s DemoORMController) Edit(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.Id == "" {
+	if body.Id <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: id is empty"))
 		return
 	}
@@ -121,10 +121,16 @@ func (s DemoORMController) Edit(c *gin.Context) {
 // DELETE /:id
 func (s DemoORMController) Remove(c *gin.Context) {
 	idStr := c.Param("id")
-	ids := parse.RemoveDuplicatesToArray(idStr, ",")
-	if idStr == "" || len(ids) <= 0 {
+	arr := parse.RemoveDuplicatesToArray(idStr, ",")
+	if idStr == "" || len(arr) <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: id is empty"))
 		return
+	}
+
+	// 转换成int64数组类型
+	ids := make([]int64, 0)
+	for _, v := range arr {
+		ids = append(ids, parse.Number(v))
 	}
 
 	rows := s.demoORMService.DeleteByIds(ids)

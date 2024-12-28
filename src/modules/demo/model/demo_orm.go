@@ -4,7 +4,7 @@ package model
 //
 // https://gorm.io/zh_CN/docs/query.html
 type DemoORM struct {
-	Id         string `gorm:"column:id;primaryKey;type:int;type:int;autoIncrement" json:"id"`    // 测试ID
+	Id         int64  `gorm:"column:id;primaryKey;autoIncrement" json:"id"`                      // 测试ID
 	Title      string `gorm:"column:title" json:"title" binding:"required"`                      // 测试标题
 	OrmType    string `gorm:"column:orm_type" json:"ormType" binding:"required"`                 // orm类型
 	StatusFlag string `gorm:"column:status_flag" json:"statusFlag" binding:"required,oneof=0 1"` // 状态（0关闭 1正常）
