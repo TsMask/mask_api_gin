@@ -21,10 +21,10 @@ func LoginUser(c *gin.Context) (token.LoginUser, error) {
 }
 
 // LoginUserToUserID 登录用户信息-用户ID
-func LoginUserToUserID(c *gin.Context) string {
+func LoginUserToUserID(c *gin.Context) int64 {
 	loginUser, err := LoginUser(c)
 	if err != nil {
-		return ""
+		return 0
 	}
 	return loginUser.UserId
 }
@@ -118,31 +118,31 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 
 		if constants.ROLE_SCOPE_CUSTOM == dataScope {
 			sql := fmt.Sprintf(`%s.dept_id IN ( 
-			SELECT dept_id FROM sys_role_dept WHERE role_id = '%s' 
+			SELECT dept_id FROM sys_role_dept WHERE role_id = %d 
 			) AND %s.dept_id NOT IN ( 
 			SELECT d.parent_id FROM sys_dept d 
 			INNER JOIN sys_role_dept rd ON rd.dept_id = d.dept_id 
-			AND rd.role_id = '%s'
+			AND rd.role_id = %d
 			)`, deptAlias, role.RoleId, deptAlias, role.RoleId)
 			conditions = append(conditions, sql)
 		}
 
 		if constants.ROLE_SCOPE_DEPT == dataScope {
-			sql := fmt.Sprintf("%s.dept_id = '%s'", deptAlias, userInfo.DeptId)
+			sql := fmt.Sprintf("%s.dept_id = %d", deptAlias, userInfo.DeptId)
 			conditions = append(conditions, sql)
 		}
 
 		if constants.ROLE_SCOPE_DEPT_CHILD == dataScope {
-			sql := fmt.Sprintf("%s.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = '%s' or find_in_set('%s' , ancestors ) )", deptAlias, userInfo.DeptId, userInfo.DeptId)
+			sql := fmt.Sprintf("%s.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = %d or find_in_set(%d, ancestors ) )", deptAlias, userInfo.DeptId, userInfo.DeptId)
 			conditions = append(conditions, sql)
 		}
 
 		if constants.ROLE_SCOPE_SELF == dataScope {
 			if userAlias == "" {
-				sql := fmt.Sprintf("%s.dept_id = '%s'", deptAlias, userInfo.DeptId)
+				sql := fmt.Sprintf("%s.dept_id = %d", deptAlias, userInfo.DeptId)
 				conditions = append(conditions, sql)
 			} else {
-				sql := fmt.Sprintf("%s.user_id = '%s'", userAlias, userInfo.UserId)
+				sql := fmt.Sprintf("%s.user_id = %d", userAlias, userInfo.UserId)
 				conditions = append(conditions, sql)
 			}
 		}

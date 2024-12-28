@@ -144,14 +144,14 @@ func readExternalConfig(configPaht string) {
 }
 
 // IsSystemUser 用户是否为系统管理员
-func IsSystemUser(userId string) bool {
-	if userId == "" {
+func IsSystemUser(userId int64) bool {
+	if userId <= 0 {
 		return false
 	}
 	// 从配置中获取系统管理员ID列表
 	arr := Get("user.system").([]any)
 	for _, v := range arr {
-		if fmt.Sprint(v) == userId {
+		if fmt.Sprint(v) == fmt.Sprint(userId) {
 			return true
 		}
 	}

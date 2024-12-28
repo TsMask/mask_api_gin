@@ -5,8 +5,8 @@ import systemModel "mask_api_gin/src/modules/system/model"
 // LoginUser 令牌登录用户身份权限信息对象
 type LoginUser struct {
 	UUID          string              `json:"uuid"`          // 用户唯一标识
-	UserId        string              `json:"userId"`        // 用户ID
-	DeptId        string              `json:"deptId"`        // 部门ID
+	UserId        int64               `json:"userId"`        // 用户ID
+	DeptId        int64               `json:"deptId"`        // 部门ID
 	LoginTime     int64               `json:"loginTime"`     // 登录时间时间戳
 	ExpireTime    int64               `json:"expireTime"`    // 过期时间时间戳
 	LoginIp       string              `json:"loginIp"`       // 登录IP地址 x.x.x.x

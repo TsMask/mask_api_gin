@@ -68,7 +68,7 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 				c.Abort() // 停止执行后续的处理函数
 				return
 			}
-			limitKey = fmt.Sprintf("%s%s:%s", constants.CACHE_RATE_LIMIT, loginUser.UserId, funcName)
+			limitKey = fmt.Sprintf("%s%d:%s", constants.CACHE_RATE_LIMIT, loginUser.UserId, funcName)
 		}
 
 		// IP
