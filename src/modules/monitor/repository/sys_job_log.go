@@ -94,14 +94,14 @@ func (r SysJobLog) Select(sysJobLog model.SysJobLog) []model.SysJobLog {
 }
 
 // SelectById 通过ID查询信息
-func (r SysJobLog) SelectById(jobLogId string) model.SysJobLog {
+func (r SysJobLog) SelectById(logId int64) model.SysJobLog {
 	item := model.SysJobLog{}
-	if jobLogId == "" {
+	if logId <= 0 {
 		return item
 	}
 	tx := db.DB("").Model(&model.SysJobLog{})
 	// 构建查询条件
-	tx = tx.Where("log_id = ?", jobLogId)
+	tx = tx.Where("log_id = ?", logId)
 	// 查询数据
 	if err := tx.Limit(1).Find(&item).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
@@ -111,17 +111,17 @@ func (r SysJobLog) SelectById(jobLogId string) model.SysJobLog {
 }
 
 // Insert 新增信息
-func (r SysJobLog) Insert(sysJobLog model.SysJobLog) string {
+func (r SysJobLog) Insert(sysJobLog model.SysJobLog) int64 {
 	// 执行插入
 	if err := db.DB("").Create(&sysJobLog).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
-		return ""
+		return 0
 	}
 	return sysJobLog.LogId
 }
 
 // DeleteByIds 批量删除信息
-func (r SysJobLog) DeleteByIds(logIds []string) int64 {
+func (r SysJobLog) DeleteByIds(logIds []int64) int64 {
 	if len(logIds) <= 0 {
 		return 0
 	}

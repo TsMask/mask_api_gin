@@ -32,10 +32,12 @@ type SysJobLogController struct {
 func (s SysJobLogController) List(c *gin.Context) {
 	// 查询参数转换map
 	query := reqctx.QueryMap(c)
-	if jobId := c.Query("jobId"); jobId != "" && jobId != "0" {
-		job := s.sysJobService.FindById(jobId)
-		query["jobName"] = job.JobName
-		query["jobGroup"] = job.JobGroup
+	if jobIdStr := c.Query("jobId"); jobIdStr != "" {
+		if jobId := parse.Number(jobIdStr); jobId > 0 {
+			job := s.sysJobService.FindById(jobId)
+			query["jobName"] = job.JobName
+			query["jobGroup"] = job.JobGroup
+		}
 	}
 	rows, total := s.sysJobLogService.FindByPage(query)
 	c.JSON(200, resp.OkData(map[string]any{"rows": rows, "total": total}))
@@ -45,8 +47,8 @@ func (s SysJobLogController) List(c *gin.Context) {
 //
 // GET /:logId
 func (s SysJobLogController) Info(c *gin.Context) {
-	logId := c.Param("logId")
-	if logId == "" {
+	logId := parse.Number(c.Param("logId"))
+	if logId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: logId is empty"))
 		return
 	}
@@ -64,10 +66,16 @@ func (s SysJobLogController) Info(c *gin.Context) {
 // DELETE /:logId
 func (s SysJobLogController) Remove(c *gin.Context) {
 	logIdStr := c.Param("logId")
-	logIds := parse.RemoveDuplicatesToArray(logIdStr, ",")
-	if logIdStr == "" || len(logIds) == 0 {
+	arr := parse.RemoveDuplicatesToArray(logIdStr, ",")
+	if logIdStr == "" || len(arr) == 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: logId is empty"))
 		return
+	}
+
+	// 转换成int64数组类型
+	logIds := make([]int64, 0)
+	for _, v := range arr {
+		logIds = append(logIds, parse.Number(v))
 	}
 
 	rows := s.sysJobLogService.RemoveByIds(logIds)
@@ -93,10 +101,12 @@ func (s SysJobLogController) Clean(c *gin.Context) {
 func (s SysJobLogController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := reqctx.QueryMap(c)
-	if jobId := c.Query("jobId"); jobId != "" && jobId != "0" {
-		job := s.sysJobService.FindById(jobId)
-		query["jobName"] = job.JobName
-		query["jobGroup"] = job.JobGroup
+	if jobIdStr := c.Query("jobId"); jobIdStr != "" {
+		if jobId := parse.Number(jobIdStr); jobId > 0 {
+			job := s.sysJobService.FindById(jobId)
+			query["jobName"] = job.JobName
+			query["jobGroup"] = job.JobGroup
+		}
 	}
 	rows, total := s.sysJobLogService.FindByPage(query)
 	if total == 0 {

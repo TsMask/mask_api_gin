@@ -39,8 +39,8 @@ func (s SysJobController) List(c *gin.Context) {
 //
 // GET /:jobId
 func (s SysJobController) Info(c *gin.Context) {
-	jobId := c.Param("jobId")
-	if jobId == "" {
+	jobId := parse.Number(c.Param("jobId"))
+	if jobId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: jobId is empty"))
 		return
 	}
@@ -63,7 +63,7 @@ func (s SysJobController) Add(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.JobId != "" {
+	if body.JobId > 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: jobId not is empty"))
 		return
 	}
@@ -89,7 +89,7 @@ func (s SysJobController) Add(c *gin.Context) {
 	}
 
 	// 检查属性值唯一
-	uniqueJob := s.sysJobService.CheckUniqueByJobName(body.JobName, body.JobGroup, "")
+	uniqueJob := s.sysJobService.CheckUniqueByJobName(body.JobName, body.JobGroup, 0)
 	if !uniqueJob {
 		msg := fmt.Sprintf("调度任务新增【%s】失败，同任务组内有相同任务名称", body.JobName)
 		c.JSON(200, resp.ErrMsg(msg))
@@ -98,7 +98,7 @@ func (s SysJobController) Add(c *gin.Context) {
 
 	body.CreateBy = reqctx.LoginUserToUserName(c)
 	insertId := s.sysJobService.Insert(body)
-	if insertId != "" {
+	if insertId > 0 {
 		c.JSON(200, resp.OkData(insertId))
 		return
 	}
@@ -115,7 +115,7 @@ func (s SysJobController) Edit(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40010, errMsgs))
 		return
 	}
-	if body.JobId == "" {
+	if body.JobId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: jobId is empty"))
 		return
 	}
@@ -179,10 +179,16 @@ func (s SysJobController) Edit(c *gin.Context) {
 // DELETE /:jobId
 func (s SysJobController) Remove(c *gin.Context) {
 	jobIdStr := c.Param("jobId")
-	jobIds := parse.RemoveDuplicatesToArray(jobIdStr, ",")
-	if jobIdStr == "" || len(jobIds) == 0 {
+	arr := parse.RemoveDuplicatesToArray(jobIdStr, ",")
+	if jobIdStr == "" || len(arr) == 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: jobId is empty"))
 		return
+	}
+
+	// 转换成int64数组类型
+	jobIds := make([]int64, 0)
+	for _, v := range arr {
+		jobIds = append(jobIds, parse.Number(v))
 	}
 
 	rows, err := s.sysJobService.DeleteByIds(jobIds)
@@ -199,7 +205,7 @@ func (s SysJobController) Remove(c *gin.Context) {
 // POST /status
 func (s SysJobController) Status(c *gin.Context) {
 	var body struct {
-		JobId      string `json:"jobId" binding:"required"`
+		JobId      int64  `json:"jobId" binding:"required"`
 		StatusFlag string `json:"statusFlag" binding:"required,oneof=0 1 2"`
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
@@ -236,8 +242,8 @@ func (s SysJobController) Status(c *gin.Context) {
 //
 // PUT /run/:jobId
 func (s SysJobController) Run(c *gin.Context) {
-	jobId := c.Param("jobId")
-	if jobId == "" {
+	jobId := parse.Number(c.Param("jobId"))
+	if jobId <= 0 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: jobId is empty"))
 		return
 	}

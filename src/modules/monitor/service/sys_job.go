@@ -35,20 +35,20 @@ func (s SysJob) Find(sysJob model.SysJob) []model.SysJob {
 }
 
 // FindById 通过ID查询
-func (s SysJob) FindById(jobId string) model.SysJob {
-	if jobId == "" {
+func (s SysJob) FindById(jobId int64) model.SysJob {
+	if jobId <= 0 {
 		return model.SysJob{}
 	}
-	if jobs := s.sysJobRepository.SelectByIds([]string{jobId}); len(jobs) > 0 {
+	if jobs := s.sysJobRepository.SelectByIds([]int64{jobId}); len(jobs) > 0 {
 		return jobs[0]
 	}
 	return model.SysJob{}
 }
 
 // Insert 新增调度任务信息
-func (s SysJob) Insert(sysJob model.SysJob) string {
+func (s SysJob) Insert(sysJob model.SysJob) int64 {
 	insertId := s.sysJobRepository.Insert(sysJob)
-	if insertId != "" && sysJob.StatusFlag == constants.STATUS_YES {
+	if insertId > 0 && sysJob.StatusFlag == constants.STATUS_YES {
 		sysJob.JobId = insertId
 		s.insertQueueJob(sysJob, true)
 	}
@@ -72,7 +72,7 @@ func (s SysJob) Update(sysJob model.SysJob) int64 {
 }
 
 // DeleteByIds 批量删除
-func (s SysJob) DeleteByIds(jobIds []string) (int64, error) {
+func (s SysJob) DeleteByIds(jobIds []int64) (int64, error) {
 	// 检查是否存在
 	jobs := s.sysJobRepository.SelectByIds(jobIds)
 	if len(jobs) <= 0 {
@@ -89,7 +89,7 @@ func (s SysJob) DeleteByIds(jobIds []string) (int64, error) {
 }
 
 // CheckUniqueByJobName 校验调度任务名称和组是否唯一
-func (s SysJob) CheckUniqueByJobName(jobName, jobGroup, jobId string) bool {
+func (s SysJob) CheckUniqueByJobName(jobName, jobGroup string, jobId int64) bool {
 	uniqueId := s.sysJobRepository.CheckUniqueJob(model.SysJob{
 		JobName:  jobName,
 		JobGroup: jobGroup,
@@ -97,7 +97,7 @@ func (s SysJob) CheckUniqueByJobName(jobName, jobGroup, jobId string) bool {
 	if uniqueId == jobId {
 		return true
 	}
-	return uniqueId == ""
+	return uniqueId == 0
 }
 
 // Run 立即运行一次调度任务
@@ -123,7 +123,7 @@ func (s SysJob) insertQueueJob(sysJob model.SysJob, repeat bool) bool {
 	if !repeat {
 		// 执行单次任务
 		status := queue.RunJob(options, cron.JobOptions{
-			JobId: sysJob.JobId,
+			JobId: fmt.Sprint(sysJob.JobId),
 		})
 		// 执行中或等待中的都返回正常
 		return status == cron.Active || status == cron.Waiting
@@ -131,7 +131,7 @@ func (s SysJob) insertQueueJob(sysJob model.SysJob, repeat bool) bool {
 
 	// 执行重复任务
 	queue.RunJob(options, cron.JobOptions{
-		JobId: sysJob.JobId,
+		JobId: fmt.Sprint(sysJob.JobId),
 		Cron:  sysJob.CronExpression,
 	})
 	return true
@@ -144,7 +144,7 @@ func (s SysJob) deleteQueueJob(sysJob model.SysJob) bool {
 	if queue.Name != sysJob.InvokeTarget {
 		return false
 	}
-	return queue.RemoveJob(sysJob.JobId)
+	return queue.RemoveJob(fmt.Sprint(sysJob.JobId))
 }
 
 // Reset 重置初始调度任务
