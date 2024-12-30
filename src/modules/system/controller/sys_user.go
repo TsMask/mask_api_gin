@@ -118,7 +118,7 @@ func (s SysUserController) Add(c *gin.Context) {
 	}
 	if err := c.ShouldBindBodyWithJSON(&bodyPassword); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 	body.Password = bodyPassword.Password
@@ -193,7 +193,7 @@ func (s SysUserController) Edit(c *gin.Context) {
 	var body model.SysUser
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 	if body.UserId <= 0 {
@@ -318,7 +318,7 @@ func (s SysUserController) Password(c *gin.Context) {
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 
@@ -360,7 +360,7 @@ func (s SysUserController) Status(c *gin.Context) {
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 
@@ -450,7 +450,7 @@ func (s SysUserController) Import(c *gin.Context) {
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 

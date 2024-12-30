@@ -77,7 +77,7 @@ func (s DemoORMController) Add(c *gin.Context) {
 	var body model.DemoORM
 	if err := c.ShouldBindJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 	if body.Id > 0 {
@@ -85,9 +85,9 @@ func (s DemoORMController) Add(c *gin.Context) {
 		return
 	}
 
-	InsertId := s.demoORMService.Insert(body)
-	if InsertId > 0 {
-		c.JSON(200, resp.OkData(InsertId))
+	insertId := s.demoORMService.Insert(body)
+	if insertId > 0 {
+		c.JSON(200, resp.OkData(insertId))
 		return
 	}
 	c.JSON(200, resp.Err(nil))
@@ -100,7 +100,7 @@ func (s DemoORMController) Edit(c *gin.Context) {
 	var body model.DemoORM
 	if err := c.ShouldBindJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 	if body.Id <= 0 {
@@ -133,9 +133,9 @@ func (s DemoORMController) Remove(c *gin.Context) {
 		ids = append(ids, parse.Number(v))
 	}
 
-	rows := s.demoORMService.DeleteByIds(ids)
-	if rows > 0 {
-		msg := fmt.Sprintf("删除成功：%d", rows)
+	rowsAffected := s.demoORMService.DeleteByIds(ids)
+	if rowsAffected > 0 {
+		msg := fmt.Sprintf("删除成功：%d", rowsAffected)
 		c.JSON(200, resp.OkMsg(msg))
 		return
 	}

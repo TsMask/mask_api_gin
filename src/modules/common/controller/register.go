@@ -35,7 +35,7 @@ func (s *RegisterController) Register(c *gin.Context) {
 	var body model.RegisterBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 

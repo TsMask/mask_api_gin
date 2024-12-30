@@ -128,7 +128,6 @@ func (s DemoORMService) DeleteByIds(ids []int64) int64 {
 	}
 	// 构建查询条件
 	tx := db.DB("").Where("id in ?", ids)
-	// 执行更新删除标记
 	if err := tx.Delete(&model.DemoORM{}).Error; err != nil {
 		return 0
 	}

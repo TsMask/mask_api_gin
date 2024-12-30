@@ -38,7 +38,7 @@ func (s SysDeptController) List(c *gin.Context) {
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 
@@ -78,7 +78,7 @@ func (s SysDeptController) Add(c *gin.Context) {
 	var body model.SysDept
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 	if body.DeptId > 0 {
@@ -132,7 +132,7 @@ func (s SysDeptController) Edit(c *gin.Context) {
 	var body model.SysDept
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 	if body.DeptId <= 0 {
@@ -278,7 +278,7 @@ func (s SysDeptController) Tree(c *gin.Context) {
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 

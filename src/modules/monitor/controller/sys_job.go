@@ -60,7 +60,7 @@ func (s SysJobController) Add(c *gin.Context) {
 	var body model.SysJob
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 	if body.JobId > 0 {
@@ -112,7 +112,7 @@ func (s SysJobController) Edit(c *gin.Context) {
 	var body model.SysJob
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 	if body.JobId <= 0 {
@@ -210,7 +210,7 @@ func (s SysJobController) Status(c *gin.Context) {
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 

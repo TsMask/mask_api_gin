@@ -72,7 +72,7 @@ func (s SysMenuController) Add(c *gin.Context) {
 	var body model.SysMenu
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 	if body.MenuId > 0 {
@@ -121,7 +121,7 @@ func (s SysMenuController) Edit(c *gin.Context) {
 	var body model.SysMenu
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 	if body.MenuId <= 0 {

@@ -37,7 +37,7 @@ func (s AccountController) Login(c *gin.Context) {
 	var loginBody model.LoginBody
 	if err := c.ShouldBindJSON(&loginBody); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(400, resp.CodeMsg(40010, errMsgs))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
 
