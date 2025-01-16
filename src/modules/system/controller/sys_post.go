@@ -18,7 +18,7 @@ var NewSysPost = &SysPostController{
 	sysPostService: service.NewSysPost,
 }
 
-// SysPostController 岗位信息
+// SysPostController 岗位信息 控制层处理
 //
 // PATH /system/post
 type SysPostController struct {
@@ -68,16 +68,16 @@ func (s SysPostController) Add(c *gin.Context) {
 	}
 
 	// 检查名称唯一
-	uniquePostName := s.sysPostService.CheckUniqueByName(body.PostName, 0)
-	if !uniquePostName {
+	uniqueuName := s.sysPostService.CheckUniqueByName(body.PostName, 0)
+	if !uniqueuName {
 		msg := fmt.Sprintf("岗位新增【%s】失败，岗位名称已存在", body.PostName)
 		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
 	// 检查编码属性值唯一
-	uniquePostCode := s.sysPostService.CheckUniqueByCode(body.PostCode, 0)
-	if !uniquePostCode {
+	uniqueCode := s.sysPostService.CheckUniqueByCode(body.PostCode, 0)
+	if !uniqueCode {
 		msg := fmt.Sprintf("岗位新增【%s】失败，岗位编码已存在", body.PostCode)
 		c.JSON(200, resp.ErrMsg(msg))
 		return

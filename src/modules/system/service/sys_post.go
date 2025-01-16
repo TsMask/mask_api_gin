@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
@@ -113,7 +114,7 @@ func (s SysPost) ExportData(rows []model.SysPost, fileName string) (string, erro
 	for i, row := range rows {
 		idx := strconv.Itoa(i + 2)
 		statusValue := "停用"
-		if row.StatusFlag == "1" {
+		if row.StatusFlag == constants.STATUS_YES {
 			statusValue = "正常"
 		}
 		dataCells = append(dataCells, map[string]any{

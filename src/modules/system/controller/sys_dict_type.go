@@ -68,17 +68,17 @@ func (s SysDictTypeController) Add(c *gin.Context) {
 	}
 
 	// 检查字典名称唯一
-	uniqueDictName := s.sysDictTypeService.CheckUniqueByName(body.DictName, 0)
-	if !uniqueDictName {
+	uniqueName := s.sysDictTypeService.CheckUniqueByName(body.DictName, 0)
+	if !uniqueName {
 		msg := fmt.Sprintf("字典新增【%s】失败，字典名称已存在", body.DictName)
 		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
 	// 检查字典类型唯一
-	uniqueDictType := s.sysDictTypeService.CheckUniqueByType(body.DictType, 0)
-	if !uniqueDictType {
-		msg := fmt.Sprintf("字典新增【%s】失败，字典类型已存在", body.DictType)
+	uniqueType := s.sysDictTypeService.CheckUniqueByType(body.DictType, 0)
+	if !uniqueType {
+		msg := fmt.Sprintf("字典新增【%s】失败，字典类型已存在", body.DictName)
 		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
@@ -108,34 +108,34 @@ func (s SysDictTypeController) Edit(c *gin.Context) {
 	}
 
 	// 检查数据是否存在
-	dictInfo := s.sysDictTypeService.FindById(body.DictId)
-	if dictInfo.DictId != body.DictId {
+	dictType := s.sysDictTypeService.FindById(body.DictId)
+	if dictType.DictId != body.DictId {
 		c.JSON(200, resp.ErrMsg("没有权限访问字典类型数据！"))
 		return
 	}
 
 	// 检查字典名称唯一
-	uniqueDictName := s.sysDictTypeService.CheckUniqueByName(body.DictName, body.DictId)
-	if !uniqueDictName {
+	uniqueName := s.sysDictTypeService.CheckUniqueByName(body.DictName, body.DictId)
+	if !uniqueName {
 		msg := fmt.Sprintf("字典修改【%s】失败，字典名称已存在", body.DictName)
 		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
 	// 检查字典类型唯一
-	uniqueDictType := s.sysDictTypeService.CheckUniqueByType(body.DictType, body.DictId)
-	if !uniqueDictType {
-		msg := fmt.Sprintf("字典修改【%s】失败，字典类型已存在", body.DictType)
+	uniqueType := s.sysDictTypeService.CheckUniqueByType(body.DictType, body.DictId)
+	if !uniqueType {
+		msg := fmt.Sprintf("字典修改【%s】失败，字典类型已存在", body.DictName)
 		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
-	dictInfo.DictName = body.DictName
-	dictInfo.DictType = body.DictType
-	dictInfo.StatusFlag = body.StatusFlag
-	dictInfo.Remark = body.Remark
-	dictInfo.UpdateBy = reqctx.LoginUserToUserName(c)
-	rows := s.sysDictTypeService.Update(dictInfo)
+	dictType.DictName = body.DictName
+	dictType.DictType = body.DictType
+	dictType.StatusFlag = body.StatusFlag
+	dictType.Remark = body.Remark
+	dictType.UpdateBy = reqctx.LoginUserToUserName(c)
+	rows := s.sysDictTypeService.Update(dictType)
 	if rows > 0 {
 		c.JSON(200, resp.Ok(nil))
 		return

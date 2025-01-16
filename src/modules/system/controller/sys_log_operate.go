@@ -16,7 +16,7 @@ var NewSysLogOperate = &SysLogOperateController{
 	SysLogOperateService: service.NewSysLogOperate,
 }
 
-// SysLogOperateController 操作日志记录信息
+// SysLogOperateController 操作日志记录信息 控制层处理
 //
 // PATH /system/log/operate
 type SysLogOperateController struct {

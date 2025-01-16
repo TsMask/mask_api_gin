@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
@@ -36,9 +37,9 @@ func (s SysDictData) FindById(dictId int64) model.SysDictData {
 	if dictId <= 0 {
 		return model.SysDictData{}
 	}
-	arr := s.sysDictDataRepository.SelectByIds([]int64{dictId})
-	if len(arr) > 0 {
-		return arr[0]
+	dicts := s.sysDictDataRepository.SelectByIds([]int64{dictId})
+	if len(dicts) > 0 {
+		return dicts[0]
 	}
 	return model.SysDictData{}
 }
@@ -69,12 +70,12 @@ func (s SysDictData) Update(sysDictData model.SysDictData) int64 {
 // DeleteByIds 批量删除信息
 func (s SysDictData) DeleteByIds(dictIds []int64) (int64, error) {
 	// 检查是否存在
-	arr := s.sysDictDataRepository.SelectByIds(dictIds)
-	if len(arr) <= 0 {
+	dicts := s.sysDictDataRepository.SelectByIds(dictIds)
+	if len(dicts) <= 0 {
 		return 0, fmt.Errorf("没有权限访问字典编码数据！")
 	}
-	if len(arr) == len(dictIds) {
-		for _, v := range arr {
+	if len(dicts) == len(dictIds) {
+		for _, v := range dicts {
 			// 刷新缓存
 			s.sysDictTypeService.CacheClean(v.DictType)
 			s.sysDictTypeService.CacheLoad(v.DictType)
@@ -86,10 +87,10 @@ func (s SysDictData) DeleteByIds(dictIds []int64) (int64, error) {
 }
 
 // CheckUniqueTypeByLabel 检查同字典类型下字典标签是否唯一
-func (s SysDictData) CheckUniqueTypeByLabel(dictType, dictLabel string, dataId int64) bool {
+func (s SysDictData) CheckUniqueTypeByLabel(dictType, dataLabel string, dataId int64) bool {
 	uniqueId := s.sysDictDataRepository.CheckUnique(model.SysDictData{
 		DictType:  dictType,
-		DataLabel: dictLabel,
+		DataLabel: dataLabel,
 	})
 	if uniqueId == dataId {
 		return true
@@ -98,10 +99,10 @@ func (s SysDictData) CheckUniqueTypeByLabel(dictType, dictLabel string, dataId i
 }
 
 // CheckUniqueTypeByValue 检查同字典类型下字典键值是否唯一
-func (s SysDictData) CheckUniqueTypeByValue(dictType, dictValue string, dataId int64) bool {
+func (s SysDictData) CheckUniqueTypeByValue(dictType, dataValue string, dataId int64) bool {
 	uniqueId := s.sysDictDataRepository.CheckUnique(model.SysDictData{
 		DictType:  dictType,
-		DataValue: dictValue,
+		DataValue: dataValue,
 	})
 	if uniqueId == dataId {
 		return true
@@ -125,7 +126,7 @@ func (s SysDictData) ExportData(rows []model.SysDictData, fileName string) (stri
 	for i, row := range rows {
 		idx := strconv.Itoa(i + 2)
 		statusValue := "停用"
-		if row.StatusFlag == "1" {
+		if row.StatusFlag == constants.STATUS_YES {
 			statusValue = "正常"
 		}
 		dataCells = append(dataCells, map[string]any{

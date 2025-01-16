@@ -70,23 +70,23 @@ func (s SysDictDataController) Add(c *gin.Context) {
 	}
 
 	// 检查字典类型是否存在
-	sysDictType := s.sysDictTypeService.FindByType(body.DictType)
-	if sysDictType.DictType != body.DictType {
+	dictType := s.sysDictTypeService.FindByType(body.DictType)
+	if dictType.DictType != body.DictType {
 		c.JSON(200, resp.ErrMsg("没有权限访问字典类型数据！"))
 		return
 	}
 
 	// 检查字典标签唯一
-	uniqueDictLabel := s.sysDictDataService.CheckUniqueTypeByLabel(body.DictType, body.DataLabel, 0)
-	if !uniqueDictLabel {
+	uniqueLabel := s.sysDictDataService.CheckUniqueTypeByLabel(body.DictType, body.DataLabel, 0)
+	if !uniqueLabel {
 		msg := fmt.Sprintf("数据新增【%s】失败，该字典类型下标签名已存在", body.DataLabel)
 		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
 	// 检查字典键值唯一
-	uniqueDictValue := s.sysDictDataService.CheckUniqueTypeByValue(body.DictType, body.DataValue, 0)
-	if !uniqueDictValue {
+	uniqueValue := s.sysDictDataService.CheckUniqueTypeByValue(body.DictType, body.DataValue, 0)
+	if !uniqueValue {
 		msg := fmt.Sprintf("数据新增【%s】失败，该字典类型下标签值已存在", body.DataValue)
 		c.JSON(200, resp.ErrMsg(msg))
 		return
@@ -117,45 +117,45 @@ func (s SysDictDataController) Edit(c *gin.Context) {
 	}
 
 	// 检查字典类型是否存在
-	sysDictType := s.sysDictTypeService.FindByType(body.DictType)
-	if sysDictType.DictType != body.DictType {
+	dictType := s.sysDictTypeService.FindByType(body.DictType)
+	if dictType.DictType != body.DictType {
 		c.JSON(200, resp.ErrMsg("没有权限访问字典类型数据！"))
 		return
 	}
 
 	// 检查字典编码是否存在
-	dataInfo := s.sysDictDataService.FindById(body.DataId)
-	if dataInfo.DataId != body.DataId {
+	dictData := s.sysDictDataService.FindById(body.DataId)
+	if dictData.DataId != body.DataId {
 		c.JSON(200, resp.ErrMsg("没有权限访问字典编码数据！"))
 		return
 	}
 
 	// 检查字典标签唯一
-	uniqueDictLabel := s.sysDictDataService.CheckUniqueTypeByLabel(body.DictType, body.DataLabel, body.DataId)
-	if !uniqueDictLabel {
+	uniqueLabel := s.sysDictDataService.CheckUniqueTypeByLabel(body.DictType, body.DataLabel, body.DataId)
+	if !uniqueLabel {
 		msg := fmt.Sprintf("数据修改【%s】失败，该字典类型下标签名已存在", body.DataLabel)
 		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
 	// 检查字典键值唯一
-	uniqueDictValue := s.sysDictDataService.CheckUniqueTypeByValue(body.DictType, body.DataValue, body.DataId)
-	if !uniqueDictValue {
-		msg := fmt.Sprintf("数据修改【%s】失败，该字典类型下标签值已存在", body.DataValue)
+	uniqueValue := s.sysDictDataService.CheckUniqueTypeByValue(body.DictType, body.DataValue, body.DataId)
+	if !uniqueValue {
+		msg := fmt.Sprintf("数据修改【%s】失败，该字典类型下标签值已存在", body.DataLabel)
 		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
-	dataInfo.DictType = body.DictType
-	dataInfo.DataLabel = body.DataLabel
-	dataInfo.DataValue = body.DataValue
-	dataInfo.DataSort = body.DataSort
-	dataInfo.TagClass = body.TagClass
-	dataInfo.TagType = body.TagType
-	dataInfo.StatusFlag = body.StatusFlag
-	dataInfo.Remark = body.Remark
-	dataInfo.UpdateBy = reqctx.LoginUserToUserName(c)
-	rows := s.sysDictDataService.Update(dataInfo)
+	dictData.DictType = body.DictType
+	dictData.DataLabel = body.DataLabel
+	dictData.DataValue = body.DataValue
+	dictData.DataSort = body.DataSort
+	dictData.TagClass = body.TagClass
+	dictData.TagType = body.TagType
+	dictData.StatusFlag = body.StatusFlag
+	dictData.Remark = body.Remark
+	dictData.UpdateBy = reqctx.LoginUserToUserName(c)
+	rows := s.sysDictDataService.Update(dictData)
 	if rows > 0 {
 		c.JSON(200, resp.Ok(nil))
 		return

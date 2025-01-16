@@ -20,7 +20,7 @@ var NewSysRole = &SysRoleController{
 	sysUserService: service.NewSysUser,
 }
 
-// SysRoleController 角色信息
+// SysRoleController 角色信息 控制层处理
 //
 // PATH /system/role
 type SysRoleController struct {
@@ -71,16 +71,16 @@ func (s SysRoleController) Add(c *gin.Context) {
 	}
 
 	// 判断角色名称是否唯一
-	uniqueRoleName := s.sysRoleService.CheckUniqueByName(body.RoleName, 0)
-	if !uniqueRoleName {
+	uniqueName := s.sysRoleService.CheckUniqueByName(body.RoleName, 0)
+	if !uniqueName {
 		msg := fmt.Sprintf("角色新增【%s】失败，角色名称已存在", body.RoleName)
 		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
 	// 判断角色键值是否唯一
-	uniqueRoleKey := s.sysRoleService.CheckUniqueByKey(body.RoleKey, 0)
-	if !uniqueRoleKey {
+	uniqueKey := s.sysRoleService.CheckUniqueByKey(body.RoleKey, 0)
+	if !uniqueKey {
 		msg := fmt.Sprintf("角色新增【%s】失败，角色键值已存在", body.RoleName)
 		c.JSON(200, resp.ErrMsg(msg))
 		return
@@ -117,30 +117,39 @@ func (s SysRoleController) Edit(c *gin.Context) {
 	}
 
 	// 检查是否存在
-	role := s.sysRoleService.FindById(body.RoleId)
-	if role.RoleId != body.RoleId {
+	roleInfo := s.sysRoleService.FindById(body.RoleId)
+	if roleInfo.RoleId != body.RoleId {
 		c.JSON(200, resp.ErrMsg("没有权限访问角色数据！"))
 		return
 	}
 
 	// 判断角色名称是否唯一
-	uniqueRoleName := s.sysRoleService.CheckUniqueByName(body.RoleName, body.RoleId)
-	if !uniqueRoleName {
+	uniqueName := s.sysRoleService.CheckUniqueByName(body.RoleName, body.RoleId)
+	if !uniqueName {
 		msg := fmt.Sprintf("角色修改【%s】失败，角色名称已存在", body.RoleName)
 		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
 	// 判断角色键值是否唯一
-	uniqueRoleKey := s.sysRoleService.CheckUniqueByKey(body.RoleKey, body.RoleId)
-	if !uniqueRoleKey {
+	uniqueKey := s.sysRoleService.CheckUniqueByKey(body.RoleKey, body.RoleId)
+	if !uniqueKey {
 		msg := fmt.Sprintf("角色修改【%s】失败，角色键值已存在", body.RoleName)
 		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
-	body.UpdateBy = reqctx.LoginUserToUserName(c)
-	rows := s.sysRoleService.Update(body)
+	roleInfo.RoleName = body.RoleName
+	roleInfo.RoleKey = body.RoleKey
+	roleInfo.RoleSort = body.RoleSort
+	roleInfo.DataScope = body.DataScope
+	roleInfo.MenuCheckStrictly = body.MenuCheckStrictly
+	roleInfo.DeptCheckStrictly = body.DeptCheckStrictly
+	roleInfo.StatusFlag = body.StatusFlag
+	roleInfo.UpdateBy = reqctx.LoginUserToUserName(c)
+	roleInfo.MenuIds = body.MenuIds
+	roleInfo.DeptIds = body.DeptIds
+	rows := s.sysRoleService.Update(roleInfo)
 	if rows > 0 {
 		c.JSON(200, resp.Ok(nil))
 		return
@@ -270,7 +279,7 @@ func (s SysRoleController) DataScope(c *gin.Context) {
 
 // UserAuthList 角色分配用户列表
 //
-// GET /user/list?roleId=xxxx
+// GET /user/list
 func (s SysRoleController) UserAuthList(c *gin.Context) {
 	roleId := parse.Number(c.Query("roleId"))
 	if roleId <= 0 {

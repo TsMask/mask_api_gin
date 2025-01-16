@@ -166,27 +166,6 @@ func (r SysRole) DeleteByIds(roleIds []int64) int64 {
 	return tx.RowsAffected
 }
 
-// SelectByUserId 根据用户ID获取角色信息
-func (r SysRole) SelectByUserId(userId int64) []model.SysRole {
-	rows := []model.SysRole{}
-	if userId <= 0 {
-		return rows
-	}
-	tx := db.DB("").Table("sys_user_role ur")
-	// 构建查询条件
-	tx = tx.Distinct("r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, r.menu_check_strictly, r.dept_check_strictly, r.status_flag, r.del_flag, r.create_time, r.remark").
-		Joins("left join sys_user u on u.user_id = ur.user_id").
-		Joins("left join sys_role r on r.role_id = ur.role_id").
-		Where("u.del_flag = '0' AND ur.user_id = ?", userId)
-
-	// 查询数据
-	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
-	}
-	return rows
-}
-
 // CheckUnique 检查信息是否唯一
 func (r SysRole) CheckUnique(sysRole model.SysRole) int64 {
 	tx := db.DB("").Model(&model.SysRole{})
@@ -206,4 +185,25 @@ func (r SysRole) CheckUnique(sysRole model.SysRole) int64 {
 		return id
 	}
 	return id
+}
+
+// SelectByUserId 根据用户ID获取角色信息
+func (r SysRole) SelectByUserId(userId int64) []model.SysRole {
+	rows := []model.SysRole{}
+	if userId <= 0 {
+		return rows
+	}
+	tx := db.DB("").Table("sys_user_role ur")
+	// 构建查询条件
+	tx = tx.Distinct("r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, r.menu_check_strictly, r.dept_check_strictly, r.status_flag, r.del_flag, r.create_time, r.remark").
+		Joins("left join sys_user u on u.user_id = ur.user_id").
+		Joins("left join sys_role r on r.role_id = ur.role_id").
+		Where("u.del_flag = '0' AND ur.user_id = ?", userId)
+
+	// 查询数据
+	if err := tx.Find(&rows).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return rows
+	}
+	return rows
 }

@@ -120,9 +120,27 @@ func (s SysDictType) CheckUniqueByType(dictType string, dictId int64) bool {
 	return uniqueId == 0
 }
 
-// getCacheKey 组装缓存key
-func (s SysDictType) getCacheKey(dictType string) string {
-	return constants.CACHE_SYS_DICT + dictType
+// FindDataByType 获取字典数据缓存数据
+func (s SysDictType) FindDataByType(dictType string) []model.SysDictData {
+	var data []model.SysDictData
+	key := constants.CACHE_SYS_DICT + ":" + dictType
+	jsonStr, _ := redis.Get("", key)
+	if len(jsonStr) > 7 {
+		if err := json.Unmarshal([]byte(jsonStr), &data); err != nil {
+			data = []model.SysDictData{}
+		}
+	} else {
+		data = s.sysDictDataRepository.Select(model.SysDictData{
+			StatusFlag: constants.STATUS_YES,
+			DictType:   dictType,
+		})
+		if len(data) > 0 {
+			_ = redis.Del("", key)
+			values, _ := json.Marshal(data)
+			_ = redis.Set("", key, string(values))
+		}
+	}
+	return data
 }
 
 // CacheLoad 加载字典缓存数据 传入*查询全部
@@ -155,7 +173,7 @@ func (s SysDictType) CacheLoad(dictType string) {
 
 	// 放入缓存
 	for k, v := range m {
-		key := s.getCacheKey(k)
+		key := constants.CACHE_SYS_DICT + ":" + k
 		_ = redis.Del("", key)
 		values, _ := json.Marshal(v)
 		_ = redis.Set("", key, string(values))
@@ -164,35 +182,12 @@ func (s SysDictType) CacheLoad(dictType string) {
 
 // CacheClean 清空字典缓存数据 传入*清除全部
 func (s SysDictType) CacheClean(dictType string) bool {
-	key := s.getCacheKey(dictType)
+	key := constants.CACHE_SYS_DICT + ":" + dictType
 	keys, err := redis.GetKeys("", key)
 	if err != nil {
 		return false
 	}
 	return redis.DelKeys("", keys) == nil
-}
-
-// FindDataByType 获取字典数据缓存数据
-func (s SysDictType) FindDataByType(dictType string) []model.SysDictData {
-	var data []model.SysDictData
-	key := s.getCacheKey(dictType)
-	jsonStr, _ := redis.Get("", key)
-	if len(jsonStr) > 7 {
-		if err := json.Unmarshal([]byte(jsonStr), &data); err != nil {
-			data = []model.SysDictData{}
-		}
-	} else {
-		data = s.sysDictDataRepository.Select(model.SysDictData{
-			StatusFlag: constants.STATUS_YES,
-			DictType:   dictType,
-		})
-		if len(data) > 0 {
-			_ = redis.Del("", key)
-			values, _ := json.Marshal(data)
-			_ = redis.Set("", key, string(values))
-		}
-	}
-	return data
 }
 
 // ExportData 导出数据表格
@@ -209,7 +204,7 @@ func (s SysDictType) ExportData(rows []model.SysDictType, fileName string) (stri
 	for i, row := range rows {
 		idx := strconv.Itoa(i + 2)
 		statusValue := "停用"
-		if row.StatusFlag == "1" {
+		if row.StatusFlag == constants.STATUS_YES {
 			statusValue = "正常"
 		}
 		dataCells = append(dataCells, map[string]any{

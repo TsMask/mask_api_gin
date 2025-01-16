@@ -41,12 +41,12 @@ func (r SysRoleDept) DeleteByDeptIds(deptIds []int64) int64 {
 }
 
 // BatchInsert 批量新增信息
-func (r SysRoleDept) BatchInsert(roleDepts []model.SysRoleDept) int64 {
-	if len(roleDepts) <= 0 {
+func (r SysRoleDept) BatchInsert(sysRoleDepts []model.SysRoleDept) int64 {
+	if len(sysRoleDepts) <= 0 {
 		return 0
 	}
 	// 执行批量删除
-	tx := db.DB("").CreateInBatches(roleDepts, 500)
+	tx := db.DB("").CreateInBatches(sysRoleDepts, 500)
 	if err := tx.Error; err != nil {
 		logger.Errorf("delete batch err => %v", err.Error())
 		return 0

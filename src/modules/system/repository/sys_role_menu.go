@@ -57,12 +57,12 @@ func (r SysRoleMenu) DeleteByMenuIds(menuIds []int64) int64 {
 }
 
 // BatchInsert 批量新增信息
-func (r SysRoleMenu) BatchInsert(roleMenus []model.SysRoleMenu) int64 {
-	if len(roleMenus) <= 0 {
+func (r SysRoleMenu) BatchInsert(sysRoleMenus []model.SysRoleMenu) int64 {
+	if len(sysRoleMenus) <= 0 {
 		return 0
 	}
 	// 执行批量删除
-	tx := db.DB("").CreateInBatches(roleMenus, 500)
+	tx := db.DB("").CreateInBatches(sysRoleMenus, 500)
 	if err := tx.Error; err != nil {
 		logger.Errorf("delete batch err => %v", err.Error())
 		return 0

@@ -22,7 +22,7 @@ var NewSysProfile = &SysProfileController{
 	sysMenuService: service.NewSysMenu,
 }
 
-// SysProfileController 个人信息
+// SysProfileController 个人信息 控制层处理
 //
 // PATH /system/user/profile
 type SysProfileController struct {
@@ -141,7 +141,7 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 		c.JSON(200, resp.Ok(nil))
 		return
 	}
-	c.JSON(200, resp.ErrMsg("上传图片异常"))
+	c.JSON(200, resp.ErrMsg("修改个人信息异常"))
 }
 
 // UpdatePassword 个人重置密码

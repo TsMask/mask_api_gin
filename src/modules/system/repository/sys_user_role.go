@@ -57,12 +57,12 @@ func (r SysUserRole) DeleteByRoleId(roleId int64, userIds []int64) int64 {
 }
 
 // BatchInsert 批量新增信息
-func (r SysUserRole) BatchInsert(userRoles []model.SysUserRole) int64 {
-	if len(userRoles) <= 0 {
+func (r SysUserRole) BatchInsert(sysUserRoles []model.SysUserRole) int64 {
+	if len(sysUserRoles) <= 0 {
 		return 0
 	}
 	// 执行批量删除
-	tx := db.DB("").CreateInBatches(userRoles, 500)
+	tx := db.DB("").CreateInBatches(sysUserRoles, 500)
 	if err := tx.Error; err != nil {
 		logger.Errorf("delete batch err => %v", err.Error())
 		return 0

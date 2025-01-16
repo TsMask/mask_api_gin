@@ -196,7 +196,7 @@ func (s SysRole) ExportData(rows []model.SysRole, fileName string) (string, erro
 	headerCells := map[string]string{
 		"A1": "角色序号",
 		"B1": "角色名称",
-		"C1": "角色权限",
+		"C1": "角色键值",
 		"D1": "角色排序",
 		"E1": "数据范围",
 		"F1": "角色状态",
@@ -212,7 +212,7 @@ func (s SysRole) ExportData(rows []model.SysRole, fileName string) (string, erro
 		}
 		// 角色状态
 		statusValue := "停用"
-		if row.StatusFlag == "1" {
+		if row.StatusFlag == constants.STATUS_YES {
 			statusValue = "正常"
 		}
 		dataCells = append(dataCells, map[string]any{

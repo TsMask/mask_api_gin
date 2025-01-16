@@ -77,9 +77,20 @@ func (s SysConfig) DeleteByIds(configIds []int64) (int64, error) {
 	return 0, fmt.Errorf("删除参数配置信息失败！")
 }
 
+// CheckUniqueByKey 检查参数键名是否唯一
+func (s SysConfig) CheckUniqueByKey(configKey string, configId int64) bool {
+	uniqueId := s.sysConfigRepository.CheckUnique(model.SysConfig{
+		ConfigKey: configKey,
+	})
+	if uniqueId == configId {
+		return true
+	}
+	return uniqueId == 0
+}
+
 // FindValueByKey 通过参数键名查询参数值
 func (s SysConfig) FindValueByKey(configKey string) string {
-	cacheKey := s.getCacheKey(configKey)
+	cacheKey := constants.CACHE_SYS_CONFIG + ":" + configKey
 	// 从缓存中读取
 	if cacheValue, err := redis.Get("", cacheKey); cacheValue != "" || err != nil {
 		return cacheValue
@@ -92,29 +103,13 @@ func (s SysConfig) FindValueByKey(configKey string) string {
 	return ""
 }
 
-// CheckUniqueByKey 检查参数键名是否唯一
-func (s SysConfig) CheckUniqueByKey(configKey string, configId int64) bool {
-	uniqueId := s.sysConfigRepository.CheckUnique(model.SysConfig{
-		ConfigKey: configKey,
-	})
-	if uniqueId == configId {
-		return true
-	}
-	return uniqueId == 0
-}
-
-// getCacheKey 组装缓存key
-func (s SysConfig) getCacheKey(configKey string) string {
-	return constants.CACHE_SYS_CONFIG + configKey
-}
-
 // CacheLoad 加载参数缓存数据 传入*查询全部
 func (s SysConfig) CacheLoad(configKey string) {
 	// 查询全部参数
 	if configKey == "*" || configKey == "" {
 		sysConfigs := s.sysConfigRepository.Select(model.SysConfig{})
 		for _, v := range sysConfigs {
-			key := s.getCacheKey(v.ConfigKey)
+			key := constants.CACHE_SYS_CONFIG + ":" + v.ConfigKey
 			_ = redis.Del("", key)
 			_ = redis.Set("", key, v.ConfigValue)
 		}
@@ -123,7 +118,7 @@ func (s SysConfig) CacheLoad(configKey string) {
 	// 指定参数
 	cacheValue := s.sysConfigRepository.SelectValueByKey(configKey)
 	if cacheValue != "" {
-		key := s.getCacheKey(configKey)
+		key := constants.CACHE_SYS_CONFIG + ":" + configKey
 		_ = redis.Del("", key)
 		_ = redis.Set("", key, cacheValue)
 	}
@@ -131,7 +126,7 @@ func (s SysConfig) CacheLoad(configKey string) {
 
 // CacheClean 清空参数缓存数据 传入*清除全部
 func (s SysConfig) CacheClean(configKey string) bool {
-	key := s.getCacheKey(configKey)
+	key := constants.CACHE_SYS_CONFIG + ":" + configKey
 	keys, err := redis.GetKeys("", key)
 	if err != nil {
 		return false

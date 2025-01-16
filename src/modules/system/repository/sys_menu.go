@@ -15,7 +15,7 @@ var NewSysMenu = &SysMenu{}
 // SysMenu 菜单表 数据层处理
 type SysMenu struct{}
 
-// Select 查询集合 userId为0为系统管理员
+// Select 查询集合 userId为0是系统管理员
 func (r SysMenu) Select(sysMenu model.SysMenu, userId int64) []model.SysMenu {
 	tx := db.DB("").Model(&model.SysMenu{})
 	tx = tx.Where("del_flag = '0'")
@@ -158,27 +158,6 @@ func (r SysMenu) DeleteById(menuId int64) int64 {
 	return tx.RowsAffected
 }
 
-// ExistChildrenByMenuIdAndStatus 菜单下同状态存在子节点数量
-func (r SysMenu) ExistChildrenByMenuIdAndStatus(menuId int64, statusFlag string) int64 {
-	if menuId <= 0 {
-		return 0
-	}
-	tx := db.DB("").Model(&model.SysMenu{})
-	// 构建查询条件
-	tx = tx.Where("parent_id = ? and del_flag = '0'", menuId)
-	if statusFlag != "" {
-		tx = tx.Where("status_flag = ?", statusFlag)
-		tx = tx.Where("menu_type in ?", []string{constants.MENU_TYPE_DIR, constants.MENU_TYPE_MENU})
-	}
-	// 查询数据
-	var count int64 = 0
-	if err := tx.Count(&count).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return count
-	}
-	return count
-}
-
 // CheckUnique 检查信息是否唯一
 func (r SysMenu) CheckUnique(sysMenu model.SysMenu) int64 {
 	tx := db.DB("").Model(&model.SysMenu{})
@@ -201,6 +180,27 @@ func (r SysMenu) CheckUnique(sysMenu model.SysMenu) int64 {
 		return id
 	}
 	return id
+}
+
+// ExistChildrenByMenuIdAndStatus 菜单下同状态存在子节点数量
+func (r SysMenu) ExistChildrenByMenuIdAndStatus(menuId int64, statusFlag string) int64 {
+	if menuId <= 0 {
+		return 0
+	}
+	tx := db.DB("").Model(&model.SysMenu{})
+	// 构建查询条件
+	tx = tx.Where("parent_id = ? and del_flag = '0'", menuId)
+	if statusFlag != "" {
+		tx = tx.Where("status_flag = ?", statusFlag)
+		tx = tx.Where("menu_type in ?", []string{constants.MENU_TYPE_DIR, constants.MENU_TYPE_MENU})
+	}
+	// 查询数据
+	var count int64 = 0
+	if err := tx.Count(&count).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return count
+	}
+	return count
 }
 
 // SelectPermsByUserId 根据用户ID查询权限标识
@@ -255,7 +255,7 @@ func (r SysMenu) SelectByRoleId(roleId int64, menuCheckStrictly bool) []int64 {
 
 // SelectTreeByUserId 根据用户ID查询菜单 0为管理员查询全部菜单，其他为用户ID查询权限
 func (r SysMenu) SelectTreeByUserId(userId int64) []model.SysMenu {
-	if userId <= 0 {
+	if userId < 0 {
 		return []model.SysMenu{}
 	}
 

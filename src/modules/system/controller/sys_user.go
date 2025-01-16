@@ -23,7 +23,7 @@ var NewSysUser = &SysUserController{
 	sysPostService: service.NewSysPost,
 }
 
-// SysUserController 用户信息
+// SysUserController 用户信息 控制层处理
 //
 // PATH /system/user
 type SysUserController struct {
@@ -107,11 +107,6 @@ func (s SysUserController) Add(c *gin.Context) {
 		c.JSON(400, resp.ErrMsg(resp.FormatBindError(err)))
 		return
 	}
-	if body.UserId > 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: userId not is empty"))
-		return
-	}
-
 	// 密码单独取，避免序列化输出
 	var bodyPassword struct {
 		Password string `json:"password" binding:"required"`
@@ -122,6 +117,21 @@ func (s SysUserController) Add(c *gin.Context) {
 		return
 	}
 	body.Password = bodyPassword.Password
+
+	if body.UserId > 0 {
+		c.JSON(400, resp.CodeMsg(40010, "bind err: userId not is empty"))
+		return
+	}
+	if !regular.ValidUsername(body.UserName) {
+		msg := fmt.Sprintf("新增用户【%s】失败，登录账号用户账号只能包含大写小写字母，数字，且不少于4位", body.UserName)
+		c.JSON(400, resp.ErrMsg(msg))
+		return
+	}
+	if !regular.ValidPassword(body.Password) {
+		msg := fmt.Sprintf("新增用户【%s】失败，登录密码至少包含大小写字母、数字、特殊符号，且不少于6位", body.UserName)
+		c.JSON(400, resp.ErrMsg(msg))
+		return
+	}
 
 	// 检查用户登录账号是否唯一
 	uniqueUserName := s.sysUserService.CheckUniqueByUserName(body.UserName, 0)
@@ -204,6 +214,17 @@ func (s SysUserController) Edit(c *gin.Context) {
 	// 检查是否系统管理员用户
 	if config.IsSystemUser(body.UserId) {
 		c.JSON(200, resp.ErrMsg("不允许操作系统管理员用户"))
+		return
+	}
+
+	// 检查用户登录账号是否唯一
+	uniqueUserName := s.sysUserService.CheckUniqueByUserName(
+		body.UserName,
+		body.UserId,
+	)
+	if !uniqueUserName {
+		msg := fmt.Sprintf("修改用户【%s】失败，登录账号已存在", body.UserName)
+		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
@@ -328,15 +349,15 @@ func (s SysUserController) Password(c *gin.Context) {
 		return
 	}
 
+	if !regular.ValidPassword(body.Password) {
+		c.JSON(200, resp.ErrMsg("登录密码至少包含大小写字母、数字、特殊符号，且不少于6位"))
+		return
+	}
+
 	// 检查是否存在
 	userInfo := s.sysUserService.FindById(body.UserId)
 	if userInfo.UserId != body.UserId {
 		c.JSON(200, resp.ErrMsg("没有权限访问用户数据！"))
-		return
-	}
-
-	if !regular.ValidPassword(body.Password) {
-		c.JSON(200, resp.ErrMsg("登录密码至少包含大小写字母、数字、特殊符号，且不少于6位"))
 		return
 	}
 
@@ -460,6 +481,10 @@ func (s SysUserController) Import(c *gin.Context) {
 	rows, err := file.ReadSheet(filePath, "")
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
+		return
+	}
+	if len(rows) <= 0 {
+		c.JSON(200, resp.ErrMsg("导入用户数据不能为空！"))
 		return
 	}
 

@@ -83,9 +83,9 @@ func (s SysMenu) CheckUniqueParentIdByMenuName(parentId int64, menuName string, 
 }
 
 // CheckUniqueParentIdByMenuPath 检查同级下路由地址是否唯一（针对目录和菜单）
-func (s SysMenu) CheckUniqueParentIdByMenuPath(parentId int64, path string, menuId int64) bool {
+func (s SysMenu) CheckUniqueParentIdByMenuPath(parentId int64, menuPath string, menuId int64) bool {
 	uniqueId := s.sysMenuRepository.CheckUnique(model.SysMenu{
-		MenuPath: path,
+		MenuPath: menuPath,
 		ParentId: parentId,
 	})
 	if uniqueId == menuId {
@@ -116,14 +116,14 @@ func (s SysMenu) FindByRoleId(roleId int64) []int64 {
 
 // BuildTreeMenusByUserId 根据用户ID查询菜单树状嵌套
 func (s SysMenu) BuildTreeMenusByUserId(userId int64) []model.SysMenu {
-	sysMenus := s.sysMenuRepository.SelectTreeByUserId(userId)
-	return s.parseDataToTree(sysMenus)
+	arr := s.sysMenuRepository.SelectTreeByUserId(userId)
+	return s.parseDataToTree(arr)
 }
 
 // BuildTreeSelectByUserId 根据用户ID查询菜单树状结构
 func (s SysMenu) BuildTreeSelectByUserId(sysMenu model.SysMenu, userId int64) []vo.TreeSelect {
-	sysMenus := s.sysMenuRepository.Select(sysMenu, userId)
-	menus := s.parseDataToTree(sysMenus)
+	arr := s.sysMenuRepository.Select(sysMenu, userId)
+	menus := s.parseDataToTree(arr)
 	tree := make([]vo.TreeSelect, 0)
 	for _, v := range menus {
 		tree = append(tree, vo.SysMenuTreeSelect(v))

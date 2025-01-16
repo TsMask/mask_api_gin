@@ -17,7 +17,7 @@ var NewSysNotice = &SysNoticeController{
 	sysNoticeService: service.NewSysNotice,
 }
 
-// SysNoticeController 通知公告信息
+// SysNoticeController 通知公告信息 控制层处理
 //
 // PATH /system/notice
 type SysNoticeController struct {

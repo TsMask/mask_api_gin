@@ -20,7 +20,7 @@ var NewSysMenu = &SysMenuController{
 	sysMenuService: service.NewSysMenu,
 }
 
-// SysMenuController 菜单信息
+// SysMenuController 菜单信息 控制层处理
 //
 // PATH /system/menu
 type SysMenuController struct {
@@ -263,7 +263,7 @@ func (s SysMenuController) Tree(c *gin.Context) {
 	if v, ok := c.GetQuery("menuName"); ok {
 		query.MenuName = v
 	}
-	if v, ok := c.GetQuery("status"); ok {
+	if v, ok := c.GetQuery("statusFlag"); ok {
 		query.StatusFlag = v
 	}
 
@@ -271,9 +271,8 @@ func (s SysMenuController) Tree(c *gin.Context) {
 	if config.IsSystemUser(userId) {
 		userId = 0
 	}
-	data := s.sysMenuService.BuildTreeSelectByUserId(query, userId)
-	c.JSON(200, resp.OkData(data))
-
+	trees := s.sysMenuService.BuildTreeSelectByUserId(query, userId)
+	c.JSON(200, resp.OkData(trees))
 }
 
 // TreeRole 菜单树结构列表（指定角色）
@@ -286,19 +285,19 @@ func (s SysMenuController) TreeRole(c *gin.Context) {
 		return
 	}
 
-	query := model.SysMenu{}
+	sysMenu := model.SysMenu{}
 	if v, ok := c.GetQuery("menuName"); ok {
-		query.MenuName = v
+		sysMenu.MenuName = v
 	}
-	if v, ok := c.GetQuery("status"); ok {
-		query.StatusFlag = v
+	if v, ok := c.GetQuery("statusFlag"); ok {
+		sysMenu.StatusFlag = v
 	}
 
 	userId := reqctx.LoginUserToUserID(c)
 	if config.IsSystemUser(userId) {
 		userId = 0
 	}
-	menuTreeSelect := s.sysMenuService.BuildTreeSelectByUserId(query, userId)
+	menuTreeSelect := s.sysMenuService.BuildTreeSelectByUserId(sysMenu, userId)
 	checkedKeys := s.sysMenuService.FindByRoleId(roleId)
 	c.JSON(200, resp.OkData(map[string]any{
 		"menus":       menuTreeSelect,

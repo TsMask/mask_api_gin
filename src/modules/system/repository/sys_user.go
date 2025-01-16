@@ -71,7 +71,7 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
-	err := tx.Find(&rows).Error
+	err := tx.Order("user_id desc").Find(&rows).Error
 	if err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows, total
@@ -93,7 +93,7 @@ func (r SysUser) Select(sysUser model.SysUser) []model.SysUser {
 	if sysUser.StatusFlag != "" {
 		tx = tx.Where("status_flag = ?", sysUser.StatusFlag)
 	}
-	if sysUser.UserId <= 0 {
+	if sysUser.UserId > 0 {
 		tx = tx.Where("user_id = ?", sysUser.UserId)
 	}
 
@@ -126,14 +126,14 @@ func (r SysUser) SelectByIds(userIds []int64) []model.SysUser {
 // Insert 新增信息
 func (r SysUser) Insert(sysUser model.SysUser) int64 {
 	sysUser.DelFlag = "0"
-	if sysUser.Password != "" {
-		sysUser.Password = crypto.BcryptHash(sysUser.Password)
-	}
 	if sysUser.CreateBy != "" {
 		ms := time.Now().UnixMilli()
 		sysUser.UpdateBy = sysUser.CreateBy
 		sysUser.UpdateTime = ms
 		sysUser.CreateTime = ms
+	}
+	if sysUser.Password != "" {
+		sysUser.Password = crypto.BcryptHash(sysUser.Password)
 	}
 	// 执行插入
 	if err := db.DB("").Create(&sysUser).Error; err != nil {
@@ -148,11 +148,11 @@ func (r SysUser) Update(sysUser model.SysUser) int64 {
 	if sysUser.UserId <= 0 {
 		return 0
 	}
-	if sysUser.Password != "" {
-		sysUser.Password = crypto.BcryptHash(sysUser.Password)
-	}
 	if sysUser.UpdateBy != "" {
 		sysUser.UpdateTime = time.Now().UnixMilli()
+	}
+	if sysUser.Password != "" {
+		sysUser.Password = crypto.BcryptHash(sysUser.Password)
 	}
 	tx := db.DB("").Model(&model.SysUser{})
 	// 构建查询条件
@@ -271,7 +271,7 @@ func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL str
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
-	err := tx.Find(&rows).Error
+	err := tx.Order("user_id desc").Find(&rows).Error
 	if err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows, total

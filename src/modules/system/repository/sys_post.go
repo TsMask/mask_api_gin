@@ -143,24 +143,6 @@ func (r SysPost) DeleteByIds(postIds []int64) int64 {
 	return tx.RowsAffected
 }
 
-// SelectByUserId 根据用户ID获取岗位选择框列表
-func (r SysPost) SelectByUserId(userId int64) []model.SysPost {
-	rows := []model.SysPost{}
-	if userId <= 0 {
-		return rows
-	}
-	tx := db.DB("").Model(&model.SysPost{})
-	// 构建查询条件
-	tx = tx.Where("post_id in (select post_id from sys_user_post  where user_id = ?)", userId)
-
-	// 查询数据
-	if err := tx.Order("post_id").Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
-	}
-	return rows
-}
-
 // CheckUnique 检查信息是否唯一 返回ID
 func (r SysPost) CheckUnique(sysPost model.SysPost) int64 {
 	tx := db.DB("").Model(&model.SysPost{})
@@ -180,4 +162,21 @@ func (r SysPost) CheckUnique(sysPost model.SysPost) int64 {
 		return id
 	}
 	return id
+}
+
+// SelectByUserId 根据用户ID获取岗位选择框列表
+func (r SysPost) SelectByUserId(userId int64) []model.SysPost {
+	rows := []model.SysPost{}
+	if userId <= 0 {
+		return rows
+	}
+	tx := db.DB("").Model(&model.SysPost{})
+	// 构建查询条件
+	tx = tx.Where("post_id in (select post_id from sys_user_post  where user_id = ?)", userId)
+	// 查询数据
+	if err := tx.Order("post_id").Find(&rows).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return rows
+	}
+	return rows
 }

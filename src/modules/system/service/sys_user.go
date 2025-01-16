@@ -58,7 +58,7 @@ func (s SysUser) FindByPage(query map[string]string, dataScopeSQL string) ([]mod
 	return rows, total
 }
 
-// Find 查询列表数据
+// Find 查询数据
 func (s SysUser) Find(sysUser model.SysUser) []model.SysUser {
 	return s.sysUserRepository.Select(sysUser)
 }
@@ -208,21 +208,22 @@ func (s SysUser) CheckUniqueByEmail(email string, userId int64) bool {
 // FindByUserName 通过用户名查询用户信息
 func (s SysUser) FindByUserName(userName string) model.SysUser {
 	userinfo := s.sysUserRepository.SelectByUserName(userName)
-	if userinfo.UserName == userName {
-		// 部门
-		deptInfo := s.sysDeptRepository.SelectById(userinfo.DeptId)
-		userinfo.Dept = &deptInfo
-		// 角色
-		roleArr := s.sysRoleRepository.SelectByUserId(userinfo.UserId)
-		roleIds := make([]int64, 0)
-		roles := make([]*model.SysRole, 0)
-		for _, role := range roleArr {
-			roles = append(roles, &role)
-			roleIds = append(roleIds, role.RoleId)
-		}
-		userinfo.Roles = roles
-		userinfo.RoleIds = roleIds
+	if userinfo.UserName != userName {
+		return userinfo
 	}
+	// 部门
+	deptInfo := s.sysDeptRepository.SelectById(userinfo.DeptId)
+	userinfo.Dept = &deptInfo
+	// 角色
+	roleArr := s.sysRoleRepository.SelectByUserId(userinfo.UserId)
+	roles := make([]*model.SysRole, 0)
+	roleIds := make([]int64, 0)
+	for _, role := range roleArr {
+		roles = append(roles, &role)
+		roleIds = append(roleIds, role.RoleId)
+	}
+	userinfo.Roles = roles
+	userinfo.RoleIds = roleIds
 	return userinfo
 }
 
@@ -280,7 +281,7 @@ func (s SysUser) ExportData(rows []model.SysUser, fileName string) (string, erro
 		}
 		// 账号状态
 		statusValue := "停用"
-		if row.StatusFlag == "1" {
+		if row.StatusFlag == constants.STATUS_YES {
 			statusValue = "正常"
 		}
 		dataCells = append(dataCells, map[string]any{

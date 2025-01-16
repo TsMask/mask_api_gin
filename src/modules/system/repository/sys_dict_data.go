@@ -128,13 +128,13 @@ func (r SysDictData) Update(sysDictData model.SysDictData) int64 {
 }
 
 // DeleteByIds 批量删除信息 返回受影响行数
-func (r SysDictData) DeleteByIds(dataId []int64) int64 {
-	if len(dataId) <= 0 {
+func (r SysDictData) DeleteByIds(dataIds []int64) int64 {
+	if len(dataIds) <= 0 {
 		return 0
 	}
 	tx := db.DB("").Model(&model.SysDictData{})
 	// 构建查询条件
-	tx = tx.Where("data_id in ?", dataId)
+	tx = tx.Where("data_id in ?", dataIds)
 	// 执行更新删除标记
 	if err := tx.Update("del_flag", "1").Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())

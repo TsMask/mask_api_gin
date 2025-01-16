@@ -42,14 +42,14 @@ func (s SysDeptController) List(c *gin.Context) {
 		return
 	}
 
-	SysDeptController := model.SysDept{
+	sysDept := model.SysDept{
 		DeptId:     query.DeptId,
 		ParentId:   query.ParentId,
 		DeptName:   query.DeptName,
 		StatusFlag: query.Status,
 	}
 	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_dept", "")
-	data := s.sysDeptService.Find(SysDeptController, dataScopeSQL)
+	data := s.sysDeptService.Find(sysDept, dataScopeSQL)
 	c.JSON(200, resp.OkData(data))
 }
 
@@ -109,8 +109,8 @@ func (s SysDeptController) Add(c *gin.Context) {
 	}
 
 	// 检查同级下名称唯一
-	uniqueDeptName := s.sysDeptService.CheckUniqueParentIdByDeptName(body.ParentId, body.DeptName, 0)
-	if !uniqueDeptName {
+	uniqueName := s.sysDeptService.CheckUniqueParentIdByDeptName(body.ParentId, body.DeptName, 0)
+	if !uniqueName {
 		msg := fmt.Sprintf("部门新增【%s】失败，部门名称已存在", body.DeptName)
 		c.JSON(200, resp.ErrMsg(msg))
 		return

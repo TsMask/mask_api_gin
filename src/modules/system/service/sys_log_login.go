@@ -1,26 +1,28 @@
 package service
 
 import (
+	"strconv"
+
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
-	"strconv"
 )
 
 // NewSysLogLogin 实例化服务层
 var NewSysLogLogin = &SysLogLogin{
-	SysLogLogin: repository.NewSysLogLogin,
+	sysLogLoginRepository: repository.NewSysLogLogin,
 }
 
 // SysLogLogin 系统登录日志 服务层处理
 type SysLogLogin struct {
-	SysLogLogin *repository.SysLogLogin // 系统登录日志信息
+	sysLogLoginRepository *repository.SysLogLogin // 系统登录日志信息
 }
 
 // FindByPage 分页查询列表数据
 func (s SysLogLogin) FindByPage(query map[string]string, dataScopeSQL string) ([]model.SysLogLogin, int64) {
-	return s.SysLogLogin.SelectByPage(query, dataScopeSQL)
+	return s.sysLogLoginRepository.SelectByPage(query, dataScopeSQL)
 }
 
 // Insert 新增信息
@@ -34,12 +36,12 @@ func (s SysLogLogin) Insert(userName, status, msg string, ilobArr [4]string) int
 		StatusFlag:    status,
 		Msg:           msg,
 	}
-	return s.SysLogLogin.Insert(sysSysLogLogin)
+	return s.sysLogLoginRepository.Insert(sysSysLogLogin)
 }
 
 // Clean 清空系统登录日志
 func (s SysLogLogin) Clean() int64 {
-	return s.SysLogLogin.Clean()
+	return s.sysLogLoginRepository.Clean()
 }
 
 // ExportData 导出数据表格
@@ -62,7 +64,7 @@ func (s SysLogLogin) ExportData(rows []model.SysLogLogin, fileName string) (stri
 		idx := strconv.Itoa(i + 2)
 		// 状态
 		statusValue := "失败"
-		if row.StatusFlag == "1" {
+		if row.StatusFlag == constants.STATUS_YES {
 			statusValue = "成功"
 		}
 		dataCells = append(dataCells, map[string]any{
