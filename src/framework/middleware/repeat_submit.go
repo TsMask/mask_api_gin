@@ -1,18 +1,18 @@
 package middleware
 
 import (
+	"encoding/json"
+	"strconv"
+	"time"
+
+	"github.com/gin-gonic/gin"
+
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/ip2region"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/reqctx"
 	"mask_api_gin/src/framework/resp"
-
-	"encoding/json"
-	"strconv"
-	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 // repeatParam 重复提交参数的类型定义
@@ -42,7 +42,7 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 
 		// 唯一标识（指定key + 客户端IP + 请求地址）
 		clientIP := ip2region.ClientIP(c.ClientIP())
-		repeatKey := constants.CACHE_REPEAT_SUBMIT + clientIP + ":" + c.Request.RequestURI
+		repeatKey := constants.CACHE_REPEAT_SUBMIT + ":" + clientIP + ":" + c.Request.RequestURI
 
 		// 在Redis查询并记录请求次数
 		repeatStr, _ := redis.Get("", repeatKey)

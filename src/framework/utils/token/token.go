@@ -23,7 +23,7 @@ func Remove(token string) string {
 	}
 	// 清除缓存KEY
 	uuid := claims[constants.JWT_UUID].(string)
-	tokenKey := constants.CACHE_LOGIN_TOKEN + uuid
+	tokenKey := constants.CACHE_LOGIN_TOKEN + ":" + uuid
 	hasKey, err := redis.Has("", tokenKey)
 	if hasKey > 0 && err == nil {
 		_ = redis.Del("", tokenKey)
@@ -91,7 +91,7 @@ func Cache(loginUser *LoginUser) {
 	loginUser.ExpireTime = iatTimestamp + expTimestamp.Milliseconds()
 	loginUser.User.Password = ""
 	// 根据登录标识将loginUser缓存
-	tokenKey := constants.CACHE_LOGIN_TOKEN + loginUser.UUID
+	tokenKey := constants.CACHE_LOGIN_TOKEN + ":" + loginUser.UUID
 	jsonBytes, err := json.Marshal(loginUser)
 	if err != nil {
 		return
@@ -137,7 +137,7 @@ func Verify(token string) (jwt.MapClaims, error) {
 func UserInfo(claims jwt.MapClaims) LoginUser {
 	loginUser := LoginUser{}
 	uuid := claims[constants.JWT_UUID].(string)
-	tokenKey := constants.CACHE_LOGIN_TOKEN + uuid
+	tokenKey := constants.CACHE_LOGIN_TOKEN + ":" + uuid
 	hasKey, err := redis.Has("", tokenKey)
 	if hasKey > 0 && err == nil {
 		loginUserStr, err := redis.Get("", tokenKey)
