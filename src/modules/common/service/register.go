@@ -34,7 +34,7 @@ func (s Register) ValidateCaptcha(code, uuid string) error {
 	if code == "" || uuid == "" {
 		return fmt.Errorf("captcha empty")
 	}
-	verifyKey := constants.CACHE_CAPTCHA_CODE + uuid
+	verifyKey := constants.CACHE_CAPTCHA_CODE + ":" + uuid
 	captcha, _ := redis.Get("", verifyKey)
 	if captcha == "" {
 		return fmt.Errorf("captcha expire")

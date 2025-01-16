@@ -40,7 +40,7 @@ func (s Account) ValidateCaptcha(code, uuid string) error {
 	if code == "" || uuid == "" {
 		return fmt.Errorf("captcha empty")
 	}
-	verifyKey := constants.CACHE_CAPTCHA_CODE + uuid
+	verifyKey := constants.CACHE_CAPTCHA_CODE + ":" + uuid
 	captcha, _ := redis.Get("", verifyKey)
 	if captcha == "" {
 		return fmt.Errorf("captcha expire")
@@ -110,7 +110,7 @@ func (s Account) UpdateLoginDateAndIP(loginUser *token.LoginUser) bool {
 
 // CleanLoginRecordCache 清除错误记录次数
 func (s Account) CleanLoginRecordCache(userName string) bool {
-	cacheKey := fmt.Sprintf("%s%s", constants.CACHE_PWD_ERR_COUNT, userName)
+	cacheKey := fmt.Sprintf("%s:%s", constants.CACHE_PWD_ERR_COUNT, userName)
 	hasKey, err := redis.Has("", cacheKey)
 	if hasKey > 0 && err == nil {
 		return redis.Del("", cacheKey) == nil
@@ -124,7 +124,7 @@ func (s Account) passwordRetryCount(userName string) (string, int64, time.Durati
 	maxRetryCount := config.Get("user.password.maxRetryCount").(int)
 	lockTime := config.Get("user.password.lockTime").(int)
 	// 验证缓存记录次数
-	retryKey := fmt.Sprintf("%s%s", constants.CACHE_PWD_ERR_COUNT, userName)
+	retryKey := fmt.Sprintf("%s:%s", constants.CACHE_PWD_ERR_COUNT, userName)
 	retryCount, err := redis.Get("", retryKey)
 	if retryCount == "" || err != nil {
 		retryCount = "0"

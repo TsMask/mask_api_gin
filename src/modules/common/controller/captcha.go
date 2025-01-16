@@ -27,7 +27,7 @@ type CaptchaController struct {
 	sysConfigService *systemService.SysConfig // 参数配置服务
 }
 
-// Image 获取验证码
+// Image 获取验证码-图片
 //
 // GET /captcha-image
 func (s *CaptchaController) Image(c *gin.Context) {
@@ -77,7 +77,7 @@ func (s *CaptchaController) Image(c *gin.Context) {
 			data["uuid"] = id
 			data["img"] = item.EncodeB64string()
 			expiration := constants.CAPTCHA_EXPIRATION * time.Second
-			verifyKey = constants.CACHE_CAPTCHA_CODE + id
+			verifyKey = constants.CACHE_CAPTCHA_CODE + ":" + id
 			_ = redis.SetByExpire("", verifyKey, answer, expiration)
 		}
 	}
@@ -111,7 +111,7 @@ func (s *CaptchaController) Image(c *gin.Context) {
 			data["uuid"] = id
 			data["img"] = item.EncodeB64string()
 			expiration := constants.CAPTCHA_EXPIRATION * time.Second
-			verifyKey = constants.CACHE_CAPTCHA_CODE + id
+			verifyKey = constants.CACHE_CAPTCHA_CODE + ":" + id
 			_ = redis.SetByExpire("", verifyKey, answer, expiration)
 		}
 	}
