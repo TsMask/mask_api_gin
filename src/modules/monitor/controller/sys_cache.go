@@ -35,13 +35,13 @@ func (s SysCacheController) Info(c *gin.Context) {
 // GET /names
 func (s SysCacheController) Names(c *gin.Context) {
 	caches := []model.SysCache{
-		model.NewSysCacheNames("用户信息", constants.CACHE_LOGIN_TOKEN),
-		model.NewSysCacheNames("配置信息", constants.CACHE_SYS_CONFIG),
-		model.NewSysCacheNames("数据字典", constants.CACHE_SYS_DICT),
-		model.NewSysCacheNames("验证码", constants.CACHE_CAPTCHA_CODE),
-		model.NewSysCacheNames("防重提交", constants.CACHE_REPEAT_SUBMIT),
-		model.NewSysCacheNames("限流处理", constants.CACHE_RATE_LIMIT),
-		model.NewSysCacheNames("密码错误次数", constants.CACHE_PWD_ERR_COUNT),
+		model.NewNames("用户信息", constants.CACHE_LOGIN_TOKEN),
+		model.NewNames("配置信息", constants.CACHE_SYS_CONFIG),
+		model.NewNames("数据字典", constants.CACHE_SYS_DICT),
+		model.NewNames("验证码", constants.CACHE_CAPTCHA_CODE),
+		model.NewNames("防重提交", constants.CACHE_REPEAT_SUBMIT),
+		model.NewNames("限流处理", constants.CACHE_RATE_LIMIT),
+		model.NewNames("密码错误次数", constants.CACHE_PWD_ERR_COUNT),
 	}
 	c.JSON(200, resp.OkData(caches))
 }
@@ -62,7 +62,7 @@ func (s SysCacheController) Keys(c *gin.Context) {
 	caches := []model.SysCache{}
 	cacheKeys, _ := redis.GetKeys("", query.CacheName+":*")
 	for _, key := range cacheKeys {
-		caches = append(caches, model.NewSysCacheKeys(query.CacheName, key))
+		caches = append(caches, model.NewKeys(query.CacheName, key))
 	}
 
 	c.JSON(200, resp.OkData(caches))
@@ -87,21 +87,21 @@ func (s SysCacheController) Value(c *gin.Context) {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
-	sysCache := model.NewSysCacheValue(query.CacheName, query.CacheKey, cacheValue)
+	sysCache := model.NewValue(query.CacheName, query.CacheKey, cacheValue)
 	c.JSON(200, resp.OkData(sysCache))
 }
 
 // CleanNames 缓存名称列表安全删除
 //
-// DELETE /clean/names
+// DELETE /names
 func (s SysCacheController) CleanNames(c *gin.Context) {
 	caches := []model.SysCache{
-		model.NewSysCacheNames("配置信息", constants.CACHE_SYS_CONFIG),
-		model.NewSysCacheNames("数据字典", constants.CACHE_SYS_DICT),
-		model.NewSysCacheNames("验证码", constants.CACHE_CAPTCHA_CODE),
-		model.NewSysCacheNames("防重提交", constants.CACHE_REPEAT_SUBMIT),
-		model.NewSysCacheNames("限流处理", constants.CACHE_RATE_LIMIT),
-		model.NewSysCacheNames("密码错误次数", constants.CACHE_PWD_ERR_COUNT),
+		model.NewNames("配置信息", constants.CACHE_SYS_CONFIG),
+		model.NewNames("数据字典", constants.CACHE_SYS_DICT),
+		model.NewNames("验证码", constants.CACHE_CAPTCHA_CODE),
+		model.NewNames("防重提交", constants.CACHE_REPEAT_SUBMIT),
+		model.NewNames("限流处理", constants.CACHE_RATE_LIMIT),
+		model.NewNames("密码错误次数", constants.CACHE_PWD_ERR_COUNT),
 	}
 	for _, v := range caches {
 		cacheKeys, err := redis.GetKeys("", v.CacheName+":*")
@@ -115,7 +115,7 @@ func (s SysCacheController) CleanNames(c *gin.Context) {
 
 // CleanKeys 缓存名称下键名删除
 //
-// DELETE /clean/keys?cacheName=xxx
+// DELETE /keys?cacheName=xxx
 func (s SysCacheController) CleanKeys(c *gin.Context) {
 	var query struct {
 		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称

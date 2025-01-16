@@ -30,7 +30,6 @@ type SysJobLogController struct {
 //
 // GET /list
 func (s SysJobLogController) List(c *gin.Context) {
-	// 查询参数转换map
 	query := reqctx.QueryMap(c)
 	if jobIdStr := c.Query("jobId"); jobIdStr != "" {
 		if jobId := parse.Number(jobIdStr); jobId > 0 {

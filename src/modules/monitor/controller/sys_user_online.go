@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -36,7 +37,7 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 	userName := c.Query("userName")
 
 	// 获取所有在线用户key
-	keys, _ := redis.GetKeys("", constants.CACHE_LOGIN_TOKEN+"*")
+	keys, _ := redis.GetKeys("", constants.CACHE_LOGIN_TOKEN+":*")
 
 	// 分批获取
 	arr := make([]string, 0)
@@ -48,12 +49,12 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 		chunk := keys[i:end]
 		values, _ := redis.GetBatch("", chunk)
 		for _, v := range values {
-			arr = append(arr, v.(string))
+			arr = append(arr, fmt.Sprint(v))
 		}
 	}
 
 	// 遍历字符串信息解析组合可用对象
-	var userOnline []model.SysUserOnline
+	var userOnlines []model.SysUserOnline
 	for _, str := range arr {
 		if str == "" {
 			continue
@@ -67,32 +68,32 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 
 		onlineUser := s.sysUserOnlineService.LoginUserToUserOnline(loginUser)
 		if onlineUser.TokenID != "" {
-			userOnline = append(userOnline, onlineUser)
+			userOnlines = append(userOnlines, onlineUser)
 		}
 	}
 
 	// 根据查询条件过滤
 	filteredUserOnline := make([]model.SysUserOnline, 0)
 	if loginIp != "" && userName != "" {
-		for _, o := range userOnline {
+		for _, o := range userOnlines {
 			if strings.Contains(o.LoginIp, loginIp) && strings.Contains(o.UserName, userName) {
 				filteredUserOnline = append(filteredUserOnline, o)
 			}
 		}
 	} else if loginIp != "" {
-		for _, o := range userOnline {
+		for _, o := range userOnlines {
 			if strings.Contains(o.LoginIp, loginIp) {
 				filteredUserOnline = append(filteredUserOnline, o)
 			}
 		}
 	} else if userName != "" {
-		for _, o := range userOnline {
+		for _, o := range userOnlines {
 			if strings.Contains(o.UserName, userName) {
 				filteredUserOnline = append(filteredUserOnline, o)
 			}
 		}
 	} else {
-		filteredUserOnline = userOnline
+		filteredUserOnline = userOnlines
 	}
 
 	// 按登录时间排序
@@ -120,7 +121,7 @@ func (s SysUserOnlineController) Logout(c *gin.Context) {
 	ids := strings.Split(tokenIdStr, ",")
 	uniqueIDs := parse.RemoveDuplicates(ids)
 	for _, v := range uniqueIDs {
-		key := constants.CACHE_LOGIN_TOKEN + v
+		key := constants.CACHE_LOGIN_TOKEN + ":" + v
 		if err := redis.Del("", key); err != nil {
 			c.JSON(200, resp.ErrMsg(err.Error()))
 			return

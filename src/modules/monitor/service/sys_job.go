@@ -39,13 +39,14 @@ func (s SysJob) FindById(jobId int64) model.SysJob {
 	if jobId <= 0 {
 		return model.SysJob{}
 	}
-	if jobs := s.sysJobRepository.SelectByIds([]int64{jobId}); len(jobs) > 0 {
+	jobs := s.sysJobRepository.SelectByIds([]int64{jobId})
+	if len(jobs) > 0 {
 		return jobs[0]
 	}
 	return model.SysJob{}
 }
 
-// Insert 新增调度任务信息
+// Insert 新增
 func (s SysJob) Insert(sysJob model.SysJob) int64 {
 	insertId := s.sysJobRepository.Insert(sysJob)
 	if insertId > 0 && sysJob.StatusFlag == constants.STATUS_YES {
@@ -209,7 +210,7 @@ func (s SysJob) ExportData(rows []model.SysJob, fileName string) (string, error)
 		}
 		// 状态
 		statusValue := "失败"
-		if row.StatusFlag == "1" {
+		if row.StatusFlag == constants.STATUS_YES {
 			statusValue = "成功"
 		}
 		dataCells = append(dataCells, map[string]any{

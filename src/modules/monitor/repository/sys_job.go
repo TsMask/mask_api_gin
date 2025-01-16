@@ -101,7 +101,6 @@ func (r SysJob) Insert(sysJob model.SysJob) int64 {
 		sysJob.UpdateBy = sysJob.CreateBy
 		sysJob.UpdateTime = ms
 		sysJob.CreateTime = ms
-
 	}
 	// 执行插入
 	if err := db.DB("").Create(&sysJob).Error; err != nil {

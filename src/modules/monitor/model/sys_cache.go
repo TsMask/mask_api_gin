@@ -10,18 +10,18 @@ type SysCache struct {
 	Remark     string `json:"remark"`     // 备注
 }
 
-// NewSysCacheNames 创建新的缓存名称列表项实例
-func NewSysCacheNames(cacheName string, cacheKey string) SysCache {
+// NewNames 创建新的缓存名称列表项实例
+func NewNames(cacheName string, cacheKey string) SysCache {
 	return SysCache{
-		CacheName:  cacheKey[:len(cacheKey)-1],
+		CacheName:  cacheKey,
 		CacheKey:   "",
 		CacheValue: "",
 		Remark:     cacheName,
 	}
 }
 
-// NewSysCacheKeys 创建新的缓存键名列表项实例
-func NewSysCacheKeys(cacheName string, cacheKey string) SysCache {
+// NewKeys 创建新的缓存键名列表项实例
+func NewKeys(cacheName string, cacheKey string) SysCache {
 	return SysCache{
 		CacheName:  cacheName,
 		CacheKey:   strings.Replace(cacheKey, cacheName+":", "", 1),
@@ -30,8 +30,8 @@ func NewSysCacheKeys(cacheName string, cacheKey string) SysCache {
 	}
 }
 
-// NewSysCacheValue 创建新的缓存键名内容项实例
-func NewSysCacheValue(cacheName string, cacheKey string, cacheValue string) SysCache {
+// NewValue 创建新的缓存键名内容项实例
+func NewValue(cacheName string, cacheKey string, cacheValue string) SysCache {
 	return SysCache{
 		CacheName:  cacheName,
 		CacheKey:   cacheKey,

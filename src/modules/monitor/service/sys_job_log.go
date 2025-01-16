@@ -3,6 +3,7 @@ package service
 import (
 	"strconv"
 
+	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/monitor/model"
@@ -76,7 +77,7 @@ func (s SysJobLog) ExportData(rows []model.SysJobLog, fileName string) (string, 
 		}
 		// 状态
 		statusValue := "失败"
-		if row.StatusFlag == "1" {
+		if row.StatusFlag == constants.STATUS_YES {
 			statusValue = "成功"
 		}
 		dataCells = append(dataCells, map[string]any{

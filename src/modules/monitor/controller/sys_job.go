@@ -254,7 +254,7 @@ func (s SysJobController) Run(c *gin.Context) {
 		c.JSON(200, resp.ErrMsg("没有权限访问调度任务数据！"))
 		return
 	}
-
+	// 执行一次调度任务
 	ok := s.sysJobService.Run(jobInfo)
 	if ok {
 		c.JSON(200, resp.Ok(nil))
