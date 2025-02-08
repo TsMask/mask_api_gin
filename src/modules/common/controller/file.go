@@ -47,9 +47,9 @@ func (s *FileController) Download(c *gin.Context) {
 	}
 
 	// 响应头
-	c.Writer.Header().Set("Content-Disposition", `attachment; filename="`+url.QueryEscape(filepath.Base(routerPath))+`"`)
 	c.Writer.Header().Set("Accept-Ranges", "bytes")
 	c.Writer.Header().Set("Content-Type", "application/octet-stream")
+	c.Writer.Header().Set("Content-Disposition", `attachment; filename="`+url.QueryEscape(filepath.Base(routerPath))+`"`)
 
 	if headerRange != "" {
 		c.Writer.Header().Set("Content-Range", fmt.Sprint(resultMap["range"]))
@@ -84,14 +84,14 @@ func (s *FileController) Upload(c *gin.Context) {
 	}
 
 	// 上传文件转存
-	uploadFilePath, err := file.TransferUploadFile(formFile, subPath, nil)
+	uploadFilePath, err := file.TransferUploadFile(formFile, subPath, []string{})
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 
 	c.JSON(200, resp.OkData(map[string]string{
-		"url":              "http://" + c.Request.Host + uploadFilePath,
+		"url":              "//" + c.Request.Host + uploadFilePath,
 		"filePath":         uploadFilePath,
 		"newFileName":      filepath.Base(uploadFilePath),
 		"originalFileName": formFile.Filename,
@@ -163,18 +163,18 @@ func (s *FileController) ChunkMerge(c *gin.Context) {
 //
 // POST /chunk-upload
 func (s *FileController) ChunkUpload(c *gin.Context) {
-	// 上传的文件
-	formFile, err := c.FormFile("file")
-	if err != nil {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: file is empty"))
-		return
-	}
 	// 切片编号
 	index := c.PostForm("index")
 	// 切片唯一标识
 	identifier := c.PostForm("identifier")
 	if index == "" || identifier == "" {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: index and identifier must be set"))
+		return
+	}
+	// 上传的文件
+	formFile, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(400, resp.CodeMsg(40010, "bind err: file is empty"))
 		return
 	}
 

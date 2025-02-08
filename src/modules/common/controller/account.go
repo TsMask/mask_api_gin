@@ -34,8 +34,8 @@ type AccountController struct {
 //
 // POST /login
 func (s AccountController) Login(c *gin.Context) {
-	var loginBody model.LoginBody
-	if err := c.ShouldBindJSON(&loginBody); err != nil {
+	var body model.LoginBody
+	if err := c.ShouldBindJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
 		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
@@ -46,10 +46,10 @@ func (s AccountController) Login(c *gin.Context) {
 	os, browser := reqctx.UaOsBrowser(c)
 
 	// 校验验证码 根据错误信息，创建系统访问记录
-	if err := s.accountService.ValidateCaptcha(loginBody.Code, loginBody.UUID); err != nil {
-		msg := fmt.Sprintf("%s code: %s", err.Error(), loginBody.Code)
+	if err := s.accountService.ValidateCaptcha(body.Code, body.UUID); err != nil {
+		msg := fmt.Sprintf("%s code: %s", err.Error(), body.Code)
 		s.sysLogLoginService.Insert(
-			loginBody.Username, constants.STATUS_NO, msg,
+			body.Username, constants.STATUS_NO, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
 		c.JSON(400, resp.CodeMsg(40012, err.Error()))
@@ -57,7 +57,7 @@ func (s AccountController) Login(c *gin.Context) {
 	}
 
 	// 登录用户信息
-	loginUser, err := s.accountService.ByUsername(loginBody.Username, loginBody.Password)
+	loginUser, err := s.accountService.ByUsername(body.Username, body.Password)
 	if err != nil {
 		c.JSON(400, resp.CodeMsg(40014, err.Error()))
 		return
@@ -69,9 +69,9 @@ func (s AccountController) Login(c *gin.Context) {
 		c.JSON(400, resp.CodeMsg(40001, "token generation failed"))
 		return
 	} else {
-		s.accountService.UpdateLoginDateAndIP(&loginUser)
+		s.accountService.UpdateLoginDateAndIP(loginUser)
 		s.sysLogLoginService.Insert(
-			loginBody.Username, constants.STATUS_YES, "登录成功",
+			body.Username, constants.STATUS_YES, "登录成功",
 			[4]string{ipaddr, location, os, browser},
 		)
 	}
@@ -88,18 +88,18 @@ func (s AccountController) Login(c *gin.Context) {
 //
 // GET /me
 func (s AccountController) Me(c *gin.Context) {
-	loginUser, err := reqctx.LoginUser(c)
+	info, err := reqctx.LoginUser(c)
 	if err != nil {
 		c.JSON(401, resp.CodeMsg(40003, err.Error()))
 		return
 	}
 
 	// 角色权限集合，系统管理员拥有所有权限
-	isSystemUser := config.IsSystemUser(loginUser.UserId)
-	roles, perms := s.accountService.RoleAndMenuPerms(loginUser.UserId, isSystemUser)
+	isSystemUser := config.IsSystemUser(info.UserId)
+	roles, perms := s.accountService.RoleAndMenuPerms(info.UserId, isSystemUser)
 
 	c.JSON(200, resp.OkData(map[string]any{
-		"user":        loginUser.User,
+		"user":        info.User,
 		"roles":       roles,
 		"permissions": perms,
 	}))

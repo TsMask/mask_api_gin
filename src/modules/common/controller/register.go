@@ -47,7 +47,7 @@ func (s *RegisterController) Register(c *gin.Context) {
 	err := s.registerService.ValidateCaptcha(body.Code, body.UUID)
 	// 根据错误信息，创建系统访问记录
 	if err != nil {
-		msg := err.Error() + " " + body.Code
+		msg := err.Error() + " code: " + body.Code
 		s.sysLogLoginService.Insert(
 			body.Username, constants.STATUS_NO, msg,
 			[4]string{ipaddr, location, os, browser},
@@ -70,6 +70,7 @@ func (s *RegisterController) Register(c *gin.Context) {
 		return
 	}
 
+	// 进行注册
 	userId, err := s.registerService.ByUserName(body.Username, body.Password)
 	if err == nil {
 		msg := fmt.Sprintf("%s 注册成功 %d", body.Username, userId)
