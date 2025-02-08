@@ -19,7 +19,7 @@ import (
 //
 // headerRange 断点续传范围区间，bytes=0-12131
 func ReadUploadFileStream(filePath, headerRange string) (map[string]any, error) {
-	// 读取文件检查
+	// 检查文件允许访问
 	err := isAllowRead(filePath)
 	if err != nil {
 		return map[string]any{}, err
@@ -63,7 +63,7 @@ func ReadUploadFileStream(filePath, headerRange string) (map[string]any, error) 
 		result["chunkSize"] = end - start + 1
 		byteArr, err := getFileStream(fileAsbPath, start, end)
 		if err != nil {
-			return map[string]any{}, fmt.Errorf("读取文件失败")
+			return map[string]any{}, err
 		}
 		result["data"] = byteArr
 		return result, nil
@@ -71,7 +71,7 @@ func ReadUploadFileStream(filePath, headerRange string) (map[string]any, error) 
 
 	byteArr, err := getFileStream(fileAsbPath, 0, fileSize)
 	if err != nil {
-		return map[string]any{}, fmt.Errorf("读取文件失败")
+		return map[string]any{}, err
 	}
 	result["data"] = byteArr
 	return result, nil
@@ -79,7 +79,7 @@ func ReadUploadFileStream(filePath, headerRange string) (map[string]any, error) 
 
 // TransferUploadFile 上传资源文件转存
 //
-// subPath 子路径，默认 UploadSubPath.DEFAULT
+// subPath 子路径
 //
 // allowExt 允许上传拓展类型（含“.”)，如 ['.png','.jpg']
 func TransferUploadFile(file *multipart.FileHeader, subPath string, allowExt []string) (string, error) {

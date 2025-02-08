@@ -17,7 +17,7 @@ import (
 	"mask_api_gin/src/framework/utils/regular"
 )
 
-// 文件上传路径 prefix, dir
+// resourceUpload 文件上传路径 prefix, dir
 func resourceUpload() (string, string) {
 	upload := config.Get("staticFile.upload").(map[string]any)
 	dir, err := filepath.Abs(upload["dir"].(string))
@@ -49,7 +49,7 @@ func uploadWhiteList() []string {
 	return whiteList
 }
 
-// 生成文件名称 fileName_随机值.extName
+// generateFileName 生成文件名称 fileName_随机值.extName
 //
 // fileName 原始文件名称含后缀，如：logo.png
 func generateFileName(fileName string) string {
@@ -127,13 +127,10 @@ func isAllowRead(filePath string) error {
 
 // transferToNewFile 读取目标文件转移到新路径下
 //
-// readFilePath 读取目标文件
-//
-// writePath 写入路径
-//
-// fileName 文件名称
-func transferToNewFile(file *multipart.FileHeader, dst string) error {
-	src, err := file.Open()
+// fileHeader 读取目标文件
+// dst 输出路径
+func transferToNewFile(fileHeader *multipart.FileHeader, dst string) error {
+	src, err := fileHeader.Open()
 	if err != nil {
 		return err
 	}

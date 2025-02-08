@@ -19,11 +19,11 @@ import (
 //
 // sheetName 工作簿名称， 空字符默认Sheet1
 func ReadSheet(filePath, sheetName string) ([]map[string]string, error) {
-	data := make([]map[string]string, 0)
+	rowDataArr := make([]map[string]string, 0)
 	// 打开 Excel 文件
 	f, err := excelize.OpenFile(filePath)
 	if err != nil {
-		return data, err
+		return rowDataArr, err
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
@@ -36,13 +36,13 @@ func ReadSheet(filePath, sheetName string) ([]map[string]string, error) {
 		sheetName = "Sheet1"
 	}
 	if visible, _ := f.GetSheetVisible(sheetName); !visible {
-		return data, fmt.Errorf("读取工作簿 %s 失败", sheetName)
+		return rowDataArr, fmt.Errorf("读取工作簿 %s 失败", sheetName)
 	}
 
 	// 获取工作簿记录
 	rows, err := f.GetRows(sheetName)
 	if err != nil {
-		return data, err
+		return rowDataArr, err
 	}
 
 	for i, row := range rows {
@@ -57,9 +57,9 @@ func ReadSheet(filePath, sheetName string) ([]map[string]string, error) {
 			rowData[columnName] = cellValue
 		}
 
-		data = append(data, rowData)
+		rowDataArr = append(rowDataArr, rowData)
 	}
-	return data, nil
+	return rowDataArr, nil
 }
 
 // WriteSheet 表格写入数据
