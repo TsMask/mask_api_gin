@@ -49,7 +49,7 @@ func initFlag() {
 
 	// 参数固定输出
 	if *pVersion {
-		fmt.Printf("Name:%s\nVersion:%s\nBuildTime:%s\nBuildGoVer:%s\n\n", Name, Version, BuildTime, GoVer)
+		fmt.Printf("Name:%s\nVersion:%s\nBuildTime:%s\nBuildGo:%s\n\n", Name, Version, BuildTime, GoVer)
 		os.Exit(1)
 	}
 	if *pHelp {
