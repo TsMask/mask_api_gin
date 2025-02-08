@@ -14,14 +14,12 @@ import (
 var NewRegister = &Register{
 	sysUserService:   systemService.NewSysUser,
 	sysConfigService: systemService.NewSysConfig,
-	sysRoleService:   systemService.NewSysRole,
 }
 
 // Register 账号注册操作 服务层处理
 type Register struct {
 	sysUserService   *systemService.SysUser   // 用户信息服务
 	sysConfigService *systemService.SysConfig // 参数配置服务
-	sysRoleService   *systemService.SysRole   // 角色服务
 }
 
 // ValidateCaptcha 校验验证码
