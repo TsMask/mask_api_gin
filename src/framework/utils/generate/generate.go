@@ -6,8 +6,6 @@ import (
 	"strings"
 
 	nanoid "github.com/matoous/go-nanoid/v2"
-
-	"mask_api_gin/src/framework/logger"
 )
 
 // Code 生成随机Code
@@ -16,7 +14,6 @@ import (
 func Code(size int) string {
 	str, err := nanoid.Generate("0123456789abcdefghijklmnopqrstuvwxyz", size)
 	if err != nil {
-		logger.Infof("Code %d : %v", size, err)
 		return ""
 	}
 	return str
@@ -28,7 +25,6 @@ func Code(size int) string {
 func String(size int) string {
 	str, err := nanoid.New(size)
 	if err != nil {
-		logger.Errorf("String %d : %v", size, err)
 		return ""
 	}
 	return str
@@ -47,7 +43,6 @@ func Number(size int) string {
 	for i := 0; i < size; i++ {
 		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(digits))))
 		if err != nil {
-			logger.Errorf("Number %d : %v", size, err)
 			return ""
 		}
 		sb.WriteByte(digits[n.Int64()])
