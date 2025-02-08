@@ -44,7 +44,7 @@ func RegionSearchByIp(ip string) (string, int, int64) {
 	tStart := time.Now()
 	region, err := searcher.SearchByStr(ip)
 	if err != nil {
-		logger.Errorf("failed to SearchIP(%s): %s\n", ip, err)
+		logger.Errorf("failed to RegionSearchByIp(%s): %s\n", ip, err)
 		return "0|0|0|0|0", 0, 0
 	}
 	return region, 0, time.Since(tStart).Milliseconds()
@@ -60,12 +60,15 @@ func RealAddressByIp(ip string) string {
 	}
 	region, err := searcher.SearchByStr(ip)
 	if err != nil {
-		logger.Errorf("failed to SearchIP(%s): %s\n", ip, err)
+		logger.Errorf("failed to RealAddressByIp(%s): %s\n", ip, err)
 		return "未知"
 	}
 	parts := strings.Split(region, "|")
 	province := parts[2]
 	city := parts[3]
+	if province == "0" && city == "0" {
+		return "未知"
+	}
 	if province == "0" && city != "0" {
 		return city
 	}

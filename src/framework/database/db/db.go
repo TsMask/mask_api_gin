@@ -127,6 +127,15 @@ func DB(source string) *gorm.DB {
 	return dbMap[source]
 }
 
+// Names 获取数据源名称列表
+func Names() []string {
+	var names []string
+	for key := range dbMap {
+		names = append(names, key)
+	}
+	return names
+}
+
 // RawDB 原生语句查询
 //
 // source-数据源

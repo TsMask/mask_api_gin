@@ -242,22 +242,6 @@ func Get(source, key string) (string, error) {
 	return v, nil
 }
 
-// GetHash 获得缓存数据Hash
-func GetHash(source, key string) (map[string]string, error) {
-	// 数据源
-	rdb := RDB(source)
-	if rdb == nil {
-		return map[string]string{}, fmt.Errorf("redis not client")
-	}
-
-	ctx := context.Background()
-	value, err := rdb.HGetAll(ctx, key).Result()
-	if err != nil || errors.Is(err, redis.Nil) {
-		return map[string]string{}, err
-	}
-	return value, nil
-}
-
 // Has 判断是否存在
 func Has(source string, keys ...string) (int64, error) {
 	// 数据源

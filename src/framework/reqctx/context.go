@@ -51,7 +51,7 @@ func RequestParamsMap(c *gin.Context) map[string]any {
 	return params
 }
 
-// Authorization 解析请求头
+// Authorization 解析请求头携带的令牌
 func Authorization(c *gin.Context) string {
 	authHeader := c.GetHeader(constants.HEADER_KEY)
 	if authHeader == "" {
