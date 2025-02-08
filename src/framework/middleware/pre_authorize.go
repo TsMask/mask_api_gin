@@ -1,14 +1,14 @@
 package middleware
 
 import (
-	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/reqctx"
-	"mask_api_gin/src/framework/resp"
-	"mask_api_gin/src/framework/utils/token"
-
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+
+	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/reqctx"
+	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/framework/token"
 )
 
 // PreAuthorize 用户身份授权认证校验

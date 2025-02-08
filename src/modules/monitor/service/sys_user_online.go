@@ -1,7 +1,7 @@
 package service
 
 import (
-	"mask_api_gin/src/framework/utils/token"
+	"mask_api_gin/src/framework/token"
 	"mask_api_gin/src/modules/monitor/model"
 )
 

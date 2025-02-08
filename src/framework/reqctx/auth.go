@@ -8,7 +8,7 @@ import (
 
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/utils/token"
+	"mask_api_gin/src/framework/token"
 )
 
 // LoginUser 登录用户信息

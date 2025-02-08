@@ -10,7 +10,7 @@ import (
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/reqctx"
 	"mask_api_gin/src/framework/resp"
-	"mask_api_gin/src/framework/utils/token"
+	"mask_api_gin/src/framework/token"
 	"mask_api_gin/src/modules/common/model"
 	"mask_api_gin/src/modules/common/service"
 	systemService "mask_api_gin/src/modules/system/service"
