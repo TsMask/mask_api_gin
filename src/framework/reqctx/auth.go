@@ -12,42 +12,42 @@ import (
 )
 
 // LoginUser 登录用户信息
-func LoginUser(c *gin.Context) (token.LoginUser, error) {
+func LoginUser(c *gin.Context) (token.TokenInfo, error) {
 	value, exists := c.Get(constants.CTX_LOGIN_USER)
 	if exists && value != nil {
-		return value.(token.LoginUser), nil
+		return value.(token.TokenInfo), nil
 	}
-	return token.LoginUser{}, fmt.Errorf("invalid login user information")
+	return token.TokenInfo{}, fmt.Errorf("invalid login user information")
 }
 
 // LoginUserToUserID 登录用户信息-用户ID
 func LoginUserToUserID(c *gin.Context) int64 {
-	loginUser, err := LoginUser(c)
+	info, err := LoginUser(c)
 	if err != nil {
 		return 0
 	}
-	return loginUser.UserId
+	return info.UserId
 }
 
 // LoginUserToUserName 登录用户信息-用户名称
 func LoginUserToUserName(c *gin.Context) string {
-	loginUser, err := LoginUser(c)
+	info, err := LoginUser(c)
 	if err != nil {
 		return ""
 	}
-	return loginUser.User.UserName
+	return info.User.UserName
 }
 
 // LoginUserByContainRoles 登录用户信息-包含角色KEY
 func LoginUserByContainRoles(c *gin.Context, target string) bool {
-	loginUser, err := LoginUser(c)
+	info, err := LoginUser(c)
 	if err != nil {
 		return false
 	}
-	if config.IsSystemUser(loginUser.UserId) {
+	if config.IsSystemUser(info.UserId) {
 		return true
 	}
-	roles := loginUser.User.Roles
+	roles := info.User.Roles
 	for _, item := range roles {
 		if item.RoleKey == target {
 			return true
@@ -78,11 +78,11 @@ func LoginUserByContainPerms(c *gin.Context, target string) bool {
 func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string) string {
 	dataScopeSQL := ""
 	// 登录用户信息
-	loginUser, err := LoginUser(c)
+	info, err := LoginUser(c)
 	if err != nil {
 		return dataScopeSQL
 	}
-	userInfo := loginUser.User
+	userInfo := info.User
 
 	// 如果是系统管理员，则不过滤数据
 	if config.IsSystemUser(userInfo.UserId) {
@@ -117,12 +117,13 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 		}
 
 		if constants.ROLE_SCOPE_CUSTOM == dataScope {
-			sql := fmt.Sprintf(`%s.dept_id IN ( 
-			SELECT dept_id FROM sys_role_dept WHERE role_id = %d 
-			) AND %s.dept_id NOT IN ( 
+			sql := fmt.Sprintf(`%s.dept_id IN 
+			( SELECT dept_id FROM sys_role_dept WHERE role_id = %d ) 
+			AND %s.dept_id NOT IN 
+			( 
 			SELECT d.parent_id FROM sys_dept d 
 			INNER JOIN sys_role_dept rd ON rd.dept_id = d.dept_id 
-			AND rd.role_id = %d
+			AND rd.role_id = %d 
 			)`, deptAlias, role.RoleId, deptAlias, role.RoleId)
 			conditions = append(conditions, sql)
 		}
@@ -133,7 +134,7 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 		}
 
 		if constants.ROLE_SCOPE_DEPT_CHILD == dataScope {
-			sql := fmt.Sprintf("%s.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = %d or find_in_set(%d, ancestors ) )", deptAlias, userInfo.DeptId, userInfo.DeptId)
+			sql := fmt.Sprintf("%s.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = %d OR find_in_set(%d, ancestors ) )", deptAlias, userInfo.DeptId, userInfo.DeptId)
 			conditions = append(conditions, sql)
 		}
 

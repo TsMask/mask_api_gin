@@ -2,8 +2,8 @@ package token
 
 import systemModel "mask_api_gin/src/modules/system/model"
 
-// LoginUser 令牌登录用户身份权限信息对象
-type LoginUser struct {
+// TokenInfo 令牌信息对象
+type TokenInfo struct {
 	UUID          string              `json:"uuid"`          // 用户唯一标识
 	UserId        int64               `json:"userId"`        // 用户ID
 	DeptId        int64               `json:"deptId"`        // 部门ID

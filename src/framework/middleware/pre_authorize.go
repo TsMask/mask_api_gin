@@ -39,7 +39,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 		}
 
 		// 获取缓存的用户信息
-		loginUser := token.UserInfo(claims)
+		loginUser := token.Info(claims)
 		if loginUser.UserId <= 0 {
 			c.JSON(401, resp.CodeMsg(401, "无效身份授权"))
 			c.Abort() // 停止执行后续的处理函数

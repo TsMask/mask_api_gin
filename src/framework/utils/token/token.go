@@ -32,23 +32,23 @@ func Remove(token string) string {
 }
 
 // Create 令牌生成
-func Create(loginUser *LoginUser, ilobArr [4]string) string {
+func Create(tokenInfo *TokenInfo, ilobArr [4]string) string {
 	// 生成用户唯一token 32位
-	loginUser.UUID = generate.Code(32)
-	loginUser.LoginTime = time.Now().UnixMilli()
+	tokenInfo.UUID = generate.Code(32)
+	tokenInfo.LoginTime = time.Now().UnixMilli()
 
 	// 设置请求用户登录客户端
-	loginUser.LoginIp = ilobArr[0]
-	loginUser.LoginLocation = ilobArr[1]
-	loginUser.OS = ilobArr[2]
-	loginUser.Browser = ilobArr[3]
+	tokenInfo.LoginIp = ilobArr[0]
+	tokenInfo.LoginLocation = ilobArr[1]
+	tokenInfo.OS = ilobArr[2]
+	tokenInfo.Browser = ilobArr[3]
 
 	// 设置新登录IP和登录时间
-	loginUser.User.LoginIp = loginUser.LoginIp
-	loginUser.User.LoginTime = loginUser.LoginTime
+	tokenInfo.User.LoginIp = tokenInfo.LoginIp
+	tokenInfo.User.LoginTime = tokenInfo.LoginTime
 
 	// 设置用户令牌有效期并存入缓存
-	Cache(loginUser)
+	Cache(tokenInfo)
 
 	// 令牌算法 HS256 HS384 HS512
 	algorithm := config.Get("jwt.algorithm").(string)
@@ -64,11 +64,10 @@ func Create(loginUser *LoginUser, ilobArr [4]string) string {
 	}
 	// 生成令牌负荷绑定uuid标识
 	jwtToken := jwt.NewWithClaims(method, jwt.MapClaims{
-		constants.JWT_UUID:      loginUser.UUID,
-		constants.JWT_USER_ID:   loginUser.UserId,
-		constants.JWT_USER_NAME: loginUser.User.UserName,
-		"exp":                   loginUser.ExpireTime,
-		"ait":                   loginUser.LoginTime,
+		constants.JWT_UUID:      tokenInfo.UUID,
+		constants.JWT_USER_ID:   tokenInfo.UserId,
+		constants.JWT_USER_NAME: tokenInfo.User.UserName,
+		"ait":                   tokenInfo.LoginTime,
 	})
 
 	// 生成令牌设置密钥
@@ -82,17 +81,17 @@ func Create(loginUser *LoginUser, ilobArr [4]string) string {
 }
 
 // Cache 缓存登录用户信息
-func Cache(loginUser *LoginUser) {
+func Cache(tokenInfo *TokenInfo) {
 	// 计算配置的有效期
 	expTime := config.Get("jwt.expiresIn").(int)
 	expTimestamp := time.Duration(expTime) * time.Minute
 	iatTimestamp := time.Now().UnixMilli()
-	loginUser.LoginTime = iatTimestamp
-	loginUser.ExpireTime = iatTimestamp + expTimestamp.Milliseconds()
-	loginUser.User.Password = ""
-	// 根据登录标识将loginUser缓存
-	tokenKey := constants.CACHE_LOGIN_TOKEN + ":" + loginUser.UUID
-	jsonBytes, err := json.Marshal(loginUser)
+	tokenInfo.LoginTime = iatTimestamp
+	tokenInfo.ExpireTime = iatTimestamp + expTimestamp.Milliseconds()
+	tokenInfo.User.Password = ""
+	// 登录信息标识缓存
+	tokenKey := constants.CACHE_LOGIN_TOKEN + ":" + tokenInfo.UUID
+	jsonBytes, err := json.Marshal(tokenInfo)
 	if err != nil {
 		return
 	}
@@ -100,7 +99,7 @@ func Cache(loginUser *LoginUser) {
 }
 
 // RefreshIn 验证令牌有效期，相差不足xx分钟，自动刷新缓存
-func RefreshIn(loginUser *LoginUser) {
+func RefreshIn(loginUser *TokenInfo) {
 	// 相差不足xx分钟，自动刷新缓存
 	refreshTime := config.Get("jwt.refreshIn").(int)
 	refreshTimestamp := time.Duration(refreshTime) * time.Minute
@@ -133,21 +132,21 @@ func Verify(token string) (jwt.MapClaims, error) {
 	return nil, fmt.Errorf("token valid error")
 }
 
-// UserInfo 缓存的登录用户信息
-func UserInfo(claims jwt.MapClaims) LoginUser {
-	loginUser := LoginUser{}
+// Info 缓存的登录用户信息
+func Info(claims jwt.MapClaims) TokenInfo {
+	tokenInfo := TokenInfo{}
 	uuid := claims[constants.JWT_UUID].(string)
 	tokenKey := constants.CACHE_LOGIN_TOKEN + ":" + uuid
 	hasKey, err := redis.Has("", tokenKey)
 	if hasKey > 0 && err == nil {
-		loginUserStr, err := redis.Get("", tokenKey)
-		if loginUserStr == "" || err != nil {
-			return loginUser
+		infoStr, err := redis.Get("", tokenKey)
+		if infoStr == "" || err != nil {
+			return tokenInfo
 		}
-		if err := json.Unmarshal([]byte(loginUserStr), &loginUser); err != nil {
-			logger.Errorf("loginuser info json err : %v", err)
-			return loginUser
+		if err := json.Unmarshal([]byte(infoStr), &tokenInfo); err != nil {
+			logger.Errorf("info json err : %v", err)
+			return tokenInfo
 		}
 	}
-	return loginUser
+	return tokenInfo
 }
