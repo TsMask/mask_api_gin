@@ -39,7 +39,7 @@ type LimitOption struct {
 // 参数表示：5秒内，最多请求10次，限制类型为 IP
 //
 // 使用 USER 时，请在用户身份授权认证校验后使用
-// 以便获取登录用户信息，无用户信息时默认为 GLOBAL
+// 以便获取登录用户信息，无用户信息时默认为 LIMIT_GLOBAL
 func RateLimit(option LimitOption) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 初始可选参数数据
@@ -62,13 +62,13 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 
 		// 用户
 		if option.Type == LIMIT_USER {
-			loginUser, err := reqctx.LoginUser(c)
-			if err != nil {
-				c.JSON(401, resp.CodeMsg(40003, err.Error()))
+			userId := reqctx.LoginUserToUserID(c)
+			if userId <= 0 {
+				c.JSON(401, resp.CodeMsg(401, "无效身份授权"))
 				c.Abort() // 停止执行后续的处理函数
 				return
 			}
-			limitKey = fmt.Sprintf("%s:%d:%s", constants.CACHE_RATE_LIMIT, loginUser.UserId, funcName)
+			limitKey = fmt.Sprintf("%s:%d:%s", constants.CACHE_RATE_LIMIT, userId, funcName)
 		}
 
 		// IP

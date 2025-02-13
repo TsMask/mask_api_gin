@@ -152,7 +152,7 @@ func (s *FileController) ChunkMerge(c *gin.Context) {
 	}
 
 	c.JSON(200, resp.OkData(map[string]string{
-		"url":              "http://" + c.Request.Host + mergeFilePath,
+		"url":              "//" + c.Request.Host + mergeFilePath,
 		"filePath":         mergeFilePath,
 		"newFileName":      filepath.Base(mergeFilePath),
 		"originalFileName": body.FileName,

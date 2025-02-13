@@ -120,16 +120,17 @@ func (s DemoORMController) Edit(c *gin.Context) {
 //
 // DELETE /:id
 func (s DemoORMController) Remove(c *gin.Context) {
-	idStr := c.Param("id")
-	arr := parse.RemoveDuplicatesToArray(idStr, ",")
-	if idStr == "" || len(arr) <= 0 {
+	id := c.Param("id")
+	if id == "" {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: id is empty"))
 		return
 	}
 
+	// 处理字符转id数组后去重
+	uniqueIDs := parse.RemoveDuplicatesToArray(id, ",")
 	// 转换成int64数组类型
 	ids := make([]int64, 0)
-	for _, v := range arr {
+	for _, v := range uniqueIDs {
 		ids = append(ids, parse.Number(v))
 	}
 

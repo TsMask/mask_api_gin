@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"encoding/json"
-	"strconv"
+	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -56,7 +56,8 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 			compareParams := rp.Params == paramsJSONStr
 
 			// 设置重复提交声明响应头（毫秒）
-			c.Header("X-RepeatSubmit-Rest", strconv.FormatInt(time.Now().Add(time.Duration(compareTime)*time.Second).UnixNano()/int64(time.Millisecond), 10))
+			t := time.Now().Add(time.Duration(compareTime) * time.Second)
+			c.Header("X-RepeatSubmit-Rest", fmt.Sprint(t.UnixMilli()))
 
 			// 小于间隔时间且参数内容一致
 			if compareTime < interval && compareParams {

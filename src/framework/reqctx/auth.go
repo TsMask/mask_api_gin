@@ -58,14 +58,14 @@ func LoginUserByContainRoles(c *gin.Context, target string) bool {
 
 // LoginUserByContainPerms 登录用户信息-包含权限标识
 func LoginUserByContainPerms(c *gin.Context, target string) bool {
-	loginUser, err := LoginUser(c)
+	info, err := LoginUser(c)
 	if err != nil {
 		return false
 	}
-	if config.IsSystemUser(loginUser.UserId) {
+	if config.IsSystemUser(info.UserId) {
 		return true
 	}
-	perms := loginUser.Permissions
+	perms := info.Permissions
 	for _, str := range perms {
 		if str == target {
 			return true

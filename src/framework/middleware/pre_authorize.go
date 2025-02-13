@@ -39,24 +39,24 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 		}
 
 		// 获取缓存的用户信息
-		loginUser := token.Info(claims)
-		if loginUser.UserId <= 0 {
+		info := token.Info(claims)
+		if info.UserId <= 0 {
 			c.JSON(401, resp.CodeMsg(401, "无效身份授权"))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
 
 		// 检查刷新有效期后存入上下文
-		token.RefreshIn(&loginUser)
-		c.Set(constants.CTX_LOGIN_USER, loginUser)
+		token.RefreshIn(&info)
+		c.Set(constants.CTX_LOGIN_USER, info)
 
 		// 登录用户角色权限校验
 		if options != nil {
 			var roles []string
-			for _, item := range loginUser.User.Roles {
+			for _, item := range info.User.Roles {
 				roles = append(roles, item.RoleKey)
 			}
-			perms := loginUser.Permissions
+			perms := info.Permissions
 			verifyOk := verifyRolePermission(roles, perms, options)
 			if !verifyOk {
 				msg := fmt.Sprintf("无权访问 %s %s", c.Request.Method, c.Request.RequestURI)

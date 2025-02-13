@@ -57,19 +57,19 @@ func (s AccountController) Login(c *gin.Context) {
 	}
 
 	// 登录用户信息
-	loginUser, err := s.accountService.ByUsername(body.Username, body.Password)
+	info, err := s.accountService.ByUsername(body.Username, body.Password)
 	if err != nil {
 		c.JSON(400, resp.CodeMsg(40014, err.Error()))
 		return
 	}
 
 	// 生成令牌，创建系统访问记录
-	tokenStr := token.Create(&loginUser, [4]string{ipaddr, location, os, browser})
+	tokenStr := token.Create(&info, [4]string{ipaddr, location, os, browser})
 	if tokenStr == "" {
 		c.JSON(400, resp.CodeMsg(40001, "token generation failed"))
 		return
 	} else {
-		s.accountService.UpdateLoginDateAndIP(loginUser)
+		s.accountService.UpdateLoginDateAndIP(info)
 		s.sysLogLoginService.Insert(
 			body.Username, constants.STATUS_YES, "登录成功",
 			[4]string{ipaddr, location, os, browser},
@@ -79,8 +79,8 @@ func (s AccountController) Login(c *gin.Context) {
 	c.JSON(200, resp.OkData(map[string]any{
 		"accessToken": tokenStr,
 		"tokenType":   strings.TrimRight(constants.HEADER_PREFIX, " "),
-		"expiresIn":   (loginUser.ExpireTime - loginUser.LoginTime) / 1000,
-		"userId":      loginUser.UserId,
+		"expiresIn":   (info.ExpireTime - info.LoginTime) / 1000,
+		"userId":      info.UserId,
 	}))
 }
 
@@ -109,11 +109,11 @@ func (s AccountController) Me(c *gin.Context) {
 //
 // GET /router
 func (s AccountController) Router(c *gin.Context) {
-	userId := reqctx.LoginUserToUserID(c)
+	loginUserId := reqctx.LoginUserToUserID(c)
 
 	// 前端路由，系统管理员拥有所有
-	isSystemUser := config.IsSystemUser(userId)
-	buildMenus := s.accountService.RouteMenus(userId, isSystemUser)
+	isSystemUser := config.IsSystemUser(loginUserId)
+	buildMenus := s.accountService.RouteMenus(loginUserId, isSystemUser)
 	c.JSON(200, resp.OkData(buildMenus))
 }
 

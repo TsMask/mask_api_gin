@@ -86,8 +86,8 @@ func OperateLog(options Options) gin.HandlerFunc {
 		ipaddr, location := reqctx.IPAddrLocation(c)
 
 		// 获取登录用户信息
-		loginUser, err := reqctx.LoginUser(c)
-		if err != nil {
+		userName := reqctx.LoginUserToUserName(c)
+		if userName == "" {
 			c.JSON(401, resp.CodeMsg(401, "无效身份授权"))
 			c.Abort() // 停止执行后续的处理函数
 			return
@@ -102,7 +102,7 @@ func OperateLog(options Options) gin.HandlerFunc {
 			OperaUrlMethod: c.Request.Method,
 			OperaIp:        ipaddr,
 			OperaLocation:  location,
-			OperaBy:        loginUser.User.UserName,
+			OperaBy:        userName,
 		}
 
 		// 是否需要保存request，参数和值
@@ -141,7 +141,6 @@ func OperateLog(options Options) gin.HandlerFunc {
 		// 日志记录时间
 		duration := time.Since(c.GetTime("startTime"))
 		operaLog.CostTime = duration.Milliseconds()
-		operaLog.OperaTime = time.Now().UnixMilli()
 
 		// 保存操作记录到数据库
 		service.NewSysLogOperate.Insert(operaLog)
