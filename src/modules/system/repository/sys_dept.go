@@ -143,7 +143,8 @@ func (r SysDept) ExistChildrenByDeptId(deptId int64) int64 {
 		return 0
 	}
 	tx := db.DB("").Model(&model.SysDept{})
-	tx = tx.Where("del_flag = '0' and status_flag = '1' and parent_id = ?", deptId)
+	tx = tx.Where("del_flag = '0' and status_flag = '1'")
+	tx = tx.Where("parent_id = ?", deptId)
 	// 查询数据
 	var count int64 = 0
 	if err := tx.Count(&count).Error; err != nil {

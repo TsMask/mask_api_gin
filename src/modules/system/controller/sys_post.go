@@ -148,20 +148,21 @@ func (s SysPostController) Edit(c *gin.Context) {
 //
 // DELETE /:postId
 func (s SysPostController) Remove(c *gin.Context) {
-	postIdsStr := c.Param("postId")
-	arr := parse.RemoveDuplicatesToArray(postIdsStr, ",")
-	if postIdsStr == "" || len(arr) <= 0 {
+	postId := c.Param("postId")
+	if postId == "" {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: postId is empty"))
 		return
 	}
 
+	// 处理字符转id数组后去重
+	uniqueIDs := parse.RemoveDuplicatesToArray(postId, ",")
 	// 转换成int64数组类型
-	postIds := make([]int64, 0)
-	for _, v := range arr {
-		postIds = append(postIds, parse.Number(v))
+	ids := make([]int64, 0)
+	for _, v := range uniqueIDs {
+		ids = append(ids, parse.Number(v))
 	}
 
-	rows, err := s.sysPostService.DeleteByIds(postIds)
+	rows, err := s.sysPostService.DeleteByIds(ids)
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return

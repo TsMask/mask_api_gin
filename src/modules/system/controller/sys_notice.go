@@ -115,20 +115,21 @@ func (s SysNoticeController) Edit(c *gin.Context) {
 //
 // DELETE /:noticeId
 func (s SysNoticeController) Remove(c *gin.Context) {
-	noticeIdsStr := c.Param("noticeId")
-	arr := parse.RemoveDuplicatesToArray(noticeIdsStr, ",")
-	if noticeIdsStr == "" || len(arr) <= 0 {
+	noticeId := c.Param("noticeId")
+	if noticeId == "" {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: noticeId is empty"))
 		return
 	}
 
+	// 处理字符转id数组后去重
+	uniqueIDs := parse.RemoveDuplicatesToArray(noticeId, ",")
 	// 转换成int64数组类型
-	noticeIds := make([]int64, 0)
-	for _, v := range arr {
-		noticeIds = append(noticeIds, parse.Number(v))
+	ids := make([]int64, 0)
+	for _, v := range uniqueIDs {
+		ids = append(ids, parse.Number(v))
 	}
 
-	rows, err := s.sysNoticeService.DeleteByIds(noticeIds)
+	rows, err := s.sysNoticeService.DeleteByIds(ids)
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return

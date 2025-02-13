@@ -104,7 +104,7 @@ func (s SysUserController) Info(c *gin.Context) {
 func (s SysUserController) Add(c *gin.Context) {
 	var body model.SysUser
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
-		c.JSON(400, resp.ErrMsg(resp.FormatBindError(err)))
+		c.JSON(422, resp.ErrMsg(resp.FormatBindError(err)))
 		return
 	}
 	// 密码单独取，避免序列化输出
@@ -124,12 +124,12 @@ func (s SysUserController) Add(c *gin.Context) {
 	}
 	if !regular.ValidUsername(body.UserName) {
 		msg := fmt.Sprintf("新增用户【%s】失败，登录账号用户账号只能包含大写小写字母，数字，且不少于4位", body.UserName)
-		c.JSON(400, resp.ErrMsg(msg))
+		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 	if !regular.ValidPassword(body.Password) {
 		msg := fmt.Sprintf("新增用户【%s】失败，登录密码至少包含大小写字母、数字、特殊符号，且不少于6位", body.UserName)
-		c.JSON(400, resp.ErrMsg(msg))
+		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
@@ -293,23 +293,24 @@ func (s SysUserController) Edit(c *gin.Context) {
 //
 // DELETE /:userId
 func (s SysUserController) Remove(c *gin.Context) {
-	userIdsStr := c.Param("userId")
-	arr := parse.RemoveDuplicatesToArray(userIdsStr, ",")
-	if userIdsStr == "" || len(arr) <= 0 {
+	userId := c.Param("userId")
+	if userId == "" {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: userId is empty"))
 		return
 	}
 
+	// 处理字符转id数组后去重
+	uniqueIDs := parse.RemoveDuplicatesToArray(userId, ",")
 	// 转换成int64数组类型
-	userIds := make([]int64, 0)
-	for _, v := range arr {
-		userIds = append(userIds, parse.Number(v))
+	ids := make([]int64, 0)
+	for _, v := range uniqueIDs {
+		ids = append(ids, parse.Number(v))
 	}
 
-	loginUserID := reqctx.LoginUserToUserID(c)
-	for _, id := range userIds {
+	loginUserId := reqctx.LoginUserToUserID(c)
+	for _, id := range ids {
 		// 不能删除自己
-		if id == loginUserID {
+		if id == loginUserId {
 			c.JSON(200, resp.ErrMsg("当前用户不能删除"))
 			return
 		}
@@ -320,7 +321,7 @@ func (s SysUserController) Remove(c *gin.Context) {
 		}
 	}
 
-	rows, err := s.sysUserService.DeleteByIds(userIds)
+	rows, err := s.sysUserService.DeleteByIds(ids)
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return

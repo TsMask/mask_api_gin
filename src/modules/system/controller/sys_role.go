@@ -161,28 +161,29 @@ func (s SysRoleController) Edit(c *gin.Context) {
 //
 // DELETE /:roleId
 func (s SysRoleController) Remove(c *gin.Context) {
-	roleIdsStr := c.Param("roleId")
-	arr := parse.RemoveDuplicatesToArray(roleIdsStr, ",")
-	if roleIdsStr == "" || len(arr) <= 0 {
+	roleId := c.Param("roleId")
+	if roleId == "" {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: roleId is empty"))
 		return
 	}
 
+	// 处理字符转id数组后去重
+	uniqueIDs := parse.RemoveDuplicatesToArray(roleId, ",")
 	// 转换成int64数组类型
-	roleIds := make([]int64, 0)
-	for _, v := range arr {
-		roleIds = append(roleIds, parse.Number(v))
+	ids := make([]int64, 0)
+	for _, v := range uniqueIDs {
+		ids = append(ids, parse.Number(v))
 	}
 
 	// 检查是否系统管理员角色
-	for _, id := range roleIds {
+	for _, id := range ids {
 		if id == constants.SYS_ROLE_SYSTEM_ID {
 			c.JSON(200, resp.ErrMsg("不允许操作系统管理员角色"))
 			return
 		}
 	}
 
-	rows, err := s.sysRoleService.DeleteByIds(roleIds)
+	rows, err := s.sysRoleService.DeleteByIds(ids)
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return

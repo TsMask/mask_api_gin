@@ -132,20 +132,21 @@ func (s SysConfigController) Edit(c *gin.Context) {
 //
 // DELETE /:configId
 func (s SysConfigController) Remove(c *gin.Context) {
-	configIdStr := c.Param("configId")
-	arr := parse.RemoveDuplicatesToArray(configIdStr, ",")
-	if configIdStr == "" || len(arr) == 0 {
+	configId := c.Param("configId")
+	if configId == "" {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: configId is empty"))
 		return
 	}
 
+	// 处理字符转id数组后去重
+	uniqueIDs := parse.RemoveDuplicatesToArray(configId, ",")
 	// 转换成int64数组类型
-	configIds := make([]int64, 0)
-	for _, v := range arr {
-		configIds = append(configIds, parse.Number(v))
+	ids := make([]int64, 0)
+	for _, v := range uniqueIDs {
+		ids = append(ids, parse.Number(v))
 	}
 
-	rows, err := s.sysConfigService.DeleteByIds(configIds)
+	rows, err := s.sysConfigService.DeleteByIds(ids)
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return

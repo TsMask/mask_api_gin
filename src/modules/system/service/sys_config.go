@@ -96,7 +96,8 @@ func (s SysConfig) FindValueByKey(configKey string) string {
 		return cacheValue
 	}
 	// 无缓存时读取数据放入缓存中
-	if configValue := s.sysConfigRepository.SelectValueByKey(configKey); configValue != "" {
+	configValue := s.sysConfigRepository.SelectValueByKey(configKey)
+	if configValue != "" {
 		_ = redis.Set("", cacheKey, configValue)
 		return configValue
 	}

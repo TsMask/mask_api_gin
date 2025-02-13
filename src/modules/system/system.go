@@ -331,6 +331,7 @@ func Setup(router *gin.Engine) {
 		)
 		sysProfileGroup.PUT("",
 			middleware.PreAuthorize(nil),
+			middleware.OperateLog(middleware.OptionNew("个人信息", middleware.BUSINESS_TYPE_UPDATE)),
 			controller.NewSysProfile.UpdateProfile,
 		)
 		sysProfileGroup.PUT("/password",

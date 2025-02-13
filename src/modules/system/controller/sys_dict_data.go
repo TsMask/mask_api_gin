@@ -167,20 +167,21 @@ func (s SysDictDataController) Edit(c *gin.Context) {
 //
 // DELETE /:dataId
 func (s SysDictDataController) Remove(c *gin.Context) {
-	dataIdsStr := c.Param("dataId")
-	arr := parse.RemoveDuplicatesToArray(dataIdsStr, ",")
-	if dataIdsStr == "" || len(arr) <= 0 {
+	dataId := c.Param("dataId")
+	if dataId == "" {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: dataId is empty"))
 		return
 	}
 
+	// 处理字符转id数组后去重
+	uniqueIDs := parse.RemoveDuplicatesToArray(dataId, ",")
 	// 转换成int64数组类型
-	dataIds := make([]int64, 0)
-	for _, v := range arr {
-		dataIds = append(dataIds, parse.Number(v))
+	ids := make([]int64, 0)
+	for _, v := range uniqueIDs {
+		ids = append(ids, parse.Number(v))
 	}
 
-	rows, err := s.sysDictDataService.DeleteByIds(dataIds)
+	rows, err := s.sysDictDataService.DeleteByIds(ids)
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return

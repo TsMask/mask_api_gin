@@ -19,7 +19,6 @@ var NewSysProfile = &SysProfileController{
 	sysUserService: service.NewSysUser,
 	sysRoleService: service.NewSysRole,
 	sysPostService: service.NewSysPost,
-	sysMenuService: service.NewSysMenu,
 }
 
 // SysProfileController 个人信息 控制层处理
@@ -29,14 +28,13 @@ type SysProfileController struct {
 	sysUserService *service.SysUser // 用户服务
 	sysRoleService *service.SysRole // 角色服务
 	sysPostService *service.SysPost // 岗位服务
-	sysMenuService *service.SysMenu // 菜单服务
 }
 
 // Info 个人信息
 //
 // GET /
 func (s SysProfileController) Info(c *gin.Context) {
-	loginUser, err := reqctx.LoginUser(c)
+	info, err := reqctx.LoginUser(c)
 	if err != nil {
 		c.JSON(401, resp.CodeMsg(40003, err.Error()))
 		return
@@ -44,20 +42,20 @@ func (s SysProfileController) Info(c *gin.Context) {
 
 	// 查询用户所属角色组
 	var roleGroup []string
-	roles := s.sysRoleService.FindByUserId(loginUser.UserId)
+	roles := s.sysRoleService.FindByUserId(info.UserId)
 	for _, role := range roles {
 		roleGroup = append(roleGroup, role.RoleName)
 	}
 
 	// 查询用户所属岗位组
 	var postGroup []string
-	posts := s.sysPostService.FindByUserId(loginUser.UserId)
+	posts := s.sysPostService.FindByUserId(info.UserId)
 	for _, post := range posts {
 		postGroup = append(postGroup, post.PostName)
 	}
 
 	c.JSON(200, resp.OkData(map[string]any{
-		"user":      loginUser.User,
+		"user":      info.User,
 		"roleGroup": parse.RemoveDuplicates(roleGroup),
 		"postGroup": parse.RemoveDuplicates(postGroup),
 	}))
@@ -81,12 +79,12 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 	}
 
 	// 登录用户信息
-	loginUser, err := reqctx.LoginUser(c)
+	info, err := reqctx.LoginUser(c)
 	if err != nil {
 		c.JSON(401, resp.CodeMsg(40003, err.Error()))
 		return
 	}
-	userId := loginUser.UserId
+	userId := info.UserId
 
 	// 检查手机号码格式并判断是否唯一
 	if body.Phone != "" {
@@ -134,10 +132,9 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 	rows := s.sysUserService.Update(userInfo)
 	if rows > 0 {
 		// 更新缓存用户信息
-		loginUser.User = userInfo
+		info.User = userInfo
 		// 刷新令牌信息
-		token.Cache(&loginUser)
-
+		token.Cache(&info)
 		c.JSON(200, resp.Ok(nil))
 		return
 	}
@@ -159,12 +156,12 @@ func (s SysProfileController) UpdatePassword(c *gin.Context) {
 	}
 
 	// 登录用户信息
-	loginUser, err := reqctx.LoginUser(c)
+	info, err := reqctx.LoginUser(c)
 	if err != nil {
 		c.JSON(401, resp.CodeMsg(40003, err.Error()))
 		return
 	}
-	userId := loginUser.UserId
+	userId := info.UserId
 
 	// 查询当前登录用户信息得到密码值
 	userInfo := s.sysUserService.FindById(userId)

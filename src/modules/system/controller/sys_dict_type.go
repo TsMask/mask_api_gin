@@ -147,20 +147,21 @@ func (s SysDictTypeController) Edit(c *gin.Context) {
 //
 // DELETE /:dictId
 func (s SysDictTypeController) Remove(c *gin.Context) {
-	dictIdStr := c.Param("dictId")
-	arr := parse.RemoveDuplicatesToArray(dictIdStr, ",")
-	if dictIdStr == "" || len(arr) <= 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: dictId not is empty"))
+	dictId := c.Param("dictId")
+	if dictId == "" {
+		c.JSON(400, resp.CodeMsg(40010, "bind err: dictId is empty"))
 		return
 	}
 
+	// 处理字符转id数组后去重
+	uniqueIDs := parse.RemoveDuplicatesToArray(dictId, ",")
 	// 转换成int64数组类型
-	dictIds := make([]int64, 0)
-	for _, v := range arr {
-		dictIds = append(dictIds, parse.Number(v))
+	ids := make([]int64, 0)
+	for _, v := range uniqueIDs {
+		ids = append(ids, parse.Number(v))
 	}
 
-	rows, err := s.sysDictTypeService.DeleteByIds(dictIds)
+	rows, err := s.sysDictTypeService.DeleteByIds(ids)
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
