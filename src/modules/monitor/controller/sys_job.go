@@ -178,20 +178,21 @@ func (s SysJobController) Edit(c *gin.Context) {
 //
 // DELETE /:jobId
 func (s SysJobController) Remove(c *gin.Context) {
-	jobIdStr := c.Param("jobId")
-	arr := parse.RemoveDuplicatesToArray(jobIdStr, ",")
-	if jobIdStr == "" || len(arr) == 0 {
+	jobId := c.Param("jobId")
+	if jobId == "" {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: jobId is empty"))
 		return
 	}
 
+	// 处理字符转id数组后去重
+	uniqueIDs := parse.RemoveDuplicatesToArray(jobId, ",")
 	// 转换成int64数组类型
-	jobIds := make([]int64, 0)
-	for _, v := range arr {
-		jobIds = append(jobIds, parse.Number(v))
+	ids := make([]int64, 0)
+	for _, v := range uniqueIDs {
+		ids = append(ids, parse.Number(v))
 	}
 
-	rows, err := s.sysJobService.DeleteByIds(jobIds)
+	rows, err := s.sysJobService.DeleteByIds(ids)
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return

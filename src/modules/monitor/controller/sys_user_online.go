@@ -118,8 +118,7 @@ func (s SysUserOnlineController) Logout(c *gin.Context) {
 	}
 
 	// 处理字符转id数组后去重
-	ids := strings.Split(tokenIdStr, ",")
-	uniqueIDs := parse.RemoveDuplicates(ids)
+	uniqueIDs := parse.RemoveDuplicatesToArray(tokenIdStr, ",")
 	for _, v := range uniqueIDs {
 		key := constants.CACHE_LOGIN_TOKEN + ":" + v
 		if err := redis.Del("", key); err != nil {

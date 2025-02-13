@@ -64,20 +64,21 @@ func (s SysJobLogController) Info(c *gin.Context) {
 //
 // DELETE /:logId
 func (s SysJobLogController) Remove(c *gin.Context) {
-	logIdStr := c.Param("logId")
-	arr := parse.RemoveDuplicatesToArray(logIdStr, ",")
-	if logIdStr == "" || len(arr) == 0 {
+	logId := c.Param("logId")
+	if logId == "" {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: logId is empty"))
 		return
 	}
 
+	// 处理字符转id数组后去重
+	uniqueIDs := parse.RemoveDuplicatesToArray(logId, ",")
 	// 转换成int64数组类型
-	logIds := make([]int64, 0)
-	for _, v := range arr {
-		logIds = append(logIds, parse.Number(v))
+	ids := make([]int64, 0)
+	for _, v := range uniqueIDs {
+		ids = append(ids, parse.Number(v))
 	}
 
-	rows := s.sysJobLogService.RemoveByIds(logIds)
+	rows := s.sysJobLogService.RemoveByIds(ids)
 	if rows > 0 {
 		msg := fmt.Sprintf("删除成功：%d", rows)
 		c.JSON(200, resp.OkMsg(msg))

@@ -157,7 +157,8 @@ func (s SysCacheController) CleanValue(c *gin.Context) {
 		return
 	}
 
-	if err := redis.Del("", query.CacheName+":"+query.CacheKey); err != nil {
+	err := redis.Del("", query.CacheName+":"+query.CacheKey)
+	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}

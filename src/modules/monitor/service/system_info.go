@@ -25,13 +25,13 @@ var NewSystemInfo = &SystemInfo{}
 type SystemInfo struct{}
 
 // ProjectInfo 程序项目信息
-func (s SystemInfo) ProjectInfo() map[string]any {
+func (s SystemInfo) ProjectInfo() map[string]string {
 	// 获取工作目录
 	appDir, err := os.Getwd()
 	if err != nil {
 		appDir = ""
 	}
-	return map[string]any{
+	return map[string]string{
 		"appDir":  appDir,
 		"env":     config.Env(),
 		"name":    config.Name,
@@ -95,7 +95,7 @@ func (s SystemInfo) TimeInfo() map[string]string {
 }
 
 // MemoryInfo 内存信息
-func (s SystemInfo) MemoryInfo() map[string]any {
+func (s SystemInfo) MemoryInfo() map[string]string {
 	memInfo, err := mem.VirtualMemory()
 	if err != nil {
 		memInfo.UsedPercent = 0
@@ -106,7 +106,7 @@ func (s SystemInfo) MemoryInfo() map[string]any {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
-	return map[string]any{
+	return map[string]string{
 		"usage":     fmt.Sprintf("%.2f", memInfo.UsedPercent),            // 内存利用率
 		"freemem":   parse.Bit(float64(memInfo.Available)),               // 可用内存大小（GB）
 		"totalmem":  parse.Bit(float64(memInfo.Total)),                   // 总内存大小（GB）
@@ -119,9 +119,9 @@ func (s SystemInfo) MemoryInfo() map[string]any {
 
 // CPUInfo CPU信息
 func (s SystemInfo) CPUInfo() map[string]any {
-	var core = 0
-	var speed = "-"
 	var model = "-"
+	var speed = "-"
+	var core = 0
 	cpuInfo, err := cpu.Info()
 	if err == nil {
 		core = runtime.NumCPU()
@@ -152,25 +152,25 @@ func (s SystemInfo) NetworkInfo() map[string]string {
 	if err == nil {
 		for _, v := range interfaces {
 			name := v.Name
-			if name[len(name)-1] == '0' {
+			if fmt.Sprint(name[len(name)-1]) == "0" {
 				name = name[0 : len(name)-1]
-				name = strings.Trim(name, "")
+				name = strings.TrimSpace(name)
 			}
 			// ignore localhost
 			if strings.HasPrefix(name, "lo") || strings.HasPrefix(name, "veth") || strings.HasPrefix(name, "Loopback") {
 				continue
 			}
-			var adders []string
+			var arr []string
 			for _, v := range v.Addrs {
 				prefix := strings.Split(v.Addr, "/")[0]
 				if strings.Contains(prefix, "::") {
-					adders = append(adders, fmt.Sprintf("IPv6 %s", prefix))
+					arr = append(arr, fmt.Sprintf("IPv6 %s", prefix))
 				}
 				if strings.Contains(prefix, ".") {
-					adders = append(adders, fmt.Sprintf("IPv4 %s", prefix))
+					arr = append(arr, fmt.Sprintf("IPv4 %s", prefix))
 				}
 			}
-			ipAdders[name] = strings.Join(adders, " / ")
+			ipAdders[name] = strings.Join(arr, " / ")
 		}
 	}
 	return ipAdders
