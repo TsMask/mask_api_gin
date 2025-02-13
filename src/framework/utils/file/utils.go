@@ -61,15 +61,14 @@ func generateFileName(fileName string) string {
 	return fmt.Sprintf("%s_%s%s", newFileName, generate.Code(6), fileExt)
 }
 
-// DEFAULT_FILE_NAME_LENGTH 最大文件名长度
-const DEFAULT_FILE_NAME_LENGTH = 100
-
 // isAllowWrite 检查文件允许写入本地
 //
 // fileName 原始文件名称含后缀，如：file_logo_xxw68.png
 //
 // allowExt 允许上传拓展类型，['.png']
 func isAllowWrite(fileName string, allowExt []string, fileSize int64) error {
+	// DEFAULT_FILE_NAME_LENGTH 最大文件名长度
+	const DEFAULT_FILE_NAME_LENGTH = 100
 	// 判断上传文件名称长度
 	if len(fileName) > DEFAULT_FILE_NAME_LENGTH {
 		return fmt.Errorf("上传文件名称长度限制最长为 %d", DEFAULT_FILE_NAME_LENGTH)
