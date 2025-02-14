@@ -40,7 +40,8 @@ func (r SysMenu) Select(sysMenu model.SysMenu, userId int64) []model.SysMenu {
 
 	// 查询数据
 	rows := []model.SysMenu{}
-	if err := tx.Order("parent_id, menu_sort").Find(&rows).Error; err != nil {
+	tx.Order("parent_id, menu_sort")
+	if err := tx.Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows
 	}
@@ -275,6 +276,7 @@ func (r SysMenu) SelectTreeByUserId(userId int64) []model.SysMenu {
 
 	// 查询数据
 	rows := []model.SysMenu{}
+	tx.Order("parent_id, menu_sort")
 	if err := tx.Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows
