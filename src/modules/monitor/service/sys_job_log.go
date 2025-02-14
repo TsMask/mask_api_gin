@@ -38,8 +38,8 @@ func (s SysJobLog) FindById(logId int64) model.SysJobLog {
 	return s.sysJobLogRepository.SelectById(logId)
 }
 
-// RemoveByIds 批量删除
-func (s SysJobLog) RemoveByIds(logIds []int64) int64 {
+// DeleteByIds 批量删除
+func (s SysJobLog) DeleteByIds(logIds []int64) int64 {
 	return s.sysJobLogRepository.DeleteByIds(logIds)
 }
 

@@ -91,7 +91,7 @@ func (s SysJob) DeleteByIds(jobIds []int64) (int64, error) {
 
 // CheckUniqueByJobName 校验调度任务名称和组是否唯一
 func (s SysJob) CheckUniqueByJobName(jobName, jobGroup string, jobId int64) bool {
-	uniqueId := s.sysJobRepository.CheckUniqueJob(model.SysJob{
+	uniqueId := s.sysJobRepository.CheckUnique(model.SysJob{
 		JobName:  jobName,
 		JobGroup: jobGroup,
 	})

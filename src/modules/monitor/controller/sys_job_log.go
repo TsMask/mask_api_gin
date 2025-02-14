@@ -78,7 +78,7 @@ func (s SysJobLogController) Remove(c *gin.Context) {
 		ids = append(ids, parse.Number(v))
 	}
 
-	rows := s.sysJobLogService.RemoveByIds(ids)
+	rows := s.sysJobLogService.DeleteByIds(ids)
 	if rows > 0 {
 		msg := fmt.Sprintf("删除成功：%d", rows)
 		c.JSON(200, resp.OkMsg(msg))

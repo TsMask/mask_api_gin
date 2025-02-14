@@ -143,8 +143,8 @@ func (r SysJob) DeleteByIds(jobIds []int64) int64 {
 	return tx.RowsAffected
 }
 
-// CheckUniqueJob 校验信息是否唯一
-func (r SysJob) CheckUniqueJob(sysJob model.SysJob) int64 {
+// CheckUnique 校验信息是否唯一
+func (r SysJob) CheckUnique(sysJob model.SysJob) int64 {
 	tx := db.DB("").Model(&model.SysJob{})
 	// 查询条件拼接
 	if sysJob.JobName != "" {
