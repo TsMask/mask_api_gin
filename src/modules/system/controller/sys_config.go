@@ -44,9 +44,9 @@ func (s SysConfigController) Info(c *gin.Context) {
 		return
 	}
 
-	configInfo := s.sysConfigService.FindById(configId)
-	if configInfo.ConfigId == configId {
-		c.JSON(200, resp.OkData(configInfo))
+	data := s.sysConfigService.FindById(configId)
+	if data.ConfigId == configId {
+		c.JSON(200, resp.OkData(data))
 		return
 	}
 	c.JSON(200, resp.Err(nil))

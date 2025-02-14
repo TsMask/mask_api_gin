@@ -13,14 +13,14 @@ import (
 
 // NewSysLogOperate 实例化控制层
 var NewSysLogOperate = &SysLogOperateController{
-	SysLogOperateService: service.NewSysLogOperate,
+	sysLogOperateService: service.NewSysLogOperate,
 }
 
 // SysLogOperateController 操作日志记录信息 控制层处理
 //
 // PATH /system/log/operate
 type SysLogOperateController struct {
-	SysLogOperateService *service.SysLogOperate // 操作日志服务
+	sysLogOperateService *service.SysLogOperate // 操作日志服务
 }
 
 // List 操作日志列表
@@ -29,7 +29,7 @@ type SysLogOperateController struct {
 func (s SysLogOperateController) List(c *gin.Context) {
 	query := reqctx.QueryMap(c)
 	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
-	rows, total := s.SysLogOperateService.FindByPage(query, dataScopeSQL)
+	rows, total := s.sysLogOperateService.FindByPage(query, dataScopeSQL)
 	c.JSON(200, resp.OkData(map[string]any{"rows": rows, "total": total}))
 }
 
@@ -37,7 +37,7 @@ func (s SysLogOperateController) List(c *gin.Context) {
 //
 // DELETE /clean
 func (s SysLogOperateController) Clean(c *gin.Context) {
-	rows := s.SysLogOperateService.Clean()
+	rows := s.sysLogOperateService.Clean()
 	c.JSON(200, resp.OkData(rows))
 }
 
@@ -48,7 +48,7 @@ func (s SysLogOperateController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := reqctx.QueryMap(c)
 	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
-	rows, total := s.SysLogOperateService.FindByPage(query, dataScopeSQL)
+	rows, total := s.sysLogOperateService.FindByPage(query, dataScopeSQL)
 	if total == 0 {
 		c.JSON(200, resp.CodeMsg(40016, "export data record as empty"))
 		return
@@ -57,7 +57,7 @@ func (s SysLogOperateController) Export(c *gin.Context) {
 	// 导出文件名称
 	fileName := fmt.Sprintf("sys_log_operate_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
 	// 导出数据表格
-	saveFilePath, err := s.SysLogOperateService.ExportData(rows, fileName)
+	saveFilePath, err := s.sysLogOperateService.ExportData(rows, fileName)
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return

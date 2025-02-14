@@ -146,6 +146,7 @@ func (s SysRoleController) Edit(c *gin.Context) {
 	roleInfo.MenuCheckStrictly = body.MenuCheckStrictly
 	roleInfo.DeptCheckStrictly = body.DeptCheckStrictly
 	roleInfo.StatusFlag = body.StatusFlag
+	roleInfo.Remark = body.Remark
 	roleInfo.UpdateBy = reqctx.LoginUserToUserName(c)
 	roleInfo.MenuIds = body.MenuIds
 	roleInfo.DeptIds = body.DeptIds
