@@ -48,7 +48,7 @@ insert into sys_dept values(109,  102, '0,100,102',  '财务部门',   2, 'MASK'
 drop table if exists sys_user;
 create table sys_user (
   user_id           bigint          not null auto_increment    comment '用户ID',
-  dept_id           bigint          default null               comment '部门ID',
+  dept_id           bigint          default 0                  comment '部门ID',
   user_name         varchar(32)     not null                   comment '用户账号',
   email             varchar(64)     default ''                 comment '用户邮箱',
   phone             varchar(32)     default ''                 comment '手机号码',
