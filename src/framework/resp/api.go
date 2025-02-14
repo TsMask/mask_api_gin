@@ -1,8 +1,8 @@
 package resp
 
 const (
-	// CODE_ERROOR 响应-code错误失败
-	CODE_ERROOR = 400
+	// CODE_ERROR 响应-code错误失败
+	CODE_ERROR = 400
 	// MSG_ERROR 响应-msg错误失败
 	MSG_ERROR = "失败"
 
@@ -52,7 +52,7 @@ func OkData(data any) map[string]any {
 // Err 响应失败结果 map[string]any{}
 func Err(v map[string]any) map[string]any {
 	args := make(map[string]any)
-	args["code"] = CODE_ERROOR
+	args["code"] = CODE_ERROR
 	args["msg"] = MSG_ERROR
 	// v合并到args
 	for key, value := range v {
@@ -64,7 +64,7 @@ func Err(v map[string]any) map[string]any {
 // ErrMsg 响应失败结果信息
 func ErrMsg(msg string) map[string]any {
 	args := make(map[string]any)
-	args["code"] = CODE_ERROOR
+	args["code"] = CODE_ERROR
 	args["msg"] = msg
 	return args
 }
@@ -72,7 +72,7 @@ func ErrMsg(msg string) map[string]any {
 // ErrData 响应失败结果数据
 func ErrData(data any) map[string]any {
 	args := make(map[string]any)
-	args["code"] = CODE_ERROOR
+	args["code"] = CODE_ERROR
 	args["msg"] = MSG_ERROR
 	args["data"] = data
 	return args
