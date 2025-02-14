@@ -24,7 +24,7 @@ type FileController struct{}
 // Download 下载文件
 //
 // GET /download/:filePath
-func (s *FileController) Download(c *gin.Context) {
+func (s FileController) Download(c *gin.Context) {
 	filePath := c.Param("filePath")
 	if len(filePath) < 8 {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: filePath not is base64 string"))
@@ -66,7 +66,7 @@ func (s *FileController) Download(c *gin.Context) {
 // Upload 上传文件
 //
 // POST /upload
-func (s *FileController) Upload(c *gin.Context) {
+func (s FileController) Upload(c *gin.Context) {
 	// 上传的文件
 	formFile, err := c.FormFile("file")
 	if err != nil {
@@ -101,7 +101,7 @@ func (s *FileController) Upload(c *gin.Context) {
 // ChunkCheck 切片文件检查
 //
 // POST /chunk-check
-func (s *FileController) ChunkCheck(c *gin.Context) {
+func (s FileController) ChunkCheck(c *gin.Context) {
 	var body struct {
 		Identifier string `json:"identifier" binding:"required"` // 唯一标识
 		FileName   string `json:"fileName" binding:"required"`   // 文件名
@@ -124,7 +124,7 @@ func (s *FileController) ChunkCheck(c *gin.Context) {
 // ChunkMerge 切片文件合并
 //
 // POST /chunk-merge
-func (s *FileController) ChunkMerge(c *gin.Context) {
+func (s FileController) ChunkMerge(c *gin.Context) {
 	var body struct {
 		Identifier string `json:"identifier" binding:"required"` // 唯一标识
 		FileName   string `json:"fileName" binding:"required"`   // 文件名
@@ -162,7 +162,7 @@ func (s *FileController) ChunkMerge(c *gin.Context) {
 // ChunkUpload 切片文件上传
 //
 // POST /chunk-upload
-func (s *FileController) ChunkUpload(c *gin.Context) {
+func (s FileController) ChunkUpload(c *gin.Context) {
 	// 切片编号
 	index := c.PostForm("index")
 	// 切片唯一标识

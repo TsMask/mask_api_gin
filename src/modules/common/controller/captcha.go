@@ -30,7 +30,7 @@ type CaptchaController struct {
 // Image 获取验证码-图片
 //
 // GET /captcha-image
-func (s *CaptchaController) Image(c *gin.Context) {
+func (s CaptchaController) Image(c *gin.Context) {
 	// 从数据库配置获取验证码开关 true开启，false关闭
 	captchaEnabledStr := s.sysConfigService.FindValueByKey("sys.account.captchaEnabled")
 	captchaEnabled := parse.Boolean(captchaEnabledStr)

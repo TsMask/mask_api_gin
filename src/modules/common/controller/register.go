@@ -31,7 +31,7 @@ type RegisterController struct {
 // Register 账号注册
 //
 // POST /register
-func (s *RegisterController) Register(c *gin.Context) {
+func (s RegisterController) Register(c *gin.Context) {
 	var body model.RegisterBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))

@@ -20,7 +20,7 @@ type IndexController struct{}
 // Handler 根路由
 //
 // GET /
-func (s *IndexController) Handler(c *gin.Context) {
+func (s IndexController) Handler(c *gin.Context) {
 	msg := fmt.Sprintf("Name:%s, Version:%s", config.Name, config.Version)
 	c.JSON(200, resp.OkMsg(msg))
 }

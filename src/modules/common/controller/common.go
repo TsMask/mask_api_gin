@@ -23,7 +23,7 @@ type CommonController struct{}
 // Hash 哈希编码
 //
 // POST /hash
-func (s *CommonController) Hash(c *gin.Context) {
+func (s CommonController) Hash(c *gin.Context) {
 	var body struct {
 		Type string `json:"type" binding:"required,oneof=sha1 sha256 sha512 md5"`
 		Str  string `json:"str" binding:"required"`
