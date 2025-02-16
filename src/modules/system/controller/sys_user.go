@@ -217,17 +217,6 @@ func (s SysUserController) Edit(c *gin.Context) {
 		return
 	}
 
-	// 检查用户登录账号是否唯一
-	uniqueUserName := s.sysUserService.CheckUniqueByUserName(
-		body.UserName,
-		body.UserId,
-	)
-	if !uniqueUserName {
-		msg := fmt.Sprintf("修改用户【%s】失败，登录账号已存在", body.UserName)
-		c.JSON(200, resp.ErrMsg(msg))
-		return
-	}
-
 	// 检查是否存在
 	userInfo := s.sysUserService.FindById(body.UserId)
 	if userInfo.UserId != body.UserId {
@@ -240,12 +229,12 @@ func (s SysUserController) Edit(c *gin.Context) {
 		if regular.ValidMobile(body.Phone) {
 			uniquePhone := s.sysUserService.CheckUniqueByPhone(body.Phone, body.UserId)
 			if !uniquePhone {
-				msg := fmt.Sprintf("修改用户【%s】失败，手机号码已存在", body.UserName)
+				msg := fmt.Sprintf("修改用户【%s】失败，手机号码已存在", userInfo.UserName)
 				c.JSON(200, resp.ErrMsg(msg))
 				return
 			}
 		} else {
-			msg := fmt.Sprintf("修改用户【%s】失败，手机号码格式错误", body.UserName)
+			msg := fmt.Sprintf("修改用户【%s】失败，手机号码格式错误", userInfo.UserName)
 			c.JSON(200, resp.ErrMsg(msg))
 			return
 		}
@@ -256,12 +245,12 @@ func (s SysUserController) Edit(c *gin.Context) {
 		if regular.ValidEmail(body.Email) {
 			uniqueEmail := s.sysUserService.CheckUniqueByEmail(body.Email, body.UserId)
 			if !uniqueEmail {
-				msg := fmt.Sprintf("修改用户【%s】失败，邮箱已存在", body.UserName)
+				msg := fmt.Sprintf("修改用户【%s】失败，邮箱已存在", userInfo.UserName)
 				c.JSON(200, resp.ErrMsg(msg))
 				return
 			}
 		} else {
-			msg := fmt.Sprintf("修改用户【%s】失败，邮箱格式错误", body.UserName)
+			msg := fmt.Sprintf("修改用户【%s】失败，邮箱格式错误", userInfo.UserName)
 			c.JSON(200, resp.ErrMsg(msg))
 			return
 		}

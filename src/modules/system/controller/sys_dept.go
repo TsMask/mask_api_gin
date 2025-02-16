@@ -31,10 +31,10 @@ type SysDeptController struct {
 // GET /list
 func (s SysDeptController) List(c *gin.Context) {
 	var query struct {
-		DeptId     int64  `form:"deptId"`     // 部门ID
-		ParentId   int64  `form:"parentId"`   // 父部门ID
-		DeptName   string `form:"deptName"`   // 部门名称
-		StatusFlag string `form:"statusFlag"` // 部门状态（0正常 1停用）
+		DeptId     int64  `form:"deptId"`                                   // 部门ID
+		ParentId   int64  `form:"parentId"`                                 // 父部门ID
+		DeptName   string `form:"deptName"`                                 // 部门名称
+		StatusFlag string `form:"statusFlag" binding:"omitempty,oneof=0 1"` // 部门状态（0正常 1停用）
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
@@ -271,10 +271,10 @@ func (s SysDeptController) ExcludeChild(c *gin.Context) {
 // GET /tree
 func (s SysDeptController) Tree(c *gin.Context) {
 	var query struct {
-		DeptId     int64  `form:"deptId"`     // 部门ID
-		ParentId   int64  `form:"parentId"`   // 父部门ID
-		DeptName   string `form:"deptName"`   // 部门名称
-		StatusFlag string `form:"statusFlag"` // 部门状态（0正常 1停用）
+		DeptId     int64  `form:"deptId"`                                   // 部门ID
+		ParentId   int64  `form:"parentId"`                                 // 父部门ID
+		DeptName   string `form:"deptName"`                                 // 部门名称
+		StatusFlag string `form:"statusFlag" binding:"omitempty,oneof=0 1"` // 部门状态（0正常 1停用）
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))

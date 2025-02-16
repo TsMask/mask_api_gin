@@ -309,7 +309,7 @@ func (s SysRoleController) UserAuthChecked(c *gin.Context) {
 	var body struct {
 		RoleId  int64   `json:"roleId" binding:"required"`  // 角色ID
 		UserIds []int64 `json:"userIds" binding:"required"` // 用户ID组
-		Auth    bool    `json:"auth" binding:"required"`    // 选择操作 添加true 取消false
+		Auth    bool    `json:"auth" binding:"omitempty"`   // 选择操作 添加true 取消false
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
