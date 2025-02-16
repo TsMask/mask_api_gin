@@ -11,11 +11,11 @@ import (
 var c *cron.Cron
 
 // 任务队列
-var queueMap map[string]Queue
+var queueMap map[string]*Queue
 
 // StartCron 启动调度任务实例
 func StartCron() {
-	queueMap = make(map[string]Queue)
+	queueMap = make(map[string]*Queue)
 	c = cron.New(cron.WithSeconds())
 	c.Start()
 }
@@ -26,22 +26,22 @@ func StopCron() {
 }
 
 // CreateQueue 创建队列注册处理器
-func CreateQueue(name string, processor QueueProcessor) Queue {
+func CreateQueue(name string, processor QueueProcessor) *Queue {
 	queue := Queue{
 		Name:      name,
-		Processor: processor,
-		Job:       []*QueueJob{},
+		Processor: &processor,
+		Job:       []QueueJob{},
 	}
-	queueMap[name] = queue
-	return queue
+	queueMap[name] = &queue
+	return &queue
 }
 
 // GetQueue 通过名称获取队列实例
-func GetQueue(name string) Queue {
+func GetQueue(name string) *Queue {
 	if v, ok := queueMap[name]; ok {
 		return v
 	}
-	return Queue{}
+	return nil
 }
 
 // QueueNames 获取注册的队列名称
@@ -56,8 +56,8 @@ func QueueNames() []string {
 // Queue 任务队列
 type Queue struct {
 	Name      string // 队列名
-	Processor QueueProcessor
-	Job       []*QueueJob
+	Processor *QueueProcessor
+	Job       []QueueJob
 }
 
 // QueueProcessor 队列处理函数接口
@@ -70,12 +70,12 @@ type QueueProcessor interface {
 
 // RunJob 运行任务，data是传入的数据
 func (q *Queue) RunJob(data any, opts JobOptions) int {
-	job := &QueueJob{
+	job := QueueJob{
 		Status:         Waiting,
 		Data:           data,
 		Opts:           opts,
 		queueName:      q.Name,
-		queueProcessor: &q.Processor,
+		queueProcessor: q.Processor,
 	}
 
 	// 非重复任务立即执行
@@ -88,9 +88,7 @@ func (q *Queue) RunJob(data any, opts JobOptions) int {
 		// 从切片 jobs 中删除指定索引位置的元素
 		for i, v := range q.Job {
 			if v.cid == 0 {
-				jobs := q.Job
-				jobs = append(jobs[:i], jobs[i+1:]...)
-				q.Job = jobs
+				q.Job = append(q.Job[:i], q.Job[i+1:]...)
 				break
 			}
 		}
@@ -113,15 +111,13 @@ func (q *Queue) RunJob(data any, opts JobOptions) int {
 }
 
 // RemoveJob 移除任务
-func (q *Queue) RemoveJob(jobId string) bool {
+func (q *Queue) RemoveJob(jobId int64) bool {
 	for i, v := range q.Job {
 		if jobId == v.Opts.JobId {
 			cronLog.Info("RemoveJob", v.cid, jobId, v.Status)
 			c.Remove(v.cid)
 			// 从切片 jobs 中删除指定索引位置的元素
-			jobs := q.Job
-			jobs = append(jobs[:i], jobs[i+1:]...)
-			q.Job = jobs
+			q.Job = append(q.Job[:i], q.Job[i+1:]...)
 			return true
 		}
 	}
@@ -138,7 +134,7 @@ const (
 
 // JobOptions 任务参数信息
 type JobOptions struct {
-	JobId string // 执行任务编号
+	JobId int64  // 执行任务编号
 	Cron  string // 重复任务cron表达式
 }
 
@@ -149,10 +145,9 @@ type QueueJob struct {
 	Data      any   // 执行任务时传入的参数
 	Opts      JobOptions
 
-	cid cron.EntryID // 执行ID
-
-	queueName      string //队列名
-	queueProcessor *QueueProcessor
+	cid            cron.EntryID    // 执行ID
+	queueName      string          // 队列名
+	queueProcessor *QueueProcessor // 队列处理器接口实现
 }
 
 // GetJob 获取当前执行任务
@@ -160,10 +155,10 @@ func (qj QueueJob) GetJob(repeat bool) QueueJob {
 	q := GetQueue(qj.queueName)
 	for _, v := range q.Job {
 		if repeat && v.Opts.JobId == qj.Opts.JobId {
-			return *v
+			return v
 		}
 		if !repeat && v.cid == 0 {
-			return *v
+			return v
 		}
 	}
 	return qj

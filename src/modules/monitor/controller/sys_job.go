@@ -203,11 +203,11 @@ func (s SysJobController) Remove(c *gin.Context) {
 
 // Status 调度任务修改状态
 //
-// POST /status
+// PUT /status
 func (s SysJobController) Status(c *gin.Context) {
 	var body struct {
 		JobId      int64  `json:"jobId" binding:"required"`
-		StatusFlag string `json:"statusFlag" binding:"required,oneof=0 1 2"`
+		StatusFlag string `json:"statusFlag" binding:"required,oneof=0 1"`
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))

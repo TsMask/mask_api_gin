@@ -124,7 +124,7 @@ func (s SysJob) insertQueueJob(sysJob model.SysJob, repeat bool) bool {
 	if !repeat {
 		// 执行单次任务
 		status := queue.RunJob(options, cron.JobOptions{
-			JobId: fmt.Sprint(sysJob.JobId),
+			JobId: sysJob.JobId,
 		})
 		// 执行中或等待中的都返回正常
 		return status == cron.Active || status == cron.Waiting
@@ -132,7 +132,7 @@ func (s SysJob) insertQueueJob(sysJob model.SysJob, repeat bool) bool {
 
 	// 执行重复任务
 	queue.RunJob(options, cron.JobOptions{
-		JobId: fmt.Sprint(sysJob.JobId),
+		JobId: sysJob.JobId,
 		Cron:  sysJob.CronExpression,
 	})
 	return true
@@ -145,7 +145,7 @@ func (s SysJob) deleteQueueJob(sysJob model.SysJob) bool {
 	if queue.Name != sysJob.InvokeTarget {
 		return false
 	}
-	return queue.RemoveJob(fmt.Sprint(sysJob.JobId))
+	return queue.RemoveJob(sysJob.JobId)
 }
 
 // Reset 重置初始调度任务
