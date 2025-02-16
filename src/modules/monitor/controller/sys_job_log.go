@@ -52,9 +52,9 @@ func (s SysJobLogController) Info(c *gin.Context) {
 		return
 	}
 
-	jobLogInfo := s.sysJobLogService.FindById(logId)
-	if jobLogInfo.LogId == logId {
-		c.JSON(200, resp.OkData(jobLogInfo))
+	data := s.sysJobLogService.FindById(logId)
+	if data.LogId == logId {
+		c.JSON(200, resp.OkData(data))
 		return
 	}
 	c.JSON(200, resp.Err(nil))

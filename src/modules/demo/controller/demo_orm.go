@@ -37,15 +37,22 @@ func (s DemoORMController) List(c *gin.Context) {
 //
 // GET /all
 func (s DemoORMController) All(c *gin.Context) {
-	demoORM := model.DemoORM{}
-
-	title := c.Query("title")
-	if title != "" {
-		demoORM.Title = title
+	var query struct {
+		Title      string `form:"title" binding:"omitempty"`
+		StatusFlag string `form:"statusFlag" binding:"omitempty,oneof=0 1"`
 	}
-	statusFlag := c.Query("statusFlag")
-	if statusFlag != "" {
-		demoORM.StatusFlag = statusFlag
+	if err := c.ShouldBindQuery(&query); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		return
+	}
+
+	demoORM := model.DemoORM{}
+	if query.Title != "" {
+		demoORM.Title = query.Title
+	}
+	if query.StatusFlag != "" {
+		demoORM.StatusFlag = query.StatusFlag
 	}
 
 	data := s.demoORMService.Find(demoORM)
