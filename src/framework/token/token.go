@@ -126,7 +126,8 @@ func Verify(token string) (jwt.MapClaims, error) {
 		return nil, fmt.Errorf("token invalid")
 	}
 	// 如果解析负荷成功并通过签名校验
-	if claims, ok := jwtToken.Claims.(jwt.MapClaims); ok && jwtToken.Valid {
+	claims, ok := jwtToken.Claims.(jwt.MapClaims)
+	if ok && jwtToken.Valid {
 		return claims, nil
 	}
 	return nil, fmt.Errorf("token valid error")
