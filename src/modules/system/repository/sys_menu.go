@@ -68,7 +68,7 @@ func (r SysMenu) SelectByIds(menuIds []int64) []model.SysMenu {
 // Insert 新增信息
 func (r SysMenu) Insert(sysMenu model.SysMenu) int64 {
 	sysMenu.DelFlag = "0"
-	if sysMenu.MenuId <= 0 {
+	if sysMenu.MenuId > 0 {
 		return 0
 	}
 	if sysMenu.Icon == "" {
