@@ -1,8 +1,6 @@
 package controller
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 
 	"mask_api_gin/src/framework/config"
@@ -21,6 +19,8 @@ type IndexController struct{}
 //
 // GET /
 func (s IndexController) Handler(c *gin.Context) {
-	msg := fmt.Sprintf("Name:%s, Version:%s", config.Name, config.Version)
-	c.JSON(200, resp.OkMsg(msg))
+	c.JSON(200, resp.OkData(map[string]string{
+		"name":    config.Name,
+		"version": config.Version,
+	}))
 }
