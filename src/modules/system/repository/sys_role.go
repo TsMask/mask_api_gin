@@ -193,11 +193,12 @@ func (r SysRole) SelectByUserId(userId int64) []model.SysRole {
 	if userId <= 0 {
 		return rows
 	}
-	tx := db.DB("").Table("sys_user_role ur")
-	// 构建查询条件
-	tx = tx.Distinct("r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, r.menu_check_strictly, r.dept_check_strictly, r.status_flag, r.del_flag, r.create_time, r.remark").
-		Joins("left join sys_user u on u.user_id = ur.user_id").
-		Joins("left join sys_role r on r.role_id = ur.role_id").
+
+	tx := db.DB("").Model(&model.SysRole{}).
+		Table("sys_role r").
+		Distinct("r.*").
+		Joins("LEFT JOIN sys_user_role ur ON ur.role_id = r.role_id").
+		Joins("LEFT JOIN sys_user u ON u.user_id = ur.user_id").
 		Where("u.del_flag = '0' AND ur.user_id = ?", userId)
 
 	// 查询数据

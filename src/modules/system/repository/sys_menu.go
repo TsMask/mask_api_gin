@@ -210,13 +210,15 @@ func (r SysMenu) SelectPermsByUserId(userId int64) []string {
 	if userId <= 0 {
 		return rows
 	}
-	tx := db.DB("").Table("sys_menu m")
-	// 构建查询条件
-	tx = tx.Distinct("m.perms").
-		Joins("left join sys_role_menu rm on m.menu_id = rm.menu_id").
-		Joins("left join sys_user_role ur on rm.role_id = ur.role_id").
-		Joins("left join sys_role r on r.role_id = ur.role_id").
-		Where("m.status_flag = '1' and m.perms != '' and r.status_flag = '1' and r.del_flag = '0'").
+
+	tx := db.DB("").Model(&model.SysMenu{}).
+		Table("sys_menu m").
+		Distinct("m.perms").
+		Joins("LEFT JOIN sys_role_menu rm ON m.menu_id = rm.menu_id").
+		Joins("LEFT JOIN sys_user_role ur ON rm.role_id = ur.role_id").
+		Joins("LEFT JOIN sys_role r ON r.role_id = ur.role_id").
+		Where("m.status_flag = '1' and m.perms != ''").
+		Where("r.status_flag = '1' and r.del_flag = '0'").
 		Where("ur.user_id = ?", userId)
 
 	// 查询数据
