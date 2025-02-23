@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -78,7 +77,7 @@ func (s AccountController) Login(c *gin.Context) {
 
 	c.JSON(200, resp.OkData(map[string]any{
 		"accessToken": tokenStr,
-		"tokenType":   strings.TrimRight(constants.HEADER_PREFIX, " "),
+		"tokenType":   constants.HEADER_PREFIX,
 		"expiresIn":   (info.ExpireTime - info.LoginTime) / 1000,
 		"userId":      info.UserId,
 	}))

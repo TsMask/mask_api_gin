@@ -3,7 +3,7 @@ package constants
 // 令牌常量信息
 
 // HEADER_PREFIX 令牌-请求头标识前缀
-const HEADER_PREFIX = "Bearer "
+const HEADER_PREFIX = "Bearer"
 
 // HEADER_KEY 令牌-请求头标识
 const HEADER_KEY = "Authorization"

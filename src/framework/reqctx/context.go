@@ -58,7 +58,7 @@ func Authorization(c *gin.Context) string {
 		return ""
 	}
 	// 拆分 Authorization 请求头，提取 JWT 令牌部分
-	tokenStr := strings.TrimPrefix(authHeader, constants.HEADER_PREFIX)
+	tokenStr := strings.Replace(authHeader, constants.HEADER_PREFIX, "", 1)
 	if len(tokenStr) > 64 {
 		return strings.TrimSpace(tokenStr) // 去除可能存在的空格
 	}

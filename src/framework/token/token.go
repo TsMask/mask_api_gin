@@ -67,9 +67,8 @@ func Create(tokenInfo *TokenInfo, ilobArr [4]string) string {
 		constants.JWT_UUID:      tokenInfo.UUID,
 		constants.JWT_USER_ID:   tokenInfo.UserId,
 		constants.JWT_USER_NAME: tokenInfo.User.UserName,
-		"ait":                   tokenInfo.LoginTime,
+		"iat":                   tokenInfo.LoginTime,
 	})
-
 	// 生成令牌设置密钥
 	secret := config.Get("jwt.secret").(string)
 	tokenStr, err := jwtToken.SignedString([]byte(secret))

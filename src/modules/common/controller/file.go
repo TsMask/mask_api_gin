@@ -75,7 +75,8 @@ func (s FileController) Upload(c *gin.Context) {
 	}
 	// 子路径需要在指定范围内
 	subPath := c.PostForm("subPath")
-	if _, ok := constants.UPLOAD_SUB_PATH[subPath]; subPath != "" && !ok {
+	_, ok := constants.UPLOAD_SUB_PATH[subPath]
+	if subPath != "" && !ok {
 		c.JSON(400, resp.CodeMsg(40010, "bind err: subPath not in range"))
 		return
 	}
