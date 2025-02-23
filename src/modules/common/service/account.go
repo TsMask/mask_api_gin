@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"mask_api_gin/src/framework/config"
@@ -46,7 +47,7 @@ func (s Account) ValidateCaptcha(code, uuid string) error {
 		return fmt.Errorf("captcha expire")
 	}
 	_ = redis.Del("", verifyKey)
-	if captcha != code {
+	if captcha != strings.ToLower(code) {
 		return fmt.Errorf("captcha error")
 	}
 	return nil

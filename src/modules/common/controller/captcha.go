@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -112,7 +113,7 @@ func (s CaptchaController) Image(c *gin.Context) {
 			data["img"] = item.EncodeB64string()
 			expiration := constants.CAPTCHA_EXPIRATION * time.Second
 			verifyKey = constants.CACHE_CAPTCHA_CODE + ":" + id
-			_ = redis.SetByExpire("", verifyKey, answer, expiration)
+			_ = redis.SetByExpire("", verifyKey, strings.ToLower(answer), expiration)
 		}
 	}
 
