@@ -253,8 +253,8 @@ func (s SysUser) ExportData(rows []model.SysUser, fileName string) (string, erro
 	// 第一行表头标题
 	headerCells := map[string]string{
 		"A1": "用户编号",
-		"B1": "登录名称",
-		"C1": "用户名称",
+		"B1": "登录账号",
+		"C1": "用户昵称",
 		"D1": "用户邮箱",
 		"E1": "手机号码",
 		"F1": "用户性别",
@@ -404,11 +404,11 @@ func (s SysUser) ImportData(rows []map[string]string, operaName string, updateSu
 		if newSysUser.UserId <= 0 {
 			newSysUser.CreateBy = operaName
 			if s.Insert(newSysUser) > 0 {
-				msg := fmt.Sprintf("用户编号：%s 登录名称：%s 导入成功", rowNo, newSysUser.UserName)
+				msg := fmt.Sprintf("用户编号：%s 登录账号：%s 导入成功", rowNo, newSysUser.UserName)
 				successNum++
 				successMsgArr = append(successMsgArr, msg)
 			} else {
-				msg := fmt.Sprintf("用户编号：%s 登录名称：%s 导入失败", rowNo, newSysUser.UserName)
+				msg := fmt.Sprintf("用户编号：%s 登录账号：%s 导入失败", rowNo, newSysUser.UserName)
 				failureNum++
 				failureMsgArr = append(failureMsgArr, msg)
 			}
@@ -421,11 +421,11 @@ func (s SysUser) ImportData(rows []map[string]string, operaName string, updateSu
 			newSysUser.UpdateBy = operaName
 			rows := s.Update(newSysUser)
 			if rows > 0 {
-				msg := fmt.Sprintf("用户编号：%s 登录名称：%s 更新成功", rowNo, newSysUser.UserName)
+				msg := fmt.Sprintf("用户编号：%s 登录账号：%s 更新成功", rowNo, newSysUser.UserName)
 				successNum++
 				successMsgArr = append(successMsgArr, msg)
 			} else {
-				msg := fmt.Sprintf("用户编号：%s 登录名称：%s 更新失败", rowNo, newSysUser.UserName)
+				msg := fmt.Sprintf("用户编号：%s 登录账号：%s 更新失败", rowNo, newSysUser.UserName)
 				failureNum++
 				failureMsgArr = append(failureMsgArr, msg)
 			}
