@@ -14,16 +14,13 @@ func SysMenuTreeSelect(sysMenu model.SysMenu) TreeSelect {
 	t := TreeSelect{}
 	t.ID = sysMenu.MenuId
 	t.Label = sysMenu.MenuName
-
+	t.Children = []TreeSelect{}
 	if len(sysMenu.Children) > 0 {
 		for _, menu := range sysMenu.Children {
 			child := SysMenuTreeSelect(menu)
 			t.Children = append(t.Children, child)
 		}
-	} else {
-		t.Children = []TreeSelect{}
 	}
-
 	return t
 }
 
@@ -32,15 +29,12 @@ func SysDeptTreeSelect(sysDept model.SysDept) TreeSelect {
 	t := TreeSelect{}
 	t.ID = sysDept.DeptId
 	t.Label = sysDept.DeptName
-
+	t.Children = []TreeSelect{}
 	if len(sysDept.Children) > 0 {
 		for _, dept := range sysDept.Children {
 			child := SysDeptTreeSelect(dept)
 			t.Children = append(t.Children, child)
 		}
-	} else {
-		t.Children = []TreeSelect{}
 	}
-
 	return t
 }
