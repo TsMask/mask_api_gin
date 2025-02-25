@@ -27,7 +27,7 @@ func CodeMsg(code int, msg string) Resp {
 // Ok 响应成功结果
 func Ok(v map[string]any) Resp {
 	if v == nil {
-		return Resp{Code: CODE_ERROR, Msg: MSG_ERROR}
+		return Resp{Code: CODE_SUCCESS, Msg: MSG_SUCCCESS}
 	}
 	return Resp{Code: CODE_SUCCESS, Msg: MSG_SUCCCESS, Data: v}
 }
