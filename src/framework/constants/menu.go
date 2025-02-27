@@ -13,8 +13,8 @@ const (
 	MENU_TYPE_DIR = "D"
 	// MENU_TYPE_MENU 菜单类型-菜单
 	MENU_TYPE_MENU = "M"
-	// MENU_TYPE_BUTTON 菜单类型-按钮
-	MENU_TYPE_BUTTON = "B"
+	// MENU_TYPE_AUTH 菜单类型-权限
+	MENU_TYPE_AUTH = "A"
 
 	// MENU_PATH_INLINE 菜单内嵌地址标识-带/前缀
 	MENU_PATH_INLINE = "/inline"

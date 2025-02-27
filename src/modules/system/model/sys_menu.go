@@ -10,7 +10,7 @@ type SysMenu struct {
 	Component   string `json:"component" gorm:"column:component"`                     // 组件路径
 	FrameFlag   string `json:"frameFlag" gorm:"column:frame_flag"`                    // 内部跳转标记（0否 1是）
 	CacheFlag   string `json:"cacheFlag" gorm:"column:cache_flag"`                    // 缓存标记（0不缓存 1缓存）
-	MenuType    string `json:"menuType" gorm:"column:menu_type" binding:"required"`   // 菜单类型（D目录 M菜单 A访问权限）
+	MenuType    string `json:"menuType" gorm:"column:menu_type" binding:"required"`   // 菜单类型（D目录 M菜单 A权限）
 	VisibleFlag string `json:"visibleFlag" gorm:"column:visible_flag"`                // 是否显示（0隐藏 1显示）
 	StatusFlag  string `json:"statusFlag" gorm:"column:status_flag"`                  // 菜单状态（0停用 1正常）
 	Perms       string `json:"perms" gorm:"column:perms"`                             // 权限标识

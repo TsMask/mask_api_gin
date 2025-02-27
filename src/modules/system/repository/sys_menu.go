@@ -82,7 +82,7 @@ func (r SysMenu) Insert(sysMenu model.SysMenu) int64 {
 	}
 
 	// 根据菜单类型重置参数
-	if sysMenu.MenuType == constants.MENU_TYPE_BUTTON {
+	if sysMenu.MenuType == constants.MENU_TYPE_AUTH {
 		sysMenu.Component = ""
 		sysMenu.FrameFlag = "1"
 		sysMenu.CacheFlag = "1"
@@ -117,7 +117,7 @@ func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
 	}
 
 	// 根据菜单类型重置参数
-	if sysMenu.MenuType == constants.MENU_TYPE_BUTTON {
+	if sysMenu.MenuType == constants.MENU_TYPE_AUTH {
 		sysMenu.Component = ""
 		sysMenu.FrameFlag = "1"
 		sysMenu.CacheFlag = "1"
