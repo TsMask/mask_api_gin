@@ -14,8 +14,8 @@ const (
 
 // Resp 响应结构体
 type Resp struct {
-	Code int    `json:"code,omitempty"` // 响应状态码
-	Msg  string `json:"msg,omitempty"`  // 响应信息
+	Code int    `json:"code"`           // 响应状态码
+	Msg  string `json:"msg"`            // 响应信息
 	Data any    `json:"data,omitempty"` // 响应数据
 }
 
@@ -25,11 +25,15 @@ func CodeMsg(code int, msg string) Resp {
 }
 
 // Ok 响应成功结果
-func Ok(v map[string]any) Resp {
-	if v == nil {
-		return Resp{Code: CODE_SUCCESS, Msg: MSG_SUCCCESS}
+func Ok(v map[string]any) map[string]any {
+	args := make(map[string]any)
+	args["code"] = CODE_ERROR
+	args["msg"] = MSG_ERROR
+	// v合并到args
+	for key, value := range v {
+		args[key] = value
 	}
-	return Resp{Code: CODE_SUCCESS, Msg: MSG_SUCCCESS, Data: v}
+	return args
 }
 
 // OkMsg 响应成功结果信息
@@ -43,11 +47,15 @@ func OkData(data any) Resp {
 }
 
 // Err 响应失败结果 map[string]any{}
-func Err(v map[string]any) Resp {
-	if v == nil {
-		return Resp{Code: CODE_ERROR, Msg: MSG_ERROR}
+func Err(v map[string]any) map[string]any {
+	args := make(map[string]any)
+	args["code"] = CODE_ERROR
+	args["msg"] = MSG_ERROR
+	// v合并到args
+	for key, value := range v {
+		args[key] = value
 	}
-	return Resp{Code: CODE_ERROR, Msg: MSG_ERROR, Data: v}
+	return args
 }
 
 // ErrMsg 响应失败结果信息

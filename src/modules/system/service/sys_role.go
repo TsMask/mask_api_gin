@@ -48,9 +48,9 @@ func (r SysRole) FindById(roleId int64) model.SysRole {
 	if roleId <= 0 {
 		return model.SysRole{}
 	}
-	posts := r.sysRoleRepository.SelectByIds([]int64{roleId})
-	if len(posts) > 0 {
-		return posts[0]
+	rows := r.sysRoleRepository.SelectByIds([]int64{roleId})
+	if len(rows) > 0 {
+		return rows[0]
 	}
 	return model.SysRole{}
 }
