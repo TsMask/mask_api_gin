@@ -127,8 +127,9 @@ func isAllowRead(filePath string) error {
 // transferToNewFile 读取目标文件转移到新路径下
 //
 // fileHeader 读取目标文件
-// dst 输出路径
-func transferToNewFile(fileHeader *multipart.FileHeader, dst string) error {
+// writePath 输出文件路径
+// writefileName 输出文件名称
+func transferToNewFile(fileHeader *multipart.FileHeader, writePath, writefileName string) error {
 	src, err := fileHeader.Open()
 	if err != nil {
 		return err
@@ -137,11 +138,12 @@ func transferToNewFile(fileHeader *multipart.FileHeader, dst string) error {
 		_ = src.Close()
 	}()
 
-	if err = os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+	if err = os.MkdirAll(writePath, 0755); err != nil {
 		return err
 	}
 
-	out, err := os.Create(dst)
+	newFilePath := filepath.Join(writePath, writefileName)
+	out, err := os.Create(newFilePath)
 	if err != nil {
 		return err
 	}
@@ -159,8 +161,8 @@ func transferToNewFile(fileHeader *multipart.FileHeader, dst string) error {
 //
 // writePath 写入路径
 //
-// fileName 文件名称
-func mergeToNewFile(dirPath string, writePath string, fileName string) error {
+// writefileName 文件名称
+func mergeToNewFile(dirPath string, writePath string, writefileName string) error {
 	// 读取目录下所有文件并排序，注意文件名称是否数值
 	fileNameList, err := getDirFileNameList(dirPath)
 	if err != nil || len(fileNameList) <= 0 {
@@ -175,12 +177,12 @@ func mergeToNewFile(dirPath string, writePath string, fileName string) error {
 	})
 
 	// 写入到新路径文件
-	newFilePath := filepath.Join(writePath, fileName)
-	if err = os.MkdirAll(filepath.Dir(newFilePath), 0755); err != nil {
+	if err = os.MkdirAll(writePath, 0755); err != nil {
 		return err
 	}
 
 	// 打开新路径文件
+	newFilePath := filepath.Join(writePath, writefileName)
 	outputFile, err := os.Create(newFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %v", err)

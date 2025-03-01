@@ -3,7 +3,6 @@ package file
 import (
 	"fmt"
 	"mime/multipart"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -93,9 +92,9 @@ func TransferUploadFile(file *multipart.FileHeader, subPath string, allowExt []s
 	// 新文件名称并组装文件地址
 	fileName := generateFileName(file.Filename)
 	filePath := filepath.Join(subPath, date.ParseDatePath(time.Now()))
-	writePathFile := filepath.Join(dir, filePath, fileName)
+	writeDir := filepath.Join(dir, filePath)
 	// 存入新文件路径
-	err = transferToNewFile(file, writePathFile)
+	err = transferToNewFile(file, writeDir, fileName)
 	if err != nil {
 		return "", err
 	}
@@ -120,9 +119,9 @@ func TransferChunkUploadFile(file *multipart.FileHeader, index, identifier strin
 	prefix, dir := resourceUpload()
 	// 新文件名称并组装文件地址
 	filePath := filepath.Join(constants.UPLOAD_CHUNK, date.ParseDatePath(time.Now()), identifier)
-	writePathFile := filepath.Join(dir, filePath, index)
+	writeDir := filepath.Join(dir, filePath)
 	// 存入新文件路径
-	err = transferToNewFile(file, writePathFile)
+	err = transferToNewFile(file, writeDir, index)
 	if err != nil {
 		return "", err
 	}
@@ -143,8 +142,8 @@ func ChunkCheckFile(identifier, originalFileName string) ([]string, error) {
 	}
 	// 上传资源路径
 	_, dir := resourceUpload()
-	dirPath := path.Join(constants.UPLOAD_CHUNK, date.ParseDatePath(time.Now()), identifier)
-	readPath := path.Join(dir, dirPath)
+	dirPath := filepath.Join(constants.UPLOAD_CHUNK, date.ParseDatePath(time.Now()), identifier)
+	readPath := filepath.Join(dir, dirPath)
 	fileList, err := getDirFileNameList(readPath)
 	if err != nil {
 		return []string{}, nil
@@ -168,13 +167,13 @@ func ChunkMergeFile(identifier, originalFileName, subPath string) (string, error
 	// 上传资源路径
 	prefix, dir := resourceUpload()
 	// 切片存放目录
-	dirPath := path.Join(constants.UPLOAD_CHUNK, date.ParseDatePath(time.Now()), identifier)
-	readPath := path.Join(dir, dirPath)
+	dirPath := filepath.Join(constants.UPLOAD_CHUNK, date.ParseDatePath(time.Now()), identifier)
+	readPath := filepath.Join(dir, dirPath)
 	// 组合存放文件路径
 	fileName := generateFileName(originalFileName)
-	filePath := path.Join(subPath, date.ParseDatePath(time.Now()))
-	writePath := path.Join(dir, filePath)
-	err = mergeToNewFile(readPath, writePath, fileName)
+	filePath := filepath.Join(subPath, date.ParseDatePath(time.Now()))
+	writeDir := filepath.Join(dir, filePath)
+	err = mergeToNewFile(readPath, writeDir, fileName)
 	if err != nil {
 		return "", err
 	}
