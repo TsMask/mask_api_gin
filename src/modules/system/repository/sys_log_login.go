@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"mask_api_gin/src/framework/database/db"
@@ -61,7 +62,38 @@ func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) 
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
-	err := tx.Order("id desc").Find(&rows).Error
+	// 排序
+	sortByStr, sortOk := query["sortBy"]
+	sortOrderStr, orderOk := query["sortOrder"]
+	if sortOk && sortByStr != "" && orderOk && sortOrderStr != "" {
+		sortByArr := strings.Split(sortByStr, ",")
+		sortOrderArr := strings.Split(sortOrderStr, ",")
+		for i := range sortByArr {
+			sortBy := sortByArr[i]
+			sortOrder := sortOrderArr[i]
+			// 排序字段
+			sort := "id"
+			if sortBy == "loginIp" {
+				sort = "login_ip"
+			} else if sortBy == "userName" {
+				sort = "user_name"
+			} else if sortBy == "createTime" {
+				sort = "create_time"
+			}
+			// 排序方式
+			order := "ASC"
+			if strings.HasPrefix(sortOrder, "asc") {
+				order = "ASC"
+			} else if strings.HasPrefix(sortOrder, "desc") {
+				order = "DESC"
+			}
+			tx = tx.Order(fmt.Sprintf("%s %s", sort, order))
+		}
+	} else {
+		tx = tx.Order("id desc")
+	}
+	// 查询数据
+	err := tx.Find(&rows).Error
 	if err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows, total
