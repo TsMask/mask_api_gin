@@ -164,7 +164,7 @@ func (r SysMenu) CheckUnique(sysMenu model.SysMenu) int64 {
 	tx := db.DB("").Model(&model.SysMenu{})
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
-	if sysMenu.ParentId <= 0 {
+	if sysMenu.ParentId >= 0 {
 		tx = tx.Where("parent_id = ?", sysMenu.ParentId)
 	}
 	if sysMenu.MenuName != "" {
