@@ -110,7 +110,7 @@ func (s SysJob) Run(sysJob model.SysJob) bool {
 func (s SysJob) insertQueueJob(sysJob model.SysJob, repeat bool) bool {
 	// 获取队列 Processor
 	queue := cron.GetQueue(sysJob.InvokeTarget)
-	if queue.Name != sysJob.InvokeTarget {
+	if queue == nil || queue.Name != sysJob.InvokeTarget {
 		return false
 	}
 
@@ -142,7 +142,7 @@ func (s SysJob) insertQueueJob(sysJob model.SysJob, repeat bool) bool {
 func (s SysJob) deleteQueueJob(sysJob model.SysJob) bool {
 	// 获取队列 Processor
 	queue := cron.GetQueue(sysJob.InvokeTarget)
-	if queue.Name != sysJob.InvokeTarget {
+	if queue == nil || queue.Name != sysJob.InvokeTarget {
 		return false
 	}
 	return queue.RemoveJob(sysJob.JobId)
