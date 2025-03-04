@@ -118,7 +118,10 @@ func isAllowRead(filePath string) error {
 		}
 	}
 	if !hasExt {
-		return fmt.Errorf("非法下载的文件规则：%s", fileExt)
+		if fileExt == "" {
+			return fmt.Errorf("未知异常文件")
+		}
+		return fmt.Errorf("限定下载的文件规则：%s", fileExt)
 	}
 
 	return nil

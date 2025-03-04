@@ -46,7 +46,7 @@ func (s AccountController) Login(c *gin.Context) {
 
 	// 校验验证码 根据错误信息，创建系统访问记录
 	if err := s.accountService.ValidateCaptcha(body.Code, body.UUID); err != nil {
-		msg := fmt.Sprintf("%s code: %s", err.Error(), body.Code)
+		msg := fmt.Sprintf("%s code %s", err.Error(), body.Code)
 		s.sysLogLoginService.Insert(
 			body.Username, constants.STATUS_NO, msg,
 			[4]string{ipaddr, location, os, browser},
