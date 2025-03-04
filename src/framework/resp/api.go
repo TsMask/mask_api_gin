@@ -27,8 +27,8 @@ func CodeMsg(code int, msg string) Resp {
 // Ok 响应成功结果
 func Ok(v map[string]any) map[string]any {
 	args := make(map[string]any)
-	args["code"] = CODE_ERROR
-	args["msg"] = MSG_ERROR
+	args["code"] = CODE_SUCCESS
+	args["msg"] = MSG_SUCCCESS
 	// v合并到args
 	for key, value := range v {
 		args[key] = value
