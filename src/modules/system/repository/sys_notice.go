@@ -21,13 +21,13 @@ func (r SysNotice) SelectByPage(query map[string]string) ([]model.SysNotice, int
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if v, ok := query["noticeTitle"]; ok && v != "" {
-		tx = tx.Where("notice_title like concat(?, '%')", v)
+		tx = tx.Where("notice_title like ?", v+"%")
 	}
 	if v, ok := query["noticeType"]; ok && v != "" {
 		tx = tx.Where("notice_type = ?", v)
 	}
 	if v, ok := query["createBy"]; ok && v != "" {
-		tx = tx.Where("create_by like concat(?, '%')", v)
+		tx = tx.Where("create_by like ?", v+"%")
 	}
 	if v, ok := query["statusFlag"]; ok && v != "" {
 		tx = tx.Where("status_flag = ?", v)
@@ -75,13 +75,13 @@ func (r SysNotice) Select(sysNotice model.SysNotice) []model.SysNotice {
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysNotice.NoticeTitle != "" {
-		tx = tx.Where("notice_title like concat(?, '%')", sysNotice.NoticeTitle)
+		tx = tx.Where("notice_title like ?", sysNotice.NoticeTitle+"%")
 	}
 	if sysNotice.NoticeType != "" {
 		tx = tx.Where("notice_type = ?", sysNotice.NoticeType)
 	}
 	if sysNotice.CreateBy != "" {
-		tx = tx.Where("create_by like concat(?, '%')", sysNotice.CreateBy)
+		tx = tx.Where("create_by like ?", sysNotice.CreateBy+"%")
 	}
 	if sysNotice.StatusFlag != "" {
 		tx = tx.Where("status_flag = ?", sysNotice.StatusFlag)

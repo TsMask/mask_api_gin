@@ -21,16 +21,16 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 	tx := db.DB("").Model(&model.SysLogOperate{})
 	// 查询条件拼接
 	if v, ok := query["title"]; ok && v != "" {
-		tx = tx.Where("title like concat(?, '%')", v)
+		tx = tx.Where("title like ?", v+"%")
 	}
 	if v, ok := query["businessType"]; ok && v != "" {
 		tx = tx.Where("business_type = ?", v)
 	}
 	if v, ok := query["operaBy"]; ok && v != "" {
-		tx = tx.Where("opera_by like concat(?, '%')", v)
+		tx = tx.Where("opera_by like ?", v+"%")
 	}
 	if v, ok := query["operaIp"]; ok && v != "" {
-		tx = tx.Where("opera_ip like concat(?, '%')", v)
+		tx = tx.Where("opera_ip like ?", v+"%")
 	}
 	if v, ok := query["statusFlag"]; ok && v != "" {
 		tx = tx.Where("status_flag = ?", v)

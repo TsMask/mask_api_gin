@@ -19,7 +19,7 @@ func (s DemoORMService) FindByPage(query map[string]string) ([]model.DemoORM, in
 	tx := db.DB("").Model(&model.DemoORM{})
 	// 查询条件拼接
 	if v, ok := query["title"]; ok && v != "" {
-		tx = tx.Where("title like concat(?, '%')", v)
+		tx = tx.Where("title like ?", v+"%")
 	}
 	if v, ok := query["statusFlag"]; ok && v != "" {
 		tx = tx.Where("status_flag = ?", v)
@@ -49,7 +49,7 @@ func (s DemoORMService) Find(demoORM model.DemoORM) []model.DemoORM {
 	tx := db.DB("").Model(&model.DemoORM{})
 	// 查询条件拼接
 	if demoORM.Title != "" {
-		tx = tx.Where("title like concat(?, '%')", demoORM.Title)
+		tx = tx.Where("title like ?", demoORM.Title+"%")
 	}
 	if demoORM.StatusFlag != "" {
 		tx = tx.Where("status_flag = ?", demoORM.StatusFlag)

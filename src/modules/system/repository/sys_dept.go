@@ -28,7 +28,7 @@ func (r SysDept) Select(sysDept model.SysDept, dataScopeSQL string) []model.SysD
 		tx = tx.Where("parent_id = ?", sysDept.ParentId)
 	}
 	if sysDept.DeptName != "" {
-		tx = tx.Where("dept_name like concat(?, '%')", sysDept.DeptName)
+		tx = tx.Where("dept_name like ?", sysDept.DeptName+"%")
 	}
 	if sysDept.StatusFlag != "" {
 		tx = tx.Where("status_flag = ?", sysDept.StatusFlag)

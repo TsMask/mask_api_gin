@@ -23,7 +23,7 @@ func (r SysDictData) SelectByPage(query map[string]string) ([]model.SysDictData,
 		tx = tx.Where("dict_type = ?", v)
 	}
 	if v, ok := query["dataLabel"]; ok && v != "" {
-		tx = tx.Where("data_label like concat(?, '%')", v)
+		tx = tx.Where("data_label like ?", v+"%")
 	}
 	if v, ok := query["statusFlag"]; ok && v != "" {
 		tx = tx.Where("status_flag = ?", v)
@@ -55,7 +55,7 @@ func (r SysDictData) Select(sysDictData model.SysDictData) []model.SysDictData {
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysDictData.DataLabel != "" {
-		tx = tx.Where("data_label like concat(?, '%')", sysDictData.DataLabel)
+		tx = tx.Where("data_label like ?", sysDictData.DataLabel+"%")
 	}
 	if sysDictData.DictType != "" {
 		tx = tx.Where("dict_type = ?", sysDictData.DictType)

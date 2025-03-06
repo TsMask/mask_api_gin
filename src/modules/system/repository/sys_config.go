@@ -21,13 +21,13 @@ func (r SysConfig) SelectByPage(query map[string]string) ([]model.SysConfig, int
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if v, ok := query["configName"]; ok && v != "" {
-		tx = tx.Where("config_name like concat(?, '%')", v)
+		tx = tx.Where("config_name like ?", v+"%")
 	}
 	if v, ok := query["configType"]; ok && v != "" {
 		tx = tx.Where("config_type = ?", v)
 	}
 	if v, ok := query["configKey"]; ok && v != "" {
-		tx = tx.Where("config_key like concat(?, '%')", v)
+		tx = tx.Where("config_key like ?", v+"%")
 	}
 	if v, ok := query["beginTime"]; ok && v != "" {
 		if len(v) == 10 {
@@ -72,13 +72,13 @@ func (r SysConfig) Select(sysConfig model.SysConfig) []model.SysConfig {
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysConfig.ConfigName != "" {
-		tx = tx.Where("config_name like concat(?, '%')", sysConfig.ConfigName)
+		tx = tx.Where("config_name like ?", sysConfig.ConfigName+"%")
 	}
 	if sysConfig.ConfigType != "" {
 		tx = tx.Where("config_type = ?", sysConfig.ConfigType)
 	}
 	if sysConfig.ConfigKey != "" {
-		tx = tx.Where("config_key like concat(?, '%')", sysConfig.ConfigKey)
+		tx = tx.Where("config_key like ?", sysConfig.ConfigKey+"%")
 	}
 	if sysConfig.CreateTime > 0 {
 		tx = tx.Where("create_time >= ?", sysConfig.CreateTime)

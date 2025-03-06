@@ -20,10 +20,10 @@ func (r SysPost) SelectByPage(query map[string]string) ([]model.SysPost, int64) 
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if v, ok := query["postCode"]; ok && v != "" {
-		tx = tx.Where("post_code like concat(?, '%')", v)
+		tx = tx.Where("post_code like ?", v+"%")
 	}
 	if v, ok := query["postName"]; ok && v != "" {
-		tx = tx.Where("post_name like concat(?, '%')", v)
+		tx = tx.Where("post_name like ?", v+"%")
 	}
 	if v, ok := query["statusFlag"]; ok && v != "" {
 		tx = tx.Where("status_flag = ?", v)
@@ -55,10 +55,10 @@ func (r SysPost) Select(sysPost model.SysPost) []model.SysPost {
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysPost.PostCode != "" {
-		tx = tx.Where("post_code like concat(?, '%')", sysPost.PostCode)
+		tx = tx.Where("post_code like ?", sysPost.PostCode+"%")
 	}
 	if sysPost.PostName != "" {
-		tx = tx.Where("post_name like concat(?, '%')", sysPost.PostName)
+		tx = tx.Where("post_name like ?", sysPost.PostName+"%")
 	}
 	if sysPost.StatusFlag != "" {
 		tx = tx.Where("status_flag = ?", sysPost.StatusFlag)

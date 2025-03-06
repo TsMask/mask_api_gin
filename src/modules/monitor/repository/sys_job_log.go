@@ -28,7 +28,7 @@ func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int
 		tx = tx.Where("status_flag = ?", v)
 	}
 	if v, ok := query["invokeTarget"]; ok && v != "" {
-		tx = tx.Where("invoke_target like concat(?, '%')", v)
+		tx = tx.Where("invoke_target like ?", v+"%")
 	}
 	if v, ok := query["beginTime"]; ok && v != "" {
 		if len(v) == 10 {
@@ -72,7 +72,7 @@ func (r SysJobLog) Select(sysJobLog model.SysJobLog) []model.SysJobLog {
 	tx := db.DB("").Model(&model.SysJobLog{})
 	// 查询条件拼接
 	if sysJobLog.JobName != "" {
-		tx = tx.Where("job_name like concat(?, '%')", sysJobLog.JobName)
+		tx = tx.Where("job_name like ?", sysJobLog.JobName+"%")
 	}
 	if sysJobLog.JobGroup != "" {
 		tx = tx.Where("job_group = ?", sysJobLog.JobGroup)
@@ -81,7 +81,7 @@ func (r SysJobLog) Select(sysJobLog model.SysJobLog) []model.SysJobLog {
 		tx = tx.Where("status_flag = ?", sysJobLog.StatusFlag)
 	}
 	if sysJobLog.InvokeTarget != "" {
-		tx = tx.Where("invoke_target like concat(?, '%')", sysJobLog.InvokeTarget)
+		tx = tx.Where("invoke_target like ?", sysJobLog.InvokeTarget+"%")
 	}
 
 	// 查询数据

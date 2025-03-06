@@ -21,10 +21,10 @@ func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64) 
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if v, ok := query["roleName"]; ok && v != "" {
-		tx = tx.Where("role_name like concat(?, '%')", v)
+		tx = tx.Where("role_name like ?", v+"%")
 	}
 	if v, ok := query["roleKey"]; ok && v != "" {
-		tx = tx.Where("role_key like concat(?, '%')", v)
+		tx = tx.Where("role_key like ?", v+"%")
 	}
 	if v, ok := query["statusFlag"]; ok && v != "" {
 		tx = tx.Where("status_flag = ?", v)
@@ -78,10 +78,10 @@ func (r SysRole) Select(sysRole model.SysRole) []model.SysRole {
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysRole.RoleKey != "" {
-		tx = tx.Where("role_key like concat(?, '%')", sysRole.RoleKey)
+		tx = tx.Where("role_key like ?", sysRole.RoleKey+"%")
 	}
 	if sysRole.RoleName != "" {
-		tx = tx.Where("role_name like concat(?, '%')", sysRole.RoleName)
+		tx = tx.Where("role_name like ?", sysRole.RoleName+"%")
 	}
 	if sysRole.StatusFlag != "" {
 		tx = tx.Where("status_flag = ?", sysRole.StatusFlag)

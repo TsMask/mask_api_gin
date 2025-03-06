@@ -26,10 +26,10 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 		tx = tx.Where("user_id = ?", v)
 	}
 	if v, ok := query["userName"]; ok && v != "" {
-		tx = tx.Where("user_name like concat(?, '%')", v)
+		tx = tx.Where("user_name like ?", v+"%")
 	}
 	if v, ok := query["phone"]; ok && v != "" {
-		tx = tx.Where("phone like concat(?, '%')", v)
+		tx = tx.Where("phone like ?", v+"%")
 	}
 	if v, ok := query["statusFlag"]; ok && v != "" {
 		tx = tx.Where("status_flag = ?", v)
@@ -85,10 +85,10 @@ func (r SysUser) Select(sysUser model.SysUser) []model.SysUser {
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysUser.UserName != "" {
-		tx = tx.Where("user_name like concat(?, '%')", sysUser.UserName)
+		tx = tx.Where("user_name like ?", sysUser.UserName+"%")
 	}
 	if sysUser.Phone != "" {
-		tx = tx.Where("phone like concat(?, '%')", sysUser.Phone)
+		tx = tx.Where("phone like ?", sysUser.Phone+"%")
 	}
 	if sysUser.StatusFlag != "" {
 		tx = tx.Where("status_flag = ?", sysUser.StatusFlag)
@@ -229,10 +229,10 @@ func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL str
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if v, ok := query["userName"]; ok && v != "" {
-		tx = tx.Where("user_name like concat(?, '%')", v)
+		tx = tx.Where("user_name like ?", v+"%")
 	}
 	if v, ok := query["phone"]; ok && v != "" {
-		tx = tx.Where("phone like concat(?, '%')", v)
+		tx = tx.Where("phone like ?", v+"%")
 	}
 	if v, ok := query["statusFlag"]; ok && v != "" {
 		tx = tx.Where("status_flag = ?", v)

@@ -19,13 +19,13 @@ func (r SysJob) SelectByPage(query map[string]string) ([]model.SysJob, int64) {
 	tx := db.DB("").Model(&model.SysJob{})
 	// 查询条件拼接
 	if v, ok := query["jobName"]; ok && v != "" {
-		tx = tx.Where("job_name like concat(?, '%')", v)
+		tx = tx.Where("job_name like ?", v+"%")
 	}
 	if v, ok := query["jobGroup"]; ok && v != "" {
 		tx = tx.Where("job_group = ?", v)
 	}
 	if v, ok := query["invokeTarget"]; ok && v != "" {
-		tx = tx.Where("invoke_target like concat(?, '%')", v)
+		tx = tx.Where("invoke_target like ?", v+"%")
 	}
 	if v, ok := query["statusFlag"]; ok && v != "" {
 		tx = tx.Where("status_flag = ?", v)
@@ -56,13 +56,13 @@ func (r SysJob) Select(sysJob model.SysJob) []model.SysJob {
 	tx := db.DB("").Model(&model.SysJob{})
 	// 查询条件拼接
 	if sysJob.JobName != "" {
-		tx = tx.Where("job_name like concat(?, '%')", sysJob.JobName)
+		tx = tx.Where("job_name like ?", sysJob.JobName+"%")
 	}
 	if sysJob.JobGroup != "" {
 		tx = tx.Where("job_group = ?", sysJob.JobGroup)
 	}
 	if sysJob.InvokeTarget != "" {
-		tx = tx.Where("invoke_target like concat(?, '%')", sysJob.InvokeTarget)
+		tx = tx.Where("invoke_target like ?", sysJob.InvokeTarget+"%")
 	}
 	if sysJob.StatusFlag != "" {
 		tx = tx.Where("status_flag = ?", sysJob.StatusFlag)

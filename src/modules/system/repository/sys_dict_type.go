@@ -21,10 +21,10 @@ func (r SysDictType) SelectByPage(query map[string]string) ([]model.SysDictType,
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if v, ok := query["dictName"]; ok && v != "" {
-		tx = tx.Where("dict_name like concat(?, '%')", v)
+		tx = tx.Where("dict_name like ?", v+"%")
 	}
 	if v, ok := query["dictType"]; ok && v != "" {
-		tx = tx.Where("dict_type like concat(?, '%')", v)
+		tx = tx.Where("dict_type like ?", v+"%")
 	}
 	if v, ok := query["statusFlag"]; ok && v != "" {
 		tx = tx.Where("status_flag = ?", v)
@@ -72,10 +72,10 @@ func (r SysDictType) Select(sysDictType model.SysDictType) []model.SysDictType {
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysDictType.DictName != "" {
-		tx = tx.Where("dict_name like concat(?, '%')", sysDictType.DictName)
+		tx = tx.Where("dict_name like ?", sysDictType.DictName+"%")
 	}
 	if sysDictType.DictType != "" {
-		tx = tx.Where("dict_type like concat(?, '%')", sysDictType.DictType)
+		tx = tx.Where("dict_type like ?)", sysDictType.DictType+"%")
 	}
 	if sysDictType.StatusFlag != "" {
 		tx = tx.Where("status_flag = ?", sysDictType.StatusFlag)

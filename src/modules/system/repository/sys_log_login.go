@@ -21,10 +21,10 @@ func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) 
 	tx := db.DB("").Model(&model.SysLogLogin{})
 	// 查询条件拼接
 	if v, ok := query["loginIp"]; ok && v != "" {
-		tx = tx.Where("login_ip like concat(?, '%')", v)
+		tx = tx.Where("login_ip like ?", v+"%")
 	}
 	if v, ok := query["userName"]; ok && v != "" {
-		tx = tx.Where("user_name like concat(?, '%')", v)
+		tx = tx.Where("user_name like ?", v+"%")
 	}
 	if v, ok := query["statusFlag"]; ok && v != "" {
 		tx = tx.Where("status_flag = ?", v)

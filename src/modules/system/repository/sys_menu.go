@@ -21,7 +21,7 @@ func (r SysMenu) Select(sysMenu model.SysMenu, userId int64) []model.SysMenu {
 	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysMenu.MenuName != "" {
-		tx = tx.Where("menu_name like concat(?, '%')", sysMenu.MenuName)
+		tx = tx.Where("menu_name like ?", sysMenu.MenuName+"%")
 	}
 	if sysMenu.VisibleFlag != "" {
 		tx = tx.Where("visible_flag = ?", sysMenu.VisibleFlag)
