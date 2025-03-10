@@ -9,8 +9,8 @@ import (
 	"mask_api_gin/src/framework/reqctx"
 	"mask_api_gin/src/framework/resp"
 	"mask_api_gin/src/framework/utils/regular"
-	"mask_api_gin/src/modules/common/model"
-	"mask_api_gin/src/modules/common/service"
+	"mask_api_gin/src/modules/auth/model"
+	"mask_api_gin/src/modules/auth/service"
 	systemService "mask_api_gin/src/modules/system/service"
 )
 

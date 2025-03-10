@@ -10,8 +10,8 @@ import (
 	"mask_api_gin/src/framework/reqctx"
 	"mask_api_gin/src/framework/resp"
 	"mask_api_gin/src/framework/token"
-	"mask_api_gin/src/modules/common/model"
-	"mask_api_gin/src/modules/common/service"
+	"mask_api_gin/src/modules/auth/model"
+	"mask_api_gin/src/modules/auth/service"
 	systemService "mask_api_gin/src/modules/system/service"
 )
 
@@ -83,6 +83,57 @@ func (s AccountController) Login(c *gin.Context) {
 	}))
 }
 
+// Logout 系统登出
+//
+// POST /logout
+func (s AccountController) Logout(c *gin.Context) {
+	tokenStr := reqctx.Authorization(c)
+	if tokenStr != "" {
+		// 存在token时记录退出信息
+		userName := token.Remove(tokenStr)
+		if userName != "" {
+			// 当前请求信息
+			ipaddr, location := reqctx.IPAddrLocation(c)
+			os, browser := reqctx.UaOsBrowser(c)
+			// 创建系统访问记录
+			s.sysLogLoginService.Insert(
+				userName, constants.STATUS_YES, "退出成功",
+				[4]string{ipaddr, location, os, browser},
+			)
+		}
+	}
+	c.JSON(200, resp.OkMsg("logout successful"))
+}
+
+// Login 刷新Token
+//
+// POST /refresh-token
+func (s AccountController) RefreshToken(c *gin.Context) {
+	var body struct {
+		RefreshToken string `json:"refresh_token"` // 刷新令牌
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		return
+	}
+
+	// 验证刷新令牌是否有效
+	m, err := token.Verify(body.RefreshToken)
+	if err != nil {
+		c.JSON(401, resp.CodeMsg(40002, err.Error()))
+		return
+	}
+
+	// 返回新的访问令牌和刷新令牌
+	c.JSON(200, resp.OkData(map[string]any{
+		"accessToken": "tokenStr",
+		"tokenType":   constants.HEADER_PREFIX,
+		"expiresIn":   "(info.ExpireTime - info.LoginTime) / 1000",
+		"userId":      m["userId"],
+	}))
+}
+
 // Me 登录用户信息
 //
 // GET /me
@@ -114,26 +165,4 @@ func (s AccountController) Router(c *gin.Context) {
 	isSystemUser := config.IsSystemUser(loginUserId)
 	buildMenus := s.accountService.RouteMenus(loginUserId, isSystemUser)
 	c.JSON(200, resp.OkData(buildMenus))
-}
-
-// Logout 系统登出
-//
-// POST /logout
-func (s AccountController) Logout(c *gin.Context) {
-	tokenStr := reqctx.Authorization(c)
-	if tokenStr != "" {
-		// 存在token时记录退出信息
-		userName := token.Remove(tokenStr)
-		if userName != "" {
-			// 当前请求信息
-			ipaddr, location := reqctx.IPAddrLocation(c)
-			os, browser := reqctx.UaOsBrowser(c)
-			// 创建系统访问记录
-			s.sysLogLoginService.Insert(
-				userName, constants.STATUS_YES, "退出成功",
-				[4]string{ipaddr, location, os, browser},
-			)
-		}
-	}
-	c.JSON(200, resp.OkMsg("logout successful"))
 }

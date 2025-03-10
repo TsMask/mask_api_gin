@@ -7,6 +7,7 @@ import (
 
 	"mask_api_gin/src/framework/config"
 	"mask_api_gin/src/framework/engine"
+	"mask_api_gin/src/modules/auth"
 	"mask_api_gin/src/modules/common"
 	"mask_api_gin/src/modules/demo"
 	"mask_api_gin/src/modules/monitor"
@@ -33,6 +34,7 @@ func RunServer() error {
 func ModulesSetup(app *gin.Engine) {
 	demo.Setup(app) // 演示模块（可移除）
 
+	auth.Setup(app)    // 认证模块
 	common.Setup(app)  // 通用模块
 	system.Setup(app)  // 系统模块
 	monitor.Setup(app) // 监控模块（含定时任务放最后）

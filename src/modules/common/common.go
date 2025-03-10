@@ -22,50 +22,6 @@ func Setup(router *gin.Engine) {
 		controller.NewIndex.Handler,
 	)
 
-	// 验证码操作
-	router.GET("/captcha-image",
-		middleware.RateLimit(middleware.LimitOption{
-			Time:  300,
-			Count: 60,
-			Type:  middleware.LIMIT_IP,
-		}),
-		controller.NewCaptcha.Image,
-	)
-
-	// 账号身份操作
-	{
-		router.POST("/login",
-			middleware.RateLimit(middleware.LimitOption{
-				Time:  180,
-				Count: 15,
-				Type:  middleware.LIMIT_IP,
-			}),
-			controller.NewAccount.Login,
-		)
-		router.GET("/me", middleware.PreAuthorize(nil), controller.NewAccount.Me)
-		router.GET("/router", middleware.PreAuthorize(nil), controller.NewAccount.Router)
-		router.POST("/logout",
-			middleware.RateLimit(middleware.LimitOption{
-				Time:  120,
-				Count: 15,
-				Type:  middleware.LIMIT_IP,
-			}),
-			controller.NewAccount.Logout,
-		)
-	}
-
-	// 账号注册操作
-	{
-		router.POST("/register",
-			middleware.RateLimit(middleware.LimitOption{
-				Time:  300,
-				Count: 10,
-				Type:  middleware.LIMIT_IP,
-			}),
-			controller.NewRegister.Register,
-		)
-	}
-
 	// 通用请求
 	commonGroup := router.Group("/common")
 	{
