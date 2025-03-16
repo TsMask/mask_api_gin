@@ -4,7 +4,7 @@ import systemModel "mask_api_gin/src/modules/system/model"
 
 // TokenInfo 令牌信息对象
 type TokenInfo struct {
-	UUID          string              `json:"uuid"`          // 用户唯一标识
+	DeviceId      string              `json:"deviceId"`      // 用户设备标识
 	UserId        int64               `json:"userId"`        // 用户ID
 	DeptId        int64               `json:"deptId"`        // 部门ID
 	LoginTime     int64               `json:"loginTime"`     // 登录时间时间戳

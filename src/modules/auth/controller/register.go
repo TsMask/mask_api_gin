@@ -30,7 +30,7 @@ type RegisterController struct {
 
 // Register 账号注册
 //
-// POST /register
+// POST /auth/register
 func (s RegisterController) Register(c *gin.Context) {
 	var body model.RegisterBody
 	if err := c.ShouldBindJSON(&body); err != nil {

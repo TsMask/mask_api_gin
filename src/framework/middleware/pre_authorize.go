@@ -45,9 +45,6 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
-
-		// 检查刷新有效期后存入上下文
-		token.RefreshIn(&info)
 		c.Set(constants.CTX_LOGIN_USER, info)
 
 		// 登录用户角色权限校验

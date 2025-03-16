@@ -53,7 +53,7 @@ func (s Account) ValidateCaptcha(code, uuid string) error {
 	return nil
 }
 
-// ByUsername 登录创建用户信息
+// ByUsername 账号密码登录创建用户信息
 func (s Account) ByUsername(username, password string) (token.TokenInfo, error) {
 	tokenInfo := token.TokenInfo{}
 
@@ -80,7 +80,7 @@ func (s Account) ByUsername(username, password string) (token.TokenInfo, error) 
 	if compareBool {
 		s.CleanLoginRecordCache(sysUser.UserName) // 清除错误记录次数
 	} else {
-		_ = redis.SetByExpire("", retryKey, retryCount+1, lockTime)
+		_ = redis.Set("", retryKey, retryCount+1, lockTime)
 		return tokenInfo, fmt.Errorf("user does not exist or password is incorrect")
 	}
 
@@ -105,6 +105,36 @@ func (s Account) UpdateLoginDateAndIP(tokenInfo token.TokenInfo) bool {
 	user.LoginIp = tokenInfo.LoginIp
 	user.LoginTime = tokenInfo.LoginTime
 	return s.sysUserService.Update(user) > 0
+}
+
+// ByUserId 用户ID刷新令牌创建用户信息
+func (s Account) ByUserId(userId int64) (token.TokenInfo, error) {
+	tokenInfo := token.TokenInfo{}
+
+	// 查询用户登录账号
+	sysUser := s.sysUserService.FindById(userId)
+	if sysUser.UserId != userId {
+		return tokenInfo, fmt.Errorf("user does not exist")
+	}
+	if sysUser.DelFlag == constants.STATUS_YES {
+		return tokenInfo, fmt.Errorf("sorry, your account has been deleted. Sorry, your account has been deleted")
+	}
+	if sysUser.StatusFlag == constants.STATUS_NO {
+		return tokenInfo, fmt.Errorf("sorry, your account has been disabled")
+	}
+
+	// 登录用户信息
+	tokenInfo.UserId = sysUser.UserId
+	tokenInfo.DeptId = sysUser.DeptId
+	tokenInfo.User = sysUser
+	// 用户权限组标识
+	if config.IsSystemUser(sysUser.UserId) {
+		tokenInfo.Permissions = []string{constants.SYS_PERMISSION_SYSTEM}
+	} else {
+		perms := s.sysMenuService.FindPermsByUserId(sysUser.UserId)
+		tokenInfo.Permissions = parse.RemoveDuplicates(perms)
+	}
+	return tokenInfo, nil
 }
 
 // CleanLoginRecordCache 清除错误记录次数

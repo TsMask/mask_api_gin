@@ -26,7 +26,7 @@ func Setup(router *gin.Engine) {
 
 	// 账号身份操作
 	{
-		router.POST("/login",
+		router.POST("/auth/login",
 			middleware.RateLimit(middleware.LimitOption{
 				Time:  180,
 				Count: 15,
@@ -34,13 +34,21 @@ func Setup(router *gin.Engine) {
 			}),
 			controller.NewAccount.Login,
 		)
-		router.POST("/logout",
+		router.POST("/auth/logout",
 			middleware.RateLimit(middleware.LimitOption{
 				Time:  120,
 				Count: 15,
 				Type:  middleware.LIMIT_IP,
 			}),
 			controller.NewAccount.Logout,
+		)
+		router.POST("/auth/refresh-token",
+			middleware.RateLimit(middleware.LimitOption{
+				Time:  60,
+				Count: 5,
+				Type:  middleware.LIMIT_IP,
+			}),
+			controller.NewAccount.RefreshToken,
 		)
 		router.GET("/me",
 			middleware.PreAuthorize(nil),
@@ -54,7 +62,7 @@ func Setup(router *gin.Engine) {
 
 	// 账号注册操作
 	{
-		router.POST("/register",
+		router.POST("/auth/register",
 			middleware.RateLimit(middleware.LimitOption{
 				Time:  300,
 				Count: 10,

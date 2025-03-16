@@ -11,45 +11,14 @@ import (
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/generate"
+	"mask_api_gin/src/framework/utils/parse"
 )
 
-// Remove 清除登录用户信息UUID
-func Remove(token string) string {
-	claims, err := Verify(token)
-	if err != nil {
-		logger.Errorf("token verify err %v", err)
-		return ""
-	}
-	// 清除缓存KEY
-	uuid := claims[constants.JWT_UUID].(string)
-	tokenKey := constants.CACHE_LOGIN_TOKEN + ":" + uuid
-	hasKey, err := redis.Has("", tokenKey)
-	if hasKey > 0 && err == nil {
-		_ = redis.Del("", tokenKey)
-	}
-	return claims[constants.JWT_USER_NAME].(string)
-}
-
-// Create 令牌生成
-func Create(tokenInfo *TokenInfo, ilobArr [4]string) string {
-	// 生成用户唯一token 32位
-	tokenInfo.UUID = generate.Code(32)
-	tokenInfo.LoginTime = time.Now().UnixMilli()
-
-	// 设置请求用户登录客户端
-	tokenInfo.LoginIp = ilobArr[0]
-	tokenInfo.LoginLocation = ilobArr[1]
-	tokenInfo.OS = ilobArr[2]
-	tokenInfo.Browser = ilobArr[3]
-
-	// 设置新登录IP和登录时间
-	tokenInfo.User.LoginIp = tokenInfo.LoginIp
-	tokenInfo.User.LoginTime = tokenInfo.LoginTime
-
-	// 设置用户令牌有效期并存入缓存
-	Cache(tokenInfo)
-
+// Create 生成令牌
+// userId 用户ID
+// deviceFingerprint 设备指纹 SHA256
+// tokenType 令牌类型 access:访问令牌 refresh:刷新令牌
+func Create(userId int64, deviceFingerprint, tokenType string) (string, int64) {
 	// 令牌算法 HS256 HS384 HS512
 	algorithm := config.Get("jwt.algorithm").(string)
 	var method *jwt.SigningMethodHMAC
@@ -62,52 +31,37 @@ func Create(tokenInfo *TokenInfo, ilobArr [4]string) string {
 	default:
 		method = jwt.SigningMethodHS256
 	}
+
+	// 设置令牌过期时间
+	now := time.Now()
+	exp := now
+	if tokenType == "access" {
+		expiresIn := time.Duration(parse.Number(config.Get("jwt.expiresIn")))
+		exp = now.Add(expiresIn * time.Minute)
+	}
+	if tokenType == "refresh" {
+		refreshIn := time.Duration(parse.Number(config.Get("jwt.refreshIn")))
+		exp = now.Add(refreshIn * time.Minute)
+	}
+
 	// 生成令牌负荷绑定uuid标识
 	jwtToken := jwt.NewWithClaims(method, jwt.MapClaims{
-		constants.JWT_UUID:      tokenInfo.UUID,
-		constants.JWT_USER_ID:   tokenInfo.UserId,
-		constants.JWT_USER_NAME: tokenInfo.User.UserName,
-		"iat":                   tokenInfo.LoginTime,
+		constants.JWT_DEVICE_ID: deviceFingerprint,
+		constants.JWT_USER_ID:   userId,
+		"exp":                   exp.Unix(), // 过期时间
+		"iat":                   now.Unix(), // 签发时间
+		"nbf":                   now.Unix(), // 生效时间
 	})
+
 	// 生成令牌设置密钥
-	secret := config.Get("jwt.secret").(string)
+	secret := fmt.Sprint(config.Get("jwt.secret"))
 	tokenStr, err := jwtToken.SignedString([]byte(secret))
 	if err != nil {
 		logger.Infof("jwt sign err : %v", err)
-		return ""
+		return "", 0
 	}
-	return tokenStr
-}
-
-// Cache 缓存登录用户信息
-func Cache(tokenInfo *TokenInfo) {
-	// 计算配置的有效期
-	expTime := config.Get("jwt.expiresIn").(int)
-	expTimestamp := time.Duration(expTime) * time.Minute
-	iatTimestamp := time.Now().UnixMilli()
-	tokenInfo.LoginTime = iatTimestamp
-	tokenInfo.ExpireTime = iatTimestamp + expTimestamp.Milliseconds()
-	tokenInfo.User.Password = ""
-	// 登录信息标识缓存
-	tokenKey := constants.CACHE_LOGIN_TOKEN + ":" + tokenInfo.UUID
-	jsonBytes, err := json.Marshal(tokenInfo)
-	if err != nil {
-		return
-	}
-	_ = redis.SetByExpire("", tokenKey, string(jsonBytes), expTimestamp)
-}
-
-// RefreshIn 验证令牌有效期，相差不足xx分钟，自动刷新缓存
-func RefreshIn(loginUser *TokenInfo) {
-	// 相差不足xx分钟，自动刷新缓存
-	refreshTime := config.Get("jwt.refreshIn").(int)
-	refreshTimestamp := time.Duration(refreshTime) * time.Minute
-	// 过期时间
-	expireTimestamp := loginUser.ExpireTime
-	currentTimestamp := time.Now().UnixMilli()
-	if expireTimestamp-currentTimestamp <= refreshTimestamp.Milliseconds() {
-		Cache(loginUser)
-	}
+	expSeconds := int64(exp.Sub(now).Seconds())
+	return tokenStr, expSeconds
 }
 
 // Verify 校验令牌是否有效
@@ -132,11 +86,72 @@ func Verify(token string) (jwt.MapClaims, error) {
 	return nil, fmt.Errorf("token valid error")
 }
 
+// RemoveInfo 清除登录用户信息
+func RemoveInfo(token string) (string, error) {
+	claims, err := Verify(token)
+	if err != nil {
+		logger.Errorf("token verify err %v", err)
+		return "", err
+	}
+	info := Info(claims)
+	if info.User.UserName != "" {
+		// 清除缓存KEY
+		deviceId := fmt.Sprint(claims[constants.JWT_DEVICE_ID])
+		tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + deviceId
+		return info.User.UserName, redis.Del("", tokenKey)
+	}
+	return "", fmt.Errorf("token invalid")
+}
+
+// CreateInfo 生成访问令牌
+func CreateInfo(tokenInfo *TokenInfo, deviceFingerprint string, ilobArr [4]string) {
+	tokenInfo.DeviceId = deviceFingerprint
+	tokenInfo.LoginTime = time.Now().UnixMilli()
+
+	// 设置请求用户登录客户端
+	tokenInfo.LoginIp = ilobArr[0]
+	tokenInfo.LoginLocation = ilobArr[1]
+	tokenInfo.OS = ilobArr[2]
+	tokenInfo.Browser = ilobArr[3]
+
+	// 设置新登录IP和登录时间
+	tokenInfo.User.LoginIp = tokenInfo.LoginIp
+	tokenInfo.User.LoginTime = tokenInfo.LoginTime
+
+	expiresIn := time.Duration(parse.Number(config.Get("jwt.expiresIn")))
+	now := time.Now()
+	exp := now.Add(expiresIn * time.Minute)
+	tokenInfo.LoginTime = now.UnixMilli()
+	tokenInfo.ExpireTime = exp.UnixMilli()
+	tokenInfo.User.Password = ""
+	// 登录信息标识缓存
+	tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + tokenInfo.DeviceId
+	jsonBytes, err := json.Marshal(tokenInfo)
+	if err != nil {
+		return
+	}
+	_ = redis.Set("", tokenKey, string(jsonBytes), expiresIn*time.Minute)
+}
+
+// UpdateInfo 生成访问令牌
+func UpdateInfo(tokenInfo TokenInfo) {
+	tokenInfo.User.Password = ""
+	// 登录信息标识缓存
+	tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + tokenInfo.DeviceId
+	jsonBytes, err := json.Marshal(tokenInfo)
+	if err != nil {
+		return
+	}
+	expiresIn, _ := redis.GetExpire("", tokenKey)
+	expiration := time.Duration(expiresIn) * time.Second
+	_ = redis.Set("", tokenKey, string(jsonBytes), expiration)
+}
+
 // Info 缓存的登录用户信息
 func Info(claims jwt.MapClaims) TokenInfo {
 	tokenInfo := TokenInfo{}
-	uuid := claims[constants.JWT_UUID].(string)
-	tokenKey := constants.CACHE_LOGIN_TOKEN + ":" + uuid
+	deviceId := fmt.Sprint(claims[constants.JWT_DEVICE_ID])
+	tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + deviceId
 	hasKey, err := redis.Has("", tokenKey)
 	if hasKey > 0 && err == nil {
 		infoStr, err := redis.Get("", tokenKey)
