@@ -1,9 +1,12 @@
 package reqctx
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 
 	"mask_api_gin/src/framework/ip2region"
+	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/ua"
 )
 
@@ -16,7 +19,7 @@ func IPAddrLocation(c *gin.Context) (string, string) {
 
 // UaOsBrowser 解析请求用户代理信息
 func UaOsBrowser(c *gin.Context) (string, string) {
-	userAgent := c.GetHeader("user-agent")
+	userAgent := c.Request.UserAgent()
 	uaInfo := ua.Info(userAgent)
 
 	browser := "-"
@@ -32,4 +35,10 @@ func UaOsBrowser(c *gin.Context) (string, string) {
 		os = bos
 	}
 	return os, browser
+}
+
+// DeviceFingerprint 设备指纹信息
+func DeviceFingerprint(c *gin.Context, userId int64) string {
+	str := fmt.Sprintf("%d:%s", userId, c.Request.UserAgent())
+	return crypto.SHA256ToBase64(str)
 }
