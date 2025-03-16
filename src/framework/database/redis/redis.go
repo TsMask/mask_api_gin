@@ -154,6 +154,39 @@ func CommandStats(source string) []map[string]string {
 	return statsObjArr
 }
 
+// Has 判断是否存在
+func Has(source string, keys ...string) (int64, error) {
+	// 数据源
+	rdb := RDB(source)
+	if rdb == nil {
+		return 0, fmt.Errorf("redis not client")
+	}
+
+	ctx := context.Background()
+	exists, err := rdb.Exists(ctx, keys...).Result()
+	if err != nil {
+		return 0, err
+	}
+	return exists, nil
+}
+
+// Expire 设置过期时间
+func Expire(source, key string, expiration time.Duration) error {
+	// 数据源
+	rdb := RDB(source)
+	if rdb == nil {
+		return fmt.Errorf("redis not client")
+	}
+
+	ctx := context.Background()
+	err := rdb.Expire(ctx, key, expiration).Err()
+	if err != nil {
+		logger.Errorf("redis Expire err %v", err)
+		return err
+	}
+	return nil
+}
+
 // GetExpire 获取键的剩余有效时间（秒）
 func GetExpire(source string, key string) (int64, error) {
 	// 数据源
@@ -242,41 +275,8 @@ func Get(source, key string) (string, error) {
 	return v, nil
 }
 
-// Has 判断是否存在
-func Has(source string, keys ...string) (int64, error) {
-	// 数据源
-	rdb := RDB(source)
-	if rdb == nil {
-		return 0, fmt.Errorf("redis not client")
-	}
-
-	ctx := context.Background()
-	exists, err := rdb.Exists(ctx, keys...).Result()
-	if err != nil {
-		return 0, err
-	}
-	return exists, nil
-}
-
 // Set 设置缓存数据
-func Set(source, key string, value any) error {
-	// 数据源
-	rdb := RDB(source)
-	if rdb == nil {
-		return fmt.Errorf("redis not client")
-	}
-
-	ctx := context.Background()
-	err := rdb.Set(ctx, key, value, 0).Err()
-	if err != nil {
-		logger.Errorf("redis Set err %v", err)
-		return err
-	}
-	return nil
-}
-
-// SetByExpire 设置缓存数据与过期时间
-func SetByExpire(source, key string, value any, expiration time.Duration) error {
+func Set(source, key string, value any, expiration time.Duration) error {
 	// 数据源
 	rdb := RDB(source)
 	if rdb == nil {
@@ -286,7 +286,7 @@ func SetByExpire(source, key string, value any, expiration time.Duration) error 
 	ctx := context.Background()
 	err := rdb.Set(ctx, key, value, expiration).Err()
 	if err != nil {
-		logger.Errorf("redis SetByExpire err %v", err)
+		logger.Errorf("redis Set err %v", err)
 		return err
 	}
 	return nil

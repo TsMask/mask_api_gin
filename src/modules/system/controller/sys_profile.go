@@ -133,8 +133,9 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 	if rows > 0 {
 		// 更新缓存用户信息
 		info.User = userInfo
-		// 刷新令牌信息
-		token.Cache(&info)
+		// 更新信息
+		token.UpdateInfo(info)
+		// token.UpdateInfo("nickName", userInfo.NickName)
 		c.JSON(200, resp.Ok(nil))
 		return
 	}

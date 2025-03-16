@@ -98,7 +98,7 @@ func (s SysConfig) FindValueByKey(configKey string) string {
 	// 无缓存时读取数据放入缓存中
 	configValue := s.sysConfigRepository.SelectValueByKey(configKey)
 	if configValue != "" {
-		_ = redis.Set("", cacheKey, configValue)
+		_ = redis.Set("", cacheKey, configValue, 0)
 		return configValue
 	}
 	return ""
@@ -112,7 +112,7 @@ func (s SysConfig) CacheLoad(configKey string) {
 		for _, v := range sysConfigs {
 			key := constants.CACHE_SYS_CONFIG + ":" + v.ConfigKey
 			_ = redis.Del("", key)
-			_ = redis.Set("", key, v.ConfigValue)
+			_ = redis.Set("", key, v.ConfigValue, 0)
 		}
 		return
 	}
@@ -121,7 +121,7 @@ func (s SysConfig) CacheLoad(configKey string) {
 	if cacheValue != "" {
 		key := constants.CACHE_SYS_CONFIG + ":" + configKey
 		_ = redis.Del("", key)
-		_ = redis.Set("", key, cacheValue)
+		_ = redis.Set("", key, cacheValue, 0)
 	}
 }
 

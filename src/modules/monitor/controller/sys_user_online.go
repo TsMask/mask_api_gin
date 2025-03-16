@@ -37,7 +37,7 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 	userName := c.Query("userName")
 
 	// 获取所有在线用户key
-	keys, _ := redis.GetKeys("", constants.CACHE_LOGIN_TOKEN+":*")
+	keys, _ := redis.GetKeys("", constants.CACHE_TOKEN_DEVICE+":*")
 
 	// 分批获取
 	arr := make([]string, 0)
@@ -120,7 +120,7 @@ func (s SysUserOnlineController) Logout(c *gin.Context) {
 	// 处理字符转id数组后去重
 	uniqueIDs := parse.RemoveDuplicatesToArray(tokenIdStr, ",")
 	for _, v := range uniqueIDs {
-		key := constants.CACHE_LOGIN_TOKEN + ":" + v
+		key := constants.CACHE_TOKEN_DEVICE + ":" + v
 		if err := redis.Del("", key); err != nil {
 			c.JSON(200, resp.ErrMsg(err.Error()))
 			return

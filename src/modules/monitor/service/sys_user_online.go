@@ -18,7 +18,7 @@ func (s SysUserOnline) TokenInfoToUserOnline(tokenInfo token.TokenInfo) model.Sy
 	}
 
 	sysUserOnline := model.SysUserOnline{
-		TokenID:       tokenInfo.UUID,
+		TokenID:       tokenInfo.DeviceId,
 		UserName:      tokenInfo.User.UserName,
 		LoginIp:       tokenInfo.LoginIp,
 		LoginLocation: tokenInfo.LoginLocation,

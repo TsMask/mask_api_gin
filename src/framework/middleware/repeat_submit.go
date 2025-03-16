@@ -77,7 +77,7 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 			logger.Errorf("RepeatSubmit rp json marshal err: %v", err)
 		}
 		// 保存请求时间和参数
-		_ = redis.SetByExpire("", repeatKey, string(rpJSON), time.Duration(interval)*time.Second)
+		_ = redis.Set("", repeatKey, string(rpJSON), time.Duration(interval)*time.Second)
 
 		// 调用下一个处理程序
 		c.Next()

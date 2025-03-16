@@ -35,7 +35,7 @@ func (s SysCacheController) Info(c *gin.Context) {
 // GET /names
 func (s SysCacheController) Names(c *gin.Context) {
 	caches := []model.SysCache{
-		model.NewNames("用户信息", constants.CACHE_LOGIN_TOKEN),
+		model.NewNames("令牌信息", constants.CACHE_TOKEN_DEVICE),
 		model.NewNames("配置信息", constants.CACHE_SYS_CONFIG),
 		model.NewNames("数据字典", constants.CACHE_SYS_DICT),
 		model.NewNames("验证码", constants.CACHE_CAPTCHA_CODE),
@@ -125,8 +125,8 @@ func (s SysCacheController) CleanKeys(c *gin.Context) {
 		c.JSON(422, resp.CodeMsg(40422, errMsgs))
 		return
 	}
-	if constants.CACHE_LOGIN_TOKEN == query.CacheName {
-		c.JSON(200, resp.ErrMsg("不能删除用户信息缓存"))
+	if constants.CACHE_TOKEN_DEVICE == query.CacheName {
+		c.JSON(200, resp.ErrMsg("不能删除令牌信息缓存"))
 		return
 	}
 

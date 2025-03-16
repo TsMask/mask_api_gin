@@ -137,7 +137,7 @@ func (s SysDictType) FindDataByType(dictType string) []model.SysDictData {
 		if len(data) > 0 {
 			_ = redis.Del("", key)
 			values, _ := json.Marshal(data)
-			_ = redis.Set("", key, string(values))
+			_ = redis.Set("", key, string(values), 0)
 		}
 	}
 	return data
@@ -176,7 +176,7 @@ func (s SysDictType) CacheLoad(dictType string) {
 		key := constants.CACHE_SYS_DICT + ":" + k
 		_ = redis.Del("", key)
 		values, _ := json.Marshal(v)
-		_ = redis.Set("", key, string(values))
+		_ = redis.Set("", key, string(values), 0)
 	}
 }
 

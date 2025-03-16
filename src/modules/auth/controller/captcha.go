@@ -73,13 +73,13 @@ func (s CaptchaController) Image(c *gin.Context) {
 		// 验证码表达式解析输出
 		item, err := driverCaptcha.DrawCaptcha(question)
 		if err != nil {
-			logger.Infof("Generate Id Question Answer %s %s : %v", captchaType, question, err)
+			logger.Infof("generate id question answer %s %s : %v", captchaType, question, err)
 		} else {
 			data["uuid"] = id
 			data["img"] = item.EncodeB64string()
 			expiration := constants.CAPTCHA_EXPIRATION * time.Second
 			verifyKey = constants.CACHE_CAPTCHA_CODE + ":" + id
-			_ = redis.SetByExpire("", verifyKey, answer, expiration)
+			_ = redis.Set("", verifyKey, answer, expiration)
 		}
 	}
 	if captchaType == constants.CAPTCHA_TYPE_CHAR {
@@ -107,13 +107,13 @@ func (s CaptchaController) Image(c *gin.Context) {
 		// 验证码表达式解析输出
 		item, err := driverCaptcha.DrawCaptcha(question)
 		if err != nil {
-			logger.Infof("Generate Id Question Answer %s %s : %v", captchaType, question, err)
+			logger.Infof("generate id question answer %s %s : %v", captchaType, question, err)
 		} else {
 			data["uuid"] = id
 			data["img"] = item.EncodeB64string()
 			expiration := constants.CAPTCHA_EXPIRATION * time.Second
 			verifyKey = constants.CACHE_CAPTCHA_CODE + ":" + id
-			_ = redis.SetByExpire("", verifyKey, strings.ToLower(answer), expiration)
+			_ = redis.Set("", verifyKey, strings.ToLower(answer), expiration)
 		}
 	}
 
