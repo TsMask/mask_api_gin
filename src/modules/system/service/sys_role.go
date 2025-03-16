@@ -84,7 +84,7 @@ func (r SysRole) insertRoleMenu(roleId int64, menuIds []int64) int64 {
 // Update 修改信息
 func (r SysRole) Update(sysRole model.SysRole) int64 {
 	rows := r.sysRoleRepository.Update(sysRole)
-	if rows > 0 && len(sysRole.MenuIds) > 0 {
+	if rows > 0 && len(sysRole.MenuIds) >= 0 {
 		// 删除角色与菜单关联
 		r.sysRoleMenuRepository.DeleteByRoleIds([]int64{sysRole.RoleId})
 		r.insertRoleMenu(sysRole.RoleId, sysRole.MenuIds)
