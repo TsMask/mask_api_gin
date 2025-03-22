@@ -35,13 +35,15 @@ func (s SysCacheController) Info(c *gin.Context) {
 // GET /names
 func (s SysCacheController) Names(c *gin.Context) {
 	caches := []model.SysCache{
-		model.NewNames("令牌信息", constants.CACHE_TOKEN_DEVICE),
+		model.NewNames("用户令牌", constants.CACHE_TOKEN_DEVICE),
 		model.NewNames("配置信息", constants.CACHE_SYS_CONFIG),
 		model.NewNames("数据字典", constants.CACHE_SYS_DICT),
-		model.NewNames("验证码", constants.CACHE_CAPTCHA_CODE),
+		model.NewNames("用户验证码", constants.CACHE_CAPTCHA_CODE),
 		model.NewNames("防重提交", constants.CACHE_REPEAT_SUBMIT),
 		model.NewNames("限流处理", constants.CACHE_RATE_LIMIT),
 		model.NewNames("密码错误次数", constants.CACHE_PWD_ERR_COUNT),
+		model.NewNames("客户端授权码", constants.CACHE_OAUTH2_CODE),
+		model.NewNames("客户端令牌", constants.CACHE_OAUTH2_DEVICE),
 	}
 	c.JSON(200, resp.OkData(caches))
 }
@@ -98,10 +100,11 @@ func (s SysCacheController) CleanNames(c *gin.Context) {
 	caches := []model.SysCache{
 		model.NewNames("配置信息", constants.CACHE_SYS_CONFIG),
 		model.NewNames("数据字典", constants.CACHE_SYS_DICT),
-		model.NewNames("验证码", constants.CACHE_CAPTCHA_CODE),
+		model.NewNames("用户验证码", constants.CACHE_CAPTCHA_CODE),
 		model.NewNames("防重提交", constants.CACHE_REPEAT_SUBMIT),
 		model.NewNames("限流处理", constants.CACHE_RATE_LIMIT),
 		model.NewNames("密码错误次数", constants.CACHE_PWD_ERR_COUNT),
+		model.NewNames("客户端授权码", constants.CACHE_OAUTH2_CODE),
 	}
 	for _, v := range caches {
 		cacheKeys, err := redis.GetKeys("", v.CacheName+":*")

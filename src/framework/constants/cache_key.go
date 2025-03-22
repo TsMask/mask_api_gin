@@ -16,4 +16,8 @@ const (
 	CACHE_RATE_LIMIT = "rate_limit"
 	// CACHE_PWD_ERR_COUNT 登录账户密码错误次数
 	CACHE_PWD_ERR_COUNT = "pwd_err_count"
+	// CACHE_OAUTH2_DEVICE 授权客户端令牌标识
+	CACHE_OAUTH2_DEVICE = "oauth2_devices"
+	// CACHE_OAUTH2_CODE 客户端授权码
+	CACHE_OAUTH2_CODE = "oauth2_codes"
 )
