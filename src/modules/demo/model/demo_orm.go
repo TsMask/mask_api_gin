@@ -12,7 +12,7 @@ type DemoORM struct {
 	CreateTime int64  `gorm:"column:create_time" json:"createTime"`                              // 创建时间
 	UpdateBy   string `gorm:"column:update_by" json:"updateBy"`                                  // 更新者
 	UpdateTime int64  `gorm:"column:update_time" json:"updateTime"`                              // 更新时间
-	Remark     string `gorm:"column:remark;size:500" json:"remark"`                              // 备注
+	Remark     string `gorm:"column:remark" json:"remark"`                                       // 备注
 }
 
 func (*DemoORM) TableName() string {
