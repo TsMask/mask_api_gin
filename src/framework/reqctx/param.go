@@ -38,7 +38,7 @@ func UaOsBrowser(c *gin.Context) (string, string) {
 }
 
 // DeviceFingerprint 设备指纹信息
-func DeviceFingerprint(c *gin.Context, userId int64) string {
-	str := fmt.Sprintf("%d:%s", userId, c.Request.UserAgent())
+func DeviceFingerprint(c *gin.Context, v any) string {
+	str := fmt.Sprintf("%v:%s", v, c.Request.UserAgent())
 	return crypto.SHA256ToBase64(str)
 }
