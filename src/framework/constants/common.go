@@ -9,3 +9,6 @@ const (
 
 // CTX_LOGIN_USER 上下文信息-登录用户
 const CTX_LOGIN_USER = "ctx:login_user"
+
+// CTX_LOGIN_OAUTH2 上下文信息-认证客户端
+const CTX_LOGIN_OAUTH2 = "ctx:login_oauth2"
