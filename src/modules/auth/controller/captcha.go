@@ -50,9 +50,11 @@ func (s CaptchaController) Image(c *gin.Context) {
 		"img":     "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
 	}
 
+	// 验证码有效期，单位秒
+	captchaExpiration := 2 * 60 * time.Second
 	// 从数据库配置获取验证码类型 math 数值计算 char 字符验证
 	captchaType := s.sysConfigService.FindValueByKey("sys.account.captchaType")
-	if captchaType == constants.CAPTCHA_TYPE_MATH {
+	if captchaType == "math" {
 		math := config.Get("mathCaptcha").(map[string]any)
 		driverCaptcha := &base64Captcha.DriverMath{
 			//Height png height in pixel.
@@ -77,12 +79,11 @@ func (s CaptchaController) Image(c *gin.Context) {
 		} else {
 			data["uuid"] = id
 			data["img"] = item.EncodeB64string()
-			expiration := constants.CAPTCHA_EXPIRATION * time.Second
 			verifyKey = constants.CACHE_CAPTCHA_CODE + ":" + id
-			_ = redis.Set("", verifyKey, answer, expiration)
+			_ = redis.Set("", verifyKey, answer, captchaExpiration)
 		}
 	}
-	if captchaType == constants.CAPTCHA_TYPE_CHAR {
+	if captchaType == "char" {
 		char := config.Get("charCaptcha").(map[string]any)
 		driverCaptcha := &base64Captcha.DriverString{
 			//Height png height in pixel.
@@ -111,9 +112,8 @@ func (s CaptchaController) Image(c *gin.Context) {
 		} else {
 			data["uuid"] = id
 			data["img"] = item.EncodeB64string()
-			expiration := constants.CAPTCHA_EXPIRATION * time.Second
 			verifyKey = constants.CACHE_CAPTCHA_CODE + ":" + id
-			_ = redis.Set("", verifyKey, strings.ToLower(answer), expiration)
+			_ = redis.Set("", verifyKey, strings.ToLower(answer), captchaExpiration)
 		}
 	}
 
