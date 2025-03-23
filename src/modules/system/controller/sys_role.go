@@ -12,6 +12,7 @@ import (
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
+	"slices"
 )
 
 // NewSysRole 实例化控制层
@@ -116,11 +117,17 @@ func (s SysRoleController) Edit(c *gin.Context) {
 		return
 	}
 
-	// 检查是否存在
-	roleInfo := s.sysRoleService.FindById(body.RoleId)
-	if roleInfo.RoleId != body.RoleId {
-		c.JSON(200, resp.ErrMsg("没有权限访问角色数据！"))
+	// 检查是否分配给当前用户
+	info, err := reqctx.LoginUser(c)
+	if err != nil {
+		c.JSON(401, resp.CodeMsg(40003, err.Error()))
 		return
+	}
+	if len(info.User.RoleIds) > 0 {
+		if slices.Contains(info.User.RoleIds, body.RoleId) {
+			c.JSON(200, resp.ErrMsg("不允许操作分配给自己的角色"))
+			return
+		}
 	}
 
 	// 判断角色名称是否唯一
@@ -136,6 +143,13 @@ func (s SysRoleController) Edit(c *gin.Context) {
 	if !uniqueKey {
 		msg := fmt.Sprintf("角色修改【%s】失败，角色键值已存在", body.RoleName)
 		c.JSON(200, resp.ErrMsg(msg))
+		return
+	}
+
+	// 检查是否存在
+	roleInfo := s.sysRoleService.FindById(body.RoleId)
+	if roleInfo.RoleId != body.RoleId {
+		c.JSON(200, resp.ErrMsg("没有权限访问角色数据！"))
 		return
 	}
 
