@@ -5,9 +5,7 @@ import (
 
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/middleware"
-	monitorController "mask_api_gin/src/modules/monitor/controller"
 	"mask_api_gin/src/modules/oauth2/controller"
-	oauth2Middleware "mask_api_gin/src/modules/oauth2/middleware"
 )
 
 // Setup 模块路由注册
@@ -18,23 +16,26 @@ func Setup(router *gin.Engine) {
 	oauth2ClientGroup := router.Group("/oauth2/client")
 	{
 		oauth2ClientGroup.GET("/list",
-			middleware.PreAuthorize(nil),
+			middleware.PreAuthorize(map[string][]string{"matchRoles": {"admin"}}),
 			controller.NewOauth2Client.List,
 		)
 		oauth2ClientGroup.GET("/:clientId",
-			middleware.PreAuthorize(nil),
+			middleware.PreAuthorize(map[string][]string{"matchRoles": {"admin"}}),
 			controller.NewOauth2Client.Info,
 		)
 		oauth2ClientGroup.POST("",
-			middleware.PreAuthorize(nil),
+			middleware.PreAuthorize(map[string][]string{"matchRoles": {"admin"}}),
+			middleware.OperateLog(middleware.OptionNew("客户端授权管理", middleware.BUSINESS_TYPE_INSERT)),
 			controller.NewOauth2Client.Add,
 		)
 		oauth2ClientGroup.PUT("",
-			middleware.PreAuthorize(nil),
+			middleware.PreAuthorize(map[string][]string{"matchRoles": {"admin"}}),
+			middleware.OperateLog(middleware.OptionNew("客户端授权管理", middleware.BUSINESS_TYPE_UPDATE)),
 			controller.NewOauth2Client.Edit,
 		)
 		oauth2ClientGroup.DELETE("/:id",
-			middleware.PreAuthorize(nil),
+			middleware.PreAuthorize(map[string][]string{"matchRoles": {"admin"}}),
+			middleware.OperateLog(middleware.OptionNew("客户端授权管理", middleware.BUSINESS_TYPE_DELETE)),
 			controller.NewOauth2Client.Remove,
 		)
 	}
@@ -56,7 +57,7 @@ func Setup(router *gin.Engine) {
 				Count: 15,
 				Type:  middleware.LIMIT_IP,
 			}),
-			controller.NewOauth2.Tooken,
+			controller.NewOauth2.Token,
 		)
 		oauth2Group.POST("/refresh-token",
 			middleware.RateLimit(middleware.LimitOption{
@@ -65,14 +66,6 @@ func Setup(router *gin.Engine) {
 				Type:  middleware.LIMIT_IP,
 			}),
 			controller.NewOauth2.RefreshToken,
-		)
-	}
-
-	// 系统监控
-	{
-		oauth2Group.GET("/monitor/system",
-			oauth2Middleware.PreAuthorize(nil),
-			monitorController.NewSystem.Info,
 		)
 	}
 

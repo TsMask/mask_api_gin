@@ -10,9 +10,9 @@ import (
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/reqctx"
 	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/framework/token"
 	"mask_api_gin/src/modules/oauth2/model"
 	"mask_api_gin/src/modules/oauth2/service"
-	"mask_api_gin/src/modules/oauth2/token"
 )
 
 // NewOauth2 实例化控制层
@@ -22,13 +22,13 @@ var NewOauth2 = &Oauth2Controller{
 	oauth2LogLoginService: service.NewOauth2LogLogin,
 }
 
-// Oauth2Controller 授权认证 控制层处理
+// Oauth2Controller 授权第三方客户端应用认证 控制层处理
 //
 // PATH /oauth2
 type Oauth2Controller struct {
-	oauth2Service         *service.Oauth2Service       // 用户授权第三方信息服务
-	oauth2ClientService   *service.Oauth2ClientService // 用户授权第三方应用信息服务
-	oauth2LogLoginService *service.Oauth2LogLogin      // 用户授权第三方应用登录日志
+	oauth2Service         *service.Oauth2Service         // 用户授权第三方信息服务
+	oauth2ClientService   *service.Oauth2ClientService   // 用户授权第三方应用信息服务
+	oauth2LogLoginService *service.Oauth2LogLoginService // 用户授权第三方应用登录日志
 }
 
 // Authorize 获取登录预授权码
@@ -45,13 +45,13 @@ func (s Oauth2Controller) Authorize(c *gin.Context) {
 	// 是否存在clientId
 	info := s.oauth2ClientService.FindByClientId(query.ClientId)
 	if info.ClientId == "" || info.ClientId != query.ClientId {
-		c.JSON(404, resp.CodeMsg(40404, "clientId不存在"))
+		c.JSON(400, resp.CodeMsg(40404, "clientId不存在"))
 		return
 	}
 
 	// 判断IP白名单
 	if !strings.Contains(info.IPWhite, c.ClientIP()) {
-		c.JSON(404, resp.CodeMsg(40404, "IP白名单不匹配"))
+		c.JSON(400, resp.CodeMsg(40404, "IP白名单不匹配"))
 		return
 	}
 
@@ -65,7 +65,7 @@ func (s Oauth2Controller) Authorize(c *gin.Context) {
 // Tooken 通过授权码获取访问令牌
 //
 // POST /token
-func (s Oauth2Controller) Tooken(c *gin.Context) {
+func (s Oauth2Controller) Token(c *gin.Context) {
 	var body model.TokenBody
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
@@ -73,7 +73,7 @@ func (s Oauth2Controller) Tooken(c *gin.Context) {
 		return
 	}
 	if body.GrantType != "authorization_code" || body.Code == "" {
-		c.JSON(404, resp.CodeMsg(40404, "grantType or code error"))
+		c.JSON(400, resp.CodeMsg(40404, "grantType or code error"))
 		return
 	}
 
@@ -101,16 +101,16 @@ func (s Oauth2Controller) Tooken(c *gin.Context) {
 	deviceFingerprint := reqctx.DeviceFingerprint(c, info.ClientId)
 
 	// 生成访问令牌
-	accessToken, expiresIn := token.Create(info.ClientId, deviceFingerprint, "access")
+	accessToken, expiresIn := token.Oauth2TokenCreate(info.ClientId, deviceFingerprint, "access")
 	if accessToken == "" || expiresIn == 0 {
 		c.JSON(400, resp.CodeMsg(40001, "token generation failed"))
 		return
 	}
 	// 生成刷新令牌
-	refreshToken, refreshExpiresIn := token.Create(info.ClientId, deviceFingerprint, "refresh")
+	refreshToken, refreshExpiresIn := token.Oauth2TokenCreate(info.ClientId, deviceFingerprint, "refresh")
 
 	// 记录令牌，创建系统访问记录
-	token.CreateInfo(&info, deviceFingerprint, [4]string{ipaddr, location, os, browser})
+	token.Oauth2InfoCreate(&info, deviceFingerprint, [4]string{ipaddr, location, os, browser})
 	s.oauth2Service.UpdateLoginDateAndIP(info)
 	s.oauth2LogLoginService.Insert(
 		body.ClientId, constants.STATUS_YES, "授权成功",
@@ -137,12 +137,12 @@ func (s Oauth2Controller) RefreshToken(c *gin.Context) {
 		return
 	}
 	if body.GrantType != "refresh_token" || body.RefreshToken == "" {
-		c.JSON(404, resp.CodeMsg(40404, "grantType or refreshToken error"))
+		c.JSON(400, resp.CodeMsg(40404, "grantType or refreshToken error"))
 		return
 	}
 
 	// 验证刷新令牌是否有效
-	claims, err := token.Verify(body.RefreshToken)
+	claims, err := token.Oauth2TokenVerify(body.RefreshToken)
 	if err != nil {
 		c.JSON(401, resp.CodeMsg(40001, err.Error()))
 		return
@@ -158,19 +158,19 @@ func (s Oauth2Controller) RefreshToken(c *gin.Context) {
 
 	// 客户端ID是否一致
 	if clientId != body.ClientId {
-		c.JSON(401, resp.CodeMsg(40003, "clientId mismatch"))
+		c.JSON(400, resp.CodeMsg(40003, "clientId mismatch"))
 		return
 	}
 	// 设备指纹信息是否一致
 	deviceId := fmt.Sprint(claims[constants.JWT_DEVICE_ID])
-	deviceFingerprint := reqctx.DeviceFingerprint(c, info.ClientId)
+	deviceFingerprint := reqctx.DeviceFingerprint(c, clientId)
 	if deviceId != deviceFingerprint {
 		c.JSON(401, resp.CodeMsg(40003, "device fingerprint mismatch"))
 		return
 	}
 
 	// 生成访问令牌
-	accessToken, expiresIn := token.Create(clientId, deviceFingerprint, "access")
+	accessToken, expiresIn := token.Oauth2TokenCreate(clientId, deviceFingerprint, "access")
 	if accessToken == "" || expiresIn == 0 {
 		c.JSON(400, resp.CodeMsg(40001, "token generation failed"))
 		return
@@ -185,14 +185,14 @@ func (s Oauth2Controller) RefreshToken(c *gin.Context) {
 	// 如果当前时间大于过期时间的一半，则生成新令牌
 	halfExp := exp.Add(-(exp.Sub(iat.Time)) / 2)
 	if now.After(halfExp) {
-		refreshToken, refreshExpiresIn = token.Create(clientId, deviceFingerprint, "refresh")
+		refreshToken, refreshExpiresIn = token.Oauth2TokenCreate(clientId, deviceFingerprint, "refresh")
 	}
 
 	// 当前请求信息
 	ipaddr, location := reqctx.IPAddrLocation(c)
 	os, browser := reqctx.UaOsBrowser(c)
 	// 记录令牌，创建系统访问记录
-	token.CreateInfo(&info, deviceFingerprint, [4]string{ipaddr, location, os, browser})
+	token.Oauth2InfoCreate(&info, deviceFingerprint, [4]string{ipaddr, location, os, browser})
 	s.oauth2Service.UpdateLoginDateAndIP(info)
 	s.oauth2LogLoginService.Insert(
 		info.ClientId, constants.STATUS_YES, "刷新访问令牌成功",

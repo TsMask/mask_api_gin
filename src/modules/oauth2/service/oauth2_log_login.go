@@ -11,22 +11,22 @@ import (
 )
 
 // NewOauth2LogLogin 实例化服务层
-var NewOauth2LogLogin = &Oauth2LogLogin{
+var NewOauth2LogLogin = &Oauth2LogLoginService{
 	oauth2LogLoginRepository: repository.NewOauth2LogLogin,
 }
 
 // Oauth2LogLogin 用户授权第三方应用登录日志 服务层处理
-type Oauth2LogLogin struct {
+type Oauth2LogLoginService struct {
 	oauth2LogLoginRepository *repository.Oauth2LogLoginRepository // 用户授权第三方应用登录日志信息
 }
 
 // FindByPage 分页查询列表数据
-func (s Oauth2LogLogin) FindByPage(query map[string]string) ([]model.Oauth2LogLogin, int64) {
+func (s Oauth2LogLoginService) FindByPage(query map[string]string) ([]model.Oauth2LogLogin, int64) {
 	return s.oauth2LogLoginRepository.SelectByPage(query)
 }
 
 // Insert 新增信息
-func (s Oauth2LogLogin) Insert(clientId, status, msg string, ilobArr [4]string) int64 {
+func (s Oauth2LogLoginService) Insert(clientId, status, msg string, ilobArr [4]string) int64 {
 	sysOauth2LogLogin := model.Oauth2LogLogin{
 		LoginIp:       ilobArr[0],
 		LoginLocation: ilobArr[1],
@@ -40,12 +40,12 @@ func (s Oauth2LogLogin) Insert(clientId, status, msg string, ilobArr [4]string) 
 }
 
 // Clean 清空用户授权第三方应用登录日志
-func (s Oauth2LogLogin) Clean() int64 {
+func (s Oauth2LogLoginService) Clean() int64 {
 	return s.oauth2LogLoginRepository.Clean()
 }
 
 // ExportData 导出数据表格
-func (s Oauth2LogLogin) ExportData(rows []model.Oauth2LogLogin, fileName string) (string, error) {
+func (s Oauth2LogLoginService) ExportData(rows []model.Oauth2LogLogin, fileName string) (string, error) {
 	// 第一行表头标题
 	headerCells := map[string]string{
 		"A1": "序号",

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"time"
 
 	"mask_api_gin/src/framework/database/db"
@@ -24,6 +25,22 @@ func (r Oauth2Client) SelectByPage(query map[string]string) ([]model.Oauth2Clien
 	}
 	if v, ok := query["title"]; ok && v != "" {
 		tx = tx.Where("title like ?", v+"%")
+	}
+	if v, ok := query["beginTime"]; ok && v != "" {
+		if len(v) == 10 {
+			v = fmt.Sprintf("%s000", v)
+			tx = tx.Where("login_time >= ?", v)
+		} else if len(v) == 13 {
+			tx = tx.Where("login_time >= ?", v)
+		}
+	}
+	if v, ok := query["endTime"]; ok && v != "" {
+		if len(v) == 10 {
+			v = fmt.Sprintf("%s999", v)
+			tx = tx.Where("login_time <= ?", v)
+		} else if len(v) == 13 {
+			tx = tx.Where("login_time <= ?", v)
+		}
 	}
 
 	// 查询结果
@@ -71,9 +88,8 @@ func (r Oauth2Client) SelectByIds(ids []int64) []model.Oauth2Client {
 		return rows
 	}
 	tx := db.DB("").Model(&model.Oauth2Client{})
-	tx = tx.Where("del_flag = 0")
 	// 构建查询条件
-	tx = tx.Where("id in ?", ids)
+	tx = tx.Where("id in ? and del_flag = 0", ids)
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
@@ -110,7 +126,7 @@ func (r Oauth2Client) Update(param model.Oauth2Client) int64 {
 	tx := db.DB("").Model(&model.Oauth2Client{})
 	// 构建查询条件
 	tx = tx.Where("id = ?", param.Id)
-	tx = tx.Omit("id", "create_by", "create_time")
+	tx = tx.Omit("id", "del_flag", "create_by", "create_time")
 	// 执行更新
 	if err := tx.Updates(param).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -142,9 +158,8 @@ func (r Oauth2Client) SelectByClientId(clientId string) model.Oauth2Client {
 		return item
 	}
 	tx := db.DB("").Model(&model.Oauth2Client{})
-	tx = tx.Where("del_flag = 0")
 	// 构建查询条件
-	tx = tx.Where("client_id = ?", clientId)
+	tx = tx.Where("client_id = ? and del_flag = '0'", clientId)
 	// 查询数据
 	if err := tx.Find(&item).Error; err != nil {
 		return item

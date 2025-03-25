@@ -7,11 +7,11 @@ import (
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
+	"mask_api_gin/src/framework/token"
 	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/generate"
 	"mask_api_gin/src/modules/oauth2/model"
 	"mask_api_gin/src/modules/oauth2/repository"
-	"mask_api_gin/src/modules/oauth2/token"
 )
 
 // NewOauth2Service 实例化服务层
@@ -53,33 +53,33 @@ func (s Oauth2Service) ValidateCode(code string) error {
 	return nil
 }
 
-// ByUsername 账号密码登录创建用户信息
-func (s Oauth2Service) ByClient(clientId, clientSecret string) (token.TokenInfo, error) {
-	tokenInfo := token.TokenInfo{}
+// ByClient 客户端信息
+func (s Oauth2Service) ByClient(clientId, clientSecret string) (token.Oauth2Info, error) {
+	info := token.Oauth2Info{}
 
 	// 查询用户登录账号
-	var info model.Oauth2Client
+	var item model.Oauth2Client
 	rows := s.oauth2ClientRepository.Select(model.Oauth2Client{
 		ClientId:     clientId,
 		ClientSecret: clientSecret,
 	})
 	if len(rows) > 0 {
-		info = rows[0]
+		item = rows[0]
 	}
-	if info.ClientId == "" {
-		return tokenInfo, fmt.Errorf("clientId or clientSecret is not exist")
+	if item.ClientId == "" {
+		return info, fmt.Errorf("clientId or clientSecret is not exist")
 	}
 
-	tokenInfo.ClientId = clientId
+	info.ClientId = clientId
 	// 用户权限组标识
-	tokenInfo.Scope = []string{}
-	return tokenInfo, nil
+	info.Scope = []string{}
+	return info, nil
 }
 
 // UpdateLoginDateAndIP 更新登录时间和IP
-func (s Oauth2Service) UpdateLoginDateAndIP(tokenInfo token.TokenInfo) bool {
-	info := s.oauth2ClientRepository.SelectByClientId(tokenInfo.ClientId)
-	info.LoginIp = tokenInfo.LoginIp
-	info.LoginTime = tokenInfo.LoginTime
-	return s.oauth2ClientRepository.Update(info) > 0
+func (s Oauth2Service) UpdateLoginDateAndIP(info token.Oauth2Info) bool {
+	item := s.oauth2ClientRepository.SelectByClientId(info.ClientId)
+	item.LoginIp = info.LoginIp
+	item.LoginTime = info.LoginTime
+	return s.oauth2ClientRepository.Update(item) > 0
 }

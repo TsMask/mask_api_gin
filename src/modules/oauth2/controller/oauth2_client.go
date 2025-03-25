@@ -103,8 +103,18 @@ func (s Oauth2ClientController) Edit(c *gin.Context) {
 		return
 	}
 
-	body.UpdateBy = reqctx.LoginUserToUserName(c)
-	rowsAffected := s.oauth2ClientService.Update(body)
+	// 查询信息
+	info := s.oauth2ClientService.FindByClientId(body.ClientId)
+	if info.ClientId != body.ClientId {
+		c.JSON(400, resp.CodeMsg(40010, "修改失败，客户端ID已存在"))
+		return
+	}
+
+	info.Title = body.Title
+	info.IPWhite = body.IPWhite
+	info.Remark = body.Remark
+	info.UpdateBy = reqctx.LoginUserToUserName(c)
+	rowsAffected := s.oauth2ClientService.Update(info)
 	if rowsAffected > 0 {
 		c.JSON(200, resp.Ok(nil))
 		return
