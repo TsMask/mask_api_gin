@@ -16,25 +16,25 @@ func Setup(router *gin.Engine) {
 	oauth2ClientGroup := router.Group("/oauth2/client")
 	{
 		oauth2ClientGroup.GET("/list",
-			middleware.PreAuthorize(map[string][]string{"matchRoles": {"admin"}}),
+			middleware.AuthorizeUser(map[string][]string{"matchRoles": {"admin"}}),
 			controller.NewOauth2Client.List,
 		)
 		oauth2ClientGroup.GET("/:clientId",
-			middleware.PreAuthorize(map[string][]string{"matchRoles": {"admin"}}),
+			middleware.AuthorizeUser(map[string][]string{"matchRoles": {"admin"}}),
 			controller.NewOauth2Client.Info,
 		)
 		oauth2ClientGroup.POST("",
-			middleware.PreAuthorize(map[string][]string{"matchRoles": {"admin"}}),
+			middleware.AuthorizeUser(map[string][]string{"matchRoles": {"admin"}}),
 			middleware.OperateLog(middleware.OptionNew("客户端授权管理", middleware.BUSINESS_TYPE_INSERT)),
 			controller.NewOauth2Client.Add,
 		)
 		oauth2ClientGroup.PUT("",
-			middleware.PreAuthorize(map[string][]string{"matchRoles": {"admin"}}),
+			middleware.AuthorizeUser(map[string][]string{"matchRoles": {"admin"}}),
 			middleware.OperateLog(middleware.OptionNew("客户端授权管理", middleware.BUSINESS_TYPE_UPDATE)),
 			controller.NewOauth2Client.Edit,
 		)
 		oauth2ClientGroup.DELETE("/:id",
-			middleware.PreAuthorize(map[string][]string{"matchRoles": {"admin"}}),
+			middleware.AuthorizeUser(map[string][]string{"matchRoles": {"admin"}}),
 			middleware.OperateLog(middleware.OptionNew("客户端授权管理", middleware.BUSINESS_TYPE_DELETE)),
 			controller.NewOauth2Client.Remove,
 		)

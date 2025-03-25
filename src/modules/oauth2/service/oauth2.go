@@ -81,5 +81,6 @@ func (s Oauth2Service) UpdateLoginDateAndIP(info token.Oauth2Info) bool {
 	item := s.oauth2ClientRepository.SelectByClientId(info.ClientId)
 	item.LoginIp = info.LoginIp
 	item.LoginTime = info.LoginTime
-	return s.oauth2ClientRepository.Update(item) > 0
+	rows := s.oauth2ClientRepository.Update(item)
+	return rows > 0
 }

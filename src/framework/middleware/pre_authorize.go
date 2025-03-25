@@ -11,7 +11,7 @@ import (
 	"mask_api_gin/src/framework/token"
 )
 
-// PreAuthorize 用户身份授权认证校验
+// AuthorizeUser 用户身份授权认证校验
 //
 // 只需含有其中角色 "hasRoles": {"xxx"},
 //
@@ -20,7 +20,7 @@ import (
 // 同时匹配其中角色 "matchRoles": {"xxx"},
 //
 // 同时匹配其中权限 "matchPerms": {"xxx"},
-func PreAuthorize(options map[string][]string) gin.HandlerFunc {
+func AuthorizeUser(options map[string][]string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 获取请求头标识信息
 		tokenStr := reqctx.Authorization(c)

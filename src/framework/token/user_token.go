@@ -145,7 +145,7 @@ func UserInfoUpdate(info UserInfo) {
 	_ = redis.Set("", tokenKey, string(jsonBytes), expiration)
 }
 
-// GetUserInfo 缓存的登录用户信息
+// UserInfoGet 缓存的访问用户信息
 func UserInfoGet(claims jwt.MapClaims) UserInfo {
 	info := UserInfo{}
 	deviceId := fmt.Sprint(claims[constants.JWT_DEVICE_ID])

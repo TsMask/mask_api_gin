@@ -25,16 +25,16 @@ func Setup(router *gin.Engine) {
 	// 通用请求
 	commonGroup := router.Group("/common")
 	{
-		commonGroup.POST("/hash", middleware.PreAuthorize(nil), controller.NewCommon.Hash)
+		commonGroup.POST("/hash", middleware.AuthorizeUser(nil), controller.NewCommon.Hash)
 	}
 
 	// 文件操作
 	fileGroup := router.Group("/file")
 	{
-		fileGroup.POST("/upload", middleware.PreAuthorize(nil), controller.NewFile.Upload)
-		fileGroup.POST("/chunk-check", middleware.PreAuthorize(nil), controller.NewFile.ChunkCheck)
-		fileGroup.POST("/chunk-upload", middleware.PreAuthorize(nil), controller.NewFile.ChunkUpload)
-		fileGroup.POST("/chunk-merge", middleware.PreAuthorize(nil), controller.NewFile.ChunkMerge)
-		fileGroup.GET("/download/:filePath", middleware.PreAuthorize(nil), controller.NewFile.Download)
+		fileGroup.POST("/upload", middleware.AuthorizeUser(nil), controller.NewFile.Upload)
+		fileGroup.POST("/chunk-check", middleware.AuthorizeUser(nil), controller.NewFile.ChunkCheck)
+		fileGroup.POST("/chunk-upload", middleware.AuthorizeUser(nil), controller.NewFile.ChunkUpload)
+		fileGroup.POST("/chunk-merge", middleware.AuthorizeUser(nil), controller.NewFile.ChunkMerge)
+		fileGroup.GET("/download/:filePath", middleware.AuthorizeUser(nil), controller.NewFile.Download)
 	}
 }

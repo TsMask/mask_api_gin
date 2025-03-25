@@ -51,11 +51,11 @@ func Setup(router *gin.Engine) {
 			controller.NewAccount.RefreshToken,
 		)
 		router.GET("/me",
-			middleware.PreAuthorize(nil),
+			middleware.AuthorizeUser(nil),
 			controller.NewAccount.Me,
 		)
 		router.GET("/router",
-			middleware.PreAuthorize(nil),
+			middleware.AuthorizeUser(nil),
 			controller.NewAccount.Router,
 		)
 	}
