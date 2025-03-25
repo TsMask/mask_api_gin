@@ -66,16 +66,16 @@ func (s AccountController) Login(c *gin.Context) {
 	deviceFingerprint := reqctx.DeviceFingerprint(c, info.UserId)
 
 	// 生成访问令牌
-	accessToken, expiresIn := token.Create(info.UserId, deviceFingerprint, "access")
+	accessToken, expiresIn := token.UserTokenCreate(info.UserId, deviceFingerprint, "access")
 	if accessToken == "" || expiresIn == 0 {
 		c.JSON(400, resp.CodeMsg(40001, "token generation failed"))
 		return
 	}
 	// 生成刷新令牌
-	refreshToken, refreshExpiresIn := token.Create(info.UserId, deviceFingerprint, "refresh")
+	refreshToken, refreshExpiresIn := token.UserTokenCreate(info.UserId, deviceFingerprint, "refresh")
 
 	// 记录令牌，创建系统访问记录
-	token.CreateInfo(&info, deviceFingerprint, [4]string{ipaddr, location, os, browser})
+	token.UserInfoCreate(&info, deviceFingerprint, [4]string{ipaddr, location, os, browser})
 	s.accountService.UpdateLoginDateAndIP(info)
 	s.sysLogLoginService.Insert(
 		body.Username, constants.STATUS_YES, "登录成功",
@@ -99,7 +99,7 @@ func (s AccountController) Logout(c *gin.Context) {
 	tokenStr := reqctx.Authorization(c)
 	if tokenStr != "" {
 		// 存在token时记录退出信息
-		userName, err := token.RemoveInfo(tokenStr)
+		userName, err := token.UserInfoRemove(tokenStr)
 		if err != nil {
 			// 当前请求信息
 			ipaddr, location := reqctx.IPAddrLocation(c)
@@ -119,7 +119,7 @@ func (s AccountController) Logout(c *gin.Context) {
 // POST /auth/refresh-token
 func (s AccountController) RefreshToken(c *gin.Context) {
 	var body struct {
-		RefreshToken string `json:"refreshToken"` // 刷新令牌
+		RefreshToken string `json:"refreshToken" binding:"required"` // 刷新令牌
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
@@ -128,7 +128,7 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 	}
 
 	// 验证刷新令牌是否有效
-	claims, err := token.Verify(body.RefreshToken)
+	claims, err := token.UserTokenVerify(body.RefreshToken)
 	if err != nil {
 		c.JSON(401, resp.CodeMsg(40001, err.Error()))
 		return
@@ -151,7 +151,7 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 	}
 
 	// 生成访问令牌
-	accessToken, expiresIn := token.Create(userId, deviceFingerprint, "access")
+	accessToken, expiresIn := token.UserTokenCreate(userId, deviceFingerprint, "access")
 	if accessToken == "" || expiresIn == 0 {
 		c.JSON(400, resp.CodeMsg(40001, "token generation failed"))
 		return
@@ -166,14 +166,14 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 	// 如果当前时间大于过期时间的一半，则生成新令牌
 	halfExp := exp.Add(-(exp.Sub(iat.Time)) / 2)
 	if now.After(halfExp) {
-		refreshToken, refreshExpiresIn = token.Create(userId, deviceFingerprint, "refresh")
+		refreshToken, refreshExpiresIn = token.UserTokenCreate(userId, deviceFingerprint, "refresh")
 	}
 
 	// 当前请求信息
 	ipaddr, location := reqctx.IPAddrLocation(c)
 	os, browser := reqctx.UaOsBrowser(c)
 	// 记录令牌，创建系统访问记录
-	token.CreateInfo(&info, deviceFingerprint, [4]string{ipaddr, location, os, browser})
+	token.UserInfoCreate(&info, deviceFingerprint, [4]string{ipaddr, location, os, browser})
 	s.accountService.UpdateLoginDateAndIP(info)
 	s.sysLogLoginService.Insert(
 		info.User.UserName, constants.STATUS_YES, "刷新访问令牌成功",

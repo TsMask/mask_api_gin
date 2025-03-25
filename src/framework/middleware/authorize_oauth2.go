@@ -8,13 +8,13 @@ import (
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/reqctx"
 	"mask_api_gin/src/framework/resp"
-	"mask_api_gin/src/modules/oauth2/token"
+	"mask_api_gin/src/framework/token"
 )
 
-// PreAuthorize 用户身份授权认证校验
+// AuthorizeOauth2 客户端授权认证校验
 //
 // scope 客户端授权范围，例如：[]string{"read","write"}
-func PreAuthorize(scope []string) gin.HandlerFunc {
+func AuthorizeOauth2(scope []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 获取请求头标识信息
 		tokenStr := reqctx.Authorization(c)
@@ -25,7 +25,7 @@ func PreAuthorize(scope []string) gin.HandlerFunc {
 		}
 
 		// 验证令牌
-		claims, err := token.Verify(tokenStr)
+		claims, err := token.Oauth2TokenVerify(tokenStr)
 		if err != nil {
 			c.JSON(401, resp.CodeMsg(40003, err.Error()))
 			c.Abort() // 停止执行后续的处理函数
@@ -33,7 +33,7 @@ func PreAuthorize(scope []string) gin.HandlerFunc {
 		}
 
 		// 获取缓存的用户信息
-		info := token.Info(claims)
+		info := token.Oauth2InfoGet(claims)
 		if info.ClientId == "" {
 			c.JSON(401, resp.CodeMsg(401, "无效客户端授权"))
 			c.Abort() // 停止执行后续的处理函数

@@ -14,11 +14,11 @@ import (
 	"mask_api_gin/src/framework/utils/parse"
 )
 
-// Create 生成令牌
+// UserTokenCreate 生成令牌
 // userId 用户ID
 // deviceFingerprint 设备指纹 SHA256
 // tokenType 令牌类型 access:访问令牌 refresh:刷新令牌
-func Create(userId int64, deviceFingerprint, tokenType string) (string, int64) {
+func UserTokenCreate(userId int64, deviceFingerprint, tokenType string) (string, int64) {
 	// 令牌算法 HS256 HS384 HS512
 	algorithm := config.Get("jwt.algorithm").(string)
 	var method *jwt.SigningMethodHMAC
@@ -48,9 +48,9 @@ func Create(userId int64, deviceFingerprint, tokenType string) (string, int64) {
 	jwtToken := jwt.NewWithClaims(method, jwt.MapClaims{
 		constants.JWT_DEVICE_ID: deviceFingerprint,
 		constants.JWT_USER_ID:   userId,
-		"exp":                   exp.Unix(), // 过期时间
-		"iat":                   now.Unix(), // 签发时间
-		"nbf":                   now.Unix(), // 生效时间
+		"exp":                   exp.Unix(),                        // 过期时间
+		"iat":                   now.Unix(),                        // 签发时间
+		"nbf":                   now.Add(-10 * time.Second).Unix(), // 生效时间
 	})
 
 	// 生成令牌设置密钥
@@ -64,8 +64,8 @@ func Create(userId int64, deviceFingerprint, tokenType string) (string, int64) {
 	return tokenStr, expSeconds
 }
 
-// Verify 校验令牌是否有效
-func Verify(token string) (jwt.MapClaims, error) {
+// UserTokenVerify 校验令牌是否有效
+func UserTokenVerify(token string) (jwt.MapClaims, error) {
 	jwtToken, err := jwt.Parse(token, func(jToken *jwt.Token) (any, error) {
 		// 判断加密算法是预期的加密算法
 		if _, ok := jToken.Method.(*jwt.SigningMethodHMAC); ok {
@@ -86,14 +86,14 @@ func Verify(token string) (jwt.MapClaims, error) {
 	return nil, fmt.Errorf("token valid error")
 }
 
-// RemoveInfo 清除登录用户信息
-func RemoveInfo(token string) (string, error) {
-	claims, err := Verify(token)
+// UserInfoRemove 清除访问用户信息缓存
+func UserInfoRemove(token string) (string, error) {
+	claims, err := UserTokenVerify(token)
 	if err != nil {
 		logger.Errorf("token verify err %v", err)
 		return "", err
 	}
-	info := Info(claims)
+	info := UserInfoGet(claims)
 	if info.User.UserName != "" {
 		// 清除缓存KEY
 		deviceId := fmt.Sprint(claims[constants.JWT_DEVICE_ID])
@@ -103,42 +103,40 @@ func RemoveInfo(token string) (string, error) {
 	return "", fmt.Errorf("token invalid")
 }
 
-// CreateInfo 生成访问令牌
-func CreateInfo(tokenInfo *TokenInfo, deviceFingerprint string, ilobArr [4]string) {
-	tokenInfo.DeviceId = deviceFingerprint
-	tokenInfo.LoginTime = time.Now().UnixMilli()
+// UserInfoCreate 生成访问用户信息缓存
+func UserInfoCreate(info *UserInfo, deviceFingerprint string, ilobArr [4]string) {
+	info.DeviceId = deviceFingerprint
 
 	// 设置请求用户登录客户端
-	tokenInfo.LoginIp = ilobArr[0]
-	tokenInfo.LoginLocation = ilobArr[1]
-	tokenInfo.OS = ilobArr[2]
-	tokenInfo.Browser = ilobArr[3]
-
-	// 设置新登录IP和登录时间
-	tokenInfo.User.LoginIp = tokenInfo.LoginIp
-	tokenInfo.User.LoginTime = tokenInfo.LoginTime
+	info.LoginIp = ilobArr[0]
+	info.LoginLocation = ilobArr[1]
+	info.OS = ilobArr[2]
+	info.Browser = ilobArr[3]
 
 	expiresIn := time.Duration(parse.Number(config.Get("jwt.expiresIn")))
 	now := time.Now()
 	exp := now.Add(expiresIn * time.Minute)
-	tokenInfo.LoginTime = now.UnixMilli()
-	tokenInfo.ExpireTime = exp.UnixMilli()
-	tokenInfo.User.Password = ""
+	info.LoginTime = now.UnixMilli()
+	info.ExpireTime = exp.UnixMilli()
+	// 设置新登录IP和登录时间
+	info.User.LoginIp = info.LoginIp
+	info.User.LoginTime = info.LoginTime
+	info.User.Password = ""
 	// 登录信息标识缓存
-	tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + tokenInfo.DeviceId
-	jsonBytes, err := json.Marshal(tokenInfo)
+	tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + info.DeviceId
+	jsonBytes, err := json.Marshal(info)
 	if err != nil {
 		return
 	}
 	_ = redis.Set("", tokenKey, string(jsonBytes), expiresIn*time.Minute)
 }
 
-// UpdateInfo 生成访问令牌
-func UpdateInfo(tokenInfo TokenInfo) {
-	tokenInfo.User.Password = ""
+// UserInfoUpdate 更新访问用户信息缓存
+func UserInfoUpdate(info UserInfo) {
+	info.User.Password = ""
 	// 登录信息标识缓存
-	tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + tokenInfo.DeviceId
-	jsonBytes, err := json.Marshal(tokenInfo)
+	tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + info.DeviceId
+	jsonBytes, err := json.Marshal(info)
 	if err != nil {
 		return
 	}
@@ -147,21 +145,21 @@ func UpdateInfo(tokenInfo TokenInfo) {
 	_ = redis.Set("", tokenKey, string(jsonBytes), expiration)
 }
 
-// Info 缓存的登录用户信息
-func Info(claims jwt.MapClaims) TokenInfo {
-	tokenInfo := TokenInfo{}
+// GetUserInfo 缓存的登录用户信息
+func UserInfoGet(claims jwt.MapClaims) UserInfo {
+	info := UserInfo{}
 	deviceId := fmt.Sprint(claims[constants.JWT_DEVICE_ID])
 	tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + deviceId
 	hasKey, err := redis.Has("", tokenKey)
 	if hasKey > 0 && err == nil {
 		infoStr, err := redis.Get("", tokenKey)
 		if infoStr == "" || err != nil {
-			return tokenInfo
+			return info
 		}
-		if err := json.Unmarshal([]byte(infoStr), &tokenInfo); err != nil {
+		if err := json.Unmarshal([]byte(infoStr), &info); err != nil {
 			logger.Errorf("info json err : %v", err)
-			return tokenInfo
+			return info
 		}
 	}
-	return tokenInfo
+	return info
 }

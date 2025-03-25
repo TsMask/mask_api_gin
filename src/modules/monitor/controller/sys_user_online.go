@@ -60,13 +60,13 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 			continue
 		}
 
-		var tokenInfo token.TokenInfo
-		err := json.Unmarshal([]byte(str), &tokenInfo)
+		var info token.UserInfo
+		err := json.Unmarshal([]byte(str), &info)
 		if err != nil {
 			continue
 		}
 
-		onlineUser := s.sysUserOnlineService.TokenInfoToUserOnline(tokenInfo)
+		onlineUser := s.sysUserOnlineService.UserInfoToUserOnline(info)
 		if onlineUser.TokenID != "" {
 			userOnlines = append(userOnlines, onlineUser)
 		}

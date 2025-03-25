@@ -1,7 +1,7 @@
 package token
 
-// TokenInfo 令牌信息对象
-type TokenInfo struct {
+// Oauth2Info 第三方客户端令牌信息对象
+type Oauth2Info struct {
 	DeviceId      string   `json:"deviceId"`      // 用户设备标识
 	ClientId      string   `json:"clientId"`      // 客户端ID
 	LoginTime     int64    `json:"loginTime"`     // 登录时间时间戳

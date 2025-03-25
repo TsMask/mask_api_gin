@@ -54,25 +54,25 @@ func (s Account) ValidateCaptcha(code, uuid string) error {
 }
 
 // ByUsername 账号密码登录创建用户信息
-func (s Account) ByUsername(username, password string) (token.TokenInfo, error) {
-	tokenInfo := token.TokenInfo{}
+func (s Account) ByUsername(username, password string) (token.UserInfo, error) {
+	info := token.UserInfo{}
 
 	// 检查密码重试次数
 	retryKey, retryCount, lockTime, err := s.passwordRetryCount(username)
 	if err != nil {
-		return tokenInfo, err
+		return info, err
 	}
 
 	// 查询用户登录账号
 	sysUser := s.sysUserService.FindByUserName(username)
 	if sysUser.UserName != username {
-		return tokenInfo, fmt.Errorf("user does not exist or password is incorrect")
+		return info, fmt.Errorf("user does not exist or password is incorrect")
 	}
 	if sysUser.DelFlag == constants.STATUS_YES {
-		return tokenInfo, fmt.Errorf("sorry, your account has been deleted. Sorry, your account has been deleted")
+		return info, fmt.Errorf("sorry, your account has been deleted. Sorry, your account has been deleted")
 	}
 	if sysUser.StatusFlag == constants.STATUS_NO {
-		return tokenInfo, fmt.Errorf("sorry, your account has been disabled")
+		return info, fmt.Errorf("sorry, your account has been disabled")
 	}
 
 	// 检验用户密码
@@ -81,60 +81,60 @@ func (s Account) ByUsername(username, password string) (token.TokenInfo, error) 
 		s.CleanLoginRecordCache(sysUser.UserName) // 清除错误记录次数
 	} else {
 		_ = redis.Set("", retryKey, retryCount+1, lockTime)
-		return tokenInfo, fmt.Errorf("user does not exist or password is incorrect")
+		return info, fmt.Errorf("user does not exist or password is incorrect")
 	}
 
 	// 登录用户信息
-	tokenInfo.UserId = sysUser.UserId
-	tokenInfo.DeptId = sysUser.DeptId
-	tokenInfo.User = sysUser
+	info.UserId = sysUser.UserId
+	info.DeptId = sysUser.DeptId
+	info.User = sysUser
 	// 用户权限组标识
 	if config.IsSystemUser(sysUser.UserId) {
-		tokenInfo.Permissions = []string{constants.SYS_PERMISSION_SYSTEM}
+		info.Permissions = []string{constants.SYS_PERMISSION_SYSTEM}
 	} else {
 		perms := s.sysMenuService.FindPermsByUserId(sysUser.UserId)
-		tokenInfo.Permissions = parse.RemoveDuplicates(perms)
+		info.Permissions = parse.RemoveDuplicates(perms)
 	}
-	return tokenInfo, nil
-}
-
-// UpdateLoginDateAndIP 更新登录时间和IP
-func (s Account) UpdateLoginDateAndIP(tokenInfo token.TokenInfo) bool {
-	user := s.sysUserService.FindById(tokenInfo.UserId)
-	user.Password = "" // 密码不更新
-	user.LoginIp = tokenInfo.LoginIp
-	user.LoginTime = tokenInfo.LoginTime
-	return s.sysUserService.Update(user) > 0
+	return info, nil
 }
 
 // ByUserId 用户ID刷新令牌创建用户信息
-func (s Account) ByUserId(userId int64) (token.TokenInfo, error) {
-	tokenInfo := token.TokenInfo{}
+func (s Account) ByUserId(userId int64) (token.UserInfo, error) {
+	info := token.UserInfo{}
 
 	// 查询用户登录账号
 	sysUser := s.sysUserService.FindById(userId)
 	if sysUser.UserId != userId {
-		return tokenInfo, fmt.Errorf("user does not exist")
+		return info, fmt.Errorf("user does not exist")
 	}
 	if sysUser.DelFlag == constants.STATUS_YES {
-		return tokenInfo, fmt.Errorf("sorry, your account has been deleted. Sorry, your account has been deleted")
+		return info, fmt.Errorf("sorry, your account has been deleted. Sorry, your account has been deleted")
 	}
 	if sysUser.StatusFlag == constants.STATUS_NO {
-		return tokenInfo, fmt.Errorf("sorry, your account has been disabled")
+		return info, fmt.Errorf("sorry, your account has been disabled")
 	}
 
 	// 登录用户信息
-	tokenInfo.UserId = sysUser.UserId
-	tokenInfo.DeptId = sysUser.DeptId
-	tokenInfo.User = sysUser
+	info.UserId = sysUser.UserId
+	info.DeptId = sysUser.DeptId
+	info.User = sysUser
 	// 用户权限组标识
 	if config.IsSystemUser(sysUser.UserId) {
-		tokenInfo.Permissions = []string{constants.SYS_PERMISSION_SYSTEM}
+		info.Permissions = []string{constants.SYS_PERMISSION_SYSTEM}
 	} else {
 		perms := s.sysMenuService.FindPermsByUserId(sysUser.UserId)
-		tokenInfo.Permissions = parse.RemoveDuplicates(perms)
+		info.Permissions = parse.RemoveDuplicates(perms)
 	}
-	return tokenInfo, nil
+	return info, nil
+}
+
+// UpdateLoginDateAndIP 更新登录时间和IP
+func (s Account) UpdateLoginDateAndIP(info token.UserInfo) bool {
+	user := s.sysUserService.FindById(info.UserId)
+	user.Password = "" // 密码不更新
+	user.LoginIp = info.LoginIp
+	user.LoginTime = info.LoginTime
+	return s.sysUserService.Update(user) > 0
 }
 
 // CleanLoginRecordCache 清除错误记录次数

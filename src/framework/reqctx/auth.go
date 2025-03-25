@@ -12,12 +12,12 @@ import (
 )
 
 // LoginUser 登录用户信息
-func LoginUser(c *gin.Context) (token.TokenInfo, error) {
+func LoginUser(c *gin.Context) (token.UserInfo, error) {
 	value, exists := c.Get(constants.CTX_LOGIN_USER)
 	if exists && value != nil {
-		return value.(token.TokenInfo), nil
+		return value.(token.UserInfo), nil
 	}
-	return token.TokenInfo{}, fmt.Errorf("invalid login user information")
+	return token.UserInfo{}, fmt.Errorf("invalid login user information")
 }
 
 // LoginUserToUserID 登录用户信息-用户ID

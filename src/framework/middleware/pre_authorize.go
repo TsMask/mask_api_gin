@@ -31,7 +31,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 		}
 
 		// 验证令牌
-		claims, err := token.Verify(tokenStr)
+		claims, err := token.UserTokenVerify(tokenStr)
 		if err != nil {
 			c.JSON(401, resp.CodeMsg(40003, err.Error()))
 			c.Abort() // 停止执行后续的处理函数
@@ -39,7 +39,7 @@ func PreAuthorize(options map[string][]string) gin.HandlerFunc {
 		}
 
 		// 获取缓存的用户信息
-		info := token.Info(claims)
+		info := token.UserInfoGet(claims)
 		if info.UserId <= 0 {
 			c.JSON(401, resp.CodeMsg(401, "无效身份授权"))
 			c.Abort() // 停止执行后续的处理函数

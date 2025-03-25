@@ -134,8 +134,7 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 		// 更新缓存用户信息
 		info.User = userInfo
 		// 更新信息
-		token.UpdateInfo(info)
-		// token.UpdateInfo("nickName", userInfo.NickName)
+		token.UserInfoUpdate(info)
 		c.JSON(200, resp.Ok(nil))
 		return
 	}
