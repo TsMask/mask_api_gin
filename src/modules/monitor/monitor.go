@@ -22,6 +22,10 @@ func Setup(router *gin.Engine) {
 		middleware.PreAuthorize(map[string][]string{"hasPerms": {"monitor:system:info"}}),
 		controller.NewSystem.Info,
 	)
+	router.GET("/oauth2/open/monitor/system",
+		middleware.AuthorizeOauth2(nil),
+		controller.NewSystem.Info,
+	)
 
 	// 在线用户监控
 	sysUserOnlineGroup := router.Group("/monitor/user-online")
