@@ -170,8 +170,8 @@ func Has(source string, keys ...string) (int64, error) {
 	return exists, nil
 }
 
-// Expire 设置过期时间
-func Expire(source, key string, expiration time.Duration) error {
+// SetExpire 设置过期时间
+func SetExpire(source, key string, expiration time.Duration) error {
 	// 数据源
 	rdb := RDB(source)
 	if rdb == nil {
