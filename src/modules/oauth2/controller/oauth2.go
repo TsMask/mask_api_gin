@@ -142,7 +142,7 @@ func (s Oauth2Controller) RefreshToken(c *gin.Context) {
 	}
 
 	// 验证刷新令牌是否有效
-	claims, err := token.Oauth2TokenVerify(body.RefreshToken)
+	claims, err := token.Oauth2TokenVerify(body.RefreshToken, "refresh")
 	if err != nil {
 		c.JSON(401, resp.CodeMsg(40001, err.Error()))
 		return

@@ -20,18 +20,32 @@ import (
 // tokenType 令牌类型 access:访问令牌 refresh:刷新令牌
 func Oauth2TokenCreate(clientId, deviceFingerprint, tokenType string) (string, int64) {
 	// 令牌算法 HS256 HS384 HS512
-	method := jwt.SigningMethodHS512
+	algorithm := config.Get("jwt.algorithm").(string)
+	var method *jwt.SigningMethodHMAC
+	switch algorithm {
+	case "HS512":
+		method = jwt.SigningMethodHS512
+	case "HS384":
+		method = jwt.SigningMethodHS384
+	case "HS256":
+	default:
+		method = jwt.SigningMethodHS256
+	}
 
+	// 生成令牌设置密钥
+	secret := fmt.Sprint(config.Get("jwt.secret"))
 	// 设置令牌过期时间
 	now := time.Now()
 	exp := now
 	if tokenType == "access" {
 		expiresIn := time.Duration(parse.Number(config.Get("jwt.expiresIn")))
 		exp = now.Add(expiresIn * time.Minute)
+		secret = "Oauth2_Access:" + secret
 	}
 	if tokenType == "refresh" {
 		refreshIn := time.Duration(parse.Number(config.Get("jwt.refreshIn")))
 		exp = now.Add(refreshIn * time.Minute)
+		secret = "Oauth2_Refresh:" + secret
 	}
 
 	// 生成令牌负荷绑定uuid标识
@@ -43,9 +57,6 @@ func Oauth2TokenCreate(clientId, deviceFingerprint, tokenType string) (string, i
 		"nbf":                   now.Unix(), // 生效时间
 	})
 
-	// 生成令牌设置密钥
-	secret := config.Get("jwt.secret").(string)
-	secret = "Oauth2:" + secret
 	tokenStr, err := jwtToken.SignedString([]byte(secret))
 	if err != nil {
 		logger.Infof("jwt sign err : %v", err)
@@ -56,12 +67,18 @@ func Oauth2TokenCreate(clientId, deviceFingerprint, tokenType string) (string, i
 }
 
 // Oauth2TokenVerify 校验令牌是否有效
-func Oauth2TokenVerify(token string) (jwt.MapClaims, error) {
-	jwtToken, err := jwt.Parse(token, func(jToken *jwt.Token) (any, error) {
+// tokenType 令牌类型 access:访问令牌 refresh:刷新令牌
+func Oauth2TokenVerify(tokenStr, tokenType string) (jwt.MapClaims, error) {
+	jwtToken, err := jwt.Parse(tokenStr, func(jToken *jwt.Token) (any, error) {
 		// 判断加密算法是预期的加密算法
 		if _, ok := jToken.Method.(*jwt.SigningMethodHMAC); ok {
 			secret := config.Get("jwt.secret").(string)
-			secret = "Oauth2:" + secret
+			if tokenType == "access" {
+				secret = "Oauth2_Access:" + secret
+			}
+			if tokenType == "refresh" {
+				secret = "Oauth2_Refresh:" + secret
+			}
 			return []byte(secret), nil
 		}
 		return nil, jwt.ErrSignatureInvalid
@@ -79,8 +96,8 @@ func Oauth2TokenVerify(token string) (jwt.MapClaims, error) {
 }
 
 // Oauth2InfoRemove 清除登录第三方客户端信息
-func Oauth2InfoRemove(token string) (string, error) {
-	claims, err := Oauth2TokenVerify(token)
+func Oauth2InfoRemove(tokenStr string) (string, error) {
+	claims, err := Oauth2TokenVerify(tokenStr, "access")
 	if err != nil {
 		logger.Errorf("token verify err %v", err)
 		return "", err

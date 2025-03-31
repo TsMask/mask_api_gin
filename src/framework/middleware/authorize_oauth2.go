@@ -25,7 +25,7 @@ func AuthorizeOauth2(scope []string) gin.HandlerFunc {
 		}
 
 		// 验证令牌
-		claims, err := token.Oauth2TokenVerify(tokenStr)
+		claims, err := token.Oauth2TokenVerify(tokenStr, "access")
 		if err != nil {
 			c.JSON(401, resp.CodeMsg(40003, err.Error()))
 			c.Abort() // 停止执行后续的处理函数

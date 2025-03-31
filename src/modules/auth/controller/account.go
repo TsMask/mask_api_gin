@@ -128,7 +128,7 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 	}
 
 	// 验证刷新令牌是否有效
-	claims, err := token.UserTokenVerify(body.RefreshToken)
+	claims, err := token.UserTokenVerify(body.RefreshToken, "refresh")
 	if err != nil {
 		c.JSON(401, resp.CodeMsg(40001, err.Error()))
 		return

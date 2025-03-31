@@ -32,16 +32,20 @@ func UserTokenCreate(userId int64, deviceFingerprint, tokenType string) (string,
 		method = jwt.SigningMethodHS256
 	}
 
+	// 生成令牌设置密钥
+	secret := fmt.Sprint(config.Get("jwt.secret"))
 	// 设置令牌过期时间
 	now := time.Now()
 	exp := now
 	if tokenType == "access" {
 		expiresIn := time.Duration(parse.Number(config.Get("jwt.expiresIn")))
 		exp = now.Add(expiresIn * time.Minute)
+		secret = "User_Access:" + secret
 	}
 	if tokenType == "refresh" {
 		refreshIn := time.Duration(parse.Number(config.Get("jwt.refreshIn")))
 		exp = now.Add(refreshIn * time.Minute)
+		secret = "User_Refresh:" + secret
 	}
 
 	// 生成令牌负荷绑定uuid标识
@@ -53,8 +57,6 @@ func UserTokenCreate(userId int64, deviceFingerprint, tokenType string) (string,
 		"nbf":                   now.Add(-10 * time.Second).Unix(), // 生效时间
 	})
 
-	// 生成令牌设置密钥
-	secret := fmt.Sprint(config.Get("jwt.secret"))
 	tokenStr, err := jwtToken.SignedString([]byte(secret))
 	if err != nil {
 		logger.Infof("jwt sign err : %v", err)
@@ -65,11 +67,18 @@ func UserTokenCreate(userId int64, deviceFingerprint, tokenType string) (string,
 }
 
 // UserTokenVerify 校验令牌是否有效
-func UserTokenVerify(token string) (jwt.MapClaims, error) {
-	jwtToken, err := jwt.Parse(token, func(jToken *jwt.Token) (any, error) {
+// tokenType 令牌类型 access:访问令牌 refresh:刷新令牌
+func UserTokenVerify(tokenStr string, tokenType string) (jwt.MapClaims, error) {
+	jwtToken, err := jwt.Parse(tokenStr, func(jToken *jwt.Token) (any, error) {
 		// 判断加密算法是预期的加密算法
 		if _, ok := jToken.Method.(*jwt.SigningMethodHMAC); ok {
 			secret := config.Get("jwt.secret").(string)
+			if tokenType == "access" {
+				secret = "User_Access:" + secret
+			}
+			if tokenType == "refresh" {
+				secret = "User_Refresh:" + secret
+			}
 			return []byte(secret), nil
 		}
 		return nil, jwt.ErrSignatureInvalid
@@ -87,8 +96,8 @@ func UserTokenVerify(token string) (jwt.MapClaims, error) {
 }
 
 // UserInfoRemove 清除访问用户信息缓存
-func UserInfoRemove(token string) (string, error) {
-	claims, err := UserTokenVerify(token)
+func UserInfoRemove(tokenStr string) (string, error) {
+	claims, err := UserTokenVerify(tokenStr, "access")
 	if err != nil {
 		logger.Errorf("token verify err %v", err)
 		return "", err
