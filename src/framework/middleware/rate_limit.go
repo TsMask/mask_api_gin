@@ -64,7 +64,7 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 		if option.Type == LIMIT_USER {
 			userId := reqctx.LoginUserToUserID(c)
 			if userId <= 0 {
-				c.JSON(401, resp.CodeMsg(401, "无效身份授权"))
+				c.JSON(401, resp.CodeMsg(401002, "invalid login user information"))
 				c.Abort() // 停止执行后续的处理函数
 				return
 			}
@@ -80,13 +80,13 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 		// 在Redis查询并记录请求次数
 		rateCount, err := redis.RateLimit("", limitKey, option.Time, option.Count)
 		if err != nil {
-			c.JSON(200, resp.CodeMsg(4013, "访问过于频繁，请稍候再试"))
+			c.JSON(200, resp.ErrMsg("访问过于频繁，请稍候再试"))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
 		rateTime, err := redis.GetExpire("", limitKey)
 		if err != nil {
-			c.JSON(200, resp.CodeMsg(4013, "访问过于频繁，请稍候再试"))
+			c.JSON(200, resp.ErrMsg("访问过于频繁，请稍候再试"))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
@@ -97,7 +97,7 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 		c.Header("X-RateLimit-Reset", fmt.Sprintf("%d", time.Now().Unix()+rateTime)) // 重置时间戳
 
 		if rateCount >= option.Count {
-			c.JSON(200, resp.CodeMsg(4013, "访问过于频繁，请稍候再试"))
+			c.JSON(200, resp.ErrMsg("访问过于频繁，请稍候再试"))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}

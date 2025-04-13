@@ -40,7 +40,7 @@ func (s SysConfigController) List(c *gin.Context) {
 func (s SysConfigController) Info(c *gin.Context) {
 	configId := parse.Number(c.Param("configId"))
 	if configId <= 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: configId is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: configId is empty"))
 		return
 	}
 
@@ -59,11 +59,11 @@ func (s SysConfigController) Add(c *gin.Context) {
 	var body model.SysConfig
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 	if body.ConfigId > 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: configId not is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: configId not is empty"))
 		return
 	}
 
@@ -91,11 +91,11 @@ func (s SysConfigController) Edit(c *gin.Context) {
 	var body model.SysConfig
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 	if body.ConfigId <= 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: configId is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: configId is empty"))
 		return
 	}
 
@@ -134,7 +134,7 @@ func (s SysConfigController) Edit(c *gin.Context) {
 func (s SysConfigController) Remove(c *gin.Context) {
 	configId := c.Param("configId")
 	if configId == "" {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: configId is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: configId is empty"))
 		return
 	}
 
@@ -170,7 +170,7 @@ func (s SysConfigController) Refresh(c *gin.Context) {
 func (s SysConfigController) ConfigKey(c *gin.Context) {
 	configKey := c.Param("configKey")
 	if configKey == "" {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: configKey is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: configKey is empty"))
 		return
 	}
 	key := s.sysConfigService.FindValueByKey(configKey)
@@ -189,7 +189,7 @@ func (s SysConfigController) Export(c *gin.Context) {
 	query := reqctx.QueryMap(c)
 	rows, total := s.sysConfigService.FindByPage(query)
 	if total == 0 {
-		c.JSON(200, resp.CodeMsg(40016, "export data record as empty"))
+		c.JSON(200, resp.ErrMsg("export data record as empty"))
 		return
 	}
 

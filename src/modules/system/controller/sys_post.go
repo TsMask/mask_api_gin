@@ -40,7 +40,7 @@ func (s SysPostController) List(c *gin.Context) {
 func (s SysPostController) Info(c *gin.Context) {
 	postId := parse.Number(c.Param("postId"))
 	if postId <= 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: postId is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: postId is empty"))
 		return
 	}
 
@@ -59,11 +59,11 @@ func (s SysPostController) Add(c *gin.Context) {
 	var body model.SysPost
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 	if body.PostId > 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: postId not is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: postId not is empty"))
 		return
 	}
 
@@ -99,11 +99,11 @@ func (s SysPostController) Edit(c *gin.Context) {
 	var body model.SysPost
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 	if body.PostId <= 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: postId is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: postId is empty"))
 		return
 	}
 
@@ -150,7 +150,7 @@ func (s SysPostController) Edit(c *gin.Context) {
 func (s SysPostController) Remove(c *gin.Context) {
 	postId := c.Param("postId")
 	if postId == "" {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: postId is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: postId is empty"))
 		return
 	}
 
@@ -179,7 +179,7 @@ func (s SysPostController) Export(c *gin.Context) {
 	query := reqctx.QueryMap(c)
 	rows, total := s.sysPostService.FindByPage(query)
 	if total == 0 {
-		c.JSON(200, resp.CodeMsg(40016, "export data record as empty"))
+		c.JSON(200, resp.ErrMsg("export data record as empty"))
 		return
 	}
 

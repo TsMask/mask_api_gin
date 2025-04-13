@@ -44,7 +44,7 @@ func (s SysRoleController) List(c *gin.Context) {
 func (s SysRoleController) Info(c *gin.Context) {
 	roleId := parse.Number(c.Param("roleId"))
 	if roleId <= 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: roleId is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: roleId is empty"))
 		return
 	}
 
@@ -63,11 +63,11 @@ func (s SysRoleController) Add(c *gin.Context) {
 	var body model.SysRole
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 	if body.RoleId > 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: roleId not is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: roleId not is empty"))
 		return
 	}
 
@@ -103,24 +103,18 @@ func (s SysRoleController) Edit(c *gin.Context) {
 	var body model.SysRole
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 	if body.RoleId <= 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: roleId is empty"))
-		return
-	}
-
-	// 检查是否系统管理员角色
-	if body.RoleId == constants.SYS_ROLE_SYSTEM_ID {
-		c.JSON(200, resp.ErrMsg("不允许操作系统管理员角色"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: roleId is empty"))
 		return
 	}
 
 	// 检查是否分配给当前用户
 	info, err := reqctx.LoginUser(c)
 	if err != nil {
-		c.JSON(401, resp.CodeMsg(40003, err.Error()))
+		c.JSON(401, resp.CodeMsg(401002, err.Error()))
 		return
 	}
 	if len(info.User.RoleIds) > 0 {
@@ -128,6 +122,12 @@ func (s SysRoleController) Edit(c *gin.Context) {
 			c.JSON(200, resp.ErrMsg("不允许操作分配给自己的角色"))
 			return
 		}
+	}
+
+	// 检查是否系统管理员角色
+	if body.RoleId == constants.SYS_ROLE_SYSTEM_ID {
+		c.JSON(200, resp.ErrMsg("不允许操作系统管理员角色"))
+		return
 	}
 
 	// 判断角色名称是否唯一
@@ -178,7 +178,7 @@ func (s SysRoleController) Edit(c *gin.Context) {
 func (s SysRoleController) Remove(c *gin.Context) {
 	roleId := c.Param("roleId")
 	if roleId == "" {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: roleId is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: roleId is empty"))
 		return
 	}
 
@@ -217,7 +217,7 @@ func (s SysRoleController) Status(c *gin.Context) {
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 
@@ -263,7 +263,7 @@ func (s SysRoleController) DataScope(c *gin.Context) {
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 
@@ -299,7 +299,7 @@ func (s SysRoleController) DataScope(c *gin.Context) {
 func (s SysRoleController) UserAuthList(c *gin.Context) {
 	roleId := parse.Number(c.Query("roleId"))
 	if roleId <= 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: roleId is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: roleId is empty"))
 		return
 	}
 
@@ -327,11 +327,11 @@ func (s SysRoleController) UserAuthChecked(c *gin.Context) {
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 	if len(body.UserIds) <= 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: userIds is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: userIds is empty"))
 		return
 	}
 
@@ -363,7 +363,7 @@ func (s SysRoleController) Export(c *gin.Context) {
 	query := reqctx.QueryMap(c)
 	rows, total := s.sysRoleService.FindByPage(query)
 	if total == 0 {
-		c.JSON(200, resp.CodeMsg(40016, "export data record as empty"))
+		c.JSON(200, resp.ErrMsg("export data record as empty"))
 		return
 	}
 

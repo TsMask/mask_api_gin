@@ -40,7 +40,7 @@ func (s Oauth2ClientController) List(c *gin.Context) {
 func (s Oauth2ClientController) Info(c *gin.Context) {
 	clientId := c.Param("clientId")
 	if clientId == "" {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: clientId is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: clientId is empty"))
 		return
 	}
 
@@ -59,17 +59,17 @@ func (s Oauth2ClientController) Add(c *gin.Context) {
 	var body model.Oauth2Client
 	if err := c.ShouldBindJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 	if body.Id > 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: id not is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: id not is empty"))
 		return
 	}
 
 	localHost := strings.Contains(body.IPWhite, "127.0.0.1") || strings.Contains(body.IPWhite, "localhost") || strings.Contains(body.IPWhite, "::1")
 	if localHost || strings.Contains(body.IPWhite, "::ffff:") {
-		c.JSON(400, resp.CodeMsg(40010, "no support local host"))
+		c.JSON(422, resp.CodeMsg(422002, "no support local host"))
 		return
 	}
 
@@ -89,24 +89,24 @@ func (s Oauth2ClientController) Edit(c *gin.Context) {
 	var body model.Oauth2Client
 	if err := c.ShouldBindJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 	if body.Id <= 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: id is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: id is empty"))
 		return
 	}
 
 	localHost := strings.Contains(body.IPWhite, "127.0.0.1") || strings.Contains(body.IPWhite, "localhost") || strings.Contains(body.IPWhite, "::1")
 	if localHost || strings.Contains(body.IPWhite, "::ffff:") {
-		c.JSON(400, resp.CodeMsg(40010, "no support local host"))
+		c.JSON(422, resp.CodeMsg(422002, "no support local host"))
 		return
 	}
 
 	// 查询信息
 	info := s.oauth2ClientService.FindByClientId(body.ClientId)
 	if info.ClientId != body.ClientId {
-		c.JSON(400, resp.CodeMsg(40010, "修改失败，客户端ID已存在"))
+		c.JSON(422, resp.CodeMsg(422002, "修改失败，客户端ID已存在"))
 		return
 	}
 
@@ -128,7 +128,7 @@ func (s Oauth2ClientController) Edit(c *gin.Context) {
 func (s Oauth2ClientController) Remove(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: id is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: id is empty"))
 		return
 	}
 

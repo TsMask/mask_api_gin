@@ -38,7 +38,7 @@ func (s AccountController) Login(c *gin.Context) {
 	var body model.LoginBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 
@@ -53,14 +53,14 @@ func (s AccountController) Login(c *gin.Context) {
 			body.Username, constants.STATUS_NO, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
-		c.JSON(400, resp.CodeMsg(40012, err.Error()))
+		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 
 	// 登录用户信息
 	info, err := s.accountService.ByUsername(body.Username, body.Password)
 	if err != nil {
-		c.JSON(400, resp.CodeMsg(40014, err.Error()))
+		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 	deviceFingerprint := reqctx.DeviceFingerprint(c, info.UserId)
@@ -68,7 +68,7 @@ func (s AccountController) Login(c *gin.Context) {
 	// 生成访问令牌
 	accessToken, expiresIn := token.UserTokenCreate(info.UserId, deviceFingerprint, "access")
 	if accessToken == "" || expiresIn == 0 {
-		c.JSON(400, resp.CodeMsg(40001, "token generation failed"))
+		c.JSON(200, resp.ErrMsg("token generation failed"))
 		return
 	}
 	// 生成刷新令牌
@@ -123,14 +123,14 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 
 	// 验证刷新令牌是否有效
 	claims, err := token.UserTokenVerify(body.RefreshToken, "refresh")
 	if err != nil {
-		c.JSON(401, resp.CodeMsg(40001, err.Error()))
+		c.JSON(401, resp.CodeMsg(401001, err.Error()))
 		return
 	}
 	userId := parse.Number(claims[constants.JWT_USER_ID])
@@ -138,7 +138,7 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 	// 登录用户信息
 	info, err := s.accountService.ByUserId(userId)
 	if err != nil {
-		c.JSON(400, resp.CodeMsg(40014, err.Error()))
+		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 
@@ -146,14 +146,14 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 	deviceId := fmt.Sprint(claims[constants.JWT_DEVICE_ID])
 	deviceFingerprint := reqctx.DeviceFingerprint(c, userId)
 	if deviceId != deviceFingerprint {
-		c.JSON(401, resp.CodeMsg(40003, "device fingerprint mismatch"))
+		c.JSON(200, resp.ErrMsg("device fingerprint mismatch"))
 		return
 	}
 
 	// 生成访问令牌
 	accessToken, expiresIn := token.UserTokenCreate(userId, deviceFingerprint, "access")
 	if accessToken == "" || expiresIn == 0 {
-		c.JSON(400, resp.CodeMsg(40001, "token generation failed"))
+		c.JSON(200, resp.ErrMsg("token generation failed"))
 		return
 	}
 	// 生成刷新令牌
@@ -197,7 +197,7 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 func (s AccountController) Me(c *gin.Context) {
 	info, err := reqctx.LoginUser(c)
 	if err != nil {
-		c.JSON(401, resp.CodeMsg(40003, err.Error()))
+		c.JSON(401, resp.CodeMsg(401002, err.Error()))
 		return
 	}
 

@@ -38,20 +38,20 @@ func (s Oauth2Controller) Authorize(c *gin.Context) {
 	var query model.CodeQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 
 	// 是否存在clientId
 	info := s.oauth2ClientService.FindByClientId(query.ClientId)
 	if info.ClientId == "" || info.ClientId != query.ClientId {
-		c.JSON(400, resp.CodeMsg(40404, "clientId不存在"))
+		c.JSON(422, resp.CodeMsg(422002, "clientId not exist"))
 		return
 	}
 
 	// 判断IP白名单
 	if !strings.Contains(info.IPWhite, c.ClientIP()) {
-		c.JSON(400, resp.CodeMsg(40404, "IP白名单不匹配"))
+		c.JSON(422, resp.CodeMsg(422002, "IP whitelist mismatch"))
 		return
 	}
 
@@ -69,11 +69,11 @@ func (s Oauth2Controller) Token(c *gin.Context) {
 	var body model.TokenBody
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 	if body.GrantType != "authorization_code" || body.Code == "" {
-		c.JSON(400, resp.CodeMsg(40404, "grantType or code error"))
+		c.JSON(422, resp.CodeMsg(422002, "grantType or code error"))
 		return
 	}
 
@@ -88,14 +88,14 @@ func (s Oauth2Controller) Token(c *gin.Context) {
 			body.ClientId, constants.STATUS_NO, msg,
 			[4]string{ipaddr, location, os, browser},
 		)
-		c.JSON(400, resp.CodeMsg(40012, err.Error()))
+		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 
 	// 客户端信息
 	info, err := s.oauth2Service.ByClient(body.ClientId, body.ClientSecret)
 	if err != nil {
-		c.JSON(400, resp.CodeMsg(40014, err.Error()))
+		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 	deviceFingerprint := reqctx.DeviceFingerprint(c, info.ClientId)
@@ -103,7 +103,7 @@ func (s Oauth2Controller) Token(c *gin.Context) {
 	// 生成访问令牌
 	accessToken, expiresIn := token.Oauth2TokenCreate(info.ClientId, deviceFingerprint, "access")
 	if accessToken == "" || expiresIn == 0 {
-		c.JSON(400, resp.CodeMsg(40001, "token generation failed"))
+		c.JSON(200, resp.ErrMsg("token generation failed"))
 		return
 	}
 	// 生成刷新令牌
@@ -133,18 +133,18 @@ func (s Oauth2Controller) RefreshToken(c *gin.Context) {
 	var body model.TokenBody
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 	if body.GrantType != "refresh_token" || body.RefreshToken == "" {
-		c.JSON(400, resp.CodeMsg(40404, "grantType or refreshToken error"))
+		c.JSON(422, resp.CodeMsg(422002, "grantType or refreshToken error"))
 		return
 	}
 
 	// 验证刷新令牌是否有效
 	claims, err := token.Oauth2TokenVerify(body.RefreshToken, "refresh")
 	if err != nil {
-		c.JSON(401, resp.CodeMsg(40001, err.Error()))
+		c.JSON(401, resp.CodeMsg(401001, err.Error()))
 		return
 	}
 	clientId := fmt.Sprint(claims[constants.JWT_CLIENT_ID])
@@ -152,27 +152,27 @@ func (s Oauth2Controller) RefreshToken(c *gin.Context) {
 	// 客户端信息
 	info, err := s.oauth2Service.ByClient(body.ClientId, body.ClientSecret)
 	if err != nil {
-		c.JSON(400, resp.CodeMsg(40014, err.Error()))
+		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 
 	// 客户端ID是否一致
 	if clientId != body.ClientId {
-		c.JSON(400, resp.CodeMsg(40003, "clientId mismatch"))
+		c.JSON(200, resp.ErrMsg("clientId mismatch"))
 		return
 	}
 	// 设备指纹信息是否一致
 	deviceId := fmt.Sprint(claims[constants.JWT_DEVICE_ID])
 	deviceFingerprint := reqctx.DeviceFingerprint(c, clientId)
 	if deviceId != deviceFingerprint {
-		c.JSON(401, resp.CodeMsg(40003, "device fingerprint mismatch"))
+		c.JSON(200, resp.ErrMsg("device fingerprint mismatch"))
 		return
 	}
 
 	// 生成访问令牌
 	accessToken, expiresIn := token.Oauth2TokenCreate(clientId, deviceFingerprint, "access")
 	if accessToken == "" || expiresIn == 0 {
-		c.JSON(400, resp.CodeMsg(40001, "token generation failed"))
+		c.JSON(200, resp.ErrMsg("token generation failed"))
 		return
 	}
 	// 生成刷新令牌

@@ -50,7 +50,7 @@ func (s SysLogOperateController) Export(c *gin.Context) {
 	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
 	rows, total := s.sysLogOperateService.FindByPage(query, dataScopeSQL)
 	if total == 0 {
-		c.JSON(200, resp.CodeMsg(40016, "export data record as empty"))
+		c.JSON(200, resp.ErrMsg("export data record as empty"))
 		return
 	}
 

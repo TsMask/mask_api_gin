@@ -36,7 +36,7 @@ type SysProfileController struct {
 func (s SysProfileController) Info(c *gin.Context) {
 	info, err := reqctx.LoginUser(c)
 	if err != nil {
-		c.JSON(401, resp.CodeMsg(40003, err.Error()))
+		c.JSON(401, resp.CodeMsg(401002, err.Error()))
 		return
 	}
 
@@ -74,14 +74,14 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 
 	// 登录用户信息
 	info, err := reqctx.LoginUser(c)
 	if err != nil {
-		c.JSON(401, resp.CodeMsg(40003, err.Error()))
+		c.JSON(401, resp.CodeMsg(401002, err.Error()))
 		return
 	}
 	userId := info.UserId
@@ -91,11 +91,11 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 		if regular.ValidMobile(body.Phone) {
 			uniquePhone := s.sysUserService.CheckUniqueByPhone(body.Phone, userId)
 			if !uniquePhone {
-				c.JSON(200, resp.CodeMsg(40018, "抱歉，手机号码已存在"))
+				c.JSON(200, resp.ErrMsg("抱歉，手机号码已存在"))
 				return
 			}
 		} else {
-			c.JSON(200, resp.CodeMsg(40018, "抱歉，手机号码格式错误"))
+			c.JSON(200, resp.ErrMsg("抱歉，手机号码格式错误"))
 			return
 		}
 	}
@@ -105,11 +105,11 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 		if regular.ValidEmail(body.Email) {
 			uniqueEmail := s.sysUserService.CheckUniqueByEmail(body.Email, userId)
 			if !uniqueEmail {
-				c.JSON(200, resp.CodeMsg(40019, "抱歉，邮箱已存在"))
+				c.JSON(200, resp.ErrMsg("抱歉，邮箱已存在"))
 				return
 			}
 		} else {
-			c.JSON(200, resp.CodeMsg(40019, "抱歉，邮箱格式错误"))
+			c.JSON(200, resp.ErrMsg("抱歉，邮箱格式错误"))
 			return
 		}
 	}
@@ -151,14 +151,14 @@ func (s SysProfileController) UpdatePassword(c *gin.Context) {
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 
 	// 登录用户信息
 	info, err := reqctx.LoginUser(c)
 	if err != nil {
-		c.JSON(401, resp.CodeMsg(40003, err.Error()))
+		c.JSON(401, resp.CodeMsg(401002, err.Error()))
 		return
 	}
 	userId := info.UserId

@@ -19,7 +19,7 @@ func AuthorizeOauth2(scope []string) gin.HandlerFunc {
 		// 获取请求头标识信息
 		tokenStr := reqctx.Authorization(c)
 		if tokenStr == "" {
-			c.JSON(401, resp.CodeMsg(401, "无效客户端授权"))
+			c.JSON(401, resp.CodeMsg(401003, "authorization token is empty"))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
@@ -27,7 +27,7 @@ func AuthorizeOauth2(scope []string) gin.HandlerFunc {
 		// 验证令牌
 		claims, err := token.Oauth2TokenVerify(tokenStr, "access")
 		if err != nil {
-			c.JSON(401, resp.CodeMsg(40003, err.Error()))
+			c.JSON(401, resp.CodeMsg(401001, err.Error()))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
@@ -35,7 +35,7 @@ func AuthorizeOauth2(scope []string) gin.HandlerFunc {
 		// 获取缓存的用户信息
 		info := token.Oauth2InfoGet(claims)
 		if info.ClientId == "" {
-			c.JSON(401, resp.CodeMsg(401, "无效客户端授权"))
+			c.JSON(401, resp.CodeMsg(401002, "invalid login user information"))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}
@@ -53,8 +53,8 @@ func AuthorizeOauth2(scope []string) gin.HandlerFunc {
 				}
 			}
 			if !hasScope {
-				msg := fmt.Sprintf("无权访问 %s %s", c.Request.Method, c.Request.RequestURI)
-				c.JSON(403, resp.CodeMsg(403, msg))
+				msg := fmt.Sprintf("unauthorized access %s %s", c.Request.Method, c.Request.RequestURI)
+				c.JSON(403, resp.CodeMsg(403001, msg))
 				c.Abort() // 停止执行后续的处理函数
 				return
 			}

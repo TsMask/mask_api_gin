@@ -88,7 +88,7 @@ func OperateLog(options Options) gin.HandlerFunc {
 		// 获取登录用户信息
 		userName := reqctx.LoginUserToUserName(c)
 		if userName == "" {
-			c.JSON(401, resp.CodeMsg(401, "无效身份授权"))
+			c.JSON(401, resp.CodeMsg(401002, "invalid login user information"))
 			c.Abort() // 停止执行后续的处理函数
 			return
 		}

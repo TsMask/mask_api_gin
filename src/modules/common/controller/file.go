@@ -27,13 +27,13 @@ type FileController struct{}
 func (s FileController) Download(c *gin.Context) {
 	filePath := c.Param("filePath")
 	if len(filePath) < 8 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: filePath not is base64 string"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: filePath not is base64 string"))
 		return
 	}
 	// base64解析出地址
 	decodedBytes, err := base64.StdEncoding.DecodeString(filePath)
 	if err != nil {
-		c.JSON(400, resp.CodeMsg(40010, "decode err: filePath not is base64 string"))
+		c.JSON(422, resp.CodeMsg(422002, "decode err: filePath not is base64 string"))
 		return
 	}
 	routerPath := string(decodedBytes)
@@ -70,14 +70,14 @@ func (s FileController) Upload(c *gin.Context) {
 	// 上传的文件
 	formFile, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: file is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: file is empty"))
 		return
 	}
 	// 子路径需要在指定范围内
 	subPath := c.PostForm("subPath")
 	_, ok := constants.UPLOAD_SUB_PATH[subPath]
 	if subPath != "" && !ok {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: subPath not in range"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: subPath not in range"))
 		return
 	}
 	if subPath == "" {
@@ -109,7 +109,7 @@ func (s FileController) ChunkCheck(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 
@@ -133,12 +133,12 @@ func (s FileController) ChunkMerge(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 	// 子路径需要在指定范围内
 	if _, ok := constants.UPLOAD_SUB_PATH[body.SubPath]; body.SubPath != "" && !ok {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: subPath not in range"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: subPath not in range"))
 		return
 	}
 	if body.SubPath == "" {
@@ -169,13 +169,13 @@ func (s FileController) ChunkUpload(c *gin.Context) {
 	// 切片唯一标识
 	identifier := c.PostForm("identifier")
 	if index == "" || identifier == "" {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: index and identifier must be set"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: index and identifier must be set"))
 		return
 	}
 	// 上传的文件
 	formFile, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: file is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: file is empty"))
 		return
 	}
 

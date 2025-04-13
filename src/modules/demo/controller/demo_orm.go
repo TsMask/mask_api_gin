@@ -43,7 +43,7 @@ func (s DemoORMController) All(c *gin.Context) {
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 
@@ -65,7 +65,7 @@ func (s DemoORMController) All(c *gin.Context) {
 func (s DemoORMController) Info(c *gin.Context) {
 	id := parse.Number(c.Param("id"))
 	if id <= 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: id is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: id is empty"))
 		return
 	}
 
@@ -84,11 +84,11 @@ func (s DemoORMController) Add(c *gin.Context) {
 	var body model.DemoORM
 	if err := c.ShouldBindJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 	if body.Id > 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: id not is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: id not is empty"))
 		return
 	}
 
@@ -107,11 +107,11 @@ func (s DemoORMController) Edit(c *gin.Context) {
 	var body model.DemoORM
 	if err := c.ShouldBindJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(40422, errMsgs))
+		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
 	}
 	if body.Id <= 0 {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: id is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: id is empty"))
 		return
 	}
 
@@ -129,7 +129,7 @@ func (s DemoORMController) Edit(c *gin.Context) {
 func (s DemoORMController) Remove(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: id is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: id is empty"))
 		return
 	}
 

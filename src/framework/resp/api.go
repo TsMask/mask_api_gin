@@ -2,14 +2,14 @@ package resp
 
 const (
 	// CODE_ERROR 响应-code错误失败
-	CODE_ERROR = 400
+	CODE_ERROR = 400001
 	// MSG_ERROR 响应-msg错误失败
-	MSG_ERROR = "失败"
+	MSG_ERROR = "error"
 
 	// CODE_SUCCESS 响应-msg正常成功
-	CODE_SUCCESS = 200
+	CODE_SUCCESS = 200001
 	// MSG_SUCCCESS 响应-code正常成功
-	MSG_SUCCCESS = "成功"
+	MSG_SUCCCESS = "success"
 )
 
 // Resp 响应结构体

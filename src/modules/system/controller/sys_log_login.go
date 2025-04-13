@@ -50,7 +50,7 @@ func (s SysLogLoginController) Clean(c *gin.Context) {
 func (s SysLogLoginController) Unlock(c *gin.Context) {
 	userName := c.Param("userName")
 	if userName == "" {
-		c.JSON(400, resp.CodeMsg(40010, "bind err: userName is empty"))
+		c.JSON(422, resp.CodeMsg(422002, "bind err: userName is empty"))
 		return
 	}
 
@@ -71,7 +71,7 @@ func (s SysLogLoginController) Export(c *gin.Context) {
 	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
 	rows, total := s.sysLogLoginService.FindByPage(query, dataScopeSQL)
 	if total == 0 {
-		c.JSON(200, resp.CodeMsg(40016, "export data record as empty"))
+		c.JSON(200, resp.ErrMsg("export data record as empty"))
 		return
 	}
 

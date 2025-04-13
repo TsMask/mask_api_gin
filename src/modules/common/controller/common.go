@@ -29,8 +29,8 @@ func (s CommonController) Hash(c *gin.Context) {
 		Str  string `json:"str" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(200, gin.H{
-			"code": 400,
+		c.JSON(422, gin.H{
+			"code": 422001,
 			"msg":  "参数错误",
 		})
 		return
@@ -49,7 +49,7 @@ func (s CommonController) Hash(c *gin.Context) {
 		h = md5.New()
 	default:
 		c.JSON(200, gin.H{
-			"code": 400,
+			"code": 400001,
 			"msg":  fmt.Sprintf("不支持的哈希算法: %s", body.Type),
 		})
 		return
@@ -58,7 +58,7 @@ func (s CommonController) Hash(c *gin.Context) {
 	// 写入需要哈希的数据
 	if _, err = h.Write([]byte(body.Str)); err != nil {
 		c.JSON(500, gin.H{
-			"code": 500,
+			"code": 500001,
 			"msg":  "哈希写入错误",
 		})
 		return
@@ -68,7 +68,7 @@ func (s CommonController) Hash(c *gin.Context) {
 	hashed := h.Sum(nil)
 	text := hex.EncodeToString(hashed)
 	c.JSON(200, gin.H{
-		"code": 200,
+		"code": 200001,
 		"msg":  "success",
 		"data": text,
 	})
