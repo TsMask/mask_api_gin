@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
@@ -139,7 +140,8 @@ func (s Account) UpdateLoginDateAndIP(info token.UserInfo) bool {
 
 // CleanLoginRecordCache 清除错误记录次数
 func (s Account) CleanLoginRecordCache(userName string) bool {
-	cacheKey := fmt.Sprintf("%s:%s", constants.CACHE_PWD_ERR_COUNT, userName)
+	base64UserName := base64.StdEncoding.EncodeToString([]byte(userName))
+	cacheKey := fmt.Sprintf("%s:%s", constants.CACHE_PWD_ERR_COUNT, base64UserName)
 	hasKey, err := redis.Has("", cacheKey)
 	if hasKey > 0 && err == nil {
 		return redis.Del("", cacheKey) == nil
@@ -150,17 +152,18 @@ func (s Account) CleanLoginRecordCache(userName string) bool {
 // passwordRetryCount 密码重试次数
 func (s Account) passwordRetryCount(userName string) (string, int64, time.Duration, error) {
 	// 验证登录次数和错误锁定时间
-	maxRetryCount := config.Get("user.password.maxRetryCount").(int)
-	lockTime := config.Get("user.password.lockTime").(int)
+	maxRetryCount := parse.Number(config.Get("user.password.maxRetryCount"))
+	lockTime := parse.Number(config.Get("user.password.lockTime"))
 	// 验证缓存记录次数
-	retryKey := fmt.Sprintf("%s:%s", constants.CACHE_PWD_ERR_COUNT, userName)
+	base64UserName := base64.StdEncoding.EncodeToString([]byte(userName))
+	retryKey := fmt.Sprintf("%s:%s", constants.CACHE_PWD_ERR_COUNT, base64UserName)
 	retryCount, err := redis.Get("", retryKey)
 	if retryCount == "" || err != nil {
 		retryCount = "0"
 	}
 	// 是否超过错误值
 	retryCountInt64 := parse.Number(retryCount)
-	if retryCountInt64 >= int64(maxRetryCount) {
+	if retryCountInt64 >= maxRetryCount {
 		msg := fmt.Sprintf("密码输入错误 %d 次，帐户锁定 %d 分钟", maxRetryCount, lockTime)
 		return retryKey, retryCountInt64, time.Duration(lockTime) * time.Minute, fmt.Errorf("%s", msg)
 	}
