@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +11,7 @@ import (
 	"mask_api_gin/src/framework/ip2region"
 	"mask_api_gin/src/framework/reqctx"
 	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/framework/utils/crypto"
 )
 
 const (
@@ -55,10 +55,8 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 
 		// 获取执行函数名称
 		funcName := c.HandlerName()
-		lastDotIndex := strings.LastIndex(funcName, "/")
-		funcName = funcName[lastDotIndex+1:]
 		// 生成限流key
-		limitKey := constants.CACHE_RATE_LIMIT + ":" + funcName
+		limitKey := constants.CACHE_RATE_LIMIT + ":" + crypto.MD5(funcName)
 
 		// 用户
 		if option.Type == LIMIT_USER {
@@ -68,13 +66,15 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 				c.Abort() // 停止执行后续的处理函数
 				return
 			}
-			limitKey = fmt.Sprintf("%s:%d:%s", constants.CACHE_RATE_LIMIT, userId, funcName)
+			funcMd5 := crypto.MD5(fmt.Sprintf("%d:%s", userId, funcName))
+			limitKey = constants.CACHE_RATE_LIMIT + ":" + funcMd5
 		}
 
 		// IP
 		if option.Type == LIMIT_IP {
 			clientIP := ip2region.ClientIP(c.ClientIP())
-			limitKey = constants.CACHE_RATE_LIMIT + ":" + clientIP + ":" + funcName
+			funcMd5 := crypto.MD5(fmt.Sprintf("%s:%s", clientIP, funcName))
+			limitKey = constants.CACHE_RATE_LIMIT + ":" + funcMd5
 		}
 
 		// 在Redis查询并记录请求次数

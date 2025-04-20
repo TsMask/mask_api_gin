@@ -13,6 +13,7 @@ import (
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/reqctx"
 	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/framework/utils/crypto"
 )
 
 // repeatParam 重复提交参数的类型定义
@@ -40,9 +41,12 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 		}
 		paramsJSONStr := string(paramsJSONByte)
 
+		// 获取执行函数名称
+		funcName := c.HandlerName()
 		// 唯一标识（指定key + 客户端IP + 请求地址）
 		clientIP := ip2region.ClientIP(c.ClientIP())
-		repeatKey := constants.CACHE_REPEAT_SUBMIT + ":" + clientIP + ":" + c.Request.RequestURI
+		funcMd5 := crypto.MD5(fmt.Sprintf("%s:%s", clientIP, funcName))
+		repeatKey := constants.CACHE_REPEAT_SUBMIT + ":" + funcMd5
 
 		// 在Redis查询并记录请求次数
 		repeatStr, _ := redis.Get("", repeatKey)
