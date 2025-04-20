@@ -422,6 +422,7 @@ func Setup(router *gin.Engine) {
 			controller.NewSysUser.Remove,
 		)
 		sysUserGroup.PUT("/password",
+			middleware.RepeatSubmit(5),
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"system:user:resetPwd"}}),
 			middleware.OperateLog(middleware.OptionNew("用户信息", middleware.BUSINESS_TYPE_UPDATE)),
 			controller.NewSysUser.Password,
