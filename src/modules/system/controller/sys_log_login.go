@@ -56,10 +56,10 @@ func (s SysLogLoginController) Unlock(c *gin.Context) {
 
 	ok := s.accountService.CleanLoginRecordCache(userName)
 	if ok {
-		c.JSON(200, resp.Ok(nil))
+		c.JSON(200, resp.OkMsg("unlock success"))
 		return
 	}
-	c.JSON(200, resp.Err(nil))
+	c.JSON(200, resp.ErrMsg("not found unlock object"))
 }
 
 // Export 导出系统登录日志信息
