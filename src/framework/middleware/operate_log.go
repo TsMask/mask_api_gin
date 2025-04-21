@@ -134,7 +134,7 @@ func OperateLog(options Options) gin.HandlerFunc {
 			contentDisposition := c.Writer.Header().Get("Content-Disposition")
 			contentType := c.Writer.Header().Get("Content-Type")
 			content := contentType + contentDisposition
-			msg := fmt.Sprintf(`{"status":"%d","size":"%d","content-type":"%s"}`, status, c.Writer.Size(), content)
+			msg := fmt.Sprintf(`{"status":"%d","size":%d,"content-type":"%s"}`, status, c.Writer.Size(), content)
 			operaLog.OperaMsg = msg
 		}
 
