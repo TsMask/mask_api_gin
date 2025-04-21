@@ -60,6 +60,10 @@ func (s AccountController) Login(c *gin.Context) {
 	// 登录用户信息
 	info, err := s.accountService.ByUsername(body.Username, body.Password)
 	if err != nil {
+		s.sysLogLoginService.Insert(
+			body.Username, constants.STATUS_NO, err.Error(),
+			[4]string{ipaddr, location, os, browser},
+		)
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}

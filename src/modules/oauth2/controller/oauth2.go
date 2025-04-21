@@ -92,9 +92,13 @@ func (s Oauth2Controller) Token(c *gin.Context) {
 		return
 	}
 
-	// 客户端信息
+	// 登录客户端信息
 	info, err := s.oauth2Service.ByClient(body.ClientId, body.ClientSecret)
 	if err != nil {
+		s.oauth2LogLoginService.Insert(
+			body.ClientId, constants.STATUS_NO, err.Error(),
+			[4]string{ipaddr, location, os, browser},
+		)
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
