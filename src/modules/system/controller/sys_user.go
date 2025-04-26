@@ -12,6 +12,7 @@ import (
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
+	authService "mask_api_gin/src/modules/auth/service"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 )
@@ -21,15 +22,17 @@ var NewSysUser = &SysUserController{
 	sysUserService: service.NewSysUser,
 	sysRoleService: service.NewSysRole,
 	sysPostService: service.NewSysPost,
+	accountService: authService.NewAccount,
 }
 
 // SysUserController 用户信息 控制层处理
 //
 // PATH /system/user
 type SysUserController struct {
-	sysUserService *service.SysUser // 用户服务
-	sysRoleService *service.SysRole // 角色服务
-	sysPostService *service.SysPost // 岗位服务
+	sysUserService *service.SysUser     // 用户服务
+	sysRoleService *service.SysRole     // 角色服务
+	sysPostService *service.SysPost     // 岗位服务
+	accountService *authService.Account // 账号身份操作服务
 }
 
 // List 用户信息列表
@@ -403,6 +406,24 @@ func (s SysUserController) Status(c *gin.Context) {
 		return
 	}
 	c.JSON(200, resp.Err(nil))
+}
+
+// Unlock 用户账户解锁
+//
+// PUT /unlock/:userName
+func (s SysUserController) Unlock(c *gin.Context) {
+	userName := c.Param("userName")
+	if userName == "" {
+		c.JSON(422, resp.CodeMsg(422002, "bind err: userName is empty"))
+		return
+	}
+
+	ok := s.accountService.CleanLoginRecordCache(userName)
+	if ok {
+		c.JSON(200, resp.OkMsg("unlock success"))
+		return
+	}
+	c.JSON(200, resp.ErrMsg("not found unlock user"))
 }
 
 // Export 用户信息列表导出

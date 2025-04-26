@@ -8,14 +8,12 @@ import (
 
 	"mask_api_gin/src/framework/reqctx"
 	"mask_api_gin/src/framework/resp"
-	authService "mask_api_gin/src/modules/auth/service"
 	"mask_api_gin/src/modules/system/service"
 )
 
 // NewSysLogLogin 实例化控制层
 var NewSysLogLogin = &SysLogLoginController{
 	sysLogLoginService: service.NewSysLogLogin,
-	accountService:     authService.NewAccount,
 }
 
 // SysLogLoginController 系统登录日志信息 控制层处理
@@ -23,7 +21,6 @@ var NewSysLogLogin = &SysLogLoginController{
 // PATH /system/log/login
 type SysLogLoginController struct {
 	sysLogLoginService *service.SysLogLogin // 系统登录日志服务
-	accountService     *authService.Account // 账号身份操作服务
 }
 
 // List 系统登录日志列表
@@ -42,24 +39,6 @@ func (s SysLogLoginController) List(c *gin.Context) {
 func (s SysLogLoginController) Clean(c *gin.Context) {
 	rows := s.sysLogLoginService.Clean()
 	c.JSON(200, resp.OkData(rows))
-}
-
-// Unlock 系统登录日志账户解锁
-//
-// PUT /unlock/:userName
-func (s SysLogLoginController) Unlock(c *gin.Context) {
-	userName := c.Param("userName")
-	if userName == "" {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: userName is empty"))
-		return
-	}
-
-	ok := s.accountService.CleanLoginRecordCache(userName)
-	if ok {
-		c.JSON(200, resp.OkMsg("unlock success"))
-		return
-	}
-	c.JSON(200, resp.ErrMsg("not found unlock object"))
 }
 
 // Export 导出系统登录日志信息

@@ -194,11 +194,6 @@ func Setup(router *gin.Engine) {
 			middleware.OperateLog(middleware.OptionNew("系统登录信息", middleware.BUSINESS_TYPE_CLEAN)),
 			controller.NewSysLogLogin.Clean,
 		)
-		sysLogLoginGroup.PUT("/unlock/:userName",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"system:log:login:unlock"}}),
-			middleware.OperateLog(middleware.OptionNew("系统登录信息", middleware.BUSINESS_TYPE_OTHER)),
-			controller.NewSysLogLogin.Unlock,
-		)
 		sysLogLoginGroup.GET("/export",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"system:log:login:export"}}),
 			middleware.OperateLog(middleware.OptionNew("系统登录信息", middleware.BUSINESS_TYPE_EXPORT)),
@@ -432,6 +427,11 @@ func Setup(router *gin.Engine) {
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"system:user:edit"}}),
 			middleware.OperateLog(middleware.OptionNew("用户信息", middleware.BUSINESS_TYPE_UPDATE)),
 			controller.NewSysUser.Status,
+		)
+		sysUserGroup.PUT("/unlock/:userName",
+			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"system:user:unlock"}}),
+			middleware.OperateLog(middleware.OptionNew("用户信息", middleware.BUSINESS_TYPE_CLEAN)),
+			controller.NewSysUser.Unlock,
 		)
 		sysUserGroup.GET("/export",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"system:user:export"}}),
