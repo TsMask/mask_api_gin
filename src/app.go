@@ -20,19 +20,25 @@ func RunServer() error {
 	app := engine.NewApp()
 
 	// 模块路由注册
-	ModulesSetup(app)
+	modulesSetup(app)
 
 	// 读取服务配置
 	app.ForwardedByClientIP = config.Get("server.proxy").(bool)
 	addr := fmt.Sprintf("%s:%d", config.Get("server.host"), config.Get("server.port"))
 
 	// 启动服务
-	fmt.Printf("\nopen http://%s \n\n", addr)
-	return app.Run(addr)
+	serverCert := fmt.Sprint(config.Get("server.cert"))
+	serverkey := fmt.Sprint(config.Get("server.key"))
+	if serverCert == "" || serverkey == "" || serverCert == "<nil>" || serverkey == "<nil>" {
+		fmt.Printf("\nListening and serving HTTP on %s \n\n", addr)
+		return app.Run(addr)
+	}
+	fmt.Printf("\nListening and serving HTTPS on %s \n\n", addr)
+	return app.RunTLS(addr, serverCert, serverkey)
 }
 
 // 模块路由注册
-func ModulesSetup(app *gin.Engine) {
+func modulesSetup(app *gin.Engine) {
 	demo.Setup(app)   // 演示模块（可移除）
 	oauth2.Setup(app) // 开放能力模块（可移除）
 
