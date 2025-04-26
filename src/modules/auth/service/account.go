@@ -152,8 +152,10 @@ func (s Account) CleanLoginRecordCache(userName string) bool {
 // passwordRetryCount 密码重试次数
 func (s Account) passwordRetryCount(userName string) (string, int64, time.Duration, error) {
 	// 验证登录次数和错误锁定时间
-	maxRetryCount := parse.Number(config.Get("user.password.maxRetryCount"))
-	lockTime := parse.Number(config.Get("user.password.lockTime"))
+	passwordRetryMaxCount := s.sysConfigService.FindValueByKey("sys.account.passwordRetryMaxCount")
+	passwordRetryLockTime := s.sysConfigService.FindValueByKey("sys.account.passwordRetryLockTime")
+	retryMaxCount := parse.Number(passwordRetryMaxCount)
+	retryLockTime := parse.Number(passwordRetryLockTime)
 	// 验证缓存记录次数
 	base64UserName := base64.StdEncoding.EncodeToString([]byte(userName))
 	retryKey := fmt.Sprintf("%s:%s", constants.CACHE_PWD_ERR_COUNT, base64UserName)
@@ -163,11 +165,11 @@ func (s Account) passwordRetryCount(userName string) (string, int64, time.Durati
 	}
 	// 是否超过错误值
 	retryCountInt64 := parse.Number(retryCount)
-	if retryCountInt64 >= maxRetryCount {
-		msg := fmt.Sprintf("密码输入错误 %d 次，帐户锁定 %d 分钟", maxRetryCount, lockTime)
-		return retryKey, retryCountInt64, time.Duration(lockTime) * time.Minute, fmt.Errorf("%s", msg)
+	if retryCountInt64 >= retryMaxCount {
+		msg := fmt.Sprintf("密码输入错误 %d 次，帐户锁定 %d 分钟", retryMaxCount, retryLockTime)
+		return retryKey, retryCountInt64, time.Duration(retryLockTime) * time.Minute, fmt.Errorf("%s", msg)
 	}
-	return retryKey, retryCountInt64, time.Duration(lockTime) * time.Minute, nil
+	return retryKey, retryCountInt64, time.Duration(retryLockTime) * time.Minute, nil
 }
 
 // RoleAndMenuPerms 角色和菜单数据权限

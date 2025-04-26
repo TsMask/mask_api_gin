@@ -149,7 +149,7 @@ func IsSystemUser(userId int64) bool {
 		return false
 	}
 	// 从配置中获取系统管理员ID列表
-	arr := Get("user.system").([]any)
+	arr := Get("systemUser").([]any)
 	for _, v := range arr {
 		if fmt.Sprint(v) == fmt.Sprint(userId) {
 			return true
