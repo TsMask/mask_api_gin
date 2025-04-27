@@ -44,12 +44,12 @@ func (s Oauth2ClientController) Info(c *gin.Context) {
 		return
 	}
 
-	data := s.oauth2ClientService.FindByClientId(clientId)
-	if data.ClientId == clientId {
-		c.JSON(200, resp.OkData(data))
+	info := s.oauth2ClientService.FindByClientId(clientId)
+	if info.ClientId == "" || info.ClientId != clientId {
+		c.JSON(200, resp.ErrMsg("clientId does not exist"))
 		return
 	}
-	c.JSON(200, resp.Err(nil))
+	c.JSON(200, resp.OkData(info))
 }
 
 // Add 新增
@@ -57,7 +57,7 @@ func (s Oauth2ClientController) Info(c *gin.Context) {
 // POST /
 func (s Oauth2ClientController) Add(c *gin.Context) {
 	var body model.Oauth2Client
-	if err := c.ShouldBindJSON(&body); err != nil {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
 		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
@@ -69,7 +69,7 @@ func (s Oauth2ClientController) Add(c *gin.Context) {
 
 	localHost := strings.Contains(body.IPWhite, "127.0.0.1") || strings.Contains(body.IPWhite, "localhost") || strings.Contains(body.IPWhite, "::1")
 	if localHost || strings.Contains(body.IPWhite, "::ffff:") {
-		c.JSON(422, resp.CodeMsg(422002, "no support local host"))
+		c.JSON(200, resp.ErrMsg("no support local host"))
 		return
 	}
 
@@ -87,7 +87,7 @@ func (s Oauth2ClientController) Add(c *gin.Context) {
 // PUT /
 func (s Oauth2ClientController) Edit(c *gin.Context) {
 	var body model.Oauth2Client
-	if err := c.ShouldBindJSON(&body); err != nil {
+	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
 		c.JSON(422, resp.CodeMsg(422001, errMsgs))
 		return
@@ -99,14 +99,14 @@ func (s Oauth2ClientController) Edit(c *gin.Context) {
 
 	localHost := strings.Contains(body.IPWhite, "127.0.0.1") || strings.Contains(body.IPWhite, "localhost") || strings.Contains(body.IPWhite, "::1")
 	if localHost || strings.Contains(body.IPWhite, "::ffff:") {
-		c.JSON(422, resp.CodeMsg(422002, "no support local host"))
+		c.JSON(200, resp.ErrMsg("no support local host"))
 		return
 	}
 
 	// 查询信息
-	info := s.oauth2ClientService.FindByClientId(body.ClientId)
-	if info.ClientId != body.ClientId {
-		c.JSON(422, resp.CodeMsg(422002, "修改失败，客户端ID已存在"))
+	info := s.oauth2ClientService.FindById(body.Id)
+	if info.ClientId == "" || info.Id != body.Id {
+		c.JSON(200, resp.ErrMsg("modification failed, data not exist"))
 		return
 	}
 

@@ -23,7 +23,16 @@ func (s Oauth2ClientService) FindByPage(query map[string]string) ([]model.Oauth2
 	return s.oauth2ClientRepository.SelectByPage(query)
 }
 
-// Find 查询集合
+// FindById 查询ID
+func (s Oauth2ClientService) FindById(id int64) model.Oauth2Client {
+	rows := s.oauth2ClientRepository.SelectByIds([]int64{id})
+	if len(rows) > 0 {
+		return rows[0]
+	}
+	return model.Oauth2Client{}
+}
+
+// FindByClientId 查询ClientId
 func (s Oauth2ClientService) FindByClientId(clientId string) model.Oauth2Client {
 	return s.oauth2ClientRepository.SelectByClientId(clientId)
 }
