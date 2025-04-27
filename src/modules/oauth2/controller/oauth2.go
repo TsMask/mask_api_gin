@@ -45,13 +45,13 @@ func (s Oauth2Controller) Authorize(c *gin.Context) {
 	// 是否存在clientId
 	info := s.oauth2ClientService.FindByClientId(query.ClientId)
 	if info.ClientId == "" || info.ClientId != query.ClientId {
-		c.JSON(422, resp.CodeMsg(422002, "clientId not exist"))
+		c.JSON(200, resp.ErrMsg("clientId not exist"))
 		return
 	}
 
 	// 判断IP白名单
 	if !strings.Contains(info.IPWhite, c.ClientIP()) {
-		c.JSON(422, resp.CodeMsg(422002, "IP whitelist mismatch"))
+		c.JSON(200, resp.ErrMsg("ip whitelist mismatch"))
 		return
 	}
 
