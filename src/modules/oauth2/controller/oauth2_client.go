@@ -45,11 +45,11 @@ func (s Oauth2ClientController) Info(c *gin.Context) {
 	}
 
 	info := s.oauth2ClientService.FindByClientId(clientId)
-	if info.ClientId == "" || info.ClientId != clientId {
-		c.JSON(200, resp.ErrMsg("clientId does not exist"))
+	if info.ClientId == clientId {
+		c.JSON(200, resp.OkData(info))
 		return
 	}
-	c.JSON(200, resp.OkData(info))
+	c.JSON(200, resp.ErrMsg("clientId does not exist"))
 }
 
 // Add 新增
