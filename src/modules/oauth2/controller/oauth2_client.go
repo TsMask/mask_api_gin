@@ -45,11 +45,11 @@ func (s Oauth2ClientController) Info(c *gin.Context) {
 	}
 
 	info := s.oauth2ClientService.FindByClientId(clientId)
-	if info.ClientId == "" || info.ClientId != clientId {
-		c.JSON(200, resp.ErrMsg("clientId does not exist"))
+	if info.ClientId == clientId {
+		c.JSON(200, resp.OkData(info))
 		return
 	}
-	c.JSON(200, resp.OkData(info))
+	c.JSON(200, resp.ErrMsg("clientId does not exist"))
 }
 
 // Add 新增
@@ -67,8 +67,16 @@ func (s Oauth2ClientController) Add(c *gin.Context) {
 		return
 	}
 
-	localHost := strings.Contains(body.IPWhite, "127.0.0.1") || strings.Contains(body.IPWhite, "localhost") || strings.Contains(body.IPWhite, "::1")
-	if localHost || strings.Contains(body.IPWhite, "::ffff:") {
+	// 本地IP地址不支持
+	localHosts := []string{"127.0.0.1", "localhost", "::ffff:", "::1"}
+	localHost := false
+	for _, host := range localHosts {
+		if strings.Contains(body.IPWhite, host) {
+			localHost = true
+			break
+		}
+	}
+	if localHost {
 		c.JSON(200, resp.ErrMsg("no support local host"))
 		return
 	}
@@ -97,8 +105,16 @@ func (s Oauth2ClientController) Edit(c *gin.Context) {
 		return
 	}
 
-	localHost := strings.Contains(body.IPWhite, "127.0.0.1") || strings.Contains(body.IPWhite, "localhost") || strings.Contains(body.IPWhite, "::1")
-	if localHost || strings.Contains(body.IPWhite, "::ffff:") {
+	// 本地IP地址不支持
+	localHosts := []string{"127.0.0.1", "localhost", "::ffff:", "::1"}
+	localHost := false
+	for _, host := range localHosts {
+		if strings.Contains(body.IPWhite, host) {
+			localHost = true
+			break
+		}
+	}
+	if localHost {
 		c.JSON(200, resp.ErrMsg("no support local host"))
 		return
 	}
