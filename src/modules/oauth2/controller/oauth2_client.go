@@ -67,8 +67,16 @@ func (s Oauth2ClientController) Add(c *gin.Context) {
 		return
 	}
 
-	localHost := strings.Contains(body.IPWhite, "127.0.0.1") || strings.Contains(body.IPWhite, "localhost") || strings.Contains(body.IPWhite, "::1")
-	if localHost || strings.Contains(body.IPWhite, "::ffff:") {
+	// 本地IP地址不支持
+	localHosts := []string{"127.0.0.1", "localhost", "::ffff:", "::1"}
+	localHost := false
+	for _, host := range localHosts {
+		if strings.Contains(body.IPWhite, host) {
+			localHost = true
+			break
+		}
+	}
+	if localHost {
 		c.JSON(200, resp.ErrMsg("no support local host"))
 		return
 	}
@@ -97,8 +105,16 @@ func (s Oauth2ClientController) Edit(c *gin.Context) {
 		return
 	}
 
-	localHost := strings.Contains(body.IPWhite, "127.0.0.1") || strings.Contains(body.IPWhite, "localhost") || strings.Contains(body.IPWhite, "::1")
-	if localHost || strings.Contains(body.IPWhite, "::ffff:") {
+	// 本地IP地址不支持
+	localHosts := []string{"127.0.0.1", "localhost", "::ffff:", "::1"}
+	localHost := false
+	for _, host := range localHosts {
+		if strings.Contains(body.IPWhite, host) {
+			localHost = true
+			break
+		}
+	}
+	if localHost {
 		c.JSON(200, resp.ErrMsg("no support local host"))
 		return
 	}

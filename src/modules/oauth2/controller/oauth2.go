@@ -93,7 +93,7 @@ func (s Oauth2Controller) Token(c *gin.Context) {
 	}
 
 	// 登录客户端信息
-	info, err := s.oauth2Service.ByClient(body.ClientId, body.ClientSecret)
+	info, err := s.oauth2Service.ByClient(body.ClientId, body.ClientSecret, ipaddr)
 	if err != nil {
 		s.oauth2LogLoginService.Insert(
 			body.ClientId, constants.STATUS_NO, err.Error(),
@@ -153,8 +153,12 @@ func (s Oauth2Controller) RefreshToken(c *gin.Context) {
 	}
 	clientId := fmt.Sprint(claims[constants.JWT_CLIENT_ID])
 
+	// 当前请求信息
+	ipaddr, location := reqctx.IPAddrLocation(c)
+	os, browser := reqctx.UaOsBrowser(c)
+
 	// 客户端信息
-	info, err := s.oauth2Service.ByClient(body.ClientId, body.ClientSecret)
+	info, err := s.oauth2Service.ByClient(body.ClientId, body.ClientSecret, ipaddr)
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
@@ -192,9 +196,6 @@ func (s Oauth2Controller) RefreshToken(c *gin.Context) {
 		refreshToken, refreshExpiresIn = token.Oauth2TokenCreate(clientId, deviceFingerprint, "refresh")
 	}
 
-	// 当前请求信息
-	ipaddr, location := reqctx.IPAddrLocation(c)
-	os, browser := reqctx.UaOsBrowser(c)
 	// 记录令牌，创建系统访问记录
 	token.Oauth2InfoCreate(&info, deviceFingerprint, [4]string{ipaddr, location, os, browser})
 	s.oauth2Service.UpdateLoginDateAndIP(info)

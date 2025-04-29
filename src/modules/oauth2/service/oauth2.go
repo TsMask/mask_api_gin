@@ -54,7 +54,7 @@ func (s Oauth2Service) ValidateCode(code string) error {
 }
 
 // ByClient 客户端信息
-func (s Oauth2Service) ByClient(clientId, clientSecret string) (token.Oauth2Info, error) {
+func (s Oauth2Service) ByClient(clientId, clientSecret, ipaddr string) (token.Oauth2Info, error) {
 	info := token.Oauth2Info{}
 
 	// 查询用户登录账号
@@ -66,8 +66,12 @@ func (s Oauth2Service) ByClient(clientId, clientSecret string) (token.Oauth2Info
 	if len(rows) > 0 {
 		item = rows[0]
 	}
-	if item.ClientId == "" {
+	if item.ClientId == "" || item.ClientSecret == "" {
 		return info, fmt.Errorf("clientId or clientSecret is not exist")
+	}
+	// 判断IP白名单
+	if !strings.Contains(item.IPWhite, ipaddr) {
+		return info, fmt.Errorf("ip whitelist mismatch")
 	}
 
 	info.ClientId = clientId

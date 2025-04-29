@@ -69,4 +69,6 @@ func Setup(router *gin.Engine) {
 		)
 	}
 
+	// ==== 授权认证的开放接口 ====
+	openAPI(router)
 }
