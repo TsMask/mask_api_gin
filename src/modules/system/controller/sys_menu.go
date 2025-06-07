@@ -53,7 +53,7 @@ func (s SysMenuController) List(c *gin.Context) {
 func (s SysMenuController) Info(c *gin.Context) {
 	menuId := parse.Number(c.Param("menuId"))
 	if menuId <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: menuId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: menuId is empty"))
 		return
 	}
 
@@ -72,11 +72,11 @@ func (s SysMenuController) Add(c *gin.Context) {
 	var body model.SysMenu
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	if body.MenuId > 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: menuId not is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: menuId not is empty"))
 		return
 	}
 
@@ -121,11 +121,11 @@ func (s SysMenuController) Edit(c *gin.Context) {
 	var body model.SysMenu
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	if body.MenuId <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: menuId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: menuId is empty"))
 		return
 	}
 
@@ -219,7 +219,7 @@ func (s SysMenuController) Edit(c *gin.Context) {
 func (s SysMenuController) Remove(c *gin.Context) {
 	menuId := parse.Number(c.Param("menuId"))
 	if menuId <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: menuId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: menuId is empty"))
 		return
 	}
 
@@ -281,7 +281,7 @@ func (s SysMenuController) Tree(c *gin.Context) {
 func (s SysMenuController) TreeRole(c *gin.Context) {
 	roleId := parse.Number(c.Param("roleId"))
 	if roleId <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: roleId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: roleId is empty"))
 		return
 	}
 

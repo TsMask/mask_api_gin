@@ -38,7 +38,7 @@ func (s Oauth2Controller) Authorize(c *gin.Context) {
 	var query model.CodeQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 
@@ -69,11 +69,11 @@ func (s Oauth2Controller) Token(c *gin.Context) {
 	var body model.TokenBody
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	if body.GrantType != "authorization_code" || body.Code == "" {
-		c.JSON(422, resp.CodeMsg(422002, "grantType or code error"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "grantType or code error"))
 		return
 	}
 
@@ -137,18 +137,18 @@ func (s Oauth2Controller) RefreshToken(c *gin.Context) {
 	var body model.TokenBody
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	if body.GrantType != "refresh_token" || body.RefreshToken == "" {
-		c.JSON(422, resp.CodeMsg(422002, "grantType or refreshToken error"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "grantType or refreshToken error"))
 		return
 	}
 
 	// 验证刷新令牌是否有效
 	claims, err := token.Oauth2TokenVerify(body.RefreshToken, "refresh")
 	if err != nil {
-		c.JSON(401, resp.CodeMsg(401001, err.Error()))
+		c.JSON(401, resp.CodeMsg(resp.CODE_AUTH_INVALID, err.Error()))
 		return
 	}
 	clientId := fmt.Sprint(claims[constants.JWT_CLIENT_ID])
@@ -173,7 +173,7 @@ func (s Oauth2Controller) RefreshToken(c *gin.Context) {
 	deviceId := fmt.Sprint(claims[constants.JWT_DEVICE_ID])
 	deviceFingerprint := reqctx.DeviceFingerprint(c, clientId)
 	if deviceId != deviceFingerprint {
-		c.JSON(200, resp.ErrMsg("device fingerprint mismatch"))
+		c.JSON(401, resp.CodeMsg(resp.CODE_AUTH_DEVICE, resp.MSG_AUTH_DEVICE))
 		return
 	}
 

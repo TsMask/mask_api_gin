@@ -39,7 +39,7 @@ func (s SysNoticeController) List(c *gin.Context) {
 func (s SysNoticeController) Info(c *gin.Context) {
 	noticeId := parse.Number(c.Param("noticeId"))
 	if noticeId <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: noticeId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: noticeId is empty"))
 		return
 	}
 
@@ -58,11 +58,11 @@ func (s SysNoticeController) Add(c *gin.Context) {
 	var body model.SysNotice
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	if body.NoticeId > 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: noticeId not is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: noticeId not is empty"))
 		return
 	}
 
@@ -82,11 +82,11 @@ func (s SysNoticeController) Edit(c *gin.Context) {
 	var body model.SysNotice
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	if body.NoticeId <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: noticeId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: noticeId is empty"))
 		return
 	}
 
@@ -117,7 +117,7 @@ func (s SysNoticeController) Edit(c *gin.Context) {
 func (s SysNoticeController) Remove(c *gin.Context) {
 	noticeId := c.Param("noticeId")
 	if noticeId == "" {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: noticeId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: noticeId is empty"))
 		return
 	}
 

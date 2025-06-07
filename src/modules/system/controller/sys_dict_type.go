@@ -40,7 +40,7 @@ func (s SysDictTypeController) List(c *gin.Context) {
 func (s SysDictTypeController) Info(c *gin.Context) {
 	dictId := parse.Number(c.Param("dictId"))
 	if dictId <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: dictId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: dictId is empty"))
 		return
 	}
 
@@ -59,11 +59,11 @@ func (s SysDictTypeController) Add(c *gin.Context) {
 	var body model.SysDictType
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	if body.DictId > 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: dictId not is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: dictId not is empty"))
 		return
 	}
 
@@ -99,11 +99,11 @@ func (s SysDictTypeController) Edit(c *gin.Context) {
 	var body model.SysDictType
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	if body.DictId <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: dictId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: dictId is empty"))
 		return
 	}
 
@@ -149,7 +149,7 @@ func (s SysDictTypeController) Edit(c *gin.Context) {
 func (s SysDictTypeController) Remove(c *gin.Context) {
 	dictId := c.Param("dictId")
 	if dictId == "" {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: dictId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: dictId is empty"))
 		return
 	}
 

@@ -42,7 +42,7 @@ func (s SysDictDataController) List(c *gin.Context) {
 func (s SysDictDataController) Info(c *gin.Context) {
 	dataId := parse.Number(c.Param("dataId"))
 	if dataId <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: deptId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: deptId is empty"))
 		return
 	}
 
@@ -61,11 +61,11 @@ func (s SysDictDataController) Add(c *gin.Context) {
 	var body model.SysDictData
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	if body.DataId > 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: dataId not is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: dataId not is empty"))
 		return
 	}
 
@@ -108,11 +108,11 @@ func (s SysDictDataController) Edit(c *gin.Context) {
 	var body model.SysDictData
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	if body.DataId <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: dataId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: dataId is empty"))
 		return
 	}
 
@@ -169,7 +169,7 @@ func (s SysDictDataController) Edit(c *gin.Context) {
 func (s SysDictDataController) Remove(c *gin.Context) {
 	dataId := c.Param("dataId")
 	if dataId == "" {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: dataId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: dataId is empty"))
 		return
 	}
 
@@ -196,7 +196,7 @@ func (s SysDictDataController) Remove(c *gin.Context) {
 func (s SysDictDataController) DictType(c *gin.Context) {
 	dictType := c.Param("dictType")
 	if dictType == "" {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: dictType is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: dictType is empty"))
 		return
 	}
 

@@ -36,7 +36,7 @@ type SysProfileController struct {
 func (s SysProfileController) Info(c *gin.Context) {
 	info, err := reqctx.LoginUser(c)
 	if err != nil {
-		c.JSON(401, resp.CodeMsg(401002, err.Error()))
+		c.JSON(401, resp.CodeMsg(resp.CODE_AUTH_INVALID, err.Error()))
 		return
 	}
 
@@ -74,14 +74,14 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 
 	// 登录用户信息
 	info, err := reqctx.LoginUser(c)
 	if err != nil {
-		c.JSON(401, resp.CodeMsg(401002, err.Error()))
+		c.JSON(401, resp.CodeMsg(resp.CODE_AUTH_INVALID, err.Error()))
 		return
 	}
 	userId := info.UserId
@@ -151,14 +151,14 @@ func (s SysProfileController) UpdatePassword(c *gin.Context) {
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 
 	// 登录用户信息
 	info, err := reqctx.LoginUser(c)
 	if err != nil {
-		c.JSON(401, resp.CodeMsg(401002, err.Error()))
+		c.JSON(401, resp.CodeMsg(resp.CODE_AUTH_INVALID, err.Error()))
 		return
 	}
 	userId := info.UserId

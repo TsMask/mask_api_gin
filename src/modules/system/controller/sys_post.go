@@ -40,7 +40,7 @@ func (s SysPostController) List(c *gin.Context) {
 func (s SysPostController) Info(c *gin.Context) {
 	postId := parse.Number(c.Param("postId"))
 	if postId <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: postId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: postId is empty"))
 		return
 	}
 
@@ -59,11 +59,11 @@ func (s SysPostController) Add(c *gin.Context) {
 	var body model.SysPost
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	if body.PostId > 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: postId not is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: postId not is empty"))
 		return
 	}
 
@@ -99,11 +99,11 @@ func (s SysPostController) Edit(c *gin.Context) {
 	var body model.SysPost
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	if body.PostId <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: postId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: postId is empty"))
 		return
 	}
 
@@ -150,7 +150,7 @@ func (s SysPostController) Edit(c *gin.Context) {
 func (s SysPostController) Remove(c *gin.Context) {
 	postId := c.Param("postId")
 	if postId == "" {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: postId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: postId is empty"))
 		return
 	}
 

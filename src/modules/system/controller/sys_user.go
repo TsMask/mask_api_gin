@@ -51,7 +51,7 @@ func (s SysUserController) List(c *gin.Context) {
 func (s SysUserController) Info(c *gin.Context) {
 	userId := parse.Number(c.Param("userId"))
 	if userId < 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: userId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: userId is empty"))
 		return
 	}
 
@@ -107,7 +107,7 @@ func (s SysUserController) Info(c *gin.Context) {
 func (s SysUserController) Add(c *gin.Context) {
 	var body model.SysUser
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
-		c.JSON(422, resp.CodeMsg(422001, resp.FormatBindError(err)))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, resp.FormatBindError(err)))
 		return
 	}
 	// 密码单独取，避免序列化输出
@@ -116,13 +116,13 @@ func (s SysUserController) Add(c *gin.Context) {
 	}
 	if err := c.ShouldBindBodyWithJSON(&bodyPassword); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	body.Password = bodyPassword.Password
 
 	if body.UserId > 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: userId not is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: userId not is empty"))
 		return
 	}
 	if !regular.ValidUsername(body.UserName) {
@@ -206,11 +206,11 @@ func (s SysUserController) Edit(c *gin.Context) {
 	var body model.SysUser
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	if body.UserId <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: userId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: userId is empty"))
 		return
 	}
 
@@ -287,7 +287,7 @@ func (s SysUserController) Edit(c *gin.Context) {
 func (s SysUserController) Remove(c *gin.Context) {
 	userId := c.Param("userId")
 	if userId == "" {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: userId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: userId is empty"))
 		return
 	}
 
@@ -332,7 +332,7 @@ func (s SysUserController) Password(c *gin.Context) {
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 
@@ -374,7 +374,7 @@ func (s SysUserController) Status(c *gin.Context) {
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 
@@ -414,7 +414,7 @@ func (s SysUserController) Status(c *gin.Context) {
 func (s SysUserController) Unlock(c *gin.Context) {
 	userName := c.Param("userName")
 	if userName == "" {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: userName is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: userName is empty"))
 		return
 	}
 
@@ -482,7 +482,7 @@ func (s SysUserController) Import(c *gin.Context) {
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 

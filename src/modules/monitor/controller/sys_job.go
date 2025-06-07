@@ -41,7 +41,7 @@ func (s SysJobController) List(c *gin.Context) {
 func (s SysJobController) Info(c *gin.Context) {
 	jobId := parse.Number(c.Param("jobId"))
 	if jobId <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: jobId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: jobId is empty"))
 		return
 	}
 
@@ -60,11 +60,11 @@ func (s SysJobController) Add(c *gin.Context) {
 	var body model.SysJob
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	if body.JobId > 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: jobId not is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: jobId not is empty"))
 		return
 	}
 
@@ -112,11 +112,11 @@ func (s SysJobController) Edit(c *gin.Context) {
 	var body model.SysJob
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	if body.JobId <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: jobId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: jobId is empty"))
 		return
 	}
 
@@ -180,7 +180,7 @@ func (s SysJobController) Edit(c *gin.Context) {
 func (s SysJobController) Remove(c *gin.Context) {
 	jobId := c.Param("jobId")
 	if jobId == "" {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: jobId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: jobId is empty"))
 		return
 	}
 
@@ -211,7 +211,7 @@ func (s SysJobController) Status(c *gin.Context) {
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 
@@ -245,7 +245,7 @@ func (s SysJobController) Status(c *gin.Context) {
 func (s SysJobController) Run(c *gin.Context) {
 	jobId := parse.Number(c.Param("jobId"))
 	if jobId <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: jobId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: jobId is empty"))
 		return
 	}
 

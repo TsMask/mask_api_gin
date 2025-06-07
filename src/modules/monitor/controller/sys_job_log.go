@@ -48,7 +48,7 @@ func (s SysJobLogController) List(c *gin.Context) {
 func (s SysJobLogController) Info(c *gin.Context) {
 	logId := parse.Number(c.Param("logId"))
 	if logId <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: logId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: logId is empty"))
 		return
 	}
 
@@ -66,7 +66,7 @@ func (s SysJobLogController) Info(c *gin.Context) {
 func (s SysJobLogController) Remove(c *gin.Context) {
 	logId := c.Param("logId")
 	if logId == "" {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: logId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: logId is empty"))
 		return
 	}
 

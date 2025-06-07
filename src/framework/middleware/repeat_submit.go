@@ -37,7 +37,7 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 		params := reqctx.RequestParamsMap(c)
 		paramsJSONByte, err := json.Marshal(params)
 		if err != nil {
-			logger.Errorf("RepeatSubmit params json marshal err: %v", err)
+			logger.Errorf("repeat submit json marshal err: %v", err)
 		}
 		paramsJSONStr := string(paramsJSONByte)
 
@@ -54,7 +54,7 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 			var rp repeatParam
 			err := json.Unmarshal([]byte(repeatStr), &rp)
 			if err != nil {
-				logger.Errorf("RepeatSubmit repeatStr json unmarshal err: %v", err)
+				logger.Errorf("repeat submit json unmarshal err: %v", err)
 			}
 			compareTime := time.Now().Unix() - rp.Time
 			compareParams := rp.Params == paramsJSONStr
@@ -78,7 +78,7 @@ func RepeatSubmit(interval int64) gin.HandlerFunc {
 		}
 		rpJSON, err := json.Marshal(rp)
 		if err != nil {
-			logger.Errorf("RepeatSubmit rp json marshal err: %v", err)
+			logger.Errorf("repeat submit json marshal err: %v", err)
 		}
 		// 保存请求时间和参数
 		_ = redis.Set("", repeatKey, string(rpJSON), time.Duration(interval)*time.Second)

@@ -40,7 +40,7 @@ func (s Oauth2ClientController) List(c *gin.Context) {
 func (s Oauth2ClientController) Info(c *gin.Context) {
 	clientId := c.Param("clientId")
 	if clientId == "" {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: clientId is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: clientId is empty"))
 		return
 	}
 
@@ -59,11 +59,11 @@ func (s Oauth2ClientController) Add(c *gin.Context) {
 	var body model.Oauth2Client
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	if body.Id > 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: id not is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id not is empty"))
 		return
 	}
 
@@ -97,11 +97,11 @@ func (s Oauth2ClientController) Edit(c *gin.Context) {
 	var body model.Oauth2Client
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 	if body.Id <= 0 {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: id is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id is empty"))
 		return
 	}
 
@@ -144,7 +144,7 @@ func (s Oauth2ClientController) Edit(c *gin.Context) {
 func (s Oauth2ClientController) Remove(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		c.JSON(422, resp.CodeMsg(422002, "bind err: id is empty"))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id is empty"))
 		return
 	}
 

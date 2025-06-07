@@ -38,7 +38,7 @@ func (s AccountController) Login(c *gin.Context) {
 	var body model.LoginBody
 	if err := c.ShouldBindJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 
@@ -127,14 +127,14 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(422001, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
 
 	// 验证刷新令牌是否有效
 	claims, err := token.UserTokenVerify(body.RefreshToken, "refresh")
 	if err != nil {
-		c.JSON(401, resp.CodeMsg(401001, err.Error()))
+		c.JSON(401, resp.CodeMsg(resp.CODE_AUTH_INVALID, err.Error()))
 		return
 	}
 	userId := parse.Number(claims[constants.JWT_USER_ID])
@@ -150,7 +150,7 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 	deviceId := fmt.Sprint(claims[constants.JWT_DEVICE_ID])
 	deviceFingerprint := reqctx.DeviceFingerprint(c, userId)
 	if deviceId != deviceFingerprint {
-		c.JSON(200, resp.ErrMsg("device fingerprint mismatch"))
+		c.JSON(401, resp.CodeMsg(resp.CODE_AUTH_DEVICE, resp.MSG_AUTH_DEVICE))
 		return
 	}
 
@@ -201,7 +201,7 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 func (s AccountController) Me(c *gin.Context) {
 	info, err := reqctx.LoginUser(c)
 	if err != nil {
-		c.JSON(401, resp.CodeMsg(401002, err.Error()))
+		c.JSON(401, resp.CodeMsg(resp.CODE_AUTH_INVALID, err.Error()))
 		return
 	}
 
