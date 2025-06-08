@@ -6,7 +6,7 @@ package resp
 // |200 |200999 |encrypt|正常请求加密数据|
 // |200 |200001 |request success|正常请求成功|
 // |200 |400001 |exist error|正常请求错误信息|
-// |200 |400002 |ratelimit over|请求限流|
+// |200 |400429 |ratelimit over|请求限流|
 // |401 |401001 |authentication error|身份认证失败或者过期|
 // |401 |401002 |authentication invalid error|无效身份信息|
 // |401 |401003 |authorization token error|令牌字符为空|
@@ -32,8 +32,8 @@ const (
 
 	// CODE_SUCCESS 响应-code正常成功
 	CODE_SUCCESS = 200001
-	// MSG_SUCCCESS 响应-msg正常成功
-	MSG_SUCCCESS = "success"
+	// MSG_SUCCESS 响应-msg正常成功
+	MSG_SUCCESS = "success"
 
 	// CODE_ERROR 响应-code错误失败
 	CODE_ERROR = 400001
@@ -41,7 +41,7 @@ const (
 	MSG_ERROR = "error"
 
 	// CODE_RATELIMIT 响应-code错误失败
-	CODE_RATELIMIT = 400002
+	CODE_RATELIMIT = 400429
 	// MSG_RATELIMIT 响应-msg错误失败
 	MSG_RATELIMIT = "access too often, please try again later"
 )
