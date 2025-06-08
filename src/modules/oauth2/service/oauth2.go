@@ -71,7 +71,7 @@ func (s Oauth2Service) ByClient(clientId, clientSecret, ipaddr string) (token.Oa
 	}
 	// 判断IP白名单
 	if !strings.Contains(item.IPWhite, ipaddr) {
-		return info, fmt.Errorf("ip whitelist mismatch")
+		return info, fmt.Errorf("ip whitelist mismatch, your ip is %s", ipaddr)
 	}
 
 	info.ClientId = clientId
