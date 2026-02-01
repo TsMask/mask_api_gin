@@ -16,21 +16,6 @@ import (
 // Redis连接实例
 var rdbMap = make(map[string]*redis.Client)
 
-// 声明定义限流脚本命令
-var rateLimitCommand = redis.NewScript(`
-local key = KEYS[1]
-local time = tonumber(ARGV[1])
-local count = tonumber(ARGV[2])
-local current = redis.call('get', key);
-if current and tonumber(current) >= count then
-	return tonumber(current);
-end
-current = redis.call('incr', key)
-if tonumber(current) == 1 then 
-	redis.call('expire', key, time)
-end
-return tonumber(current);`)
-
 // Connect 连接Redis实例
 func Connect() {
 	ctx := context.Background()
@@ -329,18 +314,26 @@ func DelKeys(source string, keys []string) error {
 }
 
 // RateLimit 限流查询并记录
-func RateLimit(source, limitKey string, time, count int64) (int64, error) {
-	// 数据源
+func RateLimit(source, limitKey string, timeSec, count int64) (int64, error) {
 	rdb := RDB(source)
 	if rdb == nil {
 		return 0, fmt.Errorf("redis not client")
 	}
 
 	ctx := context.Background()
-	result, err := rateLimitCommand.Run(ctx, rdb, []string{limitKey}, time, count).Result()
+	current, err := rdb.Incr(ctx, limitKey).Result()
 	if err != nil {
-		logger.Errorf("redis lua script err %v", err)
+		logger.Errorf("redis Incr err %v", err)
 		return 0, err
 	}
-	return result.(int64), err
+
+	if current == 1 {
+		tx := rdb.Expire(ctx, limitKey, time.Duration(timeSec)*time.Second)
+		if err := tx.Err(); err != nil {
+			logger.Errorf("redis Expire err %v", err)
+			return 0, err
+		}
+	}
+
+	return current, nil
 }
