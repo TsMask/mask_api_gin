@@ -42,8 +42,6 @@ func (s SysCacheController) Names(c *gin.Context) {
 		model.NewNames("防重提交", constants.CACHE_REPEAT_SUBMIT),
 		model.NewNames("限流处理", constants.CACHE_RATE_LIMIT),
 		model.NewNames("密码错误次数", constants.CACHE_PWD_ERR_COUNT),
-		model.NewNames("客户端授权码", constants.CACHE_OAUTH2_CODE),
-		model.NewNames("客户端令牌", constants.CACHE_OAUTH2_DEVICE),
 	}
 	c.JSON(200, resp.OkData(caches))
 }
@@ -104,7 +102,6 @@ func (s SysCacheController) CleanNames(c *gin.Context) {
 		model.NewNames("防重提交", constants.CACHE_REPEAT_SUBMIT),
 		model.NewNames("限流处理", constants.CACHE_RATE_LIMIT),
 		model.NewNames("密码错误次数", constants.CACHE_PWD_ERR_COUNT),
-		model.NewNames("客户端授权码", constants.CACHE_OAUTH2_CODE),
 	}
 	for _, v := range caches {
 		cacheKeys, err := redis.GetKeys("", v.CacheName+":*")

@@ -11,7 +11,6 @@ import (
 	"mask_api_gin/src/modules/common"
 	"mask_api_gin/src/modules/demo"
 	"mask_api_gin/src/modules/monitor"
-	"mask_api_gin/src/modules/oauth2"
 	"mask_api_gin/src/modules/system"
 )
 
@@ -39,8 +38,7 @@ func RunServer() error {
 
 // 模块路由注册
 func modulesSetup(app *gin.Engine) {
-	demo.Setup(app)   // 演示模块（可移除）
-	oauth2.Setup(app) // 开放能力模块（可移除）
+	demo.Setup(app) // 演示模块（可移除）
 
 	auth.Setup(app)    // 认证模块
 	common.Setup(app)  // 通用模块
