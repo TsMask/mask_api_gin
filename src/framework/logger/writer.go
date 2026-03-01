@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"log"
@@ -19,6 +20,7 @@ type Logger struct {
 	maxDay      int            // 保留最长天数
 	maxSize     int64          // 文件最大空间
 	fileHandle  *os.File       // 文件实例
+	bufWriter   *bufio.Writer  // 缓冲写入器
 	logger      *log.Logger    // 日志实例
 	logLevelMap map[int]string // 日志等级标识名
 	logDay      int            // 日志当前日
@@ -37,14 +39,16 @@ func NewLogger(env, fileDir, fileName string, level, maxDay, maxSize int) (*Logg
 	if err := os.MkdirAll(filepath.Dir(logFilePath), 0755); err != nil {
 		return nil, fmt.Errorf("failed to mkdir logger dir: %v", err)
 	}
-	fileHandle, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	fileHandle, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open log file: %v", err)
 	}
 
-	writer := io.Writer(fileHandle)
+	bufWriter := bufio.NewWriterSize(fileHandle, 64*1024)
+
+	writer := io.Writer(bufWriter)
 	if env == "local" {
-		writer = io.MultiWriter(fileHandle, os.Stderr)
+		writer = io.MultiWriter(bufWriter, os.Stderr)
 	}
 
 	logger := log.New(writer, "", log.LstdFlags|log.Lshortfile)
@@ -64,6 +68,7 @@ func NewLogger(env, fileDir, fileName string, level, maxDay, maxSize int) (*Logg
 		maxDay:      maxDay,
 		maxSize:     int64(maxSize * 1024 * 1024),
 		fileHandle:  fileHandle,
+		bufWriter:   bufWriter,
 		logger:      logger,
 		logLevelMap: logLevelMap,
 		logDay:      time.Now().Day(),
@@ -117,10 +122,13 @@ func (l *Logger) rotateFile(timeFormat string) {
 
 	l.fileHandle = fileHandle
 
+	// 重新创建缓冲写入器
+	l.bufWriter = bufio.NewWriterSize(fileHandle, 64*1024)
+
 	// 重新设置 logger 的 writer
-	writer := io.Writer(l.fileHandle)
+	writer := io.Writer(l.bufWriter)
 	if l.env == "local" {
-		writer = io.MultiWriter(l.fileHandle, os.Stderr)
+		writer = io.MultiWriter(l.bufWriter, os.Stderr)
 	}
 	l.logger.SetOutput(writer)
 }
@@ -189,8 +197,11 @@ func (l *Logger) Errorf(format string, args ...interface{}) {
 
 // Close 日志关闭
 func (l *Logger) Close() {
-	err := l.fileHandle.Close()
-	if err != nil {
+	if l.bufWriter != nil {
+		_ = l.bufWriter.Flush()
+	}
+
+	if err := l.fileHandle.Close(); err != nil {
 		l.logger.Printf("failed to close log file: %v\n", err)
 	}
 }
