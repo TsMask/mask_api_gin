@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -14,7 +15,10 @@ import (
 )
 
 // Redis连接实例
-var rdbMap = make(map[string]*redis.Client)
+var (
+	rdbMapMu sync.RWMutex
+	rdbMap   = make(map[string]*redis.Client)
+)
 
 // Connect 连接Redis实例
 func Connect() {
@@ -36,12 +40,16 @@ func Connect() {
 			logger.Fatalf("Ping redis %s is %v", k, err)
 		}
 		logger.Infof("redis %s %d %s connection is successful.", k, client["db"].(int), pong)
+		rdbMapMu.Lock()
 		rdbMap[k] = rdb
+		rdbMapMu.Unlock()
 	}
 }
 
 // Close 关闭Redis实例
 func Close() {
+	rdbMapMu.Lock()
+	defer rdbMapMu.Unlock()
 	for _, rdb := range rdbMap {
 		if err := rdb.Close(); err != nil {
 			logger.Errorf("redis db close: %s", err)
@@ -55,6 +63,8 @@ func RDB(source string) *redis.Client {
 	if source == "" {
 		source = config.Get("redis.defaultDataSourceName").(string)
 	}
+	rdbMapMu.RLock()
+	defer rdbMapMu.RUnlock()
 	return rdbMap[source]
 }
 

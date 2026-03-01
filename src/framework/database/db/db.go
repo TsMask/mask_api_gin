@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"sync"
 	"time"
 
 	"gorm.io/driver/mysql"
@@ -17,7 +18,10 @@ import (
 )
 
 // 数据库连接实例
-var dbMap = make(map[string]*gorm.DB)
+var (
+	dbMapMu sync.RWMutex
+	dbMap   = make(map[string]*gorm.DB)
+)
 
 type dialectInfo struct {
 	dialectic gorm.Dialector
@@ -99,12 +103,16 @@ func Connect() {
 		// SetConnMaxLifetime 设置了连接可复用的最大时间。
 		sqlDB.SetConnMaxLifetime(time.Hour)
 		logger.Infof("database %s connection is successful.", key)
+		dbMapMu.Lock()
 		dbMap[key] = db
+		dbMapMu.Unlock()
 	}
 }
 
 // Close 关闭数据库实例
 func Close() {
+	dbMapMu.Lock()
+	defer dbMapMu.Unlock()
 	for _, db := range dbMap {
 		sqlDB, err := db.DB()
 		if err != nil {
@@ -124,6 +132,8 @@ func DB(source string) *gorm.DB {
 	if source == "" {
 		source = config.Get("gorm.defaultDataSourceName").(string)
 	}
+	dbMapMu.RLock()
+	defer dbMapMu.RUnlock()
 	return dbMap[source]
 }
 
