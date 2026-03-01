@@ -37,6 +37,10 @@ func (s FileController) Download(c *gin.Context) {
 		return
 	}
 	routerPath := string(decodedBytes)
+	if len(routerPath) > 500 {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "file path too long"))
+		return
+	}
 
 	// 断点续传
 	headerRange := c.GetHeader("Range")
