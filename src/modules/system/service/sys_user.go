@@ -42,8 +42,10 @@ func (s SysUser) FindByPage(query map[string]string, dataScopeSQL string) ([]mod
 	rows, total := s.sysUserRepository.SelectByPage(query, dataScopeSQL)
 	for i, v := range rows {
 		// 部门
-		deptInfo := s.sysDeptRepository.SelectById(v.DeptId)
-		rows[i].Dept = &deptInfo
+		if rows[i].DeptId > 0 && rows[i].Dept == nil {
+			deptInfo := s.sysDeptRepository.SelectById(v.DeptId)
+			rows[i].Dept = &deptInfo
+		}
 		// 角色
 		roleArr := s.sysRoleRepository.SelectByUserId(v.UserId)
 		roleIds := make([]int64, 0)
@@ -73,8 +75,10 @@ func (s SysUser) FindById(userId int64) model.SysUser {
 	if len(users) > 0 {
 		userInfo = users[0]
 		// 部门
-		deptInfo := s.sysDeptRepository.SelectById(userInfo.DeptId)
-		userInfo.Dept = &deptInfo
+		if userInfo.DeptId > 0 && userInfo.Dept == nil {
+			deptInfo := s.sysDeptRepository.SelectById(userInfo.DeptId)
+			userInfo.Dept = &deptInfo
+		}
 		// 角色
 		roleArr := s.sysRoleRepository.SelectByUserId(userInfo.UserId)
 		roleIds := make([]int64, 0)

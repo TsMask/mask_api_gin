@@ -76,14 +76,18 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 		sortOrderArr := strings.Split(sortOrderStr, ",")
 		for i := range sortByArr {
 			sortBy := sortByArr[i]
-			sortOrder := sortOrderArr[i]
+			sortOrder := ""
+			if i < len(sortOrderArr) {
+				sortOrder = sortOrderArr[i]
+			}
 			// 排序字段
 			sort := "id"
-			if sortBy == "operaBy" {
+			switch sortBy {
+			case "operaBy":
 				sort = "opera_by"
-			} else if sortBy == "operaTime" {
+			case "operaTime":
 				sort = "opera_time"
-			} else if sortBy == "costTime" {
+			case "costTime":
 				sort = "cost_time"
 			}
 			// 排序方式

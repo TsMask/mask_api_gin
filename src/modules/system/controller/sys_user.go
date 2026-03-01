@@ -464,12 +464,7 @@ func (s SysUserController) Template(c *gin.Context) {
 	}
 	fileName := fmt.Sprintf("user_import_template_%d.xlsx", time.Now().UnixMilli())
 
-	// 设置响应头
-	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
-	c.Header("Content-Type", "application/octet-stream")
-
-	// 返回响应体
-	c.Data(200, "application/octet-stream", fileData)
+	reqctx.HeaderContentOctetStream(c, fileName, fileData)
 }
 
 // Import 用户信息列表导入

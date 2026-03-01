@@ -70,14 +70,18 @@ func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) 
 		sortOrderArr := strings.Split(sortOrderStr, ",")
 		for i := range sortByArr {
 			sortBy := sortByArr[i]
-			sortOrder := sortOrderArr[i]
+			sortOrder := ""
+			if i < len(sortOrderArr) {
+				sortOrder = sortOrderArr[i]
+			}
 			// 排序字段
 			sort := "id"
-			if sortBy == "loginIp" {
+			switch sortBy {
+			case "loginIp":
 				sort = "login_ip"
-			} else if sortBy == "userName" {
+			case "userName":
 				sort = "user_name"
-			} else if sortBy == "createTime" {
+			case "createTime":
 				sort = "create_time"
 			}
 			// 排序方式
