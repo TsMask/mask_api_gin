@@ -28,12 +28,12 @@ func RunServer() error {
 	// 启动服务
 	serverCert := fmt.Sprint(config.Get("server.cert"))
 	serverkey := fmt.Sprint(config.Get("server.key"))
-	if serverCert == "" || serverkey == "" || serverCert == "<nil>" || serverkey == "<nil>" {
-		fmt.Printf("\nListening and serving HTTP on %s \n\n", addr)
-		return app.Run(addr)
+	if serverCert != "" && serverkey != "" && serverCert != "<nil>" && serverkey != "<nil>" {
+		fmt.Printf("\nListening and serving HTTPS on %s \n\n", addr)
+		return app.RunTLS(addr, serverCert, serverkey)
 	}
-	fmt.Printf("\nListening and serving HTTPS on %s \n\n", addr)
-	return app.RunTLS(addr, serverCert, serverkey)
+	fmt.Printf("\nListening and serving HTTP on %s \n\n", addr)
+	return app.Run(addr)
 }
 
 // 模块路由注册
