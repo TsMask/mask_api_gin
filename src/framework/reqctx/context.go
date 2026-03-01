@@ -1,6 +1,9 @@
 package reqctx
 
 import (
+	"fmt"
+	"net/url"
+	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -63,4 +66,23 @@ func Authorization(c *gin.Context) string {
 		return strings.TrimSpace(tokenStr) // 去除可能存在的空格
 	}
 	return ""
+}
+
+// HeaderContentOctetStream 设置响应头为application/octet-stream返回二进制数据
+func HeaderContentOctetStream(c *gin.Context, fileName string, fileData []byte) {
+	baseName := filepath.Base(fileName)
+	safeName := strings.ReplaceAll(baseName, "..", "_")
+	safeName = strings.ReplaceAll(safeName, "/", "_")
+	safeName = strings.ReplaceAll(safeName, "\\", "_")
+	safeName = strings.ReplaceAll(safeName, ";", "_")
+	safeName = strings.ReplaceAll(safeName, "\"", "_")
+
+	escapedName := url.QueryEscape(safeName)
+	disposition := fmt.Sprintf("attachment; filename=%s", escapedName)
+
+	// 设置响应头
+	c.Header("Content-Disposition", disposition)
+	c.Header("Content-Type", "application/octet-stream")
+	// 返回响应体
+	c.Data(200, "application/octet-stream", fileData)
 }
