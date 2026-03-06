@@ -71,7 +71,6 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
-	tx = tx.Preload("Dept").Preload("Roles").Preload("UserPosts")
 	err := tx.Order("user_id desc").Find(&rows).Error
 	if err != nil {
 		logger.Errorf("query find err => %v", err.Error())
@@ -116,8 +115,6 @@ func (r SysUser) SelectByIds(userIds []int64) []model.SysUser {
 	tx := db.DB("").Model(&model.SysUser{})
 	// 构建查询条件
 	tx = tx.Where("user_id in ? and del_flag = '0'", userIds)
-	// 预加载关联数据
-	tx = tx.Preload("Dept").Preload("Roles").Preload("UserPosts")
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
