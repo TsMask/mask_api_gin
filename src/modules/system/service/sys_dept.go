@@ -5,10 +5,13 @@ import (
 	"strings"
 
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/model/vo"
 	"mask_api_gin/src/modules/system/repository"
+
+	"gorm.io/gorm"
 )
 
 // NewSysDept  实例化服务层
@@ -44,25 +47,30 @@ func (s SysDept) Insert(sysDept model.SysDept) int64 {
 func (s SysDept) Update(sysDept model.SysDept) int64 {
 	dept := s.sysDeptRepository.SelectById(sysDept.DeptId)
 	parentDept := s.sysDeptRepository.SelectById(sysDept.ParentId)
-	// 上级与当前部门祖级列表更新
-	if parentDept.DeptId == sysDept.ParentId && dept.DeptId == sysDept.DeptId {
-		newAncestors := fmt.Sprintf("%s,%d", parentDept.Ancestors, parentDept.DeptId)
-		oldAncestors := dept.Ancestors
-		// 祖级列表不一致时更新
-		if newAncestors != oldAncestors {
-			dept.Ancestors = newAncestors
-			s.updateDeptChildren(dept.DeptId, newAncestors, oldAncestors)
+
+	var rows int64
+	db.Transaction("", func(tx *gorm.DB) error {
+		// 上级与当前部门祖级列表更新
+		if parentDept.DeptId == sysDept.ParentId && dept.DeptId == sysDept.DeptId {
+			newAncestors := fmt.Sprintf("%s,%d", parentDept.Ancestors, parentDept.DeptId)
+			oldAncestors := dept.Ancestors
+			// 祖级列表不一致时更新
+			if newAncestors != oldAncestors {
+				s.updateDeptChildren(tx, dept.DeptId, newAncestors, oldAncestors)
+			}
 		}
-	}
-	// 如果该部门是启用状态，则启用该部门的所有上级部门
-	if sysDept.StatusFlag == constants.STATUS_YES && parentDept.StatusFlag == constants.STATUS_NO {
-		s.updateDeptStatusNormal(sysDept.Ancestors)
-	}
-	return s.sysDeptRepository.Update(sysDept)
+		// 如果该部门是启用状态，则启用该部门的所有上级部门
+		if sysDept.StatusFlag == constants.STATUS_YES && parentDept.StatusFlag == constants.STATUS_NO {
+			s.updateDeptStatusNormal(tx, sysDept.Ancestors)
+		}
+		rows = s.sysDeptRepository.Update(nil, sysDept)
+		return nil
+	})
+	return rows
 }
 
 // updateDeptStatusNormal 修改所在部门正常状态
-func (s SysDept) updateDeptStatusNormal(ancestors string) int64 {
+func (s SysDept) updateDeptStatusNormal(d *gorm.DB, ancestors string) int64 {
 	if ancestors == "" || ancestors == "0" {
 		return 0
 	}
@@ -70,11 +78,11 @@ func (s SysDept) updateDeptStatusNormal(ancestors string) int64 {
 	for _, v := range strings.Split(ancestors, ",") {
 		deptIds = append(deptIds, parse.Number(v))
 	}
-	return s.sysDeptRepository.UpdateDeptStatusNormal(deptIds)
+	return s.sysDeptRepository.UpdateDeptStatusNormal(d, deptIds)
 }
 
 // updateDeptChildren 修改子元素关系
-func (s SysDept) updateDeptChildren(deptId int64, newAncestors, oldAncestors string) int64 {
+func (s SysDept) updateDeptChildren(d *gorm.DB, deptId int64, newAncestors, oldAncestors string) int64 {
 	arr := s.sysDeptRepository.SelectChildrenDeptById(deptId)
 	if len(arr) == 0 {
 		return 0
@@ -85,13 +93,18 @@ func (s SysDept) updateDeptChildren(deptId int64, newAncestors, oldAncestors str
 		ancestors := strings.Replace(item.Ancestors, oldAncestors, newAncestors, 1)
 		item.Ancestors = ancestors
 	}
-	return s.sysDeptRepository.UpdateDeptChildren(arr)
+	return s.sysDeptRepository.UpdateDeptChildren(d, arr)
 }
 
 // DeleteById 删除信息
 func (s SysDept) DeleteById(deptId int64) int64 {
-	s.sysRoleDeptRepository.DeleteByDeptIds([]int64{deptId}) // 删除角色与部门关联
-	return s.sysDeptRepository.DeleteById(deptId)
+	var rows int64
+	db.Transaction("", func(tx *gorm.DB) error {
+		s.sysRoleDeptRepository.DeleteByDeptIds(tx, []int64{deptId})
+		rows = s.sysDeptRepository.DeleteById(tx, deptId)
+		return nil
+	})
+	return rows
 }
 
 // FindDeptIdsByRoleId 根据角色ID查询包含的部门ID

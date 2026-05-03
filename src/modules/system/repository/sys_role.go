@@ -7,6 +7,8 @@ import (
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
+
+	"gorm.io/gorm"
 )
 
 // NewSysRole 实例化数据层
@@ -114,7 +116,7 @@ func (r SysRole) SelectByIds(roleIds []int64) []model.SysRole {
 }
 
 // Insert 新增信息 返回新增数据ID
-func (r SysRole) Insert(sysRole model.SysRole) int64 {
+func (r SysRole) Insert(d *gorm.DB, sysRole model.SysRole) int64 {
 	sysRole.DelFlag = "0"
 	if sysRole.CreateBy != "" {
 		ms := time.Now().UnixMilli()
@@ -122,8 +124,11 @@ func (r SysRole) Insert(sysRole model.SysRole) int64 {
 		sysRole.UpdateTime = ms
 		sysRole.CreateTime = ms
 	}
+	if d == nil {
+		d = db.DB("")
+	}
 	// 执行插入
-	if err := db.DB("").Create(&sysRole).Error; err != nil {
+	if err := d.Create(&sysRole).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
 		return 0
 	}
@@ -131,17 +136,20 @@ func (r SysRole) Insert(sysRole model.SysRole) int64 {
 }
 
 // Update 修改信息 返回受影响行数
-func (r SysRole) Update(sysRole model.SysRole) int64 {
+func (r SysRole) Update(d *gorm.DB, sysRole model.SysRole) int64 {
 	if sysRole.RoleId <= 0 {
 		return 0
 	}
 	if sysRole.UpdateBy != "" {
 		sysRole.UpdateTime = time.Now().UnixMilli()
 	}
-	tx := db.DB("").Model(&model.SysRole{})
+	if d == nil {
+		d = db.DB("")
+	}
+	tx := d.Model(&model.SysRole{})
 	// 构建查询条件
 	tx = tx.Where("role_id = ?", sysRole.RoleId)
-	tx = tx.Omit("role_id", "del_flag", "create_by", "create_time")
+	tx = tx.Omit("role_id", "create_by", "create_time", "del_flag")
 	// 执行更新
 	if err := tx.Updates(sysRole).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -151,11 +159,14 @@ func (r SysRole) Update(sysRole model.SysRole) int64 {
 }
 
 // DeleteByIds 批量删除信息 返回受影响行数
-func (r SysRole) DeleteByIds(roleIds []int64) int64 {
+func (r SysRole) DeleteByIds(d *gorm.DB, roleIds []int64) int64 {
 	if len(roleIds) <= 0 {
 		return 0
 	}
-	tx := db.DB("").Model(&model.SysRole{})
+	if d == nil {
+		d = db.DB("")
+	}
+	tx := d.Model(&model.SysRole{})
 	// 构建查询条件
 	tx = tx.Where("role_id in ?", roleIds)
 	// 执行更新删除标记
@@ -207,4 +218,30 @@ func (r SysRole) SelectByUserId(userId int64) []model.SysRole {
 		return rows
 	}
 	return rows
+}
+
+// SelectByUserIds 批量根据用户ID获取角色信息，返回 userId → []SysRole 的映射
+func (r SysRole) SelectByUserIds(userIds []int64) map[int64][]model.SysRole {
+	result := make(map[int64][]model.SysRole)
+	if len(userIds) <= 0 {
+		return result
+	}
+
+	type userRoleRow struct {
+		UserId int64 `gorm:"column:user_id"`
+		model.SysRole
+	}
+	var rows []userRoleRow
+	tx := db.DB("").Table("sys_user_role ur").
+		Select("ur.user_id, r.*").
+		Joins("JOIN sys_role r ON r.role_id = ur.role_id AND r.del_flag = '0'").
+		Where("ur.user_id IN ?", userIds)
+	if err := tx.Find(&rows).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return result
+	}
+	for _, row := range rows {
+		result[row.UserId] = append(result[row.UserId], row.SysRole)
+	}
+	return result
 }

@@ -5,12 +5,16 @@ import (
 	"strings"
 
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/database/db"
+	"mask_api_gin/src/framework/token"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
+
+	"gorm.io/gorm"
 )
 
 // NewSysUser 实例化服务层
@@ -37,26 +41,58 @@ type SysUser struct {
 	sysConfigService      *SysConfig              // 参数配置服务
 }
 
+// fillUsersDeptAndRoles 批量填充用户的部门和角色信息（消除 N+1 查询）
+func (s SysUser) fillUsersDeptAndRoles(users []model.SysUser) {
+	if len(users) == 0 {
+		return
+	}
+
+	// 收集所有唯一的 deptId 和 userId
+	deptIdSet := make(map[int64]struct{})
+	userIdSet := make(map[int64]struct{})
+	for _, u := range users {
+		if u.DeptId > 0 {
+			deptIdSet[u.DeptId] = struct{}{}
+		}
+		userIdSet[u.UserId] = struct{}{}
+	}
+
+	// 批量查询部门
+	deptIds := make([]int64, 0, len(deptIdSet))
+	for id := range deptIdSet {
+		deptIds = append(deptIds, id)
+	}
+	deptMap := s.sysDeptRepository.SelectMapByIds(deptIds)
+
+	// 批量查询角色
+	userIds := make([]int64, 0, len(userIdSet))
+	for id := range userIdSet {
+		userIds = append(userIds, id)
+	}
+	roleMap := s.sysRoleRepository.SelectByUserIds(userIds)
+
+	// 填充
+	for i := range users {
+		if dept, ok := deptMap[users[i].DeptId]; ok {
+			users[i].Dept = &dept
+		}
+		if roleArr, ok := roleMap[users[i].UserId]; ok {
+			roles := make([]*model.SysRole, 0, len(roleArr))
+			roleIds := make([]int64, 0, len(roleArr))
+			for idx := range roleArr {
+				roles = append(roles, &roleArr[idx])
+				roleIds = append(roleIds, roleArr[idx].RoleId)
+			}
+			users[i].Roles = roles
+			users[i].RoleIds = roleIds
+		}
+	}
+}
+
 // FindByPage 分页查询列表数据
 func (s SysUser) FindByPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64) {
 	rows, total := s.sysUserRepository.SelectByPage(query, dataScopeSQL)
-	for i, v := range rows {
-		// 部门
-		if rows[i].DeptId > 0 && rows[i].Dept == nil {
-			deptInfo := s.sysDeptRepository.SelectById(v.DeptId)
-			rows[i].Dept = &deptInfo
-		}
-		// 角色
-		roleArr := s.sysRoleRepository.SelectByUserId(v.UserId)
-		roleIds := make([]int64, 0)
-		roles := make([]*model.SysRole, 0)
-		for _, role := range roleArr {
-			roles = append(roles, &role)
-			roleIds = append(roleIds, role.RoleId)
-		}
-		rows[i].Roles = roles
-		rows[i].RoleIds = roleIds
-	}
+	s.fillUsersDeptAndRoles(rows)
 	return rows, total
 }
 
@@ -67,45 +103,37 @@ func (s SysUser) Find(sysUser model.SysUser) []model.SysUser {
 
 // FindById 通过ID查询信息
 func (s SysUser) FindById(userId int64) model.SysUser {
-	userInfo := model.SysUser{}
 	if userId <= 0 {
-		return userInfo
+		return model.SysUser{}
 	}
 	users := s.sysUserRepository.SelectByIds([]int64{userId})
 	if len(users) > 0 {
-		userInfo = users[0]
-		// 部门
-		if userInfo.DeptId > 0 && userInfo.Dept == nil {
-			deptInfo := s.sysDeptRepository.SelectById(userInfo.DeptId)
-			userInfo.Dept = &deptInfo
-		}
-		// 角色
-		roleArr := s.sysRoleRepository.SelectByUserId(userInfo.UserId)
-		roleIds := make([]int64, 0)
-		roles := make([]*model.SysRole, 0)
-		for _, role := range roleArr {
-			roles = append(roles, &role)
-			roleIds = append(roleIds, role.RoleId)
-		}
-		userInfo.Roles = roles
-		userInfo.RoleIds = roleIds
+		s.fillUsersDeptAndRoles(users)
+		return users[0]
 	}
-	return userInfo
+	return model.SysUser{}
 }
 
 // Insert 新增信息
 func (s SysUser) Insert(sysUser model.SysUser) int64 {
-	// 新增用户信息
-	insertId := s.sysUserRepository.Insert(sysUser)
-	if insertId > 0 {
-		s.insertUserRole(insertId, sysUser.RoleIds) // 新增用户角色信息
-		s.insertUserPost(insertId, sysUser.PostIds) // 新增用户岗位信息
+	var insertId int64
+	err := db.Transaction("", func(tx *gorm.DB) error {
+		insertId = s.sysUserRepository.Insert(tx, sysUser)
+		if insertId <= 0 {
+			return fmt.Errorf("insert user failed")
+		}
+		s.insertUserRole(tx, insertId, sysUser.RoleIds)
+		s.insertUserPost(tx, insertId, sysUser.PostIds)
+		return nil
+	})
+	if err != nil {
+		return 0
 	}
 	return insertId
 }
 
 // insertUserRole 新增用户角色信息
-func (s SysUser) insertUserRole(userId int64, roleIds []int64) int64 {
+func (s SysUser) insertUserRole(d *gorm.DB, userId int64, roleIds []int64) int64 {
 	if userId <= 0 || len(roleIds) <= 0 {
 		return 0
 	}
@@ -121,11 +149,11 @@ func (s SysUser) insertUserRole(userId int64, roleIds []int64) int64 {
 		})
 	}
 
-	return s.sysUserRoleRepository.BatchInsert(arr)
+	return s.sysUserRoleRepository.BatchInsert(d, arr)
 }
 
 // insertUserPost 新增用户岗位信息
-func (s SysUser) insertUserPost(userId int64, postIds []int64) int64 {
+func (s SysUser) insertUserPost(d *gorm.DB, userId int64, postIds []int64) int64 {
 	if userId <= 0 || len(postIds) <= 0 {
 		return 0
 	}
@@ -140,25 +168,31 @@ func (s SysUser) insertUserPost(userId int64, postIds []int64) int64 {
 		})
 	}
 
-	return s.sysUserPostRepository.BatchInsert(arr)
+	return s.sysUserPostRepository.BatchInsert(d, arr)
 }
 
 // Update 修改信息
 func (s SysUser) Update(sysUser model.SysUser) int64 {
-	return s.sysUserRepository.Update(sysUser)
+	return s.sysUserRepository.Update(nil, sysUser)
 }
 
 // UpdateUserAndRolePost 修改用户信息同时更新角色和岗位
 func (s SysUser) UpdateUserAndRolePost(sysUser model.SysUser) int64 {
-	// 删除用户与角色关联
-	s.sysUserRoleRepository.DeleteByUserIds([]int64{sysUser.UserId})
-	// 新增用户角色信息
-	s.insertUserRole(sysUser.UserId, sysUser.RoleIds)
-	// 删除用户与岗位关联
-	s.sysUserPostRepository.DeleteByUserIds([]int64{sysUser.UserId})
-	// 新增用户岗位信息
-	s.insertUserPost(sysUser.UserId, sysUser.PostIds)
-	return s.sysUserRepository.Update(sysUser)
+	var rows int64
+	err := db.Transaction("", func(tx *gorm.DB) error {
+		s.sysUserRoleRepository.DeleteByUserIds(tx, []int64{sysUser.UserId})
+		s.insertUserRole(tx, sysUser.UserId, sysUser.RoleIds)
+		s.sysUserPostRepository.DeleteByUserIds(tx, []int64{sysUser.UserId})
+		s.insertUserPost(tx, sysUser.UserId, sysUser.PostIds)
+		rows = s.sysUserRepository.Update(tx, sysUser)
+		return nil
+	})
+	if err != nil {
+		return 0
+	}
+	// 角色或状态变更后清理 Token 缓存，强制重新登录
+	token.RemoveByUserIds([]int64{sysUser.UserId})
+	return rows
 }
 
 // DeleteByIds 批量删除信息
@@ -168,12 +202,22 @@ func (s SysUser) DeleteByIds(userIds []int64) (int64, error) {
 	if len(users) <= 0 {
 		return 0, fmt.Errorf("没有权限访问用户数据！")
 	}
-	if len(users) == len(userIds) {
-		s.sysUserRoleRepository.DeleteByUserIds(userIds) // 删除用户与角色关联
-		s.sysUserPostRepository.DeleteByUserIds(userIds) // 删除用户与岗位关联
-		return s.sysUserRepository.DeleteByIds(userIds), nil
+	if len(users) != len(userIds) {
+		return 0, fmt.Errorf("删除用户信息失败！")
 	}
-	return 0, fmt.Errorf("删除用户信息失败！")
+	var rows int64
+	err := db.Transaction("", func(tx *gorm.DB) error {
+		s.sysUserRoleRepository.DeleteByUserIds(tx, userIds)
+		s.sysUserPostRepository.DeleteByUserIds(tx, userIds)
+		rows = s.sysUserRepository.DeleteByIds(tx, userIds)
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	// 删除用户后清理 Token 缓存
+	token.RemoveByUserIds(userIds)
+	return rows, nil
 }
 
 // CheckUniqueByUserName 检查用户名称是否唯一
@@ -215,40 +259,14 @@ func (s SysUser) FindByUserName(userName string) model.SysUser {
 	if userinfo.UserName != userName {
 		return userinfo
 	}
-	// 部门
-	deptInfo := s.sysDeptRepository.SelectById(userinfo.DeptId)
-	userinfo.Dept = &deptInfo
-	// 角色
-	roleArr := s.sysRoleRepository.SelectByUserId(userinfo.UserId)
-	roles := make([]*model.SysRole, 0)
-	roleIds := make([]int64, 0)
-	for _, role := range roleArr {
-		roles = append(roles, &role)
-		roleIds = append(roleIds, role.RoleId)
-	}
-	userinfo.Roles = roles
-	userinfo.RoleIds = roleIds
+	s.fillUsersDeptAndRoles([]model.SysUser{userinfo})
 	return userinfo
 }
 
 // FindAuthUsersPage 根据条件分页查询分配用户角色列表
 func (s SysUser) FindAuthUsersPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64) {
 	rows, total := s.sysUserRepository.SelectAuthUsersByPage(query, dataScopeSQL)
-	for i, v := range rows {
-		// 部门
-		deptInfo := s.sysDeptRepository.SelectById(v.DeptId)
-		rows[i].Dept = &deptInfo
-		// 角色
-		roleArr := s.sysRoleRepository.SelectByUserId(v.UserId)
-		roleIds := make([]int64, 0)
-		roles := make([]*model.SysRole, 0)
-		for _, role := range roleArr {
-			roles = append(roles, &role)
-			roleIds = append(roleIds, role.RoleId)
-		}
-		rows[i].Roles = roles
-		rows[i].RoleIds = roleIds
-	}
+	s.fillUsersDeptAndRoles(rows)
 	return rows, total
 }
 

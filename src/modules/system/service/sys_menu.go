@@ -6,11 +6,14 @@ import (
 	"strings"
 
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/model/vo"
 	"mask_api_gin/src/modules/system/repository"
+
+	"gorm.io/gorm"
 )
 
 // NewSysMenu 实例化服务层
@@ -56,8 +59,13 @@ func (s SysMenu) Update(sysMenu model.SysMenu) int64 {
 
 // DeleteById 删除信息
 func (s SysMenu) DeleteById(menuId int64) int64 {
-	s.sysRoleMenuRepository.DeleteByMenuIds([]int64{menuId}) // 删除菜单与角色关联
-	return s.sysMenuRepository.DeleteById(menuId)
+	var rows int64
+	db.Transaction("", func(tx *gorm.DB) error {
+		s.sysRoleMenuRepository.DeleteByMenuIds(tx, []int64{menuId})
+		rows = s.sysMenuRepository.DeleteById(tx, menuId)
+		return nil
+	})
+	return rows
 }
 
 // ExistChildrenByMenuIdAndStatus 菜单下同状态存在子节点数量

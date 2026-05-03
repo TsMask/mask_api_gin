@@ -9,6 +9,8 @@ import (
 	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
+
+	"gorm.io/gorm"
 )
 
 // NewSysUser 实例化数据层
@@ -124,7 +126,7 @@ func (r SysUser) SelectByIds(userIds []int64) []model.SysUser {
 }
 
 // Insert 新增信息
-func (r SysUser) Insert(sysUser model.SysUser) int64 {
+func (r SysUser) Insert(d *gorm.DB, sysUser model.SysUser) int64 {
 	sysUser.DelFlag = "0"
 	if sysUser.CreateBy != "" {
 		ms := time.Now().UnixMilli()
@@ -135,8 +137,11 @@ func (r SysUser) Insert(sysUser model.SysUser) int64 {
 	if sysUser.Password != "" {
 		sysUser.Password = crypto.BcryptHash(sysUser.Password)
 	}
+	if d == nil {
+		d = db.DB("")
+	}
 	// 执行插入
-	if err := db.DB("").Create(&sysUser).Error; err != nil {
+	if err := d.Create(&sysUser).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
 		return 0
 	}
@@ -144,7 +149,7 @@ func (r SysUser) Insert(sysUser model.SysUser) int64 {
 }
 
 // Update 修改信息
-func (r SysUser) Update(sysUser model.SysUser) int64 {
+func (r SysUser) Update(d *gorm.DB, sysUser model.SysUser) int64 {
 	if sysUser.UserId <= 0 {
 		return 0
 	}
@@ -154,10 +159,13 @@ func (r SysUser) Update(sysUser model.SysUser) int64 {
 	if sysUser.Password != "" {
 		sysUser.Password = crypto.BcryptHash(sysUser.Password)
 	}
-	tx := db.DB("").Model(&model.SysUser{})
+	if d == nil {
+		d = db.DB("")
+	}
+	tx := d.Model(&model.SysUser{})
 	// 构建查询条件
 	tx = tx.Where("user_id = ?", sysUser.UserId)
-	tx = tx.Omit("user_id", "del_flag", "create_by", "create_time")
+	tx = tx.Omit("user_id", "create_by", "create_time", "del_flag")
 	// 执行更新
 	if err := tx.Updates(sysUser).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -167,11 +175,14 @@ func (r SysUser) Update(sysUser model.SysUser) int64 {
 }
 
 // DeleteByIds 批量删除信息
-func (r SysUser) DeleteByIds(userIds []int64) int64 {
+func (r SysUser) DeleteByIds(d *gorm.DB, userIds []int64) int64 {
 	if len(userIds) <= 0 {
 		return 0
 	}
-	tx := db.DB("").Model(&model.SysUser{})
+	if d == nil {
+		d = db.DB("")
+	}
+	tx := d.Model(&model.SysUser{})
 	// 构建查询条件
 	tx = tx.Where("user_id in ?", userIds)
 	// 执行更新删除标记
@@ -185,7 +196,7 @@ func (r SysUser) DeleteByIds(userIds []int64) int64 {
 // CheckUnique 检查信息是否唯一
 func (r SysUser) CheckUnique(sysUser model.SysUser) int64 {
 	tx := db.DB("").Model(&model.SysUser{})
-	tx = tx.Where("del_flag = 0")
+	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysUser.UserName != "" {
 		tx = tx.Where("user_name = ?", sysUser.UserName)

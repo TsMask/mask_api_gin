@@ -141,7 +141,7 @@ func (r SysNotice) Update(sysNotice model.SysNotice) int64 {
 	tx := db.DB("").Model(&model.SysNotice{})
 	// 构建查询条件
 	tx = tx.Where("notice_id = ?", sysNotice.NoticeId)
-	tx = tx.Omit("notice_id", "del_flag", "create_by", "create_time")
+	tx = tx.Omit("notice_id", "create_by", "create_time", "del_flag")
 	// 执行更新
 	if err := tx.Updates(sysNotice).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())

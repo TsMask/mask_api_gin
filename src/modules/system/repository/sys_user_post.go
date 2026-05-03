@@ -4,6 +4,8 @@ import (
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
+
+	"gorm.io/gorm"
 )
 
 // NewSysUserPost 实例化数据层
@@ -29,11 +31,14 @@ func (r SysUserPost) ExistUserByPostId(postId int64) int64 {
 }
 
 // DeleteByUserIds 批量删除关联By用户
-func (r SysUserPost) DeleteByUserIds(userIds []int64) int64 {
+func (r SysUserPost) DeleteByUserIds(d *gorm.DB, userIds []int64) int64 {
 	if len(userIds) <= 0 {
 		return 0
 	}
-	tx := db.DB("").Where("user_id in ?", userIds)
+	if d == nil {
+		d = db.DB("")
+	}
+	tx := d.Where("user_id in ?", userIds)
 	// 执行删除
 	if err := tx.Delete(&model.SysUserPost{}).Error; err != nil {
 		logger.Errorf("delete err => %v", err.Error())
@@ -43,14 +48,16 @@ func (r SysUserPost) DeleteByUserIds(userIds []int64) int64 {
 }
 
 // BatchInsert 批量新增信息
-func (r SysUserPost) BatchInsert(sysUserPosts []model.SysUserPost) int64 {
+func (r SysUserPost) BatchInsert(d *gorm.DB, sysUserPosts []model.SysUserPost) int64 {
 	if len(sysUserPosts) <= 0 {
 		return 0
 	}
-	// 执行批量删除
-	tx := db.DB("").CreateInBatches(sysUserPosts, 500)
+	if d == nil {
+		d = db.DB("")
+	}
+	tx := d.CreateInBatches(sysUserPosts, 500)
 	if err := tx.Error; err != nil {
-		logger.Errorf("delete batch err => %v", err.Error())
+		logger.Errorf("insert batch err => %v", err.Error())
 		return 0
 	}
 	return tx.RowsAffected

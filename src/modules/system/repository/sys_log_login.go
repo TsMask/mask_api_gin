@@ -118,7 +118,7 @@ func (r SysLogLogin) Insert(sysLogLogin model.SysLogLogin) int64 {
 
 // Clean 清空信息
 func (r SysLogLogin) Clean() int64 {
-	tx := db.DB("").Delete(&model.SysLogLogin{})
+	tx := db.DB("").Where("1 = 1").Delete(&model.SysLogLogin{})
 	if err := tx.Error; err != nil {
 		logger.Errorf("delete err => %v", err.Error())
 		return 0

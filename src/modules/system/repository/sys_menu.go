@@ -7,6 +7,8 @@ import (
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
+
+	"gorm.io/gorm"
 )
 
 // NewSysMenu 实例化数据层
@@ -136,7 +138,7 @@ func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
 	tx := db.DB("").Model(&model.SysMenu{})
 	// 构建查询条件
 	tx = tx.Where("menu_id = ?", sysMenu.MenuId)
-	tx = tx.Omit("menu_id", "del_flag", "create_by", "create_time")
+	tx = tx.Omit("menu_id", "create_by", "create_time", "del_flag")
 	// 执行更新
 	if err := tx.Updates(sysMenu).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -146,11 +148,14 @@ func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
 }
 
 // DeleteById 删除信息 返回受影响行数
-func (r SysMenu) DeleteById(menuId int64) int64 {
+func (r SysMenu) DeleteById(d *gorm.DB, menuId int64) int64 {
 	if menuId <= 0 {
 		return 0
 	}
-	tx := db.DB("").Model(&model.SysMenu{})
+	if d == nil {
+		d = db.DB("")
+	}
+	tx := d.Model(&model.SysMenu{})
 	// 构建查询条件
 	tx = tx.Where("menu_id = ?", menuId)
 	// 执行更新删除标记

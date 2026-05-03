@@ -126,7 +126,7 @@ func (r SysLogOperate) Insert(sysLogOperate model.SysLogOperate) int64 {
 
 // Clean 清空信息
 func (r SysLogOperate) Clean() int64 {
-	tx := db.DB("").Delete(&model.SysLogOperate{})
+	tx := db.DB("").Where("1 = 1").Delete(&model.SysLogOperate{})
 	if err := tx.Error; err != nil {
 		logger.Errorf("delete err => %v", err.Error())
 		return 0

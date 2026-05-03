@@ -4,9 +4,13 @@ import (
 	"fmt"
 
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/database/db"
+	"mask_api_gin/src/framework/token"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
+
+	"gorm.io/gorm"
 )
 
 // NewSysRole 实例化服务层
@@ -57,15 +61,25 @@ func (r SysRole) FindById(roleId int64) model.SysRole {
 
 // Insert 新增信息
 func (r SysRole) Insert(sysRole model.SysRole) int64 {
-	insertId := r.sysRoleRepository.Insert(sysRole)
-	if insertId > 0 && len(sysRole.MenuIds) > 0 {
-		r.insertRoleMenu(insertId, sysRole.MenuIds)
+	var insertId int64
+	err := db.Transaction("", func(tx *gorm.DB) error {
+		insertId = r.sysRoleRepository.Insert(tx, sysRole)
+		if insertId <= 0 {
+			return fmt.Errorf("insert role failed")
+		}
+		if len(sysRole.MenuIds) > 0 {
+			r.insertRoleMenu(tx, insertId, sysRole.MenuIds)
+		}
+		return nil
+	})
+	if err != nil {
+		return 0
 	}
 	return insertId
 }
 
 // insertRoleMenu 新增角色菜单信息
-func (r SysRole) insertRoleMenu(roleId int64, menuIds []int64) int64 {
+func (r SysRole) insertRoleMenu(d *gorm.DB, roleId int64, menuIds []int64) int64 {
 	if roleId <= 0 || len(menuIds) <= 0 {
 		return 0
 	}
@@ -78,17 +92,26 @@ func (r SysRole) insertRoleMenu(roleId int64, menuIds []int64) int64 {
 			RoleId: roleId, MenuId: menuId,
 		})
 	}
-	return r.sysRoleMenuRepository.BatchInsert(sysRoleMenus)
+	return r.sysRoleMenuRepository.BatchInsert(d, sysRoleMenus)
 }
 
 // Update 修改信息
 func (r SysRole) Update(sysRole model.SysRole) int64 {
-	rows := r.sysRoleRepository.Update(sysRole)
-	if rows > 0 && len(sysRole.MenuIds) >= 0 {
-		// 删除角色与菜单关联
-		r.sysRoleMenuRepository.DeleteByRoleIds([]int64{sysRole.RoleId})
-		r.insertRoleMenu(sysRole.RoleId, sysRole.MenuIds)
+	var rows int64
+	err := db.Transaction("", func(tx *gorm.DB) error {
+		rows = r.sysRoleRepository.Update(tx, sysRole)
+		if rows > 0 {
+			r.sysRoleMenuRepository.DeleteByRoleIds(tx, []int64{sysRole.RoleId})
+			r.insertRoleMenu(tx, sysRole.RoleId, sysRole.MenuIds)
+		}
+		return nil
+	})
+	if err != nil {
+		return 0
 	}
+	// 角色菜单权限变更后清理持有该角色用户的 Token 缓存
+	userIds := r.sysUserRoleRepository.SelectUserIdsByRoleIds([]int64{sysRole.RoleId})
+	token.RemoveByUserIds(userIds)
 	return rows
 }
 
@@ -109,12 +132,20 @@ func (r SysRole) DeleteByIds(roleIds []int64) (int64, error) {
 			return 0, fmt.Errorf("【%s】已分配给用户,不能删除", role.RoleName)
 		}
 	}
-	if len(roles) == len(roleIds) {
-		r.sysRoleMenuRepository.DeleteByRoleIds(roleIds) // 删除角色与菜单关联
-		r.sysRoleDeptRepository.DeleteByRoleIds(roleIds) // 删除角色与部门关联
-		return r.sysRoleRepository.DeleteByIds(roleIds), nil
+	if len(roles) != len(roleIds) {
+		return 0, fmt.Errorf("删除角色信息失败！")
 	}
-	return 0, fmt.Errorf("删除角色信息失败！")
+	var rows int64
+	err := db.Transaction("", func(tx *gorm.DB) error {
+		r.sysRoleMenuRepository.DeleteByRoleIds(tx, roleIds)
+		r.sysRoleDeptRepository.DeleteByRoleIds(tx, roleIds)
+		rows = r.sysRoleRepository.DeleteByIds(tx, roleIds)
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	return rows, nil
 }
 
 // FindByUserId 根据用户ID获取角色选择框列表
@@ -146,24 +177,28 @@ func (r SysRole) CheckUniqueByKey(roleKey string, roleId int64) bool {
 
 // UpdateAndDataScope 修改信息同时更新数据权限信息
 func (r SysRole) UpdateAndDataScope(sysRole model.SysRole) int64 {
-	// 修改角色信息
-	rows := r.sysRoleRepository.Update(sysRole)
-	if rows > 0 {
-		// 删除角色与部门关联
-		r.sysRoleDeptRepository.DeleteByRoleIds([]int64{sysRole.RoleId})
-		// 新增角色和部门信息
-		if sysRole.DataScope == constants.ROLE_SCOPE_CUSTOM && len(sysRole.DeptIds) > 0 {
-			arr := make([]model.SysRoleDept, 0)
-			for _, deptId := range sysRole.DeptIds {
-				if deptId <= 0 {
-					continue
+	var rows int64
+	err := db.Transaction("", func(tx *gorm.DB) error {
+		rows = r.sysRoleRepository.Update(tx, sysRole)
+		if rows > 0 {
+			r.sysRoleDeptRepository.DeleteByRoleIds(tx, []int64{sysRole.RoleId})
+			if sysRole.DataScope == constants.ROLE_SCOPE_CUSTOM && len(sysRole.DeptIds) > 0 {
+				arr := make([]model.SysRoleDept, 0)
+				for _, deptId := range sysRole.DeptIds {
+					if deptId <= 0 {
+						continue
+					}
+					arr = append(arr, model.SysRoleDept{
+						RoleId: sysRole.RoleId, DeptId: deptId,
+					})
 				}
-				arr = append(arr, model.SysRoleDept{
-					RoleId: sysRole.RoleId, DeptId: deptId,
-				})
+				r.sysRoleDeptRepository.BatchInsert(tx, arr)
 			}
-			r.sysRoleDeptRepository.BatchInsert(arr)
 		}
+		return nil
+	})
+	if err != nil {
+		return 0
 	}
 	return rows
 }
@@ -182,12 +217,20 @@ func (r SysRole) InsertAuthUsers(roleId int64, userIds []int64) int64 {
 			UserId: userId, RoleId: roleId,
 		})
 	}
-	return r.sysUserRoleRepository.BatchInsert(sysUserRoles)
+	rows := r.sysUserRoleRepository.BatchInsert(nil, sysUserRoles)
+	if rows > 0 {
+		token.RemoveByUserIds(userIds)
+	}
+	return rows
 }
 
 // DeleteAuthUsers 批量取消授权用户角色
 func (r SysRole) DeleteAuthUsers(roleId int64, userIds []int64) int64 {
-	return r.sysUserRoleRepository.DeleteByRoleId(roleId, userIds)
+	rows := r.sysUserRoleRepository.DeleteByRoleId(nil, roleId, userIds)
+	if rows > 0 {
+		token.RemoveByUserIds(userIds)
+	}
+	return rows
 }
 
 // ExportData 导出数据表格

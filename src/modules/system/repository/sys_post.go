@@ -118,7 +118,7 @@ func (r SysPost) Update(sysPost model.SysPost) int64 {
 	tx := db.DB("").Model(&model.SysPost{})
 	// 构建查询条件
 	tx = tx.Where("post_id = ?", sysPost.PostId)
-	tx = tx.Omit("post_id", "del_flag", "create_by", "create_time")
+	tx = tx.Omit("post_id", "create_by", "create_time", "del_flag")
 	// 执行更新
 	if err := tx.Updates(sysPost).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -146,7 +146,7 @@ func (r SysPost) DeleteByIds(postIds []int64) int64 {
 // CheckUnique 检查信息是否唯一 返回ID
 func (r SysPost) CheckUnique(sysPost model.SysPost) int64 {
 	tx := db.DB("").Model(&model.SysPost{})
-	tx = tx.Where("del_flag = 0")
+	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysPost.PostName != "" {
 		tx = tx.Where("post_name= ?", sysPost.PostName)

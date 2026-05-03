@@ -6,10 +6,13 @@ import (
 	"strconv"
 
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/database/redis"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
+
+	"gorm.io/gorm"
 )
 
 // NewSysDictType 实例化服务层
@@ -68,9 +71,16 @@ func (s SysDictType) Update(sysDictType model.SysDictType) int64 {
 	}
 	// 同字典类型被修改时，同步更新修改
 	oldDictType := arr[0].DictType
-	rows := s.sysDictTypeRepository.Update(sysDictType)
-	if rows > 0 && oldDictType != "" && oldDictType != sysDictType.DictType {
-		s.sysDictDataRepository.UpdateDataByDictType(oldDictType, sysDictType.DictType)
+	var rows int64
+	err := db.Transaction("", func(tx *gorm.DB) error {
+		rows = s.sysDictTypeRepository.Update(tx, sysDictType)
+		if rows > 0 && oldDictType != "" && oldDictType != sysDictType.DictType {
+			s.sysDictDataRepository.UpdateDataByDictType(tx, oldDictType, sysDictType.DictType)
+		}
+		return nil
+	})
+	if err != nil {
+		return 0
 	}
 	// 刷新缓存
 	s.CacheLoad(sysDictType.DictType)

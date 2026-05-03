@@ -6,6 +6,8 @@ import (
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
+
+	"gorm.io/gorm"
 )
 
 // NewSysDictData 实例化数据层
@@ -118,7 +120,7 @@ func (r SysDictData) Update(sysDictData model.SysDictData) int64 {
 	tx := db.DB("").Model(&model.SysDictData{})
 	// 构建查询条件
 	tx = tx.Where("data_id = ?", sysDictData.DataId)
-	tx = tx.Omit("data_id", "del_flag", "create_by", "create_time")
+	tx = tx.Omit("data_id", "create_by", "create_time", "del_flag")
 	// 执行更新
 	if err := tx.Updates(sysDictData).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -146,7 +148,7 @@ func (r SysDictData) DeleteByIds(dataIds []int64) int64 {
 // CheckUnique 检查信息是否唯一 返回数据ID
 func (r SysDictData) CheckUnique(sysDictData model.SysDictData) int64 {
 	tx := db.DB("").Model(&model.SysDictData{})
-	tx = tx.Where("del_flag = 0")
+	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysDictData.DictType != "" {
 		tx = tx.Where("dict_type = ?", sysDictData.DictType)
@@ -183,11 +185,14 @@ func (r SysDictData) ExistDataByDictType(dictType string) int64 {
 }
 
 // UpdateDataByDictType 更新一组字典类型 返回受影响行数
-func (r SysDictData) UpdateDataByDictType(oldDictType string, newDictType string) int64 {
+func (r SysDictData) UpdateDataByDictType(d *gorm.DB, oldDictType string, newDictType string) int64 {
 	if oldDictType == "" || newDictType == "" {
 		return 0
 	}
-	tx := db.DB("").Model(&model.SysDictData{})
+	if d == nil {
+		d = db.DB("")
+	}
+	tx := d.Model(&model.SysDictData{})
 	// 构建查询条件
 	tx = tx.Where("dict_type = ?", oldDictType)
 	// 执行更新删除标记

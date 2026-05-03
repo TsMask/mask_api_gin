@@ -7,6 +7,8 @@ import (
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
+
+	"gorm.io/gorm"
 )
 
 // NewSysDictType 实例化数据层
@@ -75,7 +77,7 @@ func (r SysDictType) Select(sysDictType model.SysDictType) []model.SysDictType {
 		tx = tx.Where("dict_name like ?", sysDictType.DictName+"%")
 	}
 	if sysDictType.DictType != "" {
-		tx = tx.Where("dict_type like ?)", sysDictType.DictType+"%")
+		tx = tx.Where("dict_type like ?", sysDictType.DictType+"%")
 	}
 	if sysDictType.StatusFlag != "" {
 		tx = tx.Where("status_flag = ?", sysDictType.StatusFlag)
@@ -125,17 +127,20 @@ func (r SysDictType) Insert(sysDictType model.SysDictType) int64 {
 }
 
 // Update 修改信息 返回受影响的行数
-func (r SysDictType) Update(sysDictType model.SysDictType) int64 {
+func (r SysDictType) Update(d *gorm.DB, sysDictType model.SysDictType) int64 {
 	if sysDictType.DictId <= 0 {
 		return 0
 	}
 	if sysDictType.UpdateBy != "" {
 		sysDictType.UpdateTime = time.Now().UnixMilli()
 	}
-	tx := db.DB("").Model(&model.SysDictType{})
+	if d == nil {
+		d = db.DB("")
+	}
+	tx := d.Model(&model.SysDictType{})
 	// 构建查询条件
 	tx = tx.Where("dict_id = ?", sysDictType.DictId)
-	tx = tx.Omit("dict_id", "del_flag", "create_by", "create_time")
+	tx = tx.Omit("dict_id", "create_by", "create_time", "del_flag")
 	// 执行更新
 	if err := tx.Updates(sysDictType).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -163,7 +168,7 @@ func (r SysDictType) DeleteByIds(dictIds []int64) int64 {
 // CheckUnique 检查信息是否唯一 返回数据ID
 func (r SysDictType) CheckUnique(sysDictType model.SysDictType) int64 {
 	tx := db.DB("").Model(&model.SysDictType{})
-	tx = tx.Where("del_flag = 0")
+	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysDictType.DictName != "" {
 		tx = tx.Where("dict_name = ?", sysDictType.DictName)
@@ -187,7 +192,7 @@ func (r SysDictType) SelectByType(dictType string) model.SysDictType {
 		return item
 	}
 	tx := db.DB("").Model(&model.SysDictType{})
-	tx.Where("dict_type = ? and del_flag = '0'", dictType)
+	tx = tx.Where("dict_type = ? and del_flag = '0'", dictType)
 	// 查询数据
 	if err := tx.Limit(1).Find(&item).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())

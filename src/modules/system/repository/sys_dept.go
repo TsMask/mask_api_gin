@@ -1,13 +1,13 @@
 package repository
 
 import (
-	"fmt"
-	"strings"
 	"time"
 
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
+
+	"gorm.io/gorm"
 )
 
 // NewSysDept 实例化数据层
@@ -63,6 +63,25 @@ func (r SysDept) SelectById(deptId int64) model.SysDept {
 	return item
 }
 
+// SelectMapByIds 批量通过ID查询信息，返回 deptId → SysDept 的映射
+func (r SysDept) SelectMapByIds(deptIds []int64) map[int64]model.SysDept {
+	result := make(map[int64]model.SysDept)
+	if len(deptIds) <= 0 {
+		return result
+	}
+	tx := db.DB("").Model(&model.SysDept{})
+	tx = tx.Where("dept_id in ? and del_flag = '0'", deptIds)
+	rows := []model.SysDept{}
+	if err := tx.Find(&rows).Error; err != nil {
+		logger.Errorf("query find err => %v", err.Error())
+		return result
+	}
+	for _, dept := range rows {
+		result[dept.DeptId] = dept
+	}
+	return result
+}
+
 // Insert 新增信息 返回新增数据ID
 func (r SysDept) Insert(sysDept model.SysDept) int64 {
 	sysDept.DelFlag = "0"
@@ -81,17 +100,20 @@ func (r SysDept) Insert(sysDept model.SysDept) int64 {
 }
 
 // Update 修改信息 返回受影响行数
-func (r SysDept) Update(sysDept model.SysDept) int64 {
+func (r SysDept) Update(d *gorm.DB, sysDept model.SysDept) int64 {
 	if sysDept.DeptId <= 0 {
 		return 0
 	}
 	if sysDept.UpdateBy != "" {
 		sysDept.UpdateTime = time.Now().UnixMilli()
 	}
-	tx := db.DB("").Model(&model.SysDept{})
+	if d == nil {
+		d = db.DB("")
+	}
+	tx := d.Model(&model.SysDept{})
 	// 构建查询条件
 	tx = tx.Where("dept_id = ?", sysDept.DeptId)
-	tx = tx.Omit("dept_id", "del_flag", "create_by", "create_time")
+	tx = tx.Omit("dept_id", "create_by", "create_time", "del_flag")
 	// 执行更新
 	if err := tx.Updates(sysDept).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -101,11 +123,14 @@ func (r SysDept) Update(sysDept model.SysDept) int64 {
 }
 
 // DeleteById 删除信息 返回受影响行数
-func (r SysDept) DeleteById(deptId int64) int64 {
+func (r SysDept) DeleteById(d *gorm.DB, deptId int64) int64 {
 	if deptId <= 0 {
 		return 0
 	}
-	tx := db.DB("").Model(&model.SysDept{})
+	if d == nil {
+		d = db.DB("")
+	}
+	tx := d.Model(&model.SysDept{})
 	// 构建查询条件
 	tx = tx.Where("dept_id = ?", deptId)
 	// 执行更新删除标记
@@ -119,7 +144,7 @@ func (r SysDept) DeleteById(deptId int64) int64 {
 // CheckUnique 检查信息是否唯一 返回数据ID
 func (r SysDept) CheckUnique(sysDept model.SysDept) int64 {
 	tx := db.DB("").Model(&model.SysDept{})
-	tx = tx.Where("del_flag = 0")
+	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysDept.DeptName != "" {
 		tx = tx.Where("dept_name = ?", sysDept.DeptName)
@@ -200,7 +225,7 @@ func (r SysDept) SelectDeptIdsByRoleId(roleId int64, deptCheckStrictly bool) []i
 // SelectChildrenDeptById 根据ID查询所有子部门
 func (r SysDept) SelectChildrenDeptById(deptId int64) []model.SysDept {
 	tx := db.DB("").Model(&model.SysDept{})
-	tx = tx.Where("del_flag = 0")
+	tx = tx.Where("del_flag = '0'")
 	tx = tx.Where("find_in_set(?, ancestors)", deptId)
 	// 查询数据
 	rows := []model.SysDept{}
@@ -212,11 +237,14 @@ func (r SysDept) SelectChildrenDeptById(deptId int64) []model.SysDept {
 }
 
 // UpdateDeptStatusNormal 修改所在部门正常状态
-func (r SysDept) UpdateDeptStatusNormal(deptIds []int64) int64 {
+func (r SysDept) UpdateDeptStatusNormal(d *gorm.DB, deptIds []int64) int64 {
 	if len(deptIds) <= 0 {
 		return 0
 	}
-	tx := db.DB("").Model(&model.SysDept{})
+	if d == nil {
+		d = db.DB("")
+	}
+	tx := d.Model(&model.SysDept{})
 	// 构建查询条件
 	tx = tx.Where("dept_id in ?", deptIds)
 	// 执行更新状态标记
@@ -228,28 +256,27 @@ func (r SysDept) UpdateDeptStatusNormal(deptIds []int64) int64 {
 }
 
 // UpdateDeptChildren 修改子元素关系
-func (r SysDept) UpdateDeptChildren(arr []model.SysDept) int64 {
+func (r SysDept) UpdateDeptChildren(d *gorm.DB, arr []model.SysDept) int64 {
 	if len(arr) == 0 {
 		return 0
 	}
 
-	// 构建查询条件
-	var conditions []string
-	var deptIds []any
+	// 逐条更新子部门的 ancestors，使用参数化避免 SQL 注入
+	if d == nil {
+		d = db.DB("")
+	}
+	var affected int64
 	for _, dept := range arr {
-		caseSql := fmt.Sprintf("WHEN dept_id = %d THEN '%s'", dept.DeptId, dept.Ancestors)
-		conditions = append(conditions, caseSql)
-		deptIds = append(deptIds, dept.DeptId)
+		if dept.DeptId <= 0 {
+			continue
+		}
+		tx := d.Model(&model.SysDept{})
+		tx = tx.Where("dept_id = ?", dept.DeptId)
+		if err := tx.Update("ancestors", dept.Ancestors).Error; err != nil {
+			logger.Errorf("update dept children err => %v", err.Error())
+			continue
+		}
+		affected += tx.RowsAffected
 	}
-	cases := strings.Join(conditions, " ")
-	casesVal := fmt.Sprintf("CASE %s END", cases)
-
-	// 执行更新操作
-	tx := db.DB("").Model(&model.SysDept{})
-	tx = tx.Update("ancestors", casesVal)
-	if err := tx.Where("dept_id in ?", deptIds).Error; err != nil {
-		logger.Errorf("update err => %v", err.Error())
-		return 0
-	}
-	return tx.RowsAffected
+	return affected
 }

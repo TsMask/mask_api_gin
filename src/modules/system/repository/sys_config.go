@@ -138,7 +138,7 @@ func (r SysConfig) Update(sysConfig model.SysConfig) int64 {
 	tx := db.DB("").Model(&model.SysConfig{})
 	// 构建查询条件
 	tx = tx.Where("config_id = ?", sysConfig.ConfigId)
-	tx = tx.Omit("config_id", "del_flag", "create_by", "create_time")
+	tx = tx.Omit("config_id", "create_by", "create_time", "del_flag")
 	// 执行更新
 	if err := tx.Updates(sysConfig).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -166,7 +166,7 @@ func (r SysConfig) DeleteByIds(configIds []int64) int64 {
 // CheckUnique 检查信息是否唯一 返回数据ID
 func (r SysConfig) CheckUnique(sysConfig model.SysConfig) int64 {
 	tx := db.DB("").Model(&model.SysConfig{})
-	tx = tx.Where("del_flag = 0")
+	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysConfig.ConfigType != "" {
 		tx = tx.Where("config_type = ?", sysConfig.ConfigType)
