@@ -77,9 +77,14 @@ func (s AccountController) Login(c *gin.Context) {
 	}
 	// 生成刷新令牌
 	refreshToken, refreshExpiresIn := token.UserTokenCreate(info.UserId, deviceFingerprint, "refresh")
-
 	// 记录令牌，创建系统访问记录
-	token.UserInfoCreate(&info, deviceFingerprint, [4]string{ipaddr, location, os, browser})
+	if err := token.UserInfoCreate(
+		&info, deviceFingerprint,
+		[4]string{ipaddr, location, os, browser},
+	); err != nil {
+		c.JSON(200, resp.ErrMsg("token cache create failed"))
+		return
+	}
 	s.accountService.UpdateLoginDateAndIP(info)
 	s.sysLogLoginService.Insert(
 		body.Username, constants.STATUS_YES, "登录成功",
@@ -104,7 +109,7 @@ func (s AccountController) Logout(c *gin.Context) {
 	if tokenStr != "" {
 		// 存在token时记录退出信息
 		userName, err := token.UserInfoRemove(tokenStr)
-		if err != nil {
+		if err == nil {
 			// 当前请求信息
 			ipaddr, location := reqctx.IPAddrLocation(c)
 			os, browser := reqctx.UaOsBrowser(c)
@@ -177,7 +182,10 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 	ipaddr, location := reqctx.IPAddrLocation(c)
 	os, browser := reqctx.UaOsBrowser(c)
 	// 记录令牌，创建系统访问记录
-	token.UserInfoCreate(&info, deviceFingerprint, [4]string{ipaddr, location, os, browser})
+	if err := token.UserInfoCreate(&info, deviceFingerprint, [4]string{ipaddr, location, os, browser}); err != nil {
+		c.JSON(200, resp.ErrMsg("token cache create failed"))
+		return
+	}
 	s.accountService.UpdateLoginDateAndIP(info)
 	s.sysLogLoginService.Insert(
 		info.User.UserName, constants.STATUS_YES, "刷新访问令牌成功",

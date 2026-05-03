@@ -43,11 +43,10 @@ func (s Account) ValidateCaptcha(code, uuid string) error {
 		return fmt.Errorf("captcha empty")
 	}
 	verifyKey := constants.CACHE_CAPTCHA_CODE + ":" + uuid
-	captcha, _ := redis.Get("", verifyKey)
+	captcha, _ := redis.GetAndDel("", verifyKey)
 	if captcha == "" {
 		return fmt.Errorf("captcha expire")
 	}
-	_ = redis.Del("", verifyKey)
 	if captcha != strings.ToLower(code) {
 		return fmt.Errorf("captcha error")
 	}
@@ -59,7 +58,7 @@ func (s Account) ByUsername(username, password string) (token.UserInfo, error) {
 	info := token.UserInfo{}
 
 	// 检查密码重试次数
-	retryKey, retryCount, lockTime, err := s.passwordRetryCount(username)
+	retryKey, _, lockTime, err := s.passwordRetryCount(username)
 	if err != nil {
 		return info, err
 	}
@@ -81,7 +80,7 @@ func (s Account) ByUsername(username, password string) (token.UserInfo, error) {
 	if compareBool {
 		s.CleanLoginRecordCache(sysUser.UserName) // 清除错误记录次数
 	} else {
-		_ = redis.Set("", retryKey, retryCount+1, lockTime)
+		_, _ = redis.IncrWithExpire("", retryKey, int64(lockTime.Seconds()))
 		return info, fmt.Errorf("user does not exist or password is incorrect")
 	}
 
@@ -142,11 +141,7 @@ func (s Account) UpdateLoginDateAndIP(info token.UserInfo) bool {
 func (s Account) CleanLoginRecordCache(userName string) bool {
 	base64UserName := base64.StdEncoding.EncodeToString([]byte(userName))
 	cacheKey := fmt.Sprintf("%s:%s", constants.CACHE_PWD_ERR_COUNT, base64UserName)
-	hasKey, err := redis.Has("", cacheKey)
-	if hasKey > 0 && err == nil {
-		return redis.Del("", cacheKey) == nil
-	}
-	return false
+	return redis.Del("", cacheKey) == nil
 }
 
 // passwordRetryCount 密码重试次数

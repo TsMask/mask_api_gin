@@ -83,7 +83,7 @@ func (r DemoORM) Update(demoORM model.DemoORM) int64 {
 	}
 	tx := db.DB("").Model(&model.DemoORM{})
 	tx = tx.Where("id = ?", demoORM.Id)
-	if err := tx.Select("title", "orm_type", "status_flag", "remark", "update_by", "update_time").Updates(demoORM).Error; err != nil {
+	if err := tx.Omit("id", "create_by", "create_time").Updates(demoORM).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
 		return 0
 	}
@@ -105,7 +105,7 @@ func (r DemoORM) DeleteByIds(ids []int64) int64 {
 
 // Clean 清空表
 func (r DemoORM) Clean() int64 {
-	tx := db.DB("").Delete(&model.DemoORM{})
+	tx := db.DB("").Where("1 = 1").Delete(&model.DemoORM{})
 	if err := tx.Error; err != nil {
 		logger.Errorf("clean err => %v", err.Error())
 		return 0
