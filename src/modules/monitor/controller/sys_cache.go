@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -86,6 +87,19 @@ func (s SysCacheController) Value(c *gin.Context) {
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
+	}
+	// token_devices 缓存值脱敏：隐藏权限列表和密码等敏感字段
+	if query.CacheName == constants.CACHE_TOKEN_DEVICE && cacheValue != "" {
+		var info map[string]any
+		if json.Unmarshal([]byte(cacheValue), &info) == nil {
+			delete(info, "permissions")
+			if user, ok := info["user"].(map[string]any); ok {
+				delete(user, "password")
+			}
+			if sanitized, err := json.Marshal(info); err == nil {
+				cacheValue = string(sanitized)
+			}
+		}
 	}
 	sysCache := model.NewValue(query.CacheName, query.CacheKey, cacheValue)
 	c.JSON(200, resp.OkData(sysCache))

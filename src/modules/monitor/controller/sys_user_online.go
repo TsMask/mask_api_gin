@@ -39,6 +39,12 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 	// 获取所有在线用户key
 	keys, _ := redis.GetKeys("", constants.CACHE_TOKEN_DEVICE+":*")
 
+	// 限制最大加载数量防止内存暴涨
+	maxKeys := 500
+	if len(keys) > maxKeys {
+		keys = keys[:maxKeys]
+	}
+
 	// 分批获取
 	arr := make([]string, 0)
 	for i := 0; i < len(keys); i += 20 {

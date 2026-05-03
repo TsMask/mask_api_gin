@@ -135,7 +135,7 @@ func (r SysJobLog) DeleteByIds(logIds []int64) int64 {
 
 // Clean 清空集合数据
 func (r SysJobLog) Clean() int64 {
-	tx := db.DB("").Delete(&model.SysJobLog{})
+	tx := db.DB("").Where("1 = 1").Delete(&model.SysJobLog{})
 	if err := tx.Error; err != nil {
 		logger.Errorf("delete err => %v", err.Error())
 		return 0

@@ -121,7 +121,7 @@ func (r SysJob) Update(sysJob model.SysJob) int64 {
 	tx := db.DB("").Model(&model.SysJob{})
 	// 构建查询条件
 	tx = tx.Where("job_id = ?", sysJob.JobId)
-	tx = tx.Omit("config_id", "create_by", "create_time")
+	tx = tx.Omit("job_id", "create_by", "create_time")
 	// 执行更新
 	if err := tx.Updates(sysJob).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())

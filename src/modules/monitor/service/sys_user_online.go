@@ -26,7 +26,7 @@ func (s SysUserOnline) UserInfoToUserOnline(info token.UserInfo) model.SysUserOn
 		OS:            info.OS,
 		LoginTime:     info.LoginTime,
 	}
-	if info.User.DeptId > 0 {
+	if info.User.DeptId > 0 && info.User.Dept != nil {
 		sysUserOnline.DeptName = info.User.Dept.DeptName
 	}
 	return sysUserOnline
