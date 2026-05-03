@@ -113,7 +113,7 @@ func UserInfoRemove(tokenStr string) (string, error) {
 }
 
 // UserInfoCreate 生成访问用户信息缓存
-func UserInfoCreate(info *UserInfo, deviceFingerprint string, ilobArr [4]string) {
+func UserInfoCreate(info *UserInfo, deviceFingerprint string, ilobArr [4]string) error {
 	info.DeviceId = deviceFingerprint
 
 	// 设置请求用户登录客户端
@@ -135,23 +135,31 @@ func UserInfoCreate(info *UserInfo, deviceFingerprint string, ilobArr [4]string)
 	tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + info.DeviceId
 	jsonBytes, err := json.Marshal(info)
 	if err != nil {
-		return
+		return fmt.Errorf("UserInfoCreate marshal err: %w", err)
 	}
-	_ = redis.Set("", tokenKey, string(jsonBytes), expiresIn*time.Minute)
+	if err := redis.Set("",
+		tokenKey,
+		string(jsonBytes),
+		expiresIn*time.Minute,
+	); err != nil {
+		return fmt.Errorf("UserInfoCreate redis set err: %w", err)
+	}
+	return nil
 }
 
 // UserInfoUpdate 更新访问用户信息缓存
 func UserInfoUpdate(info UserInfo) {
 	info.User.Password = ""
-	// 登录信息标识缓存
 	tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + info.DeviceId
 	jsonBytes, err := json.Marshal(info)
 	if err != nil {
 		return
 	}
-	expiresIn, _ := redis.GetExpire("", tokenKey)
-	expiration := time.Duration(expiresIn) * time.Second
-	_ = redis.Set("", tokenKey, string(jsonBytes), expiration)
+	// 使用 Lua 脚本原子更新值并保留原 TTL，避免 TTL 竞态
+	ttl, err := redis.SetWithExistingTTL("", tokenKey, string(jsonBytes))
+	if err != nil || ttl < 0 {
+		logger.Errorf("UserInfoUpdate SetWithExistingTTL err: %v ttl: %d", err, ttl)
+	}
 }
 
 // UserInfoGet 缓存的访问用户信息
@@ -171,4 +179,36 @@ func UserInfoGet(claims jwt.MapClaims) UserInfo {
 		}
 	}
 	return info
+}
+
+// RemoveByUserIds 根据 userId 列表清理对应的 Token 缓存
+func RemoveByUserIds(userIds []int64) {
+	if len(userIds) == 0 {
+		return
+	}
+	userIdSet := make(map[int64]struct{}, len(userIds))
+	for _, id := range userIds {
+		userIdSet[id] = struct{}{}
+	}
+	keys, err := redis.GetKeys("", constants.CACHE_TOKEN_DEVICE+":*")
+	if err != nil {
+		return
+	}
+	var delKeys []string
+	for _, key := range keys {
+		val, err := redis.Get("", key)
+		if err != nil || val == "" {
+			continue
+		}
+		var info UserInfo
+		if json.Unmarshal([]byte(val), &info) != nil {
+			continue
+		}
+		if _, ok := userIdSet[info.UserId]; ok {
+			delKeys = append(delKeys, key)
+		}
+	}
+	if len(delKeys) > 0 {
+		_ = redis.DelKeys("", delKeys)
+	}
 }

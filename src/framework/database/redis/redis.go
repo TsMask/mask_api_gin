@@ -18,7 +18,15 @@ import (
 var (
 	rdbMapMu sync.RWMutex
 	rdbMap   = make(map[string]*redis.Client)
+
+	// defaultTimeout Redis 操作默认超时时间
+	defaultTimeout = 5 * time.Second
 )
+
+// DefaultCtx 创建带默认超时的 context
+func DefaultCtx() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), defaultTimeout)
+}
 
 // Connect 连接Redis实例
 func Connect() {
@@ -77,7 +85,8 @@ func Info(source string) map[string]map[string]string {
 		return infoObj
 	}
 
-	ctx := context.Background()
+	ctx, cancel := DefaultCtx()
+	defer cancel()
 	info, err := rdb.Info(ctx).Result()
 	if err != nil {
 		return infoObj
@@ -110,7 +119,8 @@ func KeySize(source string) int64 {
 		return 0
 	}
 
-	ctx := context.Background()
+	ctx, cancel := DefaultCtx()
+	defer cancel()
 	size, err := rdb.DBSize(ctx).Result()
 	if err != nil {
 		return 0
@@ -127,7 +137,8 @@ func CommandStats(source string) []map[string]string {
 		return statsObjArr
 	}
 
-	ctx := context.Background()
+	ctx, cancel := DefaultCtx()
+	defer cancel()
 	commandstats, err := rdb.Info(ctx, "commandstats").Result()
 	if err != nil {
 		return statsObjArr
@@ -157,7 +168,8 @@ func Has(source string, keys ...string) (int64, error) {
 		return 0, fmt.Errorf("redis not client")
 	}
 
-	ctx := context.Background()
+	ctx, cancel := DefaultCtx()
+	defer cancel()
 	exists, err := rdb.Exists(ctx, keys...).Result()
 	if err != nil {
 		return 0, err
@@ -173,7 +185,8 @@ func SetExpire(source, key string, expiration time.Duration) error {
 		return fmt.Errorf("redis not client")
 	}
 
-	ctx := context.Background()
+	ctx, cancel := DefaultCtx()
+	defer cancel()
 	err := rdb.Expire(ctx, key, expiration).Err()
 	if err != nil {
 		logger.Errorf("redis Expire err %v", err)
@@ -190,7 +203,8 @@ func GetExpire(source string, key string) (int64, error) {
 		return 0, fmt.Errorf("redis not client")
 	}
 
-	ctx := context.Background()
+	ctx, cancel := DefaultCtx()
+	defer cancel()
 	ttl, err := rdb.TTL(ctx, key).Result()
 	if err != nil {
 		return 0, err
@@ -210,7 +224,8 @@ func GetKeys(source string, pattern string) ([]string, error) {
 	// 游标
 	var cursor uint64 = 0
 	var count int64 = 100
-	ctx := context.Background()
+	ctx, cancel := DefaultCtx()
+	defer cancel()
 	// 循环遍历获取匹配的键
 	for {
 		// 使用 SCAN 命令获取匹配的键
@@ -243,7 +258,9 @@ func GetBatch(source string, keys []string) ([]any, error) {
 	}
 
 	// 获取缓存数据
-	v, err := rdb.MGet(context.Background(), keys...).Result()
+	ctx, cancel := DefaultCtx()
+	defer cancel()
+	v, err := rdb.MGet(ctx, keys...).Result()
 	if err != nil || errors.Is(err, redis.Nil) {
 		logger.Errorf("failed to get batch data: %v", err)
 		return result, err
@@ -259,7 +276,8 @@ func Get(source, key string) (string, error) {
 		return "", fmt.Errorf("redis not client")
 	}
 
-	ctx := context.Background()
+	ctx, cancel := DefaultCtx()
+	defer cancel()
 	v, err := rdb.Get(ctx, key).Result()
 	if errors.Is(err, redis.Nil) {
 		return "", fmt.Errorf("no keys")
@@ -278,7 +296,8 @@ func Set(source, key string, value any, expiration time.Duration) error {
 		return fmt.Errorf("redis not client")
 	}
 
-	ctx := context.Background()
+	ctx, cancel := DefaultCtx()
+	defer cancel()
 	err := rdb.Set(ctx, key, value, expiration).Err()
 	if err != nil {
 		logger.Errorf("redis Set err %v", err)
@@ -295,7 +314,8 @@ func Del(source string, key string) error {
 		return fmt.Errorf("redis not client")
 	}
 
-	ctx := context.Background()
+	ctx, cancel := DefaultCtx()
+	defer cancel()
 	if err := rdb.Del(ctx, key).Err(); err != nil {
 		logger.Errorf("redis Del err %v", err)
 		return err
@@ -315,7 +335,8 @@ func DelKeys(source string, keys []string) error {
 		return fmt.Errorf("redis not client")
 	}
 
-	ctx := context.Background()
+	ctx, cancel := DefaultCtx()
+	defer cancel()
 	if err := rdb.Del(ctx, keys...).Err(); err != nil {
 		logger.Errorf("redis DelKeys err %v", err)
 		return err
@@ -323,27 +344,120 @@ func DelKeys(source string, keys []string) error {
 	return nil
 }
 
-// RateLimit 限流查询并记录
+// RateLimit 限流查询并记录（原子操作）
 func RateLimit(source, limitKey string, timeSec, count int64) (int64, error) {
 	rdb := RDB(source)
 	if rdb == nil {
 		return 0, fmt.Errorf("redis not client")
 	}
 
-	ctx := context.Background()
-	current, err := rdb.Incr(ctx, limitKey).Result()
-	if err != nil {
-		logger.Errorf("redis Incr err %v", err)
-		return 0, err
+	ctx, cancel := DefaultCtx()
+	defer cancel()
+
+	// 使用事务保证原子性
+	incr := rdb.Incr(ctx, limitKey)
+	if incr.Err() != nil {
+		logger.Errorf("redis RateLimit incr err %v", incr.Err())
+		return 0, incr.Err()
 	}
 
-	if current == 1 {
-		tx := rdb.Expire(ctx, limitKey, time.Duration(timeSec)*time.Second)
-		if err := tx.Err(); err != nil {
-			logger.Errorf("redis Expire err %v", err)
+	// 首次递增时设置过期时间
+	if incr.Val() == 1 {
+		if err := rdb.Expire(ctx, limitKey, time.Duration(timeSec)*time.Second).Err(); err != nil {
+			logger.Errorf("redis RateLimit expire err %v", err)
 			return 0, err
 		}
 	}
 
-	return current, nil
+	return incr.Val(), nil
+}
+
+// GetAndDel 原子获取并删除 key 的值
+func GetAndDel(source, key string) (string, error) {
+	rdb := RDB(source)
+	if rdb == nil {
+		return "", fmt.Errorf("redis not client")
+	}
+
+	ctx, cancel := DefaultCtx()
+	defer cancel()
+
+	// 先获取值
+	val, err := rdb.Get(ctx, key).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return "", fmt.Errorf("no keys")
+		}
+		return "", err
+	}
+
+	// 删除 key
+	if err := rdb.Del(ctx, key).Err(); err != nil {
+		return "", err
+	}
+
+	return val, nil
+}
+
+// SetWithExistingTTL 仅当 key 存在且有过期时间时更新值，保留原 TTL
+func SetWithExistingTTL(source, key string, value any) (int64, error) {
+	rdb := RDB(source)
+	if rdb == nil {
+		return 0, fmt.Errorf("redis not client")
+	}
+
+	ctx, cancel := DefaultCtx()
+	defer cancel()
+
+	// 先获取 TTL
+	ttl, err := rdb.TTL(ctx, key).Result()
+	if err != nil {
+		return 0, err
+	}
+
+	// key 不存在
+	if ttl == -2 {
+		return -2, nil
+	}
+
+	// key 存在但无过期时间
+	if ttl == -1 {
+		return -1, nil
+	}
+
+	// 设置新值，保留原 TTL
+	ttlMs := int64(ttl.Milliseconds())
+	if err := rdb.Set(ctx, key, value, time.Duration(ttlMs)*time.Millisecond).Err(); err != nil {
+		return 0, err
+	}
+
+	return int64(ttl.Seconds()), nil
+}
+
+// IncrWithExpire 原子递增，首次创建时设置过期时间
+func IncrWithExpire(source, key string, expireSeconds int64) (int64, error) {
+	rdb := RDB(source)
+	if rdb == nil {
+		return 0, fmt.Errorf("redis not client")
+	}
+
+	ctx, cancel := DefaultCtx()
+	defer cancel()
+
+	// 递增
+	incr := rdb.Incr(ctx, key)
+	if incr.Err() != nil {
+		logger.Errorf("redis IncrWithExpire incr err %v", incr.Err())
+		return 0, incr.Err()
+	}
+
+	// 首次递增时设置过期时间
+	if incr.Val() == 1 {
+		if err := rdb.Expire(ctx, key, time.Duration(expireSeconds)*time.Second).Err(); err != nil {
+			logger.Errorf("redis IncrWithExpire expire err %v", err)
+			return 0, err
+		}
+	}
+
+	return incr.Val(), nil
 }

@@ -21,6 +21,8 @@ import (
 var (
 	dbMapMu sync.RWMutex
 	dbMap   = make(map[string]*gorm.DB)
+	// 预编译正则，用于格式化SQL中的连续空白
+	whitespaceRe = regexp.MustCompile(`\s+`)
 )
 
 type dialectInfo struct {
@@ -102,6 +104,8 @@ func Connect() {
 		sqlDB.SetMaxOpenConns(100)
 		// SetConnMaxLifetime 设置了连接可复用的最大时间。
 		sqlDB.SetConnMaxLifetime(time.Hour)
+		// SetConnMaxIdleTime 设置空闲连接最大存活时间
+		sqlDB.SetConnMaxIdleTime(15 * time.Minute)
 		logger.Infof("database %s connection is successful.", key)
 		dbMapMu.Lock()
 		dbMap[key] = db
@@ -137,8 +141,19 @@ func DB(source string) *gorm.DB {
 	return dbMap[source]
 }
 
+// Transaction 在事务中执行fn，成功自动提交，失败自动回滚
+func Transaction(source string, fn func(tx *gorm.DB) error) error {
+	d := DB(source)
+	if d == nil {
+		return fmt.Errorf("not database source")
+	}
+	return d.Transaction(fn)
+}
+
 // Names 获取数据源名称列表
 func Names() []string {
+	dbMapMu.RLock()
+	defer dbMapMu.RUnlock()
 	var names []string
 	for key := range dbMap {
 		names = append(names, key)
@@ -159,7 +174,7 @@ func RawDB(source string, sql string, parameters []any) ([]map[string]any, error
 		return rows, fmt.Errorf("not database source")
 	}
 	// 使用正则表达式替换连续的空白字符为单个空格
-	fmtSql := regexp.MustCompile(`\s+`).ReplaceAllString(sql, " ")
+	fmtSql := whitespaceRe.ReplaceAllString(sql, " ")
 	// 查询结果
 	res := db.Raw(fmtSql, parameters...).Scan(&rows)
 	if res.Error != nil {
@@ -180,7 +195,7 @@ func ExecDB(source string, sql string, parameters []any) (int64, error) {
 		return 0, fmt.Errorf("not database source")
 	}
 	// 使用正则表达式替换连续的空白字符为单个空格
-	fmtSql := regexp.MustCompile(`\s+`).ReplaceAllString(sql, " ")
+	fmtSql := whitespaceRe.ReplaceAllString(sql, " ")
 	// 执行结果
 	res := db.Exec(fmtSql, parameters...)
 	if res.Error != nil {
