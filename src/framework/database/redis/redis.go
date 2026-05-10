@@ -1,4 +1,4 @@
-package redis
+﻿package redis
 
 import (
 	"context"
@@ -344,8 +344,9 @@ func DelKeys(source string, keys []string) error {
 	return nil
 }
 
-// RateLimit 限流查询并记录（原子操作）
-func RateLimit(source, limitKey string, timeSec, count int64) (int64, error) {
+// RateLimit 限流计数（MULTI/EXEC 原子执行 INCR + EXPIRE）
+// 返回值: currentCount 当前计数, err 错误
+func RateLimit(source, limitKey string, expiration time.Duration) (int64, error) {
 	rdb := RDB(source)
 	if rdb == nil {
 		return 0, fmt.Errorf("redis not client")
@@ -354,25 +355,19 @@ func RateLimit(source, limitKey string, timeSec, count int64) (int64, error) {
 	ctx, cancel := DefaultCtx()
 	defer cancel()
 
-	// 使用事务保证原子性
-	incr := rdb.Incr(ctx, limitKey)
-	if incr.Err() != nil {
-		logger.Errorf("redis RateLimit incr err %v", incr.Err())
-		return 0, incr.Err()
+	// MULTI/EXEC 原子执行 INCR + EXPIRE
+	tx := rdb.TxPipeline()
+	incrCmd := tx.Incr(ctx, limitKey)
+	tx.Expire(ctx, limitKey, expiration)
+	if _, err := tx.Exec(ctx); err != nil {
+		logger.Errorf("redis RateLimit tx err %v", err)
+		return 0, err
 	}
 
-	// 首次递增时设置过期时间
-	if incr.Val() == 1 {
-		if err := rdb.Expire(ctx, limitKey, time.Duration(timeSec)*time.Second).Err(); err != nil {
-			logger.Errorf("redis RateLimit expire err %v", err)
-			return 0, err
-		}
-	}
-
-	return incr.Val(), nil
+	return incrCmd.Val(), nil
 }
 
-// GetAndDel 原子获取并删除 key 的值
+// GetAndDel 原子获取并删除 key 的值（MULTI/EXEC 事务）
 func GetAndDel(source, key string) (string, error) {
 	rdb := RDB(source)
 	if rdb == nil {
@@ -382,24 +377,21 @@ func GetAndDel(source, key string) (string, error) {
 	ctx, cancel := DefaultCtx()
 	defer cancel()
 
-	// 先获取值
-	val, err := rdb.Get(ctx, key).Result()
-	if err != nil {
+	// MULTI/EXEC 原子执行 GET + DEL，防止并发重复消费
+	tx := rdb.TxPipeline()
+	getCmd := tx.Get(ctx, key)
+	tx.Del(ctx, key)
+	if _, err := tx.Exec(ctx); err != nil {
 		if errors.Is(err, redis.Nil) {
 			return "", fmt.Errorf("no keys")
 		}
 		return "", err
 	}
 
-	// 删除 key
-	if err := rdb.Del(ctx, key).Err(); err != nil {
-		return "", err
-	}
-
-	return val, nil
+	return getCmd.Val(), nil
 }
 
-// SetWithExistingTTL 仅当 key 存在且有过期时间时更新值，保留原 TTL
+// SetWithExistingTTL 仅当 key 存在且有过期时间时更新值，保留原 TTL（MULTI/EXEC 事务）
 func SetWithExistingTTL(source, key string, value any) (int64, error) {
 	rdb := RDB(source)
 	if rdb == nil {
@@ -409,32 +401,34 @@ func SetWithExistingTTL(source, key string, value any) (int64, error) {
 	ctx, cancel := DefaultCtx()
 	defer cancel()
 
-	// 先获取 TTL
+	// 先读取 TTL 判断 key 状态
 	ttl, err := rdb.TTL(ctx, key).Result()
 	if err != nil {
 		return 0, err
 	}
 
 	// key 不存在
-	if ttl == -2 {
+	if ttl == -2*time.Second {
 		return -2, nil
 	}
 
 	// key 存在但无过期时间
-	if ttl == -1 {
+	if ttl == -1*time.Second {
 		return -1, nil
 	}
 
-	// 设置新值，保留原 TTL
+	// MULTI/EXEC 原子执行 SET + 保留原 TTL，避免 TTL 竞争
 	ttlMs := int64(ttl.Milliseconds())
-	if err := rdb.Set(ctx, key, value, time.Duration(ttlMs)*time.Millisecond).Err(); err != nil {
+	tx := rdb.TxPipeline()
+	tx.Set(ctx, key, value, time.Duration(ttlMs)*time.Millisecond)
+	if _, err := tx.Exec(ctx); err != nil {
 		return 0, err
 	}
 
 	return int64(ttl.Seconds()), nil
 }
 
-// IncrWithExpire 原子递增，首次创建时设置过期时间
+// IncrWithExpire 原子递增，首次创建时设置过期时间（MULTI/EXEC 事务）
 func IncrWithExpire(source, key string, expireSeconds int64) (int64, error) {
 	rdb := RDB(source)
 	if rdb == nil {
@@ -444,20 +438,14 @@ func IncrWithExpire(source, key string, expireSeconds int64) (int64, error) {
 	ctx, cancel := DefaultCtx()
 	defer cancel()
 
-	// 递增
-	incr := rdb.Incr(ctx, key)
-	if incr.Err() != nil {
-		logger.Errorf("redis IncrWithExpire incr err %v", incr.Err())
-		return 0, incr.Err()
+	// MULTI/EXEC 原子执行 INCR + EXPIRE，防止 INCR 成功但 EXPIRE 失败导致 key 永不过期
+	tx := rdb.TxPipeline()
+	incrCmd := tx.Incr(ctx, key)
+	tx.Expire(ctx, key, time.Duration(expireSeconds)*time.Second)
+	if _, err := tx.Exec(ctx); err != nil {
+		logger.Errorf("redis IncrWithExpire tx err %v", err)
+		return 0, err
 	}
 
-	// 首次递增时设置过期时间
-	if incr.Val() == 1 {
-		if err := rdb.Expire(ctx, key, time.Duration(expireSeconds)*time.Second).Err(); err != nil {
-			logger.Errorf("redis IncrWithExpire expire err %v", err)
-			return 0, err
-		}
-	}
-
-	return incr.Val(), nil
+	return incrCmd.Val(), nil
 }

@@ -78,7 +78,7 @@ func RateLimit(option LimitOption) gin.HandlerFunc {
 		}
 
 		// 在Redis查询并记录请求次数
-		rateCount, err := redis.RateLimit("", limitKey, option.Time, option.Count)
+		rateCount, err := redis.RateLimit("", limitKey, time.Duration(option.Time)*time.Second)
 		if err != nil {
 			c.JSON(200, resp.CodeMsg(resp.CODE_RATELIMIT, resp.MSG_RATELIMIT))
 			c.Abort() // 停止执行后续的处理函数
