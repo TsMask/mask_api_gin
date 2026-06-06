@@ -1,8 +1,9 @@
-package token
+﻿package token
 
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -14,22 +15,34 @@ import (
 	"mask_api_gin/src/framework/utils/parse"
 )
 
+// validateDeviceId 校验设备标识格式，防止注入特殊字符
+func validateDeviceId(deviceId string) bool {
+	if len(deviceId) == 0 || len(deviceId) > 128 {
+		return false
+	}
+	if strings.ContainsAny(deviceId, "*? \t\n\r") {
+		return false
+	}
+	return true
+}
+
 // UserTokenCreate 生成令牌
 // userId 用户ID
 // deviceFingerprint 设备指纹 SHA256
 // tokenType 令牌类型 access:访问令牌 refresh:刷新令牌
 func UserTokenCreate(userId int64, deviceFingerprint, tokenType string) (string, int64) {
-	// 令牌算法 HS256 HS384 HS512
+	if !validateDeviceId(deviceFingerprint) {
+		return "", 0
+	}
+
+	// 令牌算法 HS256 HS384 HS512，默认 HS256
 	algorithm := config.Get("jwt.algorithm").(string)
-	var method *jwt.SigningMethodHMAC
+	method := jwt.SigningMethodHS256
 	switch algorithm {
 	case "HS512":
 		method = jwt.SigningMethodHS512
 	case "HS384":
 		method = jwt.SigningMethodHS384
-	case "HS256":
-	default:
-		method = jwt.SigningMethodHS256
 	}
 
 	// 生成令牌设置密钥
@@ -48,7 +61,7 @@ func UserTokenCreate(userId int64, deviceFingerprint, tokenType string) (string,
 		secret = "User_Refresh:" + secret
 	}
 
-	// 生成令牌负荷绑定uuid标识
+	// 生成令牌负载绑定设备标识
 	jwtToken := jwt.NewWithClaims(method, jwt.MapClaims{
 		constants.JWT_DEVICE_ID: deviceFingerprint,
 		constants.JWT_USER_ID:   userId,
@@ -87,7 +100,7 @@ func UserTokenVerify(tokenStr string, tokenType string) (jwt.MapClaims, error) {
 		logger.Errorf("Token Verify Err: %v", err)
 		return nil, fmt.Errorf("token invalid")
 	}
-	// 如果解析负荷成功并通过签名校验
+	// 如果解析负载成功并通过签名校验
 	claims, ok := jwtToken.Claims.(jwt.MapClaims)
 	if ok && jwtToken.Valid {
 		return claims, nil
@@ -114,6 +127,9 @@ func UserInfoRemove(tokenStr string) (string, error) {
 
 // UserInfoCreate 生成访问用户信息缓存
 func UserInfoCreate(info *UserInfo, deviceFingerprint string, ilobArr [4]string) error {
+	if !validateDeviceId(deviceFingerprint) {
+		return fmt.Errorf("invalid device fingerprint")
+	}
 	info.DeviceId = deviceFingerprint
 
 	// 设置请求用户登录客户端
@@ -155,28 +171,28 @@ func UserInfoUpdate(info UserInfo) {
 	if err != nil {
 		return
 	}
-	// 使用 Lua 脚本原子更新值并保留原 TTL，避免 TTL 竞态
+	// 保留原 TTL 原子更新值，避免 TTL 竞争
 	ttl, err := redis.SetWithExistingTTL("", tokenKey, string(jsonBytes))
 	if err != nil || ttl < 0 {
 		logger.Errorf("UserInfoUpdate SetWithExistingTTL err: %v ttl: %d", err, ttl)
 	}
 }
 
-// UserInfoGet 缓存的访问用户信息
+// UserInfoGet 缓存的访问用户消息
 func UserInfoGet(claims jwt.MapClaims) UserInfo {
 	info := UserInfo{}
 	deviceId := fmt.Sprint(claims[constants.JWT_DEVICE_ID])
+	if !validateDeviceId(deviceId) {
+		return info
+	}
 	tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + deviceId
-	hasKey, err := redis.Has("", tokenKey)
-	if hasKey > 0 && err == nil {
-		infoStr, err := redis.Get("", tokenKey)
-		if infoStr == "" || err != nil {
-			return info
-		}
-		if err := json.Unmarshal([]byte(infoStr), &info); err != nil {
-			logger.Errorf("info json err : %v", err)
-			return info
-		}
+	infoStr, err := redis.Get("", tokenKey)
+	if err != nil || infoStr == "" {
+		return info
+	}
+	if err := json.Unmarshal([]byte(infoStr), &info); err != nil {
+		logger.Errorf("info json err : %v", err)
+		return info
 	}
 	return info
 }
@@ -191,21 +207,36 @@ func RemoveByUserIds(userIds []int64) {
 		userIdSet[id] = struct{}{}
 	}
 	keys, err := redis.GetKeys("", constants.CACHE_TOKEN_DEVICE+":*")
-	if err != nil {
+	if err != nil || len(keys) == 0 {
 		return
 	}
+	// 批量 MGET 替代逐个 GET，减少网络往返
 	var delKeys []string
-	for _, key := range keys {
-		val, err := redis.Get("", key)
-		if err != nil || val == "" {
+	for i := 0; i < len(keys); i += 50 {
+		end := i + 50
+		if end > len(keys) {
+			end = len(keys)
+		}
+		batch := keys[i:end]
+		values, err := redis.GetBatch("", batch)
+		if err != nil {
 			continue
 		}
-		var info UserInfo
-		if json.Unmarshal([]byte(val), &info) != nil {
-			continue
-		}
-		if _, ok := userIdSet[info.UserId]; ok {
-			delKeys = append(delKeys, key)
+		for j, v := range values {
+			if v == nil {
+				continue
+			}
+			str := fmt.Sprint(v)
+			if str == "" {
+				continue
+			}
+			var info UserInfo
+			if json.Unmarshal([]byte(str), &info) != nil {
+				continue
+			}
+			if _, ok := userIdSet[info.UserId]; ok {
+				delKeys = append(delKeys, batch[j])
+			}
 		}
 	}
 	if len(delKeys) > 0 {
