@@ -1,4 +1,4 @@
-package repository
+﻿package repository
 
 import (
 	"mask_api_gin/src/framework/database/db"
@@ -11,6 +11,17 @@ var NewDemoORM = &DemoORM{}
 
 // DemoORM 测试ORM表 数据层处理
 type DemoORM struct{}
+
+// demoORMSortMapping 测试ORM排序字段映射
+var demoORMSortMapping = map[string]string{
+	"id":         "id",
+	"title":      "title",
+	"ormType":    "orm_type",
+	"statusFlag": "status_flag",
+	"createBy":   "create_by",
+	"createTime": "create_time",
+	"updateTime": "update_time",
+}
 
 // SelectByPage 分页查询
 func (r DemoORM) SelectByPage(query map[string]string) ([]model.DemoORM, int64) {
@@ -30,6 +41,11 @@ func (r DemoORM) SelectByPage(query map[string]string) ([]model.DemoORM, int64) 
 	rows := []model.DemoORM{}
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
+
+	// 排序
+	orders := db.SortParse(query["sort"], demoORMSortMapping)
+	tx = db.SortOrDefault(tx, orders, "id desc")
+
 	if err := tx.Find(&rows).Error; err != nil {
 		return rows, total
 	}

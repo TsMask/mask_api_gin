@@ -1,4 +1,4 @@
-package repository
+﻿package repository
 
 import (
 	"fmt"
@@ -16,6 +16,16 @@ var NewSysDictType = &SysDictType{}
 
 // SysDictType 字典类型表 数据层处理
 type SysDictType struct{}
+
+// sysDictTypeSortMapping 字典类型排序字段映射
+var sysDictTypeSortMapping = map[string]string{
+	"dictId":     "dict_id",
+	"dictName":   "dict_name",
+	"dictType":   "dict_type",
+	"statusFlag": "status_flag",
+	"createTime": "create_time",
+	"updateTime": "update_time",
+}
 
 // SelectByPage 分页查询集合
 func (r SysDictType) SelectByPage(query map[string]string) ([]model.SysDictType, int64) {
@@ -60,6 +70,11 @@ func (r SysDictType) SelectByPage(query map[string]string) ([]model.SysDictType,
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
+
+	// 排序
+	orders := db.SortParse(query["sort"], sysDictTypeSortMapping)
+	tx = db.SortOrDefault(tx, orders, "dict_id desc")
+
 	err := tx.Find(&rows).Error
 	if err != nil {
 		logger.Errorf("query find err => %v", err.Error())

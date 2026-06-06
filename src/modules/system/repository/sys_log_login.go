@@ -1,8 +1,7 @@
-package repository
+﻿package repository
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"mask_api_gin/src/framework/database/db"
@@ -15,6 +14,15 @@ var NewSysLogLogin = &SysLogLogin{}
 
 // SysLogLoginRepository 系统登录访问表 数据层处理
 type SysLogLogin struct{}
+
+// sysLogLoginSortMapping 登录日志排序字段映射
+var sysLogLoginSortMapping = map[string]string{
+	"id":         "id",
+	"loginIp":    "login_ip",
+	"userName":   "user_name",
+	"statusFlag": "status_flag",
+	"loginTime":  "login_time",
+}
 
 // SelectByPage 分页查询集合
 func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysLogLogin, int64) {
@@ -62,40 +70,11 @@ func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) 
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
+
 	// 排序
-	sortByStr, sortOk := query["sortBy"]
-	sortOrderStr, orderOk := query["sortOrder"]
-	if sortOk && sortByStr != "" && orderOk && sortOrderStr != "" {
-		sortByArr := strings.Split(sortByStr, ",")
-		sortOrderArr := strings.Split(sortOrderStr, ",")
-		for i := range sortByArr {
-			sortBy := sortByArr[i]
-			sortOrder := ""
-			if i < len(sortOrderArr) {
-				sortOrder = sortOrderArr[i]
-			}
-			// 排序字段
-			sort := "id"
-			switch sortBy {
-			case "loginIp":
-				sort = "login_ip"
-			case "userName":
-				sort = "user_name"
-			case "createTime":
-				sort = "create_time"
-			}
-			// 排序方式
-			order := "ASC"
-			if strings.HasPrefix(sortOrder, "asc") {
-				order = "ASC"
-			} else if strings.HasPrefix(sortOrder, "desc") {
-				order = "DESC"
-			}
-			tx = tx.Order(fmt.Sprintf("%s %s", sort, order))
-		}
-	} else {
-		tx = tx.Order("id desc")
-	}
+	orders := db.SortParse(query["sort"], sysLogLoginSortMapping)
+	tx = db.SortOrDefault(tx, orders, "id desc")
+
 	// 查询数据
 	err := tx.Find(&rows).Error
 	if err != nil {

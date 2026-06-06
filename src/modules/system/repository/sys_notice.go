@@ -1,4 +1,4 @@
-package repository
+﻿package repository
 
 import (
 	"fmt"
@@ -14,6 +14,17 @@ var NewSysNotice = &SysNotice{}
 
 // SysNotice 通知公告表 数据层处理
 type SysNotice struct{}
+
+// sysNoticeSortMapping 通知公告排序字段映射
+var sysNoticeSortMapping = map[string]string{
+	"noticeId":    "notice_id",
+	"noticeTitle": "notice_title",
+	"noticeType":  "notice_type",
+	"statusFlag":  "status_flag",
+	"createBy":    "create_by",
+	"createTime":  "create_time",
+	"updateTime":  "update_time",
+}
 
 // SelectByPage 分页查询集合
 func (r SysNotice) SelectByPage(query map[string]string) ([]model.SysNotice, int64) {
@@ -61,6 +72,11 @@ func (r SysNotice) SelectByPage(query map[string]string) ([]model.SysNotice, int
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
+
+	// 排序
+	orders := db.SortParse(query["sort"], sysNoticeSortMapping)
+	tx = db.SortOrDefault(tx, orders, "notice_id desc")
+
 	err := tx.Find(&rows).Error
 	if err != nil {
 		logger.Errorf("query find err => %v", err.Error())

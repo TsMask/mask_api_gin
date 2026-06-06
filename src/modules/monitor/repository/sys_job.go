@@ -1,4 +1,4 @@
-package repository
+﻿package repository
 
 import (
 	"time"
@@ -13,6 +13,20 @@ var NewSysJob = &SysJob{}
 
 // SysJob 调度任务 数据层处理
 type SysJob struct{}
+
+// sysJobSortMapping 调度任务排序字段映射
+var sysJobSortMapping = map[string]string{
+	"jobId":          "job_id",
+	"jobName":        "job_name",
+	"jobGroup":       "job_group",
+	"invokeTarget":   "invoke_target",
+	"cronExpression": "cron_expression",
+	"misfirePolicy":  "misfire_policy",
+	"concurrent":     "concurrent",
+	"statusFlag":     "status_flag",
+	"createTime":     "create_time",
+	"updateTime":     "update_time",
+}
 
 // SelectByPage 分页查询集合
 func (r SysJob) SelectByPage(query map[string]string) ([]model.SysJob, int64) {
@@ -43,6 +57,11 @@ func (r SysJob) SelectByPage(query map[string]string) ([]model.SysJob, int64) {
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
+
+	// 排序
+	orders := db.SortParse(query["sort"], sysJobSortMapping)
+	tx = db.SortOrDefault(tx, orders, "job_id desc")
+
 	err := tx.Find(&rows).Error
 	if err != nil {
 		logger.Errorf("query find err => %v", err.Error())

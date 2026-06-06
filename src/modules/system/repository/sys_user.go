@@ -1,4 +1,4 @@
-package repository
+﻿package repository
 
 import (
 	"fmt"
@@ -18,6 +18,21 @@ var NewSysUser = &SysUser{}
 
 // SysUser 用户表 数据层处理
 type SysUser struct{}
+
+// sysUserSortMapping 用户排序字段映射
+var sysUserSortMapping = map[string]string{
+	"userId":     "user_id",
+	"deptId":     "dept_id",
+	"userName":   "user_name",
+	"nickName":   "nick_name",
+	"phone":      "phone",
+	"email":      "email",
+	"statusFlag": "status_flag",
+	"loginIp":    "login_ip",
+	"loginTime":  "login_time",
+	"createTime": "create_time",
+	"updateTime": "update_time",
+}
 
 // SelectByPage 分页查询集合
 func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64) {
@@ -53,8 +68,8 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 		}
 	}
 	if v, ok := query["deptId"]; ok && v != "" {
-		tx = tx.Where(`(dept_id = ? or dept_id in ( 
-		select t.dept_id from sys_dept t where find_in_set(?, ancestors) 
+		tx = tx.Where(`(dept_id = ? or dept_id in (
+		select t.dept_id from sys_dept t where find_in_set(?, ancestors)
 		))`, v, v)
 	}
 	if dataScopeSQL != "" {
@@ -73,8 +88,13 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
-	err := tx.Order("user_id desc").Find(&rows).Error
-	if err != nil {
+
+	// 排序，默认按 user_id DESC
+	orders := db.SortParse(query["sort"], sysUserSortMapping)
+	tx = db.SortOrDefault(tx, orders, "user_id desc")
+
+	// 查询数据
+	if err := tx.Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows, total
 	}
@@ -254,14 +274,14 @@ func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL str
 		auth, ok := query["auth"]
 		if ok && parse.Boolean(auth) {
 			tx = tx.Where(`user_id in (
-				select distinct u.user_id from sys_user u 
-				inner join sys_user_role ur on u.user_id = ur.user_id 
+				select distinct u.user_id from sys_user u
+				inner join sys_user_role ur on u.user_id = ur.user_id
 				and ur.role_id = ?
 			)`, roleId)
 		} else {
 			tx = tx.Where(`user_id not in (
-				select distinct u.user_id from sys_user u 
-				inner join sys_user_role ur on u.user_id = ur.user_id 
+				select distinct u.user_id from sys_user u
+				inner join sys_user_role ur on u.user_id = ur.user_id
 				and ur.role_id = ?
 			)`, roleId)
 		}
@@ -282,8 +302,13 @@ func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL str
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
-	err := tx.Order("user_id desc").Find(&rows).Error
-	if err != nil {
+
+	// 排序，默认按 user_id DESC
+	orders := db.SortParse(query["sort"], sysUserSortMapping)
+	tx = db.SortOrDefault(tx, orders, "user_id desc")
+
+	// 查询数据
+	if err := tx.Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows, total
 	}

@@ -1,8 +1,7 @@
-package repository
+﻿package repository
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"mask_api_gin/src/framework/database/db"
@@ -13,8 +12,19 @@ import (
 // NewSysLogOperate 实例化数据层
 var NewSysLogOperate = &SysLogOperate{}
 
-// SysLogOperateRepository 操作日志表 数据层处理
+// SysLogOperate 操作日志表 数据层处理
 type SysLogOperate struct{}
+
+// sysLogOperateSortMapping 操作日志排序字段映射
+var sysLogOperateSortMapping = map[string]string{
+	"id":           "id",
+	"title":        "title",
+	"businessType": "business_type",
+	"operaBy":      "opera_by",
+	"operaTime":    "opera_time",
+	"costTime":     "cost_time",
+	"statusFlag":   "status_flag",
+}
 
 // SelectByPage 分页查询集合
 func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysLogOperate, int64) {
@@ -68,40 +78,11 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
+
 	// 排序
-	sortByStr, sortOk := query["sortBy"]
-	sortOrderStr, orderOk := query["sortOrder"]
-	if sortOk && sortByStr != "" && orderOk && sortOrderStr != "" {
-		sortByArr := strings.Split(sortByStr, ",")
-		sortOrderArr := strings.Split(sortOrderStr, ",")
-		for i := range sortByArr {
-			sortBy := sortByArr[i]
-			sortOrder := ""
-			if i < len(sortOrderArr) {
-				sortOrder = sortOrderArr[i]
-			}
-			// 排序字段
-			sort := "id"
-			switch sortBy {
-			case "operaBy":
-				sort = "opera_by"
-			case "operaTime":
-				sort = "opera_time"
-			case "costTime":
-				sort = "cost_time"
-			}
-			// 排序方式
-			order := "ASC"
-			if strings.HasPrefix(sortOrder, "asc") {
-				order = "ASC"
-			} else if strings.HasPrefix(sortOrder, "desc") {
-				order = "DESC"
-			}
-			tx = tx.Order(fmt.Sprintf("%s %s", sort, order))
-		}
-	} else {
-		tx = tx.Order("id desc")
-	}
+	orders := db.SortParse(query["sort"], sysLogOperateSortMapping)
+	tx = db.SortOrDefault(tx, orders, "id desc")
+
 	// 查询数据
 	err := tx.Find(&rows).Error
 	if err != nil {

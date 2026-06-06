@@ -1,4 +1,4 @@
-package repository
+﻿package repository
 
 import (
 	"fmt"
@@ -14,6 +14,16 @@ var NewSysConfig = &SysConfig{}
 
 // SysConfig 参数配置表 数据层处理
 type SysConfig struct{}
+
+// sysConfigSortMapping 参数配置排序字段映射
+var sysConfigSortMapping = map[string]string{
+	"configId":   "config_id",
+	"configName": "config_name",
+	"configKey":  "config_key",
+	"configType": "config_type",
+	"createTime": "create_time",
+	"updateTime": "update_time",
+}
 
 // SelectByPage 分页查询集合
 func (r SysConfig) SelectByPage(query map[string]string) ([]model.SysConfig, int64) {
@@ -58,6 +68,11 @@ func (r SysConfig) SelectByPage(query map[string]string) ([]model.SysConfig, int
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
+
+	// 排序
+	orders := db.SortParse(query["sort"], sysConfigSortMapping)
+	tx = db.SortOrDefault(tx, orders, "config_id desc")
+
 	err := tx.Find(&rows).Error
 	if err != nil {
 		logger.Errorf("query find err => %v", err.Error())

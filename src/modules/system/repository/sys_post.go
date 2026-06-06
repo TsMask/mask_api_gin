@@ -1,4 +1,4 @@
-package repository
+﻿package repository
 
 import (
 	"time"
@@ -13,6 +13,17 @@ var NewSysPost = &SysPost{}
 
 // SysPost 岗位表 数据层处理
 type SysPost struct{}
+
+// sysPostSortMapping 岗位排序字段映射
+var sysPostSortMapping = map[string]string{
+	"postId":     "post_id",
+	"postCode":   "post_code",
+	"postName":   "post_name",
+	"postSort":   "post_sort",
+	"statusFlag": "status_flag",
+	"createTime": "create_time",
+	"updateTime": "update_time",
+}
 
 // SelectByPage 分页查询集合
 func (r SysPost) SelectByPage(query map[string]string) ([]model.SysPost, int64) {
@@ -41,7 +52,12 @@ func (r SysPost) SelectByPage(query map[string]string) ([]model.SysPost, int64) 
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
-	err := tx.Order("post_sort asc").Find(&rows).Error
+
+	// 排序，默认按 post_sort ASC
+	orders := db.SortParse(query["sort"], sysPostSortMapping)
+	tx = db.SortOrDefault(tx, orders, "post_sort asc")
+
+	err := tx.Find(&rows).Error
 	if err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows, total

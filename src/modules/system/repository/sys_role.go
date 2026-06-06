@@ -1,4 +1,4 @@
-package repository
+﻿package repository
 
 import (
 	"fmt"
@@ -16,6 +16,18 @@ var NewSysRole = &SysRole{}
 
 // SysRole 角色表 数据层处理
 type SysRole struct{}
+
+// sysRoleSortMapping 角色排序字段映射
+var sysRoleSortMapping = map[string]string{
+	"roleId":     "role_id",
+	"roleName":   "role_name",
+	"roleKey":    "role_key",
+	"roleSort":   "role_sort",
+	"dataScope":  "data_scope",
+	"statusFlag": "status_flag",
+	"createTime": "create_time",
+	"updateTime": "update_time",
+}
 
 // SelectByPage 分页查询集合
 func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64) {
@@ -48,9 +60,9 @@ func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64) 
 		}
 	}
 	if v, ok := query["deptId"]; ok && v != "" {
-		tx = tx.Where(`role_id in ( 
-		select distinct role_id from sys_role_dept where sys_role_dept.dept_id IN ( 
-		SELECT dept_id FROM sys_dept WHERE dept_id = ? or find_in_set(? , ancestors ) 
+		tx = tx.Where(`role_id in (
+		select distinct role_id from sys_role_dept where sys_role_dept.dept_id IN (
+		SELECT dept_id FROM sys_dept WHERE dept_id = ? or find_in_set(? , ancestors )
 		))`, v, v)
 	}
 
@@ -66,8 +78,13 @@ func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64) 
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
-	err := tx.Order("role_sort asc").Find(&rows).Error
-	if err != nil {
+
+	// 排序，默认按 role_sort ASC
+	orders := db.SortParse(query["sort"], sysRoleSortMapping)
+	tx = db.SortOrDefault(tx, orders, "role_sort asc")
+
+	// 查询数据
+	if err := tx.Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows, total
 	}

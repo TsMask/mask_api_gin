@@ -1,4 +1,4 @@
-package repository
+﻿package repository
 
 import (
 	"time"
@@ -15,6 +15,20 @@ var NewSysDictData = &SysDictData{}
 
 // SysDictData 字典类型数据表 数据层处理
 type SysDictData struct{}
+
+// sysDictDataSortMapping 字典数据排序字段映射
+var sysDictDataSortMapping = map[string]string{
+	"dataId":     "data_id",
+	"dictType":   "dict_type",
+	"dataLabel":  "data_label",
+	"dataValue":  "data_value",
+	"dataSort":   "data_sort",
+	"tagClass":   "tag_class",
+	"tagType":    "tag_type",
+	"statusFlag": "status_flag",
+	"createTime": "create_time",
+	"updateTime": "update_time",
+}
 
 // SelectByPage 分页查询集合
 func (r SysDictData) SelectByPage(query map[string]string) ([]model.SysDictData, int64) {
@@ -43,7 +57,12 @@ func (r SysDictData) SelectByPage(query map[string]string) ([]model.SysDictData,
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
-	err := tx.Order("data_sort asc").Find(&rows).Error
+
+	// 排序，默认按 data_sort ASC
+	orders := db.SortParse(query["sort"], sysDictDataSortMapping)
+	tx = db.SortOrDefault(tx, orders, "data_sort asc")
+
+	err := tx.Find(&rows).Error
 	if err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows, total

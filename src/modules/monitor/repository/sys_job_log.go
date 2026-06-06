@@ -1,4 +1,4 @@
-package repository
+﻿package repository
 
 import (
 	"fmt"
@@ -13,6 +13,16 @@ var NewSysJobLog = &SysJobLog{}
 
 // SysJobLog 调度任务日志表 数据层处理
 type SysJobLog struct{}
+
+// sysJobLogSortMapping 调度任务日志排序字段映射
+var sysJobLogSortMapping = map[string]string{
+	"logId":        "log_id",
+	"jobName":      "job_name",
+	"jobGroup":     "job_group",
+	"invokeTarget": "invoke_target",
+	"statusFlag":   "status_flag",
+	"createTime":   "create_time",
+}
 
 // SelectByPage 分页查询集合
 func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int64) {
@@ -59,6 +69,11 @@ func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int
 	// 查询数据分页
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
+
+	// 排序
+	orders := db.SortParse(query["sort"], sysJobLogSortMapping)
+	tx = db.SortOrDefault(tx, orders, "log_id desc")
+
 	err := tx.Find(&rows).Error
 	if err != nil {
 		logger.Errorf("query find err => %v", err.Error())
