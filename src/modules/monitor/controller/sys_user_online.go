@@ -1,4 +1,4 @@
-package controller
+﻿package controller
 
 import (
 	"encoding/json"
@@ -10,6 +10,7 @@ import (
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
+	"mask_api_gin/src/framework/reqctx"
 	"mask_api_gin/src/framework/resp"
 	"mask_api_gin/src/framework/token"
 	"mask_api_gin/src/framework/utils/parse"
@@ -17,7 +18,7 @@ import (
 	"mask_api_gin/src/modules/monitor/service"
 )
 
-// NewSysUserOnline 实例化控制层 SysUserOnlineController 结构体
+// NewSysUserOnline 实例化控制层
 var NewSysUserOnline = &SysUserOnlineController{
 	sysUserOnlineService: service.NewSysUserOnline,
 }
@@ -26,90 +27,134 @@ var NewSysUserOnline = &SysUserOnlineController{
 //
 // PATH /monitor/user-online
 type SysUserOnlineController struct {
-	sysUserOnlineService *service.SysUserOnline // 在线用户服务
+	sysUserOnlineService *service.SysUserOnline
 }
 
 // List 在线用户列表
 //
 // GET /list
 func (s SysUserOnlineController) List(c *gin.Context) {
-	loginIp := c.Query("loginIp")
-	userName := c.Query("userName")
+	query := reqctx.QueryMap(c)
 
-	// 获取所有在线用户key
+	// SCAN 获取所有 key（仅名称），排序保证顺序确定性
 	keys, _ := redis.GetKeys("", constants.CACHE_TOKEN_DEVICE+":*")
+	sort.Strings(keys)
 
-	// 限制最大加载数量防止内存暴涨
-	maxKeys := 500
-	if len(keys) > maxKeys {
-		keys = keys[:maxKeys]
+	total := int64(len(keys))
+	if total <= 0 {
+		c.JSON(200, resp.OkData(map[string]any{"total": 0, "rows": []model.SysUserOnline{}}))
+		return
 	}
 
-	// 分批获取
-	arr := make([]string, 0)
-	for i := 0; i < len(keys); i += 20 {
-		end := i + 20
-		if end > len(keys) {
-			end = len(keys)
-		}
-		chunk := keys[i:end]
-		values, _ := redis.GetBatch("", chunk)
-		for _, v := range values {
-			arr = append(arr, fmt.Sprint(v))
-		}
+	// 分页：只取当前页的 key，避免全量 mget
+	pn := int(parse.Number(query["pageNum"]))
+	if pn < 1 {
+		pn = 1
 	}
+	ps := int(parse.Number(query["pageSize"]))
+	if ps < 1 {
+		ps = 10
+	}
+	start := (pn - 1) * ps
+	end := pn * ps
+	if start > len(keys) {
+		start = len(keys)
+	}
+	if end > len(keys) {
+		end = len(keys)
+	}
+	pageKeys := keys[start:end]
 
-	// 遍历字符串信息解析组合可用对象
-	var userOnlines []model.SysUserOnline
-	for _, str := range arr {
+	values, _ := redis.GetBatch("", pageKeys)
+
+	// 解析当前页数据
+	list := make([]model.SysUserOnline, 0, len(values))
+	for _, v := range values {
+		str := fmt.Sprint(v)
 		if str == "" {
 			continue
 		}
-
 		var info token.UserInfo
-		err := json.Unmarshal([]byte(str), &info)
-		if err != nil {
+		if err := json.Unmarshal([]byte(str), &info); err != nil {
 			continue
 		}
-
 		onlineUser := s.sysUserOnlineService.UserInfoToUserOnline(info)
 		if onlineUser.TokenID != "" {
-			userOnlines = append(userOnlines, onlineUser)
+			list = append(list, onlineUser)
 		}
 	}
 
-	// 根据查询条件过滤
-	filteredUserOnline := make([]model.SysUserOnline, 0)
-	if loginIp != "" && userName != "" {
-		for _, o := range userOnlines {
-			if strings.Contains(o.LoginIp, loginIp) && strings.Contains(o.UserName, userName) {
-				filteredUserOnline = append(filteredUserOnline, o)
+	// 过滤
+	if v, ok := query["tokenId"]; ok && v != "" {
+		filtered := make([]model.SysUserOnline, 0, len(list))
+		for _, o := range list {
+			if strings.Contains(o.TokenID, v) {
+				filtered = append(filtered, o)
 			}
 		}
-	} else if loginIp != "" {
-		for _, o := range userOnlines {
-			if strings.Contains(o.LoginIp, loginIp) {
-				filteredUserOnline = append(filteredUserOnline, o)
+		list = filtered
+	}
+	if v, ok := query["userName"]; ok && v != "" {
+		filtered := make([]model.SysUserOnline, 0, len(list))
+		for _, o := range list {
+			if strings.Contains(o.UserName, v) {
+				filtered = append(filtered, o)
 			}
 		}
-	} else if userName != "" {
-		for _, o := range userOnlines {
-			if strings.Contains(o.UserName, userName) {
-				filteredUserOnline = append(filteredUserOnline, o)
+		list = filtered
+	}
+	if v, ok := query["loginIp"]; ok && v != "" {
+		filtered := make([]model.SysUserOnline, 0, len(list))
+		for _, o := range list {
+			if strings.Contains(o.LoginIp, v) {
+				filtered = append(filtered, o)
 			}
 		}
+		list = filtered
+	}
+	if v, ok := query["deptName"]; ok && v != "" {
+		filtered := make([]model.SysUserOnline, 0, len(list))
+		for _, o := range list {
+			if strings.Contains(o.DeptName, v) {
+				filtered = append(filtered, o)
+			}
+		}
+		list = filtered
+	}
+	if v, ok := query["browser"]; ok && v != "" {
+		filtered := make([]model.SysUserOnline, 0, len(list))
+		for _, o := range list {
+			if strings.Contains(o.Browser, v) {
+				filtered = append(filtered, o)
+			}
+		}
+		list = filtered
+	}
+	if v, ok := query["os"]; ok && v != "" {
+		filtered := make([]model.SysUserOnline, 0, len(list))
+		for _, o := range list {
+			if strings.Contains(o.OS, v) {
+				filtered = append(filtered, o)
+			}
+		}
+		list = filtered
+	}
+
+	// 排序，格式: sort=loginTime,userName:asc（不加方向默认 DESC）
+	if sortStr, ok := query["sort"]; ok && sortStr != "" {
+		sort.SliceStable(list, func(i, j int) bool {
+			return compareUserOnline(list[i], list[j], sortStr)
+		})
 	} else {
-		filteredUserOnline = userOnlines
+		// 默认登录时间降序
+		sort.SliceStable(list, func(i, j int) bool {
+			return list[i].LoginTime > list[j].LoginTime
+		})
 	}
-
-	// 按登录时间排序
-	sort.Slice(filteredUserOnline, func(i, j int) bool {
-		return filteredUserOnline[j].LoginTime > filteredUserOnline[i].LoginTime
-	})
 
 	c.JSON(200, resp.OkData(map[string]any{
-		"total": len(filteredUserOnline),
-		"rows":  filteredUserOnline,
+		"total": total,
+		"rows":  list,
 	}))
 }
 
@@ -123,7 +168,6 @@ func (s SysUserOnlineController) Logout(c *gin.Context) {
 		return
 	}
 
-	// 处理字符转id数组后去重
 	uniqueIDs := parse.RemoveDuplicatesToArray(tokenIdStr, ",")
 	for _, v := range uniqueIDs {
 		key := constants.CACHE_TOKEN_DEVICE + ":" + v
@@ -134,4 +178,48 @@ func (s SysUserOnlineController) Logout(c *gin.Context) {
 	}
 
 	c.JSON(200, resp.Ok(nil))
+}
+
+// compareUserOnline 多字段排序比较
+func compareUserOnline(a, b model.SysUserOnline, sortStr string) bool {
+	items := strings.Split(sortStr, ",")
+	for _, item := range items {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		field, dir, _ := strings.Cut(item, ":")
+		field = strings.TrimSpace(field)
+		asc := strings.EqualFold(strings.TrimSpace(dir), "asc")
+
+		var cmp int
+		switch field {
+		case "tokenId":
+			cmp = strings.Compare(a.TokenID, b.TokenID)
+		case "userName":
+			cmp = strings.Compare(a.UserName, b.UserName)
+		case "loginIp":
+			cmp = strings.Compare(a.LoginIp, b.LoginIp)
+		case "deptName":
+			cmp = strings.Compare(a.DeptName, b.DeptName)
+		case "browser":
+			cmp = strings.Compare(a.Browser, b.Browser)
+		case "os":
+			cmp = strings.Compare(a.OS, b.OS)
+		case "loginTime":
+			if a.LoginTime < b.LoginTime {
+				cmp = -1
+			} else if a.LoginTime > b.LoginTime {
+				cmp = 1
+			}
+		}
+
+		if cmp != 0 {
+			if asc {
+				return cmp < 0
+			}
+			return cmp > 0
+		}
+	}
+	return false
 }
