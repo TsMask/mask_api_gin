@@ -2,7 +2,7 @@
 
 [![star](https://gitee.com/TsMask/mask_api_gin/badge/star.svg?theme=dark)](https://gitee.com/TsMask/mask_api_gin/stargazers)
 ![Build Gin](https://img.shields.io/badge/Build-Gin-green.svg)
-![Release V0.6.6](https://img.shields.io/badge/Release-V0.6.6-orange.svg)
+![Release V0.6.7](https://img.shields.io/badge/Release-V0.6.7-orange.svg)
 ![License MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
 ## 介绍
@@ -13,7 +13,6 @@
 
 ## 项目文档
 
-- 项目代码进行服务器部署的网站 => [在线预览](http://124.223.91.248:8102/#/)
 - `Apifox` 提供mock服务和程序接口文档 => [接口文档](https://mask-api-midwayjs.apifox.cn/)
 - `Mask管理系统` 文档专栏，相关使用和开发升级文档。 => [专栏](https://juejin.cn/column/7188761626017792056/)
 
@@ -79,7 +78,7 @@ mask_api_gin
 
 | 技术 | 说明 | 版本 |
 | ---- | ---- | ---- |
-| Go | go项目的运行环境 | 1.22+ |
+| Go | go项目的运行环境 | 1.24+ |
 | Redis | 缓存存储程序 | 6+ |
 | Mysql | 数据存储程序 | 8+ |
 
