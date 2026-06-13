@@ -12,7 +12,7 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-// Number 解析数值型
+// Number 解析数值型，支持 string/int/uint/float/bool，无法解析返回 0。
 func Number(value any) int64 {
 	switch v := value.(type) {
 	case string:
@@ -40,7 +40,7 @@ func Number(value any) int64 {
 	}
 }
 
-// Boolean 解析布尔型
+// Boolean 解析布尔型，支持 string/int/uint/float/bool，无法解析返回 false。
 func Boolean(value any) bool {
 	switch v := value.(type) {
 	case string:
@@ -50,14 +50,11 @@ func Boolean(value any) bool {
 		}
 		return b
 	case int, int8, int16, int32, int64:
-		num := reflect.ValueOf(v).Int()
-		return num != 0
+		return reflect.ValueOf(v).Int() != 0
 	case uint, uint8, uint16, uint32, uint64:
-		num := int64(reflect.ValueOf(v).Uint())
-		return num != 0
+		return reflect.ValueOf(v).Uint() != 0
 	case float32, float64:
-		num := reflect.ValueOf(v).Float()
-		return num != 0
+		return reflect.ValueOf(v).Float() != 0
 	case bool:
 		return v
 	default:
@@ -87,7 +84,8 @@ func ConvertToCamelCase(str string) string {
 	return strings.Join(words, "")
 }
 
-// Bit 比特位为单位 1023.00 B --> 1.00 KB
+// Bit 将字节数格式化为人类可读的容量字符串（1024 进制）。
+// 例如 Bit(1023) -> "1023.00 B"，Bit(1024) -> "1.00 KB"。
 func Bit(bit float64) string {
 	units := []string{"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
 	for i := 0; i < len(units); i++ {
@@ -96,7 +94,7 @@ func Bit(bit float64) string {
 		}
 		bit /= 1024
 	}
-	return ""
+	return fmt.Sprintf("%.2f B", bit)
 }
 
 // CronExpression 解析 Cron 表达式，返回下一次执行的时间戳（毫秒）
@@ -111,18 +109,28 @@ func CronExpression(expression string) int64 {
 	return schedule.Next(time.Now()).UnixMilli()
 }
 
-// SafeContent 内容值进行安全掩码
+// SafeContent 对敏感内容进行掩码处理，支持多字节 UTF-8 字符。
+// 显示首尾少量字符，中间以 * 替代。
+//
+//	长度 < 3:  全部掩码       "ab"    -> "**"
+//	长度 < 6:  保留首字符     "abc"   -> "a**"
+//	长度 < 10: 保留首尾字符   "abcdef" -> "a****f"
+//	长度 < 15: 保留首尾各2    "abcdefghij" -> "ab******ij"
+//	长度 >= 15: 保留首尾各3   "abcdefghijklmno" -> "abc*********o"
 func SafeContent(value string) string {
-	if len(value) < 3 {
-		return strings.Repeat("*", len(value))
-	} else if len(value) < 6 {
-		return string(value[0]) + strings.Repeat("*", len(value)-1)
-	} else if len(value) < 10 {
-		return string(value[0]) + strings.Repeat("*", len(value)-2) + string(value[len(value)-1])
-	} else if len(value) < 15 {
-		return value[:2] + strings.Repeat("*", len(value)-4) + value[len(value)-2:]
-	} else {
-		return value[:3] + strings.Repeat("*", len(value)-6) + value[len(value)-3:]
+	runes := []rune(value)
+	length := len(runes)
+	switch {
+	case length < 3:
+		return strings.Repeat("*", length)
+	case length < 6:
+		return string(runes[0]) + strings.Repeat("*", length-1)
+	case length < 10:
+		return string(runes[0]) + strings.Repeat("*", length-2) + string(runes[length-1])
+	case length < 15:
+		return string(runes[:2]) + strings.Repeat("*", length-4) + string(runes[length-2:])
+	default:
+		return string(runes[:3]) + strings.Repeat("*", length-6) + string(runes[length-3:])
 	}
 }
 

@@ -2,6 +2,7 @@ package service
 
 import (
 	"strconv"
+	"time"
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/utils/date"
@@ -77,7 +78,7 @@ func (s SysLogOperate) ExportData(rows []model.SysLogOperate, fileName string) (
 			"I" + idx: row.OperaMsg,
 			"J" + idx: row.OperaMethod,
 			"K" + idx: row.OperaBy,
-			"L" + idx: date.ParseDateToStr(row.OperaTime, date.YYYY_MM_DD_HH_MM_SS),
+			"L" + idx: date.ParseNumberToDate(row.OperaTime).Format(time.RFC3339),
 			"M" + idx: statusValue,
 			"N" + idx: row.CostTime,
 		})

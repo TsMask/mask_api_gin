@@ -2,6 +2,7 @@ package service
 
 import (
 	"strconv"
+	"time"
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/utils/date"
@@ -76,7 +77,7 @@ func (s SysLogLogin) ExportData(rows []model.SysLogLogin, fileName string) (stri
 			"F" + idx: row.Browser,
 			"G" + idx: row.OS,
 			"H" + idx: row.Msg,
-			"I" + idx: date.ParseDateToStr(row.LoginTime, date.YYYY_MM_DD_HH_MM_SS),
+			"I" + idx: date.ParseNumberToDate(row.LoginTime).Format(time.RFC3339),
 		})
 	}
 

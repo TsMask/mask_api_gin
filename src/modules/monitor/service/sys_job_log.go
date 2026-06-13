@@ -2,6 +2,7 @@ package service
 
 import (
 	"strconv"
+	"time"
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/utils/date"
@@ -88,7 +89,7 @@ func (s SysJobLog) ExportData(rows []model.SysJobLog, fileName string) (string, 
 			"E" + idx: row.TargetParams,
 			"F" + idx: row.JobMsg,
 			"G" + idx: statusValue,
-			"H" + idx: date.ParseDateToStr(row.CreateTime, date.YYYY_MM_DD_HH_MM_SS),
+			"H" + idx: date.ParseNumberToDate(row.CreateTime).Format(time.RFC3339),
 		})
 	}
 

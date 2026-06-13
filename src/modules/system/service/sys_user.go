@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/db"
@@ -318,7 +319,7 @@ func (s SysUser) ExportData(rows []model.SysUser, fileName string) (string, erro
 			"I" + idx: row.Dept.DeptName,
 			"J" + idx: row.Dept.Leader,
 			"K" + idx: row.LoginIp,
-			"L" + idx: date.ParseDateToStr(row.LoginTime, date.YYYY_MM_DD_HH_MM_SS),
+			"L" + idx: date.ParseNumberToDate(row.LoginTime).Format(time.RFC3339),
 		})
 	}
 

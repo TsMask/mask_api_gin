@@ -4,49 +4,65 @@ import (
 	"crypto/rand"
 	"math/big"
 	"strings"
-
-	nanoid "github.com/matoous/go-nanoid/v2"
 )
 
-// Code 生成随机Code
-// 包含数字、小写字母
-// 不保证长度满足
+const (
+	digits       = "0123456789"
+	lowerAlpha   = "abcdefghijklmnopqrstuvwxyz"
+	upperAlpha   = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	alphanumeric = digits + lowerAlpha + upperAlpha
+	codeAlpha    = digits + lowerAlpha
+)
+
+// Code 生成指定长度的随机编码，仅包含数字和小写字母。
+// 使用 crypto/rand 保证密码学安全。
 func Code(size int) string {
-	str, err := nanoid.Generate("0123456789abcdefghijklmnopqrstuvwxyz", size)
-	if err != nil {
-		return ""
-	}
-	return str
+	return randomString(codeAlpha, size)
 }
 
-// String 生成随机字符串
-// 包含数字、大小写字母、下划线、横杠
-// 不保证长度满足
+// String 生成指定长度的随机字符串，包含数字、大小写字母。
+// 使用 crypto/rand 保证密码学安全。
 func String(size int) string {
-	str, err := nanoid.New(size)
-	if err != nil {
-		return ""
-	}
-	return str
+	return randomString(alphanumeric, size)
 }
 
-// Number 随机数 纯数字0-9
-func Number(size int) string {
+// Number 生成指定位数的随机正整数，首位保证非零。
+// size 范围 [1,18]，超出范围自动截断；size <= 0 返回 0。
+func Number(size int) int64 {
+	if size < 1 {
+		return 0
+	}
+	if size > 18 {
+		size = 18
+	}
+	// [10^(size-1), 10^size - 1]，保证恰好 size 位且首位非零
+	lo := int64(1)
+	for i := 1; i < size; i++ {
+		lo *= 10
+	}
+	hi := lo*10 - 1
+	n, err := rand.Int(rand.Reader, big.NewInt(hi-lo+1))
+	if err != nil {
+		return lo
+	}
+	return lo + n.Int64()
+}
+
+// randomString 从 alphabet 中安全随机选取 size 个字符组成字符串。
+func randomString(alphabet string, size int) string {
 	if size <= 0 {
 		return ""
 	}
-
-	const digits = "0123456789"
-	var sb strings.Builder
-	sb.Grow(size) // 预分配字符串空间
-
-	for i := 0; i < size; i++ {
-		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(digits))))
+	sb := strings.Builder{}
+	sb.Grow(size)
+	max := big.NewInt(int64(len(alphabet)))
+	for range size {
+		n, err := rand.Int(rand.Reader, max)
 		if err != nil {
-			return ""
+			sb.WriteByte(alphabet[0])
+			continue
 		}
-		sb.WriteByte(digits[n.Int64()])
+		sb.WriteByte(alphabet[n.Int64()])
 	}
-
 	return sb.String()
 }
