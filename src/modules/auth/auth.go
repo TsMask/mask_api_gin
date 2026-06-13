@@ -14,25 +14,27 @@ func Setup(router *gin.Engine) {
 
 	// 验证码操作
 	{
+		captcha := controller.NewCaptcha
 		router.GET("/captcha-image",
 			middleware.RateLimit(middleware.LimitOption{
 				Time:  300,
 				Count: 60,
 				Type:  middleware.LIMIT_IP,
 			}),
-			controller.NewCaptcha.Image,
+			captcha.Image,
 		)
 	}
 
 	// 账号身份操作
 	{
+		account := controller.NewAccount
 		router.POST("/auth/login",
 			middleware.RateLimit(middleware.LimitOption{
 				Time:  180,
 				Count: 15,
 				Type:  middleware.LIMIT_IP,
 			}),
-			controller.NewAccount.Login,
+			account.Login,
 		)
 		router.POST("/auth/logout",
 			middleware.RateLimit(middleware.LimitOption{
@@ -40,7 +42,7 @@ func Setup(router *gin.Engine) {
 				Count: 15,
 				Type:  middleware.LIMIT_IP,
 			}),
-			controller.NewAccount.Logout,
+			account.Logout,
 		)
 		router.POST("/auth/refresh-token",
 			middleware.RateLimit(middleware.LimitOption{
@@ -48,27 +50,28 @@ func Setup(router *gin.Engine) {
 				Count: 5,
 				Type:  middleware.LIMIT_IP,
 			}),
-			controller.NewAccount.RefreshToken,
+			account.RefreshToken,
 		)
 		router.GET("/me",
 			middleware.AuthorizeUser(nil),
-			controller.NewAccount.Me,
+			account.Me,
 		)
 		router.GET("/router",
 			middleware.AuthorizeUser(nil),
-			controller.NewAccount.Router,
+			account.Router,
 		)
 	}
 
 	// 账号注册操作
 	{
+		register := controller.NewRegister
 		router.POST("/auth/register",
 			middleware.RateLimit(middleware.LimitOption{
 				Time:  300,
 				Count: 10,
 				Type:  middleware.LIMIT_IP,
 			}),
-			controller.NewRegister.Register,
+			register.Register,
 		)
 	}
 }

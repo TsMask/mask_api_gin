@@ -30,11 +30,12 @@ func Setup(router *gin.Engine) {
 
 	// 文件操作
 	fileGroup := router.Group("/file")
+	file := controller.NewFile
 	{
-		fileGroup.POST("/upload", middleware.AuthorizeUser(nil), controller.NewFile.Upload)
-		fileGroup.POST("/chunk-check", middleware.AuthorizeUser(nil), controller.NewFile.ChunkCheck)
-		fileGroup.POST("/chunk-upload", middleware.AuthorizeUser(nil), controller.NewFile.ChunkUpload)
-		fileGroup.POST("/chunk-merge", middleware.AuthorizeUser(nil), controller.NewFile.ChunkMerge)
-		fileGroup.GET("/download/:filePath", middleware.AuthorizeUser(nil), controller.NewFile.Download)
+		fileGroup.POST("/upload", middleware.AuthorizeUser(nil), file.Upload)
+		fileGroup.POST("/chunk-check", middleware.AuthorizeUser(nil), file.ChunkCheck)
+		fileGroup.POST("/chunk-upload", middleware.AuthorizeUser(nil), file.ChunkUpload)
+		fileGroup.POST("/chunk-merge", middleware.AuthorizeUser(nil), file.ChunkMerge)
+		fileGroup.GET("/download/:filePath", middleware.AuthorizeUser(nil), file.Download)
 	}
 }

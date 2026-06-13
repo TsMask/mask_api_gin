@@ -18,134 +18,139 @@ func Setup(router *gin.Engine) {
 	InitLoad()
 
 	// 服务器信息
+	system := controller.NewSystem
 	router.GET("/monitor/system",
 		middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:system:info"}}),
-		controller.NewSystem.Info,
+		system.Info,
 	)
 
 	// 在线用户监控
 	sysUserOnlineGroup := router.Group("/monitor/user-online")
+	sysUserOnline := controller.NewSysUserOnline
 	{
 		sysUserOnlineGroup.GET("/list",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:online:list"}}),
-			controller.NewSysUserOnline.List,
+			sysUserOnline.List,
 		)
 		sysUserOnlineGroup.DELETE("/logout/:tokenId",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:online:logout"}}),
 			middleware.OperateLog(middleware.OptionNew("在线用户监控", middleware.BUSINESS_TYPE_FORCE)),
-			controller.NewSysUserOnline.Logout,
+			sysUserOnline.Logout,
 		)
 	}
 
 	// 缓存信息
 	sysCacheGroup := router.Group("/monitor/cache")
+	sysCache := controller.NewSysCache
 	{
 		sysCacheGroup.GET("",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:cache:info"}}),
-			controller.NewSysCache.Info,
+			sysCache.Info,
 		)
 		sysCacheGroup.GET("/names",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:cache:list"}}),
-			controller.NewSysCache.Names,
+			sysCache.Names,
 		)
 		sysCacheGroup.GET("/keys",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:cache:list"}}),
-			controller.NewSysCache.Keys,
+			sysCache.Keys,
 		)
 		sysCacheGroup.GET("/value",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:cache:query"}}),
-			controller.NewSysCache.Value,
+			sysCache.Value,
 		)
 		sysCacheGroup.DELETE("/names",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
-			controller.NewSysCache.CleanNames,
+			sysCache.CleanNames,
 		)
 		sysCacheGroup.DELETE("/keys",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
-			controller.NewSysCache.CleanKeys,
+			sysCache.CleanKeys,
 		)
 		sysCacheGroup.DELETE("/value",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
-			controller.NewSysCache.CleanValue,
+			sysCache.CleanValue,
 		)
 	}
 
 	// 调度任务信息
 	sysJobGroup := router.Group("/monitor/job")
+	sysJob := controller.NewSysJob
 	{
 		sysJobGroup.GET("/list",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:list"}}),
-			controller.NewSysJob.List,
+			sysJob.List,
 		)
 		sysJobGroup.GET("/:jobId",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:query"}}),
-			controller.NewSysJob.Info,
+			sysJob.Info,
 		)
 		sysJobGroup.POST("",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:add"}}),
 			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BUSINESS_TYPE_INSERT)),
-			controller.NewSysJob.Add,
+			sysJob.Add,
 		)
 		sysJobGroup.PUT("",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:edit"}}),
 			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BUSINESS_TYPE_UPDATE)),
-			controller.NewSysJob.Edit,
+			sysJob.Edit,
 		)
 		sysJobGroup.DELETE("/:jobId",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
 			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BUSINESS_TYPE_DELETE)),
-			controller.NewSysJob.Remove,
+			sysJob.Remove,
 		)
 		sysJobGroup.PUT("/status",
 			middleware.RepeatSubmit(5),
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:status"}}),
 			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BUSINESS_TYPE_UPDATE)),
-			controller.NewSysJob.Status,
+			sysJob.Status,
 		)
 		sysJobGroup.PUT("/run/:jobId",
 			middleware.RepeatSubmit(10),
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:status"}}),
 			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BUSINESS_TYPE_UPDATE)),
-			controller.NewSysJob.Run,
+			sysJob.Run,
 		)
 		sysJobGroup.PUT("/reset",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:status"}}),
 			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BUSINESS_TYPE_OTHER)),
-			controller.NewSysJob.Reset,
+			sysJob.Reset,
 		)
 		sysJobGroup.GET("/export",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:export"}}),
 			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.BUSINESS_TYPE_EXPORT)),
-			controller.NewSysJob.Export,
+			sysJob.Export,
 		)
 	}
 
 	// 调度任务日志信息
 	sysJobLogGroup := router.Group("/monitor/job/log")
+	sysJobLog := controller.NewSysJobLog
 	{
 		sysJobLogGroup.GET("/list",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:list"}}),
-			controller.NewSysJobLog.List,
+			sysJobLog.List,
 		)
 		sysJobLogGroup.GET("/:logId",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:query"}}),
-			controller.NewSysJobLog.Info,
+			sysJobLog.Info,
 		)
 		sysJobLogGroup.DELETE("/:logId",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
 			middleware.OperateLog(middleware.OptionNew("调度任务日志信息", middleware.BUSINESS_TYPE_DELETE)),
-			controller.NewSysJobLog.Remove,
+			sysJobLog.Remove,
 		)
 		sysJobLogGroup.DELETE("/clean",
 			middleware.RepeatSubmit(5),
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
 			middleware.OperateLog(middleware.OptionNew("调度任务日志信息", middleware.BUSINESS_TYPE_CLEAN)),
-			controller.NewSysJobLog.Clean,
+			sysJobLog.Clean,
 		)
 		sysJobLogGroup.GET("/export",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:export"}}),
 			middleware.OperateLog(middleware.OptionNew("调度任务日志信息", middleware.BUSINESS_TYPE_EXPORT)),
-			controller.NewSysJobLog.Export,
+			sysJobLog.Export,
 		)
 	}
 

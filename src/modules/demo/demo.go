@@ -13,13 +13,14 @@ func Setup(router *gin.Engine) {
 
 	// 演示-GORM基本使用
 	ormGroup := router.Group("/demo/orm")
+	demoORM := controller.NewDemoORM
 	{
-		ormGroup.GET("/list", controller.NewDemoORM.List)
-		ormGroup.GET("/all", controller.NewDemoORM.All)
-		ormGroup.GET("/:id", controller.NewDemoORM.Info)
-		ormGroup.POST("", controller.NewDemoORM.Add)
-		ormGroup.PUT("", controller.NewDemoORM.Edit)
-		ormGroup.DELETE("/:id", controller.NewDemoORM.Remove)
-		ormGroup.DELETE("/clean", controller.NewDemoORM.Clean)
+		ormGroup.GET("/list", demoORM.List)
+		ormGroup.GET("/all", demoORM.All)
+		ormGroup.GET("/:id", demoORM.Info)
+		ormGroup.POST("", demoORM.Add)
+		ormGroup.PUT("", demoORM.Edit)
+		ormGroup.DELETE("/:id", demoORM.Remove)
+		ormGroup.DELETE("/clean", demoORM.Clean)
 	}
 }
