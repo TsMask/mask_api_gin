@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,7 +13,6 @@ import (
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
-	"slices"
 )
 
 // NewSysRole 实例化控制层
@@ -368,7 +368,7 @@ func (s SysRoleController) Export(c *gin.Context) {
 	}
 
 	// 导出文件名称
-	fileName := fmt.Sprintf("role_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
+	fileName := fmt.Sprintf("role_export_%d_%d.csv", len(rows), time.Now().UnixMilli())
 	// 导出数据表格
 	saveFilePath, err := s.sysRoleService.ExportData(rows, fileName)
 	if err != nil {

@@ -3,16 +3,17 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
+	"path/filepath"
+
+	"gorm.io/gorm"
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/database/redis"
+	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
-
-	"gorm.io/gorm"
 )
 
 // NewSysDictType 实例化服务层
@@ -203,28 +204,28 @@ func (s SysDictType) CacheClean(dictType string) bool {
 // ExportData 导出数据表格
 func (s SysDictType) ExportData(rows []model.SysDictType, fileName string) (string, error) {
 	// 第一行表头标题
-	headerCells := map[string]string{
-		"A1": "字典编号",
-		"B1": "字典名称",
-		"C1": "字典类型",
-		"D1": "字典状态",
+	data := [][]string{
+		{"字典编号", "字典名称", "字典类型", "字典状态"},
 	}
 	// 从第二行开始的数据
-	dataCells := make([]map[string]any, 0)
-	for i, row := range rows {
-		idx := strconv.Itoa(i + 2)
+	for _, row := range rows {
 		statusValue := "停用"
 		if row.StatusFlag == constants.STATUS_YES {
 			statusValue = "正常"
 		}
-		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.DictId,
-			"B" + idx: row.DictName,
-			"C" + idx: row.DictType,
-			"D" + idx: statusValue,
+		data = append(data, []string{
+			fmt.Sprintf("%d", row.DictId),
+			row.DictName,
+			row.DictType,
+			statusValue,
 		})
 	}
 
+	// 导出文件路径
+	_, dir := file.UploadResourceDir()
+	datePath := date.ParseDatePath()
+	filePath := filepath.Join(dir, constants.UPLOAD_EXPORT, datePath, fileName)
+
 	// 导出数据表格
-	return file.WriteSheet(headerCells, dataCells, fileName, "")
+	return filePath, file.CSVWrite(filePath, data, false)
 }

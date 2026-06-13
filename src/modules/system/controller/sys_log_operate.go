@@ -55,7 +55,7 @@ func (s SysLogOperateController) Export(c *gin.Context) {
 	}
 
 	// 导出文件名称
-	fileName := fmt.Sprintf("sys_log_operate_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
+	fileName := fmt.Sprintf("sys_log_operate_export_%d_%d.csv", len(rows), time.Now().UnixMilli())
 	// 导出数据表格
 	saveFilePath, err := s.sysLogOperateService.ExportData(rows, fileName)
 	if err != nil {

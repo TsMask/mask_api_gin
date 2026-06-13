@@ -2,10 +2,11 @@ package service
 
 import (
 	"fmt"
-	"strconv"
+	"path/filepath"
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/cron"
+	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/repository"
@@ -171,25 +172,14 @@ func (s SysJob) Reset() {
 
 // ExportData 导出数据表格
 func (s SysJob) ExportData(rows []model.SysJob, fileName string) (string, error) {
-	// 第一行表头标题
-	headerCells := map[string]string{
-		"A1": "任务编号",
-		"B1": "任务名称",
-		"C1": "任务组名",
-		"D1": "调用目标",
-		"E1": "传入参数",
-		"F1": "执行表达式",
-		"G1": "出错策略",
-		"H1": "并发执行",
-		"I1": "任务状态",
-		"J1": "备注说明",
-	}
 	// 读取任务组名字典数据
 	dictSysJobGroup := s.sysDictTypeService.FindDataByType("sys_job_group")
+	// 第一行表头标题
+	data := [][]string{
+		{"任务编号", "任务名称", "任务组名", "调用目标", "传入参数", "执行表达式", "出错策略", "并发执行", "任务状态", "备注说明"},
+	}
 	// 从第二行开始的数据
-	dataCells := make([]map[string]any, 0)
-	for i, row := range rows {
-		idx := strconv.Itoa(i + 2)
+	for _, row := range rows {
 		// 任务组名
 		sysJobGroup := ""
 		for _, v := range dictSysJobGroup {
@@ -199,9 +189,10 @@ func (s SysJob) ExportData(rows []model.SysJob, fileName string) (string, error)
 			}
 		}
 		misfirePolicy := "放弃执行"
-		if row.MisfirePolicy == "1" {
+		switch row.MisfirePolicy {
+		case "1":
 			misfirePolicy = "立即执行"
-		} else if row.MisfirePolicy == "2" {
+		case "2":
 			misfirePolicy = "执行一次"
 		}
 		concurrent := "禁止"
@@ -213,20 +204,25 @@ func (s SysJob) ExportData(rows []model.SysJob, fileName string) (string, error)
 		if row.StatusFlag == constants.STATUS_YES {
 			statusValue = "成功"
 		}
-		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.JobId,
-			"B" + idx: row.JobName,
-			"C" + idx: sysJobGroup,
-			"D" + idx: row.InvokeTarget,
-			"E" + idx: row.TargetParams,
-			"F" + idx: row.CronExpression,
-			"G" + idx: misfirePolicy,
-			"H" + idx: concurrent,
-			"I" + idx: statusValue,
-			"J" + idx: row.Remark,
+		data = append(data, []string{
+			fmt.Sprintf("%d", row.JobId),
+			row.JobName,
+			sysJobGroup,
+			row.InvokeTarget,
+			row.TargetParams,
+			row.CronExpression,
+			misfirePolicy,
+			concurrent,
+			statusValue,
+			row.Remark,
 		})
 	}
 
+	// 导出文件路径
+	_, dir := file.UploadResourceDir()
+	datePath := date.ParseDatePath()
+	filePath := filepath.Join(dir, constants.UPLOAD_EXPORT, datePath, fileName)
+
 	// 导出数据表格
-	return file.WriteSheet(headerCells, dataCells, fileName, "")
+	return filePath, file.CSVWrite(filePath, data, false)
 }

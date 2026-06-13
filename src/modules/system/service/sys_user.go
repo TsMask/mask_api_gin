@@ -2,8 +2,11 @@ package service
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/db"
@@ -14,8 +17,6 @@ import (
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
-
-	"gorm.io/gorm"
 )
 
 // NewSysUser 实例化服务层
@@ -274,26 +275,13 @@ func (s SysUser) FindAuthUsersPage(query map[string]string, dataScopeSQL string)
 // ExportData 导出数据表格
 func (s SysUser) ExportData(rows []model.SysUser, fileName string) (string, error) {
 	// 第一行表头标题
-	headerCells := map[string]string{
-		"A1": "用户编号",
-		"B1": "登录账号",
-		"C1": "用户昵称",
-		"D1": "用户邮箱",
-		"E1": "手机号码",
-		"F1": "用户性别",
-		"G1": "帐号状态",
-		"H1": "部门编号",
-		"I1": "部门名称",
-		"J1": "部门负责人",
-		"K1": "最后登录IP",
-		"L1": "最后登录时间",
+	data := [][]string{
+		{"用户编号", "登录账号", "用户昵称", "用户邮箱", "手机号码", "用户性别", "帐号状态", "部门编号", "部门名称", "部门负责人", "最后登录IP", "最后登录时间"},
 	}
 	// 读取用户性别字典数据
 	dictSysUserSex := s.sysDictTypeService.FindDataByType("sys_user_sex")
 	// 从第二行开始的数据
-	dataCells := make([]map[string]any, 0)
-	for i, row := range rows {
-		idx := fmt.Sprint(i + 2)
+	for _, row := range rows {
 		// 用户性别
 		sysUserSex := "未知"
 		for _, v := range dictSysUserSex {
@@ -307,24 +295,29 @@ func (s SysUser) ExportData(rows []model.SysUser, fileName string) (string, erro
 		if row.StatusFlag == constants.STATUS_YES {
 			statusValue = "正常"
 		}
-		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.UserId,
-			"B" + idx: row.UserName,
-			"C" + idx: row.NickName,
-			"D" + idx: row.Email,
-			"E" + idx: row.Phone,
-			"F" + idx: sysUserSex,
-			"G" + idx: statusValue,
-			"H" + idx: row.Dept.DeptId,
-			"I" + idx: row.Dept.DeptName,
-			"J" + idx: row.Dept.Leader,
-			"K" + idx: row.LoginIp,
-			"L" + idx: date.ParseNumberToDate(row.LoginTime).Format(time.RFC3339),
+		data = append(data, []string{
+			fmt.Sprintf("%d", row.UserId),
+			row.UserName,
+			row.NickName,
+			row.Email,
+			row.Phone,
+			sysUserSex,
+			statusValue,
+			fmt.Sprintf("%d", row.Dept.DeptId),
+			row.Dept.DeptName,
+			row.Dept.Leader,
+			row.LoginIp,
+			date.ParseNumberToDate(row.LoginTime).Format(time.RFC3339),
 		})
 	}
 
+	// 导出文件路径
+	_, dir := file.UploadResourceDir()
+	datePath := date.ParseDatePath()
+	filePath := filepath.Join(dir, constants.UPLOAD_EXPORT, datePath, fileName)
+
 	// 导出数据表格
-	return file.WriteSheet(headerCells, dataCells, fileName, "")
+	return filePath, file.CSVWrite(filePath, data, false)
 }
 
 // ImportData 导入数据表格
@@ -339,7 +332,7 @@ func (s SysUser) ImportData(rows []map[string]string, operaName string, updateSu
 	failureNum := 0
 	var successMsgArr []string
 	var failureMsgArr []string
-	mustItemArr := []string{"B", "C"}
+	mustItemArr := []string{"username", "nickname"}
 	for _, row := range rows {
 		// 检查必填列
 		ownItem := true
@@ -360,33 +353,33 @@ func (s SysUser) ImportData(rows []map[string]string, operaName string, updateSu
 		// 用户性别转值
 		sysUserSex := "0"
 		for _, v := range dictSysUserSex {
-			if row["F"] == v.DataLabel {
+			if row["gender"] == v.DataLabel {
 				sysUserSex = v.DataValue
 				break
 			}
 		}
 		sysUserStatus := constants.STATUS_NO
-		if row["G"] == "正常" {
+		if row["status"] == "正常" {
 			sysUserStatus = constants.STATUS_YES
 		}
 		var sysUserDeptId int64 = 100
-		if row["H"] != "" {
-			sysUserDeptId = parse.Number(row["H"])
+		if row["dept_id"] != "" {
+			sysUserDeptId = parse.Number(row["dept_id"])
 		}
 
 		// 验证是否存在这个用户
-		newSysUser := s.FindByUserName(row["B"])
+		newSysUser := s.FindByUserName(row["username"])
 		newSysUser.Password = initPassword
-		newSysUser.UserName = row["B"]
-		newSysUser.NickName = row["C"]
-		newSysUser.Phone = row["E"]
-		newSysUser.Email = row["D"]
+		newSysUser.UserName = row["username"]
+		newSysUser.NickName = row["nickname"]
+		newSysUser.Phone = row["phone"]
+		newSysUser.Email = row["email"]
 		newSysUser.StatusFlag = sysUserStatus
 		newSysUser.Sex = sysUserSex
 		newSysUser.DeptId = sysUserDeptId
 
 		// 行用户编号
-		rowNo := row["A"]
+		rowNo := row["user_id"]
 
 		// 检查手机号码格式并判断是否唯一
 		if newSysUser.Phone != "" {

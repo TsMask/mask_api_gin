@@ -1,7 +1,8 @@
 package service
 
 import (
-	"strconv"
+	"fmt"
+	"path/filepath"
 	"time"
 
 	"mask_api_gin/src/framework/constants"
@@ -39,26 +40,11 @@ func (s SysLogOperate) Clean() int64 {
 // ExportData 导出数据表格
 func (s SysLogOperate) ExportData(rows []model.SysLogOperate, fileName string) (string, error) {
 	// 第一行表头标题
-	headerCells := map[string]string{
-		"A1": "操作序号",
-		"B1": "模块标题",
-		"C1": "业务类型",
-		"D1": "请求URL",
-		"E1": "请求方式",
-		"F1": "主机地址",
-		"G1": "操作地点",
-		"H1": "请求参数",
-		"I1": "操作消息",
-		"J1": "方法名称",
-		"K1": "操作人员",
-		"L1": "操作时间",
-		"M1": "操作状态",
-		"N1": "消耗时间",
+	data := [][]string{
+		{"操作序号", "模块标题", "业务类型", "请求URL", "请求方式", "主机地址", "操作地点", "请求参数", "操作消息", "方法名称", "操作人员", "操作时间", "操作状态", "消耗时间"},
 	}
 	// 从第二行开始的数据
-	dataCells := make([]map[string]any, 0)
-	for i, row := range rows {
-		idx := strconv.Itoa(i + 2)
+	for _, row := range rows {
 		// 业务类型
 		businessType := ""
 		// 状态
@@ -66,24 +52,29 @@ func (s SysLogOperate) ExportData(rows []model.SysLogOperate, fileName string) (
 		if row.StatusFlag == constants.STATUS_YES {
 			statusValue = "成功"
 		}
-		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.ID,
-			"B" + idx: row.Title,
-			"C" + idx: businessType,
-			"D" + idx: row.OperaUrl,
-			"E" + idx: row.OperaUrlMethod,
-			"F" + idx: row.OperaIp,
-			"G" + idx: row.OperaLocation,
-			"H" + idx: row.OperaParam,
-			"I" + idx: row.OperaMsg,
-			"J" + idx: row.OperaMethod,
-			"K" + idx: row.OperaBy,
-			"L" + idx: date.ParseNumberToDate(row.OperaTime).Format(time.RFC3339),
-			"M" + idx: statusValue,
-			"N" + idx: row.CostTime,
+		data = append(data, []string{
+			fmt.Sprintf("%d", row.ID),
+			row.Title,
+			businessType,
+			row.OperaUrl,
+			row.OperaUrlMethod,
+			row.OperaIp,
+			row.OperaLocation,
+			row.OperaParam,
+			row.OperaMsg,
+			row.OperaMethod,
+			row.OperaBy,
+			date.ParseNumberToDate(row.OperaTime).Format(time.RFC3339),
+			statusValue,
+			fmt.Sprintf("%d", row.CostTime),
 		})
 	}
 
+	// 导出文件路径
+	_, dir := file.UploadResourceDir()
+	datePath := date.ParseDatePath()
+	filePath := filepath.Join(dir, constants.UPLOAD_EXPORT, datePath, fileName)
+
 	// 导出数据表格
-	return file.WriteSheet(headerCells, dataCells, fileName, "")
+	return filePath, file.CSVWrite(filePath, data, false)
 }

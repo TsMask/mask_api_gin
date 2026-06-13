@@ -50,6 +50,7 @@ upload:
     - ".html"
     - ".htm"
     - ".txt"
+    - ".csv"
     # pdf
     - ".pdf"
     # 压缩文件

@@ -1,7 +1,8 @@
 package service
 
 import (
-	"strconv"
+	"fmt"
+	"path/filepath"
 	"time"
 
 	"mask_api_gin/src/framework/constants"
@@ -48,39 +49,34 @@ func (s SysLogLogin) Clean() int64 {
 // ExportData 导出数据表格
 func (s SysLogLogin) ExportData(rows []model.SysLogLogin, fileName string) (string, error) {
 	// 第一行表头标题
-	headerCells := map[string]string{
-		"A1": "序号",
-		"B1": "用户账号",
-		"C1": "登录状态",
-		"D1": "登录地址",
-		"E1": "登录地点",
-		"F1": "浏览器",
-		"G1": "操作系统",
-		"H1": "提示消息",
-		"I1": "访问时间",
+	data := [][]string{
+		{"序号", "用户账号", "登录状态", "登录地址", "登录地点", "浏览器", "操作系统", "提示消息", "访问时间"},
 	}
 	// 从第二行开始的数据
-	dataCells := make([]map[string]any, 0)
-	for i, row := range rows {
-		idx := strconv.Itoa(i + 2)
+	for _, row := range rows {
 		// 状态
 		statusValue := "失败"
 		if row.StatusFlag == constants.STATUS_YES {
 			statusValue = "成功"
 		}
-		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.ID,
-			"B" + idx: row.UserName,
-			"C" + idx: statusValue,
-			"D" + idx: row.LoginIp,
-			"E" + idx: row.LoginLocation,
-			"F" + idx: row.Browser,
-			"G" + idx: row.OS,
-			"H" + idx: row.Msg,
-			"I" + idx: date.ParseNumberToDate(row.LoginTime).Format(time.RFC3339),
+		data = append(data, []string{
+			fmt.Sprintf("%d", row.ID),
+			row.UserName,
+			statusValue,
+			row.LoginIp,
+			row.LoginLocation,
+			row.Browser,
+			row.OS,
+			row.Msg,
+			date.ParseNumberToDate(row.LoginTime).Format(time.RFC3339),
 		})
 	}
 
+	// 导出文件路径
+	_, dir := file.UploadResourceDir()
+	datePath := date.ParseDatePath()
+	filePath := filepath.Join(dir, constants.UPLOAD_EXPORT, datePath, fileName)
+
 	// 导出数据表格
-	return file.WriteSheet(headerCells, dataCells, fileName, "")
+	return filePath, file.CSVWrite(filePath, data, false)
 }

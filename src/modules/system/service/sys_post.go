@@ -2,9 +2,10 @@ package service
 
 import (
 	"fmt"
-	"strconv"
+	"path/filepath"
 
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
@@ -102,30 +103,29 @@ func (s SysPost) FindByUserId(userId int64) []model.SysPost {
 // ExportData 导出数据表格
 func (s SysPost) ExportData(rows []model.SysPost, fileName string) (string, error) {
 	// 第一行表头标题
-	headerCells := map[string]string{
-		"A1": "岗位编号",
-		"B1": "岗位编码",
-		"C1": "岗位名称",
-		"D1": "岗位排序",
-		"E1": "岗位状态",
+	data := [][]string{
+		{"岗位编号", "岗位编码", "岗位名称", "岗位排序", "岗位状态"},
 	}
 	// 从第二行开始的数据
-	dataCells := make([]map[string]any, 0)
-	for i, row := range rows {
-		idx := strconv.Itoa(i + 2)
+	for _, row := range rows {
 		statusValue := "停用"
 		if row.StatusFlag == constants.STATUS_YES {
 			statusValue = "正常"
 		}
-		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.PostId,
-			"B" + idx: row.PostCode,
-			"C" + idx: row.PostName,
-			"D" + idx: row.PostSort,
-			"E" + idx: statusValue,
+		data = append(data, []string{
+			fmt.Sprintf("%d", row.PostId),
+			row.PostCode,
+			row.PostName,
+			fmt.Sprintf("%d", row.PostSort),
+			statusValue,
 		})
 	}
 
+	// 导出文件路径
+	_, dir := file.UploadResourceDir()
+	datePath := date.ParseDatePath()
+	filePath := filepath.Join(dir, constants.UPLOAD_EXPORT, datePath, fileName)
+
 	// 导出数据表格
-	return file.WriteSheet(headerCells, dataCells, fileName, "")
+	return filePath, file.CSVWrite(filePath, data, false)
 }

@@ -2,15 +2,17 @@ package service
 
 import (
 	"fmt"
+	"path/filepath"
+
+	"gorm.io/gorm"
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/token"
+	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
-
-	"gorm.io/gorm"
 )
 
 // NewSysRole 实例化服务层
@@ -236,18 +238,11 @@ func (r SysRole) DeleteAuthUsers(roleId int64, userIds []int64) int64 {
 // ExportData 导出数据表格
 func (s SysRole) ExportData(rows []model.SysRole, fileName string) (string, error) {
 	// 第一行表头标题
-	headerCells := map[string]string{
-		"A1": "角色序号",
-		"B1": "角色名称",
-		"C1": "角色键值",
-		"D1": "角色排序",
-		"E1": "数据范围",
-		"F1": "角色状态",
+	data := [][]string{
+		{"角色序号", "角色名称", "角色键值", "角色排序", "数据范围", "角色状态"},
 	}
 	// 从第二行开始的数据
-	dataCells := make([]map[string]any, 0)
-	for i, row := range rows {
-		idx := fmt.Sprintf("%d", i+2)
+	for _, row := range rows {
 		// 数据范围
 		dataScope := "空"
 		if v, ok := constants.ROLE_SCOPE_DATA[row.DataScope]; ok {
@@ -258,16 +253,21 @@ func (s SysRole) ExportData(rows []model.SysRole, fileName string) (string, erro
 		if row.StatusFlag == constants.STATUS_YES {
 			statusValue = "正常"
 		}
-		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.RoleId,
-			"B" + idx: row.RoleName,
-			"C" + idx: row.RoleKey,
-			"D" + idx: row.RoleSort,
-			"E" + idx: dataScope,
-			"F" + idx: statusValue,
+		data = append(data, []string{
+			fmt.Sprintf("%d", row.RoleId),
+			row.RoleName,
+			row.RoleKey,
+			fmt.Sprintf("%d", row.RoleSort),
+			dataScope,
+			statusValue,
 		})
 	}
 
+	// 导出文件路径
+	_, dir := file.UploadResourceDir()
+	datePath := date.ParseDatePath()
+	filePath := filepath.Join(dir, constants.UPLOAD_EXPORT, datePath, fileName)
+
 	// 导出数据表格
-	return file.WriteSheet(headerCells, dataCells, fileName, "")
+	return filePath, file.CSVWrite(filePath, data, false)
 }

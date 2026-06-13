@@ -440,7 +440,7 @@ func (s SysUserController) Export(c *gin.Context) {
 	}
 
 	// 导出文件名称
-	fileName := fmt.Sprintf("user_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
+	fileName := fmt.Sprintf("user_export_%d_%d.csv", len(rows), time.Now().UnixMilli())
 	// 导出数据表格
 	saveFilePath, err := s.sysUserService.ExportData(rows, fileName)
 	if err != nil {
@@ -457,12 +457,12 @@ func (s SysUserController) Export(c *gin.Context) {
 func (s SysUserController) Template(c *gin.Context) {
 	// 从 embed.FS 中读取内嵌文件
 	assetsDir := config.GetAssetsDirFS()
-	fileData, err := assetsDir.ReadFile("src/assets/template/excel/user_import_template.xlsx")
+	fileData, err := assetsDir.ReadFile("src/assets/template/csv/user_import_template.csv")
 	if err != nil {
 		c.String(400, "failed to read file")
 		return
 	}
-	fileName := fmt.Sprintf("user_import_template_%d.xlsx", time.Now().UnixMilli())
+	fileName := fmt.Sprintf("user_import_template_%d.csv", time.Now().UnixMilli())
 
 	reqctx.HeaderContentOctetStream(c, fileName, fileData)
 }
@@ -484,7 +484,7 @@ func (s SysUserController) Import(c *gin.Context) {
 	// 表格文件绝对地址
 	filePath := file.UploadFileAbsPath(body.FilePath)
 	// 读取表格数据
-	rows, err := file.ReadSheet(filePath, "")
+	rows, err := file.CSVReadAll(filePath)
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return

@@ -2,9 +2,10 @@ package service
 
 import (
 	"fmt"
-	"strconv"
+	"path/filepath"
 
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
@@ -113,32 +114,30 @@ func (s SysDictData) CheckUniqueTypeByValue(dictType, dataValue string, dataId i
 // ExportData 导出数据表格
 func (s SysDictData) ExportData(rows []model.SysDictData, fileName string) (string, error) {
 	// 第一行表头标题
-	headerCells := map[string]string{
-		"A1": "字典类型",
-		"B1": "数据排序",
-		"C1": "数据编号",
-		"D1": "数据标签",
-		"E1": "数据键值",
-		"F1": "数据状态",
+	data := [][]string{
+		{"字典类型", "数据排序", "数据编号", "数据标签", "数据键值", "数据状态"},
 	}
 	// 从第二行开始的数据
-	dataCells := make([]map[string]any, 0)
-	for i, row := range rows {
-		idx := strconv.Itoa(i + 2)
+	for _, row := range rows {
 		statusValue := "停用"
 		if row.StatusFlag == constants.STATUS_YES {
 			statusValue = "正常"
 		}
-		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.DictType,
-			"B" + idx: row.DataSort,
-			"C" + idx: row.DataId,
-			"D" + idx: row.DataLabel,
-			"E" + idx: row.DataValue,
-			"F" + idx: statusValue,
+		data = append(data, []string{
+			row.DictType,
+			fmt.Sprintf("%d", row.DataSort),
+			fmt.Sprintf("%d", row.DataId),
+			row.DataLabel,
+			row.DataValue,
+			statusValue,
 		})
 	}
 
+	// 导出文件路径
+	_, dir := file.UploadResourceDir()
+	datePath := date.ParseDatePath()
+	filePath := filepath.Join(dir, constants.UPLOAD_EXPORT, datePath, fileName)
+
 	// 导出数据表格
-	return file.WriteSheet(headerCells, dataCells, fileName, "")
+	return filePath, file.CSVWrite(filePath, data, false)
 }

@@ -217,7 +217,7 @@ func (s SysDictDataController) Export(c *gin.Context) {
 	}
 
 	// 导出文件名称
-	fileName := fmt.Sprintf("dict_data_export_%d_%d.xlsx", len(rows), time.Now().UnixMilli())
+	fileName := fmt.Sprintf("dict_data_export_%d_%d.csv", len(rows), time.Now().UnixMilli())
 	// 导出数据表格
 	saveFilePath, err := s.sysDictDataService.ExportData(rows, fileName)
 	if err != nil {

@@ -1,7 +1,8 @@
 package service
 
 import (
-	"strconv"
+	"fmt"
+	"path/filepath"
 	"time"
 
 	"mask_api_gin/src/framework/constants"
@@ -52,22 +53,13 @@ func (s SysJobLog) Clean() int64 {
 // ExportData 导出数据表格
 func (s SysJobLog) ExportData(rows []model.SysJobLog, fileName string) (string, error) {
 	// 第一行表头标题
-	headerCells := map[string]string{
-		"A1": "日志序号",
-		"B1": "任务名称",
-		"C1": "任务组名",
-		"D1": "调用目标",
-		"E1": "传入参数",
-		"F1": "日志信息",
-		"G1": "执行状态",
-		"H1": "记录时间",
+	data := [][]string{
+		{"日志序号", "任务名称", "任务组名", "调用目标", "传入参数", "日志信息", "执行状态", "记录时间"},
 	}
 	// 读取任务组名字典数据
 	dictSysJobGroup := s.sysDictTypeService.FindDataByType("sys_job_group")
 	// 从第二行开始的数据
-	dataCells := make([]map[string]any, 0)
-	for i, row := range rows {
-		idx := strconv.Itoa(i + 2)
+	for _, row := range rows {
 		// 任务组名
 		sysJobGroup := ""
 		for _, v := range dictSysJobGroup {
@@ -81,18 +73,23 @@ func (s SysJobLog) ExportData(rows []model.SysJobLog, fileName string) (string, 
 		if row.StatusFlag == constants.STATUS_YES {
 			statusValue = "成功"
 		}
-		dataCells = append(dataCells, map[string]any{
-			"A" + idx: row.LogId,
-			"B" + idx: row.JobName,
-			"C" + idx: sysJobGroup,
-			"D" + idx: row.InvokeTarget,
-			"E" + idx: row.TargetParams,
-			"F" + idx: row.JobMsg,
-			"G" + idx: statusValue,
-			"H" + idx: date.ParseNumberToDate(row.CreateTime).Format(time.RFC3339),
+		data = append(data, []string{
+			fmt.Sprintf("%d", row.LogId),
+			row.JobName,
+			sysJobGroup,
+			row.InvokeTarget,
+			row.TargetParams,
+			row.JobMsg,
+			statusValue,
+			date.ParseNumberToDate(row.CreateTime).Format(time.RFC3339),
 		})
 	}
 
+	// 导出文件路径
+	_, dir := file.UploadResourceDir()
+	datePath := date.ParseDatePath()
+	filePath := filepath.Join(dir, constants.UPLOAD_EXPORT, datePath, fileName)
+
 	// 导出数据表格
-	return file.WriteSheet(headerCells, dataCells, fileName, "")
+	return filePath, file.CSVWrite(filePath, data, false)
 }
