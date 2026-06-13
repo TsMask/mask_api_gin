@@ -4,12 +4,16 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/url"
+	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 )
 
@@ -42,9 +46,24 @@ func (s FileController) Download(c *gin.Context) {
 		return
 	}
 
-	// 断点续传
-	headerRange := c.GetHeader("Range")
-	resultMap, err := file.ReadUploadFileStream(routerPath, headerRange)
+	if err := file.UploadAllowReadFilePath(routerPath); err != nil {
+		c.JSON(200, resp.ErrMsg(err.Error()))
+		return
+	}
+
+	absPath := file.UploadFileAbsPath(routerPath)
+	headerRange := c.GetHeader("Range") // 断点续传
+
+	var result file.FileRange
+	if headerRange != "" {
+		partsStr := strings.Replace(headerRange, "bytes=", "", 1)
+		parts := strings.Split(partsStr, "-")
+		start, _ := strconv.ParseInt(parts[0], 10, 64)
+		end, _ := strconv.ParseInt(parts[1], 10, 64)
+		result, err = file.ReadStream(absPath, start, end)
+	} else {
+		result, err = file.ReadStream(absPath, 0, 0)
+	}
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
@@ -56,15 +75,14 @@ func (s FileController) Download(c *gin.Context) {
 	c.Writer.Header().Set("Content-Disposition", `attachment; filename="`+url.QueryEscape(filepath.Base(routerPath))+`"`)
 
 	if headerRange != "" {
-		c.Writer.Header().Set("Content-Range", fmt.Sprint(resultMap["range"]))
-		c.Writer.Header().Set("Content-Length", fmt.Sprint(resultMap["chunkSize"]))
+		c.Writer.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", result.Start, result.End, result.Total))
+		c.Writer.Header().Set("Content-Length", strconv.Itoa(len(result.Data)))
 		c.Status(206)
 	} else {
-		c.Writer.Header().Set("Content-Length", fmt.Sprint(resultMap["fileSize"]))
+		c.Writer.Header().Set("Content-Length", strconv.FormatInt(result.Total, 10))
 		c.Status(200)
-
 	}
-	_, _ = c.Writer.Write(resultMap["data"].([]byte))
+	_, _ = c.Writer.Write(result.Data)
 }
 
 // Upload 上传文件
@@ -79,8 +97,7 @@ func (s FileController) Upload(c *gin.Context) {
 	}
 	// 子路径需要在指定范围内
 	subPath := c.PostForm("subPath")
-	_, ok := constants.UPLOAD_SUB_PATH[subPath]
-	if subPath != "" && !ok {
+	if _, ok := constants.UPLOAD_SUB_PATH[subPath]; subPath != "" && !ok {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: subPath not in range"))
 		return
 	}
@@ -88,17 +105,36 @@ func (s FileController) Upload(c *gin.Context) {
 		subPath = constants.UPLOAD_COMMON
 	}
 
-	// 上传文件转存
-	uploadFilePath, err := file.TransferUploadFile(formFile, subPath, []string{})
+	src, err := formFile.Open()
+	if err != nil {
+		c.JSON(200, resp.ErrMsg(err.Error()))
+		return
+	}
+	defer src.Close()
+
+	prefix, dir := file.UploadResourceDir()
+	datePath := date.ParseDatePath()
+
+	dst, err := file.FileUpload{
+		Name:   formFile.Filename,
+		Reader: src,
+	}.Save(file.FileConfig{
+		Dir:       filepath.Join(dir, subPath, datePath),
+		MaxSize:   file.UploadFileSize(),
+		WhiteExts: file.UploadWhiteList(),
+	})
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 
+	urlPath := strings.Replace(dst, dir, prefix, 1)
+	urlPath = filepath.ToSlash(urlPath)
+
 	c.JSON(200, resp.OkData(map[string]string{
-		"url":              "//" + c.Request.Host + uploadFilePath,
-		"filePath":         uploadFilePath,
-		"newFileName":      filepath.Base(uploadFilePath),
+		"url":              "//" + c.Request.Host + urlPath,
+		"filePath":         urlPath,
+		"newFileName":      filepath.Base(dst),
 		"originalFileName": formFile.Filename,
 	}))
 }
@@ -109,19 +145,19 @@ func (s FileController) Upload(c *gin.Context) {
 func (s FileController) ChunkCheck(c *gin.Context) {
 	var body struct {
 		Identifier string `json:"identifier" binding:"required"` // 唯一标识
-		FileName   string `json:"fileName" binding:"required"`   // 文件名
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, fmt.Sprintf("bind err: %s", resp.FormatBindError(err))))
 		return
 	}
 
+	_, dir := file.UploadResourceDir()
+	datePath := date.ParseDatePath()
+	chunkDir := filepath.Join(dir, constants.UPLOAD_CHUNK, datePath)
 	// 读取标识目录
-	chunks, err := file.ChunkCheckFile(body.Identifier, body.FileName)
+	chunks, err := file.FileConfig{Dir: chunkDir}.ChunkList(body.Identifier)
 	if err != nil {
-		c.JSON(200, resp.ErrMsg(err.Error()))
-		return
+		chunks = []string{}
 	}
 	c.JSON(200, resp.OkData(chunks))
 }
@@ -136,8 +172,7 @@ func (s FileController) ChunkMerge(c *gin.Context) {
 		SubPath    string `json:"subPath"`                       // 子路径类型
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
-		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, fmt.Sprintf("bind err: %s", resp.FormatBindError(err))))
 		return
 	}
 	// 子路径需要在指定范围内
@@ -149,17 +184,42 @@ func (s FileController) ChunkMerge(c *gin.Context) {
 		body.SubPath = constants.UPLOAD_COMMON
 	}
 
-	// 切片文件合并
-	mergeFilePath, err := file.ChunkMergeFile(body.Identifier, body.FileName, body.SubPath)
+	prefix, dir := file.UploadResourceDir()
+	datePath := date.ParseDatePath()
+
+	// 合并到 chunk 日期目录下
+	dst, err := file.FileConfig{
+		Dir:       filepath.Join(dir, constants.UPLOAD_CHUNK, datePath),
+		MaxSize:   file.UploadFileSize(),
+		WhiteExts: file.UploadWhiteList(),
+	}.ChunkMerge(
+		body.Identifier,
+		body.FileName,
+	)
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 
+	// 移动到目标子路径目录
+	finalDir := filepath.Join(dir, body.SubPath, datePath)
+	if err := os.MkdirAll(finalDir, 0755); err != nil {
+		c.JSON(200, resp.ErrMsg(err.Error()))
+		return
+	}
+	finalPath := filepath.Join(finalDir, filepath.Base(dst))
+	if err := os.Rename(dst, finalPath); err != nil {
+		c.JSON(200, resp.ErrMsg(err.Error()))
+		return
+	}
+
+	urlPath := strings.Replace(finalPath, dir, prefix, 1)
+	urlPath = filepath.ToSlash(urlPath)
+
 	c.JSON(200, resp.OkData(map[string]string{
-		"url":              "//" + c.Request.Host + mergeFilePath,
-		"filePath":         mergeFilePath,
-		"newFileName":      filepath.Base(mergeFilePath),
+		"url":              "//" + c.Request.Host + urlPath,
+		"filePath":         urlPath,
+		"newFileName":      filepath.Base(finalPath),
 		"originalFileName": body.FileName,
 	}))
 }
@@ -168,10 +228,8 @@ func (s FileController) ChunkMerge(c *gin.Context) {
 //
 // POST /chunk-upload
 func (s FileController) ChunkUpload(c *gin.Context) {
-	// 切片编号
-	index := c.PostForm("index")
-	// 切片唯一标识
-	identifier := c.PostForm("identifier")
+	index := c.PostForm("index")           // 切片编号
+	identifier := c.PostForm("identifier") // 切片唯一标识
 	if index == "" || identifier == "" {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: index and identifier must be set"))
 		return
@@ -183,11 +241,33 @@ func (s FileController) ChunkUpload(c *gin.Context) {
 		return
 	}
 
-	// 上传文件转存
-	chunkFilePath, err := file.TransferChunkUploadFile(formFile, index, identifier)
+	src, err := formFile.Open()
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
-	c.JSON(206, resp.OkData(chunkFilePath))
+	defer src.Close()
+
+	prefix, dir := file.UploadResourceDir()
+	datePath := date.ParseDatePath()
+	chunkDir := filepath.Join(dir, constants.UPLOAD_CHUNK, datePath)
+
+	upload := file.FileUpload{
+		Reader: src,
+		Name:   formFile.Filename,
+		Id:     identifier,
+		Index:  index,
+	}
+	cfg := file.FileConfig{
+		Dir:     chunkDir,
+		MaxSize: file.UploadFileSize(),
+	}
+	if err := upload.ChunkSave(cfg); err != nil {
+		c.JSON(200, resp.ErrMsg(err.Error()))
+		return
+	}
+
+	urlPath := strings.Replace(chunkDir, dir, prefix, 1)
+	urlPath = filepath.ToSlash(filepath.Join(urlPath, identifier, index))
+	c.JSON(206, resp.OkData(urlPath))
 }

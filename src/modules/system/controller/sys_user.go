@@ -482,7 +482,7 @@ func (s SysUserController) Import(c *gin.Context) {
 	}
 
 	// 表格文件绝对地址
-	filePath := file.ParseUploadFileAbsPath(body.FilePath)
+	filePath := file.UploadFileAbsPath(body.FilePath)
 	// 读取表格数据
 	rows, err := file.ReadSheet(filePath, "")
 	if err != nil {
