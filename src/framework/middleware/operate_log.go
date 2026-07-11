@@ -18,38 +18,38 @@ import (
 )
 
 const (
-	// BUSINESS_TYPE_OTHER 业务操作类型-其它
-	BUSINESS_TYPE_OTHER = "0"
+	// OPERATE_TYPE_OTHER 业务操作类型-其它
+	OPERATE_TYPE_OTHER = "0"
 
-	// BUSINESS_TYPE_INSERT 业务操作类型-新增
-	BUSINESS_TYPE_INSERT = "1"
+	// OPERATE_TYPE_INSERT 业务操作类型-新增
+	OPERATE_TYPE_INSERT = "1"
 
-	// BUSINESS_TYPE_UPDATE 业务操作类型-修改
-	BUSINESS_TYPE_UPDATE = "2"
+	// OPERATE_TYPE_UPDATE 业务操作类型-修改
+	OPERATE_TYPE_UPDATE = "2"
 
-	// BUSINESS_TYPE_DELETE 业务操作类型-删除
-	BUSINESS_TYPE_DELETE = "3"
+	// OPERATE_TYPE_DELETE 业务操作类型-删除
+	OPERATE_TYPE_DELETE = "3"
 
-	// BUSINESS_TYPE_GRANT 业务操作类型-授权
-	BUSINESS_TYPE_GRANT = "4"
+	// OPERATE_TYPE_GRANT 业务操作类型-授权
+	OPERATE_TYPE_GRANT = "4"
 
-	// BUSINESS_TYPE_EXPORT 业务操作类型-导出
-	BUSINESS_TYPE_EXPORT = "5"
+	// OPERATE_TYPE_EXPORT 业务操作类型-导出
+	OPERATE_TYPE_EXPORT = "5"
 
-	// BUSINESS_TYPE_IMPORT 业务操作类型-导入
-	BUSINESS_TYPE_IMPORT = "6"
+	// OPERATE_TYPE_IMPORT 业务操作类型-导入
+	OPERATE_TYPE_IMPORT = "6"
 
-	// BUSINESS_TYPE_FORCE 业务操作类型-强退
-	BUSINESS_TYPE_FORCE = "7"
+	// OPERATE_TYPE_FORCE 业务操作类型-强退
+	OPERATE_TYPE_FORCE = "7"
 
-	// BUSINESS_TYPE_CLEAN 业务操作类型-清空数据
-	BUSINESS_TYPE_CLEAN = "8"
+	// OPERATE_TYPE_CLEAN 业务操作类型-清空数据
+	OPERATE_TYPE_CLEAN = "8"
 )
 
 // Options Option 操作日志参数
 type Options struct {
 	Title              string `json:"title"`              // 标题
-	BusinessType       string `json:"businessType"`       // 类型，默认常量 BUSINESS_TYPE_OTHER
+	OperateType        string `json:"operateType"`        // 类型，默认常量 OPERATE_TYPE_OTHER
 	IsSaveRequestData  bool   `json:"isSaveRequestData"`  // 是否保存请求的参数
 	IsSaveResponseData bool   `json:"isSaveResponseData"` // 是否保存响应的参数
 }
@@ -58,13 +58,13 @@ type Options struct {
 //
 // 标题 "title":"--"
 //
-// 类型 "businessType": BUSINESS_TYPE_OTHER
+// 类型 "operateType": OPERATE_TYPE_OTHER
 //
 // 注意之后JSON反序列使用：c.ShouldBindBodyWithJSON(&params)
-func OptionNew(title, businessType string) Options {
+func OptionNew(title, operateType string) Options {
 	return Options{
 		Title:              title,
-		BusinessType:       businessType,
+		OperateType:        operateType,
 		IsSaveRequestData:  true,
 		IsSaveResponseData: true,
 	}
@@ -95,14 +95,14 @@ func OperateLog(options Options) gin.HandlerFunc {
 
 		// 操作日志记录
 		operaLog := model.SysLogOperate{
-			Title:          options.Title,
-			BusinessType:   options.BusinessType,
-			OperaMethod:    funcName,
-			OperaUrl:       c.Request.RequestURI,
-			OperaUrlMethod: c.Request.Method,
-			OperaIp:        ipaddr,
-			OperaLocation:  location,
-			OperaBy:        userName,
+			Title:           options.Title,
+			OperateType:     options.OperateType,
+			OperateFunction: funcName,
+			OperateUrl:      c.Request.RequestURI,
+			OperateMethod:   c.Request.Method,
+			OperateIp:       ipaddr,
+			OperateLocation: location,
+			CreateBy:        userName,
 		}
 
 		// 是否需要保存request，参数和值
@@ -115,7 +115,7 @@ func OperateLog(options Options) gin.HandlerFunc {
 			if len(paramsStr) > 2000 {
 				paramsStr = paramsStr[:2000]
 			}
-			operaLog.OperaParam = paramsStr
+			operaLog.OperateParam = paramsStr
 		}
 
 		// 调用下一个处理程序
@@ -124,9 +124,9 @@ func OperateLog(options Options) gin.HandlerFunc {
 		// 响应状态
 		status := c.Writer.Status()
 		if status == 200 {
-			operaLog.StatusFlag = constants.STATUS_YES
+			operaLog.OperateStatus = constants.STATUS_YES
 		} else {
-			operaLog.StatusFlag = constants.STATUS_NO
+			operaLog.OperateStatus = constants.STATUS_NO
 		}
 
 		// 是否需要保存response，参数和值
@@ -135,12 +135,12 @@ func OperateLog(options Options) gin.HandlerFunc {
 			contentType := c.Writer.Header().Get("Content-Type")
 			content := contentType + contentDisposition
 			msg := fmt.Sprintf(`{"status":"%d","size":%d,"content-type":"%s"}`, status, c.Writer.Size(), content)
-			operaLog.OperaMsg = msg
+			operaLog.OperateMsg = msg
 		}
 
 		// 日志记录时间
 		duration := time.Since(c.GetTime("startTime"))
-		operaLog.CostTime = duration.Milliseconds()
+		operaLog.OperateCostTime = duration.Milliseconds()
 
 		// 保存操作记录到数据库
 		service.NewSysLogOperate.Insert(operaLog)

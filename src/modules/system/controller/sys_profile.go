@@ -66,11 +66,11 @@ func (s SysProfileController) Info(c *gin.Context) {
 // PUT /
 func (s SysProfileController) UpdateProfile(c *gin.Context) {
 	var body struct {
-		NickName string `json:"nickName" binding:"required"`        // 昵称
-		Sex      string `json:"sex" binding:"required,oneof=0 1 2"` // 性别
-		Phone    string `json:"phone"`                              // 手机号
-		Email    string `json:"email"`                              // 邮箱
-		Avatar   string `json:"avatar"`                             // 头像地址
+		NickName string `json:"nickName" binding:"required"`           // 昵称
+		Gender   string `json:"gender" binding:"required,oneof=0 1 2"` // 性别
+		Phone    string `json:"phone"`                                 // 手机号
+		Email    string `json:"email"`                                 // 邮箱
+		Avatar   string `json:"avatar"`                                // 头像地址
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
@@ -116,18 +116,18 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 
 	// 查询当前登录用户信息
 	userInfo := s.sysUserService.FindById(userId)
-	if userInfo.UserId != userId {
+	if userInfo.ID != userId {
 		c.JSON(200, resp.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
 
 	// 用户基本资料
-	userInfo.NickName = body.NickName
-	userInfo.Phone = body.Phone
-	userInfo.Email = body.Email
-	userInfo.Sex = body.Sex
-	userInfo.Avatar = body.Avatar
-	userInfo.Password = "" // 密码不更新
+	userInfo.UserNick = body.NickName
+	userInfo.UserPhone = body.Phone
+	userInfo.UserEmail = body.Email
+	userInfo.UserGender = body.Gender
+	userInfo.UserAvatar = body.Avatar
+	userInfo.UserPassword = "" // 密码不更新
 	userInfo.UpdateBy = userInfo.UserName
 	rows := s.sysUserService.Update(userInfo)
 	if rows > 0 {
@@ -165,25 +165,25 @@ func (s SysProfileController) UpdatePassword(c *gin.Context) {
 
 	// 查询当前登录用户信息得到密码值
 	userInfo := s.sysUserService.FindById(userId)
-	if userInfo.UserId != userId {
+	if userInfo.ID != userId {
 		c.JSON(200, resp.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
 
 	// 检查匹配用户密码
-	oldCompare := crypto.BcryptCompare(body.OldPassword, userInfo.Password)
+	oldCompare := crypto.BcryptCompare(body.OldPassword, userInfo.UserPassword)
 	if !oldCompare {
 		c.JSON(200, resp.ErrMsg("修改密码失败，旧密码错误"))
 		return
 	}
-	newCompare := crypto.BcryptCompare(body.NewPassword, userInfo.Password)
+	newCompare := crypto.BcryptCompare(body.NewPassword, userInfo.UserPassword)
 	if newCompare {
 		c.JSON(200, resp.ErrMsg("新密码不能与旧密码相同"))
 		return
 	}
 
 	// 修改新密码
-	userInfo.Password = body.NewPassword
+	userInfo.UserPassword = body.NewPassword
 	userInfo.UpdateBy = userInfo.UserName
 	rows := s.sysUserService.Update(userInfo)
 	if rows > 0 {

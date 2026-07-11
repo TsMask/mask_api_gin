@@ -1,4 +1,4 @@
-﻿package repository
+package repository
 
 import (
 	"fmt"
@@ -17,13 +17,13 @@ type SysLogOperate struct{}
 
 // sysLogOperateSortMapping 操作日志排序字段映射
 var sysLogOperateSortMapping = map[string]string{
-	"id":           "id",
-	"title":        "title",
-	"businessType": "business_type",
-	"operaBy":      "opera_by",
-	"operaTime":    "opera_time",
-	"costTime":     "cost_time",
-	"statusFlag":   "status_flag",
+	"id":              "id",
+	"createBy":        "create_by",
+	"createTime":      "create_time",
+	"title":           "title",
+	"operateType":     "operate_type",
+	"operateCostTime": "operate_cost_time",
+	"operateStatus":   "operate_status",
 }
 
 // SelectByPage 分页查询集合
@@ -33,37 +33,37 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 	if v, ok := query["title"]; ok && v != "" {
 		tx = tx.Where("title like ?", v+"%")
 	}
-	if v, ok := query["businessType"]; ok && v != "" {
-		tx = tx.Where("business_type = ?", v)
+	if v, ok := query["operateType"]; ok && v != "" {
+		tx = tx.Where("operate_type = ?", v)
 	}
-	if v, ok := query["operaBy"]; ok && v != "" {
-		tx = tx.Where("opera_by like ?", v+"%")
+	if v, ok := query["createBy"]; ok && v != "" {
+		tx = tx.Where("create_by like ?", v+"%")
 	}
-	if v, ok := query["operaIp"]; ok && v != "" {
-		tx = tx.Where("opera_ip like ?", v+"%")
+	if v, ok := query["operateIp"]; ok && v != "" {
+		tx = tx.Where("operate_ip like ?", v+"%")
 	}
-	if v, ok := query["statusFlag"]; ok && v != "" {
-		tx = tx.Where("status_flag = ?", v)
+	if v, ok := query["operateStatus"]; ok && v != "" {
+		tx = tx.Where("operate_status = ?", v)
 	}
 	if v, ok := query["beginTime"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s000", v)
-			tx = tx.Where("opera_time >= ?", v)
+			tx = tx.Where("create_time >= ?", v)
 		} else if len(v) == 13 {
-			tx = tx.Where("opera_time >= ?", v)
+			tx = tx.Where("create_time >= ?", v)
 		}
 	}
 	if v, ok := query["endTime"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s999", v)
-			tx = tx.Where("opera_time <= ?", v)
+			tx = tx.Where("create_time <= ?", v)
 		} else if len(v) == 13 {
-			tx = tx.Where("opera_time <= ?", v)
+			tx = tx.Where("create_time <= ?", v)
 		}
 	}
 	if dataScopeSQL != "" {
 		dataScopeSQL = fmt.Sprintf("select distinct user_name from sys_user where %s", dataScopeSQL)
-		tx = tx.Where(fmt.Sprintf("opera_by in ( %s )", dataScopeSQL))
+		tx = tx.Where(fmt.Sprintf("create_by in ( %s )", dataScopeSQL))
 	}
 
 	// 查询结果
@@ -94,8 +94,8 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 
 // Insert 新增信息
 func (r SysLogOperate) Insert(sysLogOperate model.SysLogOperate) int64 {
-	if sysLogOperate.OperaBy != "" {
-		sysLogOperate.OperaTime = time.Now().UnixMilli()
+	if sysLogOperate.CreateBy != "" {
+		sysLogOperate.CreateTime = time.Now().UnixMilli()
 	}
 	// 执行插入
 	if err := db.DB("").Create(&sysLogOperate).Error; err != nil {

@@ -9,6 +9,7 @@ import (
 	"mask_api_gin/src/framework/engine"
 	"mask_api_gin/src/modules/auth"
 	"mask_api_gin/src/modules/common"
+	"mask_api_gin/src/modules/cronjob"
 	"mask_api_gin/src/modules/demo"
 	"mask_api_gin/src/modules/monitor"
 	"mask_api_gin/src/modules/system"
@@ -43,5 +44,6 @@ func modulesSetup(app *gin.Engine) {
 	auth.Setup(app)    // 认证模块
 	common.Setup(app)  // 通用模块
 	system.Setup(app)  // 系统模块
-	monitor.Setup(app) // 监控模块（含定时任务放最后）
+	cronjob.Setup()    // 任务模块
+	monitor.Setup(app) // 监控模块（对任务名称绑定放最后）
 }

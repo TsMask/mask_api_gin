@@ -1,4 +1,4 @@
-﻿package repository
+package repository
 
 import (
 	"time"
@@ -18,22 +18,19 @@ type SysDictData struct{}
 
 // sysDictDataSortMapping 字典数据排序字段映射
 var sysDictDataSortMapping = map[string]string{
-	"dataId":     "data_id",
+	"id":         "id",
+	"createTime": "create_time",
+	"updateTime": "update_time",
 	"dictType":   "dict_type",
-	"dataLabel":  "data_label",
-	"dataValue":  "data_value",
 	"dataSort":   "data_sort",
 	"tagClass":   "tag_class",
 	"tagType":    "tag_type",
-	"statusFlag": "status_flag",
-	"createTime": "create_time",
-	"updateTime": "update_time",
+	"dataStatus": "data_status",
 }
 
 // SelectByPage 分页查询集合
 func (r SysDictData) SelectByPage(query map[string]string) ([]model.SysDictData, int64) {
 	tx := db.DB("").Model(&model.SysDictData{})
-	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if v, ok := query["dictType"]; ok && v != "" {
 		tx = tx.Where("dict_type = ?", v)
@@ -41,8 +38,8 @@ func (r SysDictData) SelectByPage(query map[string]string) ([]model.SysDictData,
 	if v, ok := query["dataLabel"]; ok && v != "" {
 		tx = tx.Where("data_label like ?", v+"%")
 	}
-	if v, ok := query["statusFlag"]; ok && v != "" {
-		tx = tx.Where("status_flag = ?", v)
+	if v, ok := query["dataStatus"]; ok && v != "" {
+		tx = tx.Where("data_status = ?", v)
 	}
 
 	// 查询结果
@@ -73,7 +70,6 @@ func (r SysDictData) SelectByPage(query map[string]string) ([]model.SysDictData,
 // Select 查询集合
 func (r SysDictData) Select(sysDictData model.SysDictData) []model.SysDictData {
 	tx := db.DB("").Model(&model.SysDictData{})
-	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysDictData.DataLabel != "" {
 		tx = tx.Where("data_label like ?", sysDictData.DataLabel+"%")
@@ -81,8 +77,8 @@ func (r SysDictData) Select(sysDictData model.SysDictData) []model.SysDictData {
 	if sysDictData.DictType != "" {
 		tx = tx.Where("dict_type = ?", sysDictData.DictType)
 	}
-	if sysDictData.StatusFlag != "" {
-		tx = tx.Where("status_flag = ?", sysDictData.StatusFlag)
+	if sysDictData.DataStatus != "" {
+		tx = tx.Where("data_status = ?", sysDictData.DataStatus)
 	}
 
 	// 查询数据
@@ -95,14 +91,14 @@ func (r SysDictData) Select(sysDictData model.SysDictData) []model.SysDictData {
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysDictData) SelectByIds(dataIds []int64) []model.SysDictData {
+func (r SysDictData) SelectByIds(ids []int64) []model.SysDictData {
 	rows := []model.SysDictData{}
-	if len(dataIds) <= 0 {
+	if len(ids) <= 0 {
 		return rows
 	}
 	tx := db.DB("").Model(&model.SysDictData{})
 	// 构建查询条件
-	tx = tx.Where("data_id in ? and del_flag = '0'", dataIds)
+	tx = tx.Where("id in ?", ids)
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
@@ -113,7 +109,6 @@ func (r SysDictData) SelectByIds(dataIds []int64) []model.SysDictData {
 
 // Insert 新增信息 返回新增数据ID
 func (r SysDictData) Insert(sysDictData model.SysDictData) int64 {
-	sysDictData.DelFlag = "0"
 	if sysDictData.CreateBy != "" {
 		ms := time.Now().UnixMilli()
 		sysDictData.UpdateBy = sysDictData.CreateBy
@@ -125,12 +120,12 @@ func (r SysDictData) Insert(sysDictData model.SysDictData) int64 {
 		logger.Errorf("insert err => %v", err.Error())
 		return 0
 	}
-	return sysDictData.DataId
+	return sysDictData.ID
 }
 
 // Update 修改信息 返回受影响行数
 func (r SysDictData) Update(sysDictData model.SysDictData) int64 {
-	if sysDictData.DataId <= 0 {
+	if sysDictData.ID <= 0 {
 		return 0
 	}
 	if sysDictData.UpdateBy != "" {
@@ -138,8 +133,8 @@ func (r SysDictData) Update(sysDictData model.SysDictData) int64 {
 	}
 	tx := db.DB("").Model(&model.SysDictData{})
 	// 构建查询条件
-	tx = tx.Where("data_id = ?", sysDictData.DataId)
-	tx = tx.Omit("data_id", "create_by", "create_time", "del_flag")
+	tx = tx.Where("id = ?", sysDictData.ID)
+	tx = tx.Omit("id", "create_by", "create_time")
 	// 执行更新
 	if err := tx.Updates(sysDictData).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -148,17 +143,17 @@ func (r SysDictData) Update(sysDictData model.SysDictData) int64 {
 	return tx.RowsAffected
 }
 
-// DeleteByIds 批量删除信息 返回受影响行数
-func (r SysDictData) DeleteByIds(dataIds []int64) int64 {
-	if len(dataIds) <= 0 {
+// DeleteByIds 批量删除信息 返回受影响行数（物理删除）
+func (r SysDictData) DeleteByIds(ids []int64) int64 {
+	if len(ids) <= 0 {
 		return 0
 	}
 	tx := db.DB("").Model(&model.SysDictData{})
 	// 构建查询条件
-	tx = tx.Where("data_id in ?", dataIds)
-	// 执行更新删除标记
-	if err := tx.Update("del_flag", "1").Error; err != nil {
-		logger.Errorf("update err => %v", err.Error())
+	tx = tx.Where("id in ?", ids)
+	// 执行物理删除
+	if err := tx.Delete(&model.SysDictData{}).Error; err != nil {
+		logger.Errorf("delete err => %v", err.Error())
 		return 0
 	}
 	return tx.RowsAffected
@@ -167,7 +162,6 @@ func (r SysDictData) DeleteByIds(dataIds []int64) int64 {
 // CheckUnique 检查信息是否唯一 返回数据ID
 func (r SysDictData) CheckUnique(sysDictData model.SysDictData) int64 {
 	tx := db.DB("").Model(&model.SysDictData{})
-	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysDictData.DictType != "" {
 		tx = tx.Where("dict_type = ?", sysDictData.DictType)
@@ -180,7 +174,7 @@ func (r SysDictData) CheckUnique(sysDictData model.SysDictData) int64 {
 	}
 	// 查询数据
 	var id int64 = 0
-	if err := tx.Select("data_id").Limit(1).Find(&id).Error; err != nil {
+	if err := tx.Select("id").Limit(1).Find(&id).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return id
 	}
@@ -193,7 +187,7 @@ func (r SysDictData) ExistDataByDictType(dictType string) int64 {
 		return 0
 	}
 	tx := db.DB("").Model(&model.SysDictData{})
-	tx = tx.Where("del_flag = '0' and dict_type = ?", dictType)
+	tx = tx.Where("dict_type = ?", dictType)
 	// 查询数据
 	var count int64 = 0
 	if err := tx.Count(&count).Error; err != nil {
@@ -214,7 +208,7 @@ func (r SysDictData) UpdateDataByDictType(d *gorm.DB, oldDictType string, newDic
 	tx := d.Model(&model.SysDictData{})
 	// 构建查询条件
 	tx = tx.Where("dict_type = ?", oldDictType)
-	// 执行更新删除标记
+	// 执行更新字典类型
 	if err := tx.Update("dict_type", newDictType).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
 		return 0

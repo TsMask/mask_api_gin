@@ -49,24 +49,24 @@ func (s SysLogOperate) ExportData(rows []model.SysLogOperate, fileName string) (
 		businessType := ""
 		// 状态
 		statusValue := "失败"
-		if row.StatusFlag == constants.STATUS_YES {
+		if row.OperateStatus == constants.STATUS_YES {
 			statusValue = "成功"
 		}
 		data = append(data, []string{
 			fmt.Sprintf("%d", row.ID),
 			row.Title,
 			businessType,
-			row.OperaUrl,
-			row.OperaUrlMethod,
-			row.OperaIp,
-			row.OperaLocation,
-			row.OperaParam,
-			row.OperaMsg,
-			row.OperaMethod,
-			row.OperaBy,
-			date.ParseNumberToDate(row.OperaTime).Format(time.RFC3339),
+			row.OperateUrl,
+			row.OperateMethod,
+			row.OperateIp,
+			row.OperateLocation,
+			row.OperateParam,
+			row.OperateMsg,
+			row.OperateFunction,
+			row.CreateBy,
+			date.ParseNumberToDate(row.CreateTime).Format(time.RFC3339),
 			statusValue,
-			fmt.Sprintf("%d", row.CostTime),
+			fmt.Sprintf("%d", row.OperateCostTime),
 		})
 	}
 

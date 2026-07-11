@@ -58,8 +58,8 @@ func (s SysNotice) DeleteByIds(noticeIds []int64) (int64, error) {
 	}
 	for _, notice := range notices {
 		// 检查是否为已删除
-		if notice.DelFlag == "1" {
-			return 0, fmt.Errorf("ID:%d 公告信息已经删除！", notice.NoticeId)
+		if notice.NoticeDel == "1" {
+			return 0, fmt.Errorf("ID:%d 公告信息已经删除！", notice.ID)
 		}
 	}
 	if len(notices) == len(noticeIds) {

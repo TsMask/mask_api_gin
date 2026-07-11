@@ -38,8 +38,8 @@ func (s DemoORMController) List(c *gin.Context) {
 // GET /all
 func (s DemoORMController) All(c *gin.Context) {
 	var query struct {
-		Title      string `form:"title" binding:"omitempty"`
-		StatusFlag string `form:"statusFlag" binding:"omitempty,oneof=0 1"`
+		Title     string `form:"title" binding:"omitempty"`
+		OrmStatus string `form:"ormStatus" binding:"omitempty,oneof=0 1"`
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
@@ -51,8 +51,8 @@ func (s DemoORMController) All(c *gin.Context) {
 	if query.Title != "" {
 		demoORM.Title = query.Title
 	}
-	if query.StatusFlag != "" {
-		demoORM.StatusFlag = query.StatusFlag
+	if query.OrmStatus != "" {
+		demoORM.OrmStatus = query.OrmStatus
 	}
 
 	data := s.demoORMService.Find(demoORM)

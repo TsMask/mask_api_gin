@@ -31,9 +31,13 @@ type SysJobLogController struct {
 // GET /list
 func (s SysJobLogController) List(c *gin.Context) {
 	query := reqctx.QueryMap(c)
-	if jobIdStr := c.Query("jobId"); jobIdStr != "" {
-		if jobId := parse.Number(jobIdStr); jobId > 0 {
-			job := s.sysJobService.FindById(jobId)
+	if idStr := c.Query("id"); idStr != "" {
+		if id := parse.Number(idStr); id > 0 {
+			job := s.sysJobService.FindById(id)
+			if job.ID != id {
+				c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id no found"))
+				return
+			}
 			query["jobName"] = job.JobName
 			query["jobGroup"] = job.JobGroup
 		}
@@ -44,16 +48,16 @@ func (s SysJobLogController) List(c *gin.Context) {
 
 // Info 调度任务日志信息
 //
-// GET /:logId
+// GET /:id
 func (s SysJobLogController) Info(c *gin.Context) {
-	logId := parse.Number(c.Param("logId"))
-	if logId <= 0 {
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: logId is empty"))
+	id := parse.Number(c.Param("id"))
+	if id <= 0 {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id is empty"))
 		return
 	}
 
-	data := s.sysJobLogService.FindById(logId)
-	if data.LogId == logId {
+	data := s.sysJobLogService.FindById(id)
+	if data.ID == id {
 		c.JSON(200, resp.OkData(data))
 		return
 	}
@@ -62,16 +66,16 @@ func (s SysJobLogController) Info(c *gin.Context) {
 
 // Remove 调度任务日志删除
 //
-// DELETE /:logId
+// DELETE /:id
 func (s SysJobLogController) Remove(c *gin.Context) {
-	logId := c.Param("logId")
-	if logId == "" {
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: logId is empty"))
+	id := c.Param("id")
+	if id == "" {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id is empty"))
 		return
 	}
 
 	// 处理字符转id数组后去重
-	uniqueIDs := parse.RemoveDuplicatesToArray(logId, ",")
+	uniqueIDs := parse.RemoveDuplicatesToArray(id, ",")
 	// 转换成int64数组类型
 	ids := make([]int64, 0)
 	for _, v := range uniqueIDs {
@@ -101,9 +105,9 @@ func (s SysJobLogController) Clean(c *gin.Context) {
 func (s SysJobLogController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := reqctx.QueryMap(c)
-	if jobIdStr := c.Query("jobId"); jobIdStr != "" {
-		if jobId := parse.Number(jobIdStr); jobId > 0 {
-			job := s.sysJobService.FindById(jobId)
+	if idStr := c.Query("id"); idStr != "" {
+		if id := parse.Number(idStr); id > 0 {
+			job := s.sysJobService.FindById(id)
 			query["jobName"] = job.JobName
 			query["jobGroup"] = job.JobGroup
 		}

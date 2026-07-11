@@ -52,7 +52,7 @@ func (s DemoORMService) Update(demoORM model.DemoORM) int64 {
 	}
 	item.Title = demoORM.Title
 	item.OrmType = demoORM.OrmType
-	item.StatusFlag = demoORM.StatusFlag
+	item.OrmStatus = demoORM.OrmStatus
 	item.Remark = demoORM.Remark
 	item.UpdateBy = "system"
 	item.UpdateTime = time.Now().UnixMilli()

@@ -1,4 +1,4 @@
-﻿package repository
+package repository
 
 import (
 	"time"
@@ -16,16 +16,16 @@ type SysJob struct{}
 
 // sysJobSortMapping 调度任务排序字段映射
 var sysJobSortMapping = map[string]string{
-	"jobId":          "job_id",
-	"jobName":        "job_name",
-	"jobGroup":       "job_group",
-	"invokeTarget":   "invoke_target",
-	"cronExpression": "cron_expression",
-	"misfirePolicy":  "misfire_policy",
-	"concurrent":     "concurrent",
-	"statusFlag":     "status_flag",
-	"createTime":     "create_time",
-	"updateTime":     "update_time",
+	"id":               "id",
+	"jobName":          "job_name",
+	"jobGroup":         "job_group",
+	"jobInvokeTarget":  "job_invoke_target",
+	"jobCron":          "job_cron",
+	"jobMisfirePolicy": "job_misfire_policy",
+	"jobConcurrent":    "job_concurrent",
+	"jobStatus":        "job_status",
+	"createTime":       "create_time",
+	"updateTime":       "update_time",
 }
 
 // SelectByPage 分页查询集合
@@ -38,11 +38,11 @@ func (r SysJob) SelectByPage(query map[string]string) ([]model.SysJob, int64) {
 	if v, ok := query["jobGroup"]; ok && v != "" {
 		tx = tx.Where("job_group = ?", v)
 	}
-	if v, ok := query["invokeTarget"]; ok && v != "" {
-		tx = tx.Where("invoke_target like ?", v+"%")
+	if v, ok := query["jobInvokeTarget"]; ok && v != "" {
+		tx = tx.Where("job_invoke_target like ?", v+"%")
 	}
-	if v, ok := query["statusFlag"]; ok && v != "" {
-		tx = tx.Where("status_flag = ?", v)
+	if v, ok := query["jobStatus"]; ok && v != "" {
+		tx = tx.Where("job_status = ?", v)
 	}
 
 	// 查询结果
@@ -60,7 +60,7 @@ func (r SysJob) SelectByPage(query map[string]string) ([]model.SysJob, int64) {
 
 	// 排序
 	orders := db.SortParse(query["sort"], sysJobSortMapping)
-	tx = db.SortOrDefault(tx, orders, "job_id desc")
+	tx = db.SortOrDefault(tx, orders, "id desc")
 
 	err := tx.Find(&rows).Error
 	if err != nil {
@@ -80,16 +80,16 @@ func (r SysJob) Select(sysJob model.SysJob) []model.SysJob {
 	if sysJob.JobGroup != "" {
 		tx = tx.Where("job_group = ?", sysJob.JobGroup)
 	}
-	if sysJob.InvokeTarget != "" {
-		tx = tx.Where("invoke_target like ?", sysJob.InvokeTarget+"%")
+	if sysJob.JobInvokeTarget != "" {
+		tx = tx.Where("job_invoke_target like ?", sysJob.JobInvokeTarget+"%")
 	}
-	if sysJob.StatusFlag != "" {
-		tx = tx.Where("status_flag = ?", sysJob.StatusFlag)
+	if sysJob.JobStatus != "" {
+		tx = tx.Where("job_status = ?", sysJob.JobStatus)
 	}
 
 	// 查询数据
 	rows := []model.SysJob{}
-	if err := tx.Order("job_id asc").Find(&rows).Error; err != nil {
+	if err := tx.Order("id asc").Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows
 	}
@@ -97,14 +97,14 @@ func (r SysJob) Select(sysJob model.SysJob) []model.SysJob {
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysJob) SelectByIds(jobIds []int64) []model.SysJob {
+func (r SysJob) SelectByIds(ids []int64) []model.SysJob {
 	rows := []model.SysJob{}
-	if len(jobIds) <= 0 {
+	if len(ids) <= 0 {
 		return rows
 	}
 	tx := db.DB("").Model(&model.SysJob{})
 	// 构建查询条件
-	tx = tx.Where("job_id in ?", jobIds)
+	tx = tx.Where("id in ?", ids)
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
@@ -126,12 +126,12 @@ func (r SysJob) Insert(sysJob model.SysJob) int64 {
 		logger.Errorf("insert err => %v", err.Error())
 		return 0
 	}
-	return sysJob.JobId
+	return sysJob.ID
 }
 
 // Update 修改信息
 func (r SysJob) Update(sysJob model.SysJob) int64 {
-	if sysJob.JobId <= 0 {
+	if sysJob.ID <= 0 {
 		return 0
 	}
 	if sysJob.UpdateBy != "" {
@@ -139,8 +139,8 @@ func (r SysJob) Update(sysJob model.SysJob) int64 {
 	}
 	tx := db.DB("").Model(&model.SysJob{})
 	// 构建查询条件
-	tx = tx.Where("job_id = ?", sysJob.JobId)
-	tx = tx.Omit("job_id", "create_by", "create_time")
+	tx = tx.Where("id = ?", sysJob.ID)
+	tx = tx.Omit("id", "create_by", "create_time")
 	// 执行更新
 	if err := tx.Updates(sysJob).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -149,12 +149,12 @@ func (r SysJob) Update(sysJob model.SysJob) int64 {
 	return tx.RowsAffected
 }
 
-// DeleteByIds 批量删除信息
-func (r SysJob) DeleteByIds(jobIds []int64) int64 {
-	if len(jobIds) <= 0 {
+// DeleteByIds 批量删除信息（物理删除）
+func (r SysJob) DeleteByIds(ids []int64) int64 {
+	if len(ids) <= 0 {
 		return 0
 	}
-	tx := db.DB("").Where("job_id in ?", jobIds)
+	tx := db.DB("").Where("id in ?", ids)
 	if err := tx.Delete(&model.SysJob{}).Error; err != nil {
 		logger.Errorf("delete err => %v", err.Error())
 		return 0
@@ -175,7 +175,7 @@ func (r SysJob) CheckUnique(sysJob model.SysJob) int64 {
 
 	// 查询数据
 	var id int64 = 0
-	if err := tx.Select("job_id").Limit(1).Find(&id).Error; err != nil {
+	if err := tx.Select("id").Limit(1).Find(&id).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return id
 	}

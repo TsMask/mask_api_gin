@@ -75,6 +75,7 @@ func LoginUserByContainPerms(c *gin.Context, target string) bool {
 }
 
 // LoginUserToDataScopeSQL 登录用户信息-角色数据范围过滤SQL字符串
+// deptAlias 数据范围过滤目标表的部门别名/表名；userAlias 仅本人数据权限时用户表别名/表名，空则回退部门维度
 func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string) string {
 	dataScopeSQL := ""
 	// 登录用户信息
@@ -84,8 +85,14 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 	}
 	userInfo := info.User
 
+	// 数据范围过滤引用的部门列：目标表为 sys_dept 时为其主键 id，其余表为外键 dept_id
+	deptRefCol := "dept_id"
+	if deptAlias == "sys_dept" {
+		deptRefCol = "id"
+	}
+
 	// 如果是系统管理员，则不过滤数据
-	if config.IsSystemUser(userInfo.UserId) {
+	if config.IsSystemUser(userInfo.ID) {
 		return dataScopeSQL
 	}
 	// 无用户角色
@@ -97,7 +104,7 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 	var scopeKeys []string
 	var conditions []string
 	for _, role := range userInfo.Roles {
-		dataScope := role.DataScope
+		dataScope := role.RoleDataScope
 
 		if constants.ROLE_SCOPE_ALL == dataScope {
 			break
@@ -117,33 +124,33 @@ func LoginUserToDataScopeSQL(c *gin.Context, deptAlias string, userAlias string)
 		}
 
 		if constants.ROLE_SCOPE_CUSTOM == dataScope {
-			sql := fmt.Sprintf(`%s.dept_id IN 
-			( SELECT dept_id FROM sys_role_dept WHERE role_id = %d ) 
-			AND %s.dept_id NOT IN 
-			( 
-			SELECT d.parent_id FROM sys_dept d 
-			INNER JOIN sys_role_dept rd ON rd.dept_id = d.dept_id 
-			AND rd.role_id = %d 
-			)`, deptAlias, role.RoleId, deptAlias, role.RoleId)
+			sql := fmt.Sprintf(`%s.%s IN
+			( SELECT dept_id FROM sys_role_dept WHERE role_id = %d )
+			AND %s.%s NOT IN
+			(
+			SELECT d.parent_id FROM sys_dept d
+			INNER JOIN sys_role_dept rd ON rd.dept_id = d.id
+			AND rd.role_id = %d
+			)`, deptAlias, deptRefCol, role.ID, deptAlias, deptRefCol, role.ID)
 			conditions = append(conditions, sql)
 		}
 
 		if constants.ROLE_SCOPE_DEPT == dataScope {
-			sql := fmt.Sprintf("%s.dept_id = %d", deptAlias, userInfo.DeptId)
+			sql := fmt.Sprintf("%s.%s = %d", deptAlias, deptRefCol, userInfo.DeptId)
 			conditions = append(conditions, sql)
 		}
 
 		if constants.ROLE_SCOPE_DEPT_CHILD == dataScope {
-			sql := fmt.Sprintf("%s.dept_id IN ( SELECT dept_id FROM sys_dept WHERE dept_id = %d OR find_in_set(%d, ancestors ) )", deptAlias, userInfo.DeptId, userInfo.DeptId)
+			sql := fmt.Sprintf("%s.%s IN ( SELECT id FROM sys_dept WHERE id = %d OR find_in_set(%d, ancestors ) )", deptAlias, deptRefCol, userInfo.DeptId, userInfo.DeptId)
 			conditions = append(conditions, sql)
 		}
 
 		if constants.ROLE_SCOPE_SELF == dataScope {
 			if userAlias == "" {
-				sql := fmt.Sprintf("%s.dept_id = %d", deptAlias, userInfo.DeptId)
+				sql := fmt.Sprintf("%s.%s = %d", deptAlias, deptRefCol, userInfo.DeptId)
 				conditions = append(conditions, sql)
 			} else {
-				sql := fmt.Sprintf("%s.user_id = %d", userAlias, userInfo.UserId)
+				sql := fmt.Sprintf("%s.id = %d", userAlias, userInfo.ID)
 				conditions = append(conditions, sql)
 			}
 		}

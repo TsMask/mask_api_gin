@@ -38,16 +38,16 @@ func (s SysDictDataController) List(c *gin.Context) {
 
 // Info 字典数据详情
 //
-// GET /:dataId
+// GET /:id
 func (s SysDictDataController) Info(c *gin.Context) {
-	dataId := parse.Number(c.Param("dataId"))
-	if dataId <= 0 {
+	id := parse.Number(c.Param("id"))
+	if id <= 0 {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: deptId is empty"))
 		return
 	}
 
-	data := s.sysDictDataService.FindById(dataId)
-	if data.DataId == dataId {
+	data := s.sysDictDataService.FindById(id)
+	if data.ID == id {
 		c.JSON(200, resp.OkData(data))
 		return
 	}
@@ -64,8 +64,8 @@ func (s SysDictDataController) Add(c *gin.Context) {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
-	if body.DataId > 0 {
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: dataId not is empty"))
+	if body.ID > 0 {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id not is empty"))
 		return
 	}
 
@@ -111,8 +111,8 @@ func (s SysDictDataController) Edit(c *gin.Context) {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
-	if body.DataId <= 0 {
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: dataId is empty"))
+	if body.ID <= 0 {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id is empty"))
 		return
 	}
 
@@ -124,14 +124,14 @@ func (s SysDictDataController) Edit(c *gin.Context) {
 	}
 
 	// 检查字典编码是否存在
-	dictData := s.sysDictDataService.FindById(body.DataId)
-	if dictData.DataId != body.DataId {
+	dictData := s.sysDictDataService.FindById(body.ID)
+	if dictData.ID != body.ID {
 		c.JSON(200, resp.ErrMsg("没有权限访问字典编码数据！"))
 		return
 	}
 
 	// 检查字典标签唯一
-	uniqueLabel := s.sysDictDataService.CheckUniqueTypeByLabel(body.DictType, body.DataLabel, body.DataId)
+	uniqueLabel := s.sysDictDataService.CheckUniqueTypeByLabel(body.DictType, body.DataLabel, body.ID)
 	if !uniqueLabel {
 		msg := fmt.Sprintf("数据修改【%s】失败，该字典类型下标签名已存在", body.DataLabel)
 		c.JSON(200, resp.ErrMsg(msg))
@@ -139,7 +139,7 @@ func (s SysDictDataController) Edit(c *gin.Context) {
 	}
 
 	// 检查字典键值唯一
-	uniqueValue := s.sysDictDataService.CheckUniqueTypeByValue(body.DictType, body.DataValue, body.DataId)
+	uniqueValue := s.sysDictDataService.CheckUniqueTypeByValue(body.DictType, body.DataValue, body.ID)
 	if !uniqueValue {
 		msg := fmt.Sprintf("数据修改【%s】失败，该字典类型下标签值已存在", body.DataLabel)
 		c.JSON(200, resp.ErrMsg(msg))
@@ -152,7 +152,7 @@ func (s SysDictDataController) Edit(c *gin.Context) {
 	dictData.DataSort = body.DataSort
 	dictData.TagClass = body.TagClass
 	dictData.TagType = body.TagType
-	dictData.StatusFlag = body.StatusFlag
+	dictData.DataStatus = body.DataStatus
 	dictData.Remark = body.Remark
 	dictData.UpdateBy = reqctx.LoginUserToUserName(c)
 	rows := s.sysDictDataService.Update(dictData)
@@ -165,16 +165,16 @@ func (s SysDictDataController) Edit(c *gin.Context) {
 
 // Remove 字典数据删除
 //
-// DELETE /:dataId
+// DELETE /:id
 func (s SysDictDataController) Remove(c *gin.Context) {
-	dataId := c.Param("dataId")
-	if dataId == "" {
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: dataId is empty"))
+	idStr := c.Param("id")
+	if idStr == "" {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id is empty"))
 		return
 	}
 
 	// 处理字符转id数组后去重
-	uniqueIDs := parse.RemoveDuplicatesToArray(dataId, ",")
+	uniqueIDs := parse.RemoveDuplicatesToArray(idStr, ",")
 	// 转换成int64数组类型
 	ids := make([]int64, 0)
 	for _, v := range uniqueIDs {

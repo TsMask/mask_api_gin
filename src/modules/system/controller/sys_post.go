@@ -36,16 +36,16 @@ func (s SysPostController) List(c *gin.Context) {
 
 // Info 岗位信息
 //
-// GET /:postId
+// GET /:id
 func (s SysPostController) Info(c *gin.Context) {
-	postId := parse.Number(c.Param("postId"))
-	if postId <= 0 {
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: postId is empty"))
+	id := parse.Number(c.Param("id"))
+	if id <= 0 {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id is empty"))
 		return
 	}
 
-	data := s.sysPostService.FindById(postId)
-	if data.PostId == postId {
+	data := s.sysPostService.FindById(id)
+	if data.ID == id {
 		c.JSON(200, resp.OkData(data))
 		return
 	}
@@ -62,7 +62,7 @@ func (s SysPostController) Add(c *gin.Context) {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
-	if body.PostId > 0 {
+	if body.ID > 0 {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: postId not is empty"))
 		return
 	}
@@ -102,20 +102,20 @@ func (s SysPostController) Edit(c *gin.Context) {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
-	if body.PostId <= 0 {
+	if body.ID <= 0 {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: postId is empty"))
 		return
 	}
 
 	// 检查是否存在
-	postInfo := s.sysPostService.FindById(body.PostId)
-	if postInfo.PostId != body.PostId {
+	postInfo := s.sysPostService.FindById(body.ID)
+	if postInfo.ID != body.ID {
 		c.JSON(200, resp.ErrMsg("没有权限访问岗位数据！"))
 		return
 	}
 
 	// 检查名称唯一
-	uniquePostName := s.sysPostService.CheckUniqueByName(body.PostName, body.PostId)
+	uniquePostName := s.sysPostService.CheckUniqueByName(body.PostName, body.ID)
 	if !uniquePostName {
 		msg := fmt.Sprintf("岗位修改【%s】失败，岗位名称已存在", body.PostName)
 		c.JSON(200, resp.ErrMsg(msg))
@@ -123,7 +123,7 @@ func (s SysPostController) Edit(c *gin.Context) {
 	}
 
 	// 检查编码属性值唯一
-	uniquePostCode := s.sysPostService.CheckUniqueByCode(body.PostCode, body.PostId)
+	uniquePostCode := s.sysPostService.CheckUniqueByCode(body.PostCode, body.ID)
 	if !uniquePostCode {
 		msg := fmt.Sprintf("岗位修改【%s】失败，岗位编码已存在", body.PostCode)
 		c.JSON(200, resp.ErrMsg(msg))
@@ -133,7 +133,7 @@ func (s SysPostController) Edit(c *gin.Context) {
 	postInfo.PostCode = body.PostCode
 	postInfo.PostName = body.PostName
 	postInfo.PostSort = body.PostSort
-	postInfo.StatusFlag = body.StatusFlag
+	postInfo.PostStatus = body.PostStatus
 	postInfo.Remark = body.Remark
 	postInfo.UpdateBy = reqctx.LoginUserToUserName(c)
 	rows := s.sysPostService.Update(postInfo)
@@ -146,16 +146,16 @@ func (s SysPostController) Edit(c *gin.Context) {
 
 // Remove 岗位删除
 //
-// DELETE /:postId
+// DELETE /:id
 func (s SysPostController) Remove(c *gin.Context) {
-	postId := c.Param("postId")
-	if postId == "" {
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: postId is empty"))
+	idStr := c.Param("id")
+	if idStr == "" {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id is empty"))
 		return
 	}
 
 	// 处理字符转id数组后去重
-	uniqueIDs := parse.RemoveDuplicatesToArray(postId, ",")
+	uniqueIDs := parse.RemoveDuplicatesToArray(idStr, ",")
 	// 转换成int64数组类型
 	ids := make([]int64, 0)
 	for _, v := range uniqueIDs {

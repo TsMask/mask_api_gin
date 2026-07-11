@@ -19,10 +19,10 @@ type SysDept struct{}
 // Select 查询集合
 func (r SysDept) Select(sysDept model.SysDept, dataScopeSQL string) []model.SysDept {
 	tx := db.DB("").Model(&model.SysDept{})
-	tx = tx.Where("del_flag = '0'")
+	tx = tx.Where("dept_del = '0'")
 	// 查询条件拼接
-	if sysDept.DeptId > 0 {
-		tx = tx.Where("dept_id = ?", sysDept.DeptId)
+	if sysDept.ID > 0 {
+		tx = tx.Where("id = ?", sysDept.ID)
 	}
 	if sysDept.ParentId > 0 {
 		tx = tx.Where("parent_id = ?", sysDept.ParentId)
@@ -30,8 +30,8 @@ func (r SysDept) Select(sysDept model.SysDept, dataScopeSQL string) []model.SysD
 	if sysDept.DeptName != "" {
 		tx = tx.Where("dept_name like ?", sysDept.DeptName+"%")
 	}
-	if sysDept.StatusFlag != "" {
-		tx = tx.Where("status_flag = ?", sysDept.StatusFlag)
+	if sysDept.DeptStatus != "" {
+		tx = tx.Where("dept_status = ?", sysDept.DeptStatus)
 	}
 	if dataScopeSQL != "" {
 		tx = tx.Where(dataScopeSQL)
@@ -53,7 +53,7 @@ func (r SysDept) SelectById(deptId int64) model.SysDept {
 	}
 	tx := db.DB("").Model(&model.SysDept{})
 	// 构建查询条件
-	tx = tx.Where("dept_id = ? and del_flag = '0'", deptId)
+	tx = tx.Where("id = ? and dept_del = '0'", deptId)
 	// 查询数据
 	item := model.SysDept{}
 	if err := tx.Limit(1).Find(&item).Error; err != nil {
@@ -70,21 +70,21 @@ func (r SysDept) SelectMapByIds(deptIds []int64) map[int64]model.SysDept {
 		return result
 	}
 	tx := db.DB("").Model(&model.SysDept{})
-	tx = tx.Where("dept_id in ? and del_flag = '0'", deptIds)
+	tx = tx.Where("id in ? and dept_del = '0'", deptIds)
 	rows := []model.SysDept{}
 	if err := tx.Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return result
 	}
 	for _, dept := range rows {
-		result[dept.DeptId] = dept
+		result[dept.ID] = dept
 	}
 	return result
 }
 
 // Insert 新增信息 返回新增数据ID
 func (r SysDept) Insert(sysDept model.SysDept) int64 {
-	sysDept.DelFlag = "0"
+	sysDept.DeptDel = "0"
 	if sysDept.CreateBy != "" {
 		ms := time.Now().UnixMilli()
 		sysDept.UpdateBy = sysDept.CreateBy
@@ -96,12 +96,12 @@ func (r SysDept) Insert(sysDept model.SysDept) int64 {
 		logger.Errorf("insert err => %v", err.Error())
 		return 0
 	}
-	return sysDept.DeptId
+	return sysDept.ID
 }
 
 // Update 修改信息 返回受影响行数
 func (r SysDept) Update(d *gorm.DB, sysDept model.SysDept) int64 {
-	if sysDept.DeptId <= 0 {
+	if sysDept.ID <= 0 {
 		return 0
 	}
 	if sysDept.UpdateBy != "" {
@@ -112,8 +112,8 @@ func (r SysDept) Update(d *gorm.DB, sysDept model.SysDept) int64 {
 	}
 	tx := d.Model(&model.SysDept{})
 	// 构建查询条件
-	tx = tx.Where("dept_id = ?", sysDept.DeptId)
-	tx = tx.Omit("dept_id", "create_by", "create_time", "del_flag")
+	tx = tx.Where("id = ?", sysDept.ID)
+	tx = tx.Omit("id", "create_by", "create_time", "dept_del")
 	// 执行更新
 	if err := tx.Updates(sysDept).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -122,7 +122,7 @@ func (r SysDept) Update(d *gorm.DB, sysDept model.SysDept) int64 {
 	return tx.RowsAffected
 }
 
-// DeleteById 删除信息 返回受影响行数
+// DeleteById 删除信息 返回受影响行数（软删除）
 func (r SysDept) DeleteById(d *gorm.DB, deptId int64) int64 {
 	if deptId <= 0 {
 		return 0
@@ -132,9 +132,9 @@ func (r SysDept) DeleteById(d *gorm.DB, deptId int64) int64 {
 	}
 	tx := d.Model(&model.SysDept{})
 	// 构建查询条件
-	tx = tx.Where("dept_id = ?", deptId)
+	tx = tx.Where("id = ?", deptId)
 	// 执行更新删除标记
-	if err := tx.Update("del_flag", "1").Error; err != nil {
+	if err := tx.Update("dept_del", "1").Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
 		return 0
 	}
@@ -144,7 +144,7 @@ func (r SysDept) DeleteById(d *gorm.DB, deptId int64) int64 {
 // CheckUnique 检查信息是否唯一 返回数据ID
 func (r SysDept) CheckUnique(sysDept model.SysDept) int64 {
 	tx := db.DB("").Model(&model.SysDept{})
-	tx = tx.Where("del_flag = '0'")
+	tx = tx.Where("dept_del = '0'")
 	// 查询条件拼接
 	if sysDept.DeptName != "" {
 		tx = tx.Where("dept_name = ?", sysDept.DeptName)
@@ -155,7 +155,7 @@ func (r SysDept) CheckUnique(sysDept model.SysDept) int64 {
 
 	// 查询数据
 	var id int64 = 0
-	if err := tx.Select("dept_id").Limit(1).Find(&id).Error; err != nil {
+	if err := tx.Select("id").Limit(1).Find(&id).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return id
 	}
@@ -168,7 +168,7 @@ func (r SysDept) ExistChildrenByDeptId(deptId int64) int64 {
 		return 0
 	}
 	tx := db.DB("").Model(&model.SysDept{})
-	tx = tx.Where("del_flag = '0' and status_flag = '1'")
+	tx = tx.Where("dept_del = '0' and dept_status = '1'")
 	tx = tx.Where("parent_id = ?", deptId)
 	// 查询数据
 	var count int64 = 0
@@ -185,7 +185,7 @@ func (r SysDept) ExistUserByDeptId(deptId int64) int64 {
 		return 0
 	}
 	tx := db.DB("").Model(&model.SysUser{})
-	tx = tx.Where("del_flag = '0' and dept_id = ?", deptId)
+	tx = tx.Where("user_del = '0' and dept_id = ?", deptId)
 	// 查询数据
 	var count int64 = 0
 	if err := tx.Count(&count).Error; err != nil {
@@ -202,20 +202,20 @@ func (r SysDept) SelectDeptIdsByRoleId(roleId int64, deptCheckStrictly bool) []i
 	}
 
 	tx := db.DB("").Model(&model.SysDept{})
-	tx = tx.Where("del_flag = '0'")
-	tx = tx.Where("dept_id in (SELECT DISTINCT dept_id FROM sys_role_dept WHERE role_id = ?)", roleId)
+	tx = tx.Where("dept_del = '0'")
+	tx = tx.Where("id in (SELECT DISTINCT dept_id FROM sys_role_dept WHERE role_id = ?)", roleId)
 	// 父子互相关联显示，取所有子节点
 	if deptCheckStrictly {
-		tx = tx.Where(`dept_id not in (
-		SELECT d.parent_id FROM sys_dept d 
-		INNER JOIN sys_role_dept rd ON rd.dept_id = d.dept_id 
+		tx = tx.Where(`id not in (
+		SELECT d.parent_id FROM sys_dept d
+		INNER JOIN sys_role_dept rd ON rd.dept_id = d.id
 		AND rd.role_id = ?
 		)`, roleId)
 	}
 
 	// 查询数据
 	rows := []int64{}
-	if err := tx.Distinct("dept_id").Find(&rows).Error; err != nil {
+	if err := tx.Distinct("id").Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows
 	}
@@ -225,7 +225,7 @@ func (r SysDept) SelectDeptIdsByRoleId(roleId int64, deptCheckStrictly bool) []i
 // SelectChildrenDeptById 根据ID查询所有子部门
 func (r SysDept) SelectChildrenDeptById(deptId int64) []model.SysDept {
 	tx := db.DB("").Model(&model.SysDept{})
-	tx = tx.Where("del_flag = '0'")
+	tx = tx.Where("dept_del = '0'")
 	tx = tx.Where("find_in_set(?, ancestors)", deptId)
 	// 查询数据
 	rows := []model.SysDept{}
@@ -246,9 +246,9 @@ func (r SysDept) UpdateDeptStatusNormal(d *gorm.DB, deptIds []int64) int64 {
 	}
 	tx := d.Model(&model.SysDept{})
 	// 构建查询条件
-	tx = tx.Where("dept_id in ?", deptIds)
+	tx = tx.Where("id in ?", deptIds)
 	// 执行更新状态标记
-	if err := tx.Update("status_flag", "1").Error; err != nil {
+	if err := tx.Update("dept_status", "1").Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
 		return 0
 	}
@@ -267,11 +267,11 @@ func (r SysDept) UpdateDeptChildren(d *gorm.DB, arr []model.SysDept) int64 {
 	}
 	var affected int64
 	for _, dept := range arr {
-		if dept.DeptId <= 0 {
+		if dept.ID <= 0 {
 			continue
 		}
 		tx := d.Model(&model.SysDept{})
-		tx = tx.Where("dept_id = ?", dept.DeptId)
+		tx = tx.Where("id = ?", dept.ID)
 		if err := tx.Update("ancestors", dept.Ancestors).Error; err != nil {
 			logger.Errorf("update dept children err => %v", err.Error())
 			continue

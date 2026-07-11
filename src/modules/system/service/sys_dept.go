@@ -45,22 +45,22 @@ func (s SysDept) Insert(sysDept model.SysDept) int64 {
 
 // Update 修改信息
 func (s SysDept) Update(sysDept model.SysDept) int64 {
-	dept := s.sysDeptRepository.SelectById(sysDept.DeptId)
+	dept := s.sysDeptRepository.SelectById(sysDept.ID)
 	parentDept := s.sysDeptRepository.SelectById(sysDept.ParentId)
 
 	var rows int64
 	db.Transaction("", func(tx *gorm.DB) error {
 		// 上级与当前部门祖级列表更新
-		if parentDept.DeptId == sysDept.ParentId && dept.DeptId == sysDept.DeptId {
-			newAncestors := fmt.Sprintf("%s,%d", parentDept.Ancestors, parentDept.DeptId)
+		if parentDept.ID == sysDept.ParentId && dept.ID == sysDept.ID {
+			newAncestors := fmt.Sprintf("%s,%d", parentDept.Ancestors, parentDept.ID)
 			oldAncestors := dept.Ancestors
 			// 祖级列表不一致时更新
 			if newAncestors != oldAncestors {
-				s.updateDeptChildren(tx, dept.DeptId, newAncestors, oldAncestors)
+				s.updateDeptChildren(tx, dept.ID, newAncestors, oldAncestors)
 			}
 		}
 		// 如果该部门是启用状态，则启用该部门的所有上级部门
-		if sysDept.StatusFlag == constants.STATUS_YES && parentDept.StatusFlag == constants.STATUS_NO {
+		if sysDept.DeptStatus == constants.STATUS_YES && parentDept.DeptStatus == constants.STATUS_NO {
 			s.updateDeptStatusNormal(tx, sysDept.Ancestors)
 		}
 		rows = s.sysDeptRepository.Update(nil, sysDept)
@@ -112,10 +112,10 @@ func (s SysDept) FindDeptIdsByRoleId(roleId int64) []int64 {
 	roles := s.sysRoleRepository.SelectByIds([]int64{roleId})
 	if len(roles) > 0 {
 		role := roles[0]
-		if role.RoleId == roleId {
+		if role.ID == roleId {
 			return s.sysDeptRepository.SelectDeptIdsByRoleId(
-				role.RoleId,
-				role.DeptCheckStrictly == "1",
+				role.ID,
+				role.RoleDeptCheckStrictly == "1",
 			)
 		}
 	}
@@ -174,7 +174,7 @@ func (s SysDept) parseDataToTree(arr []model.SysDept) []model.SysDept {
 		mapItem = append(mapItem, item)
 		nodesMap[parentID] = mapItem
 		// 记录节点ID
-		treeIds = append(treeIds, item.DeptId)
+		treeIds = append(treeIds, item.ID)
 	}
 
 	for key, value := range nodesMap {
@@ -201,7 +201,7 @@ func (s SysDept) parseDataToTree(arr []model.SysDept) []model.SysDept {
 
 // parseDataToTreeComponent 递归函数处理子节点
 func (s SysDept) parseDataToTreeComponent(node model.SysDept, nodesMap *map[int64][]model.SysDept) model.SysDept {
-	if children, ok := (*nodesMap)[node.DeptId]; ok {
+	if children, ok := (*nodesMap)[node.ID]; ok {
 		node.Children = children
 	}
 	if len(node.Children) > 0 {

@@ -1,4 +1,4 @@
-﻿package repository
+package repository
 
 import (
 	"fmt"
@@ -16,12 +16,12 @@ type SysJobLog struct{}
 
 // sysJobLogSortMapping 调度任务日志排序字段映射
 var sysJobLogSortMapping = map[string]string{
-	"logId":        "log_id",
-	"jobName":      "job_name",
-	"jobGroup":     "job_group",
-	"invokeTarget": "invoke_target",
-	"statusFlag":   "status_flag",
-	"createTime":   "create_time",
+	"id":              "id",
+	"jobName":         "job_name",
+	"jobGroup":        "job_group",
+	"jobInvokeTarget": "job_invoke_target",
+	"logStatus":       "log_status",
+	"createTime":      "create_time",
 }
 
 // SelectByPage 分页查询集合
@@ -34,11 +34,11 @@ func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int
 	if v, ok := query["jobGroup"]; ok && v != "" {
 		tx = tx.Where("job_group = ?", v)
 	}
-	if v, ok := query["statusFlag"]; ok && v != "" {
-		tx = tx.Where("status_flag = ?", v)
+	if v, ok := query["logStatus"]; ok && v != "" {
+		tx = tx.Where("log_status = ?", v)
 	}
-	if v, ok := query["invokeTarget"]; ok && v != "" {
-		tx = tx.Where("invoke_target like ?", v+"%")
+	if v, ok := query["jobInvokeTarget"]; ok && v != "" {
+		tx = tx.Where("job_invoke_target like ?", v+"%")
 	}
 	if v, ok := query["beginTime"]; ok && v != "" {
 		if len(v) == 10 {
@@ -72,7 +72,7 @@ func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int
 
 	// 排序
 	orders := db.SortParse(query["sort"], sysJobLogSortMapping)
-	tx = db.SortOrDefault(tx, orders, "log_id desc")
+	tx = db.SortOrDefault(tx, orders, "id desc")
 
 	err := tx.Find(&rows).Error
 	if err != nil {
@@ -92,11 +92,11 @@ func (r SysJobLog) Select(sysJobLog model.SysJobLog) []model.SysJobLog {
 	if sysJobLog.JobGroup != "" {
 		tx = tx.Where("job_group = ?", sysJobLog.JobGroup)
 	}
-	if sysJobLog.StatusFlag != "" {
-		tx = tx.Where("status_flag = ?", sysJobLog.StatusFlag)
+	if sysJobLog.LogStatus != "" {
+		tx = tx.Where("log_status = ?", sysJobLog.LogStatus)
 	}
-	if sysJobLog.InvokeTarget != "" {
-		tx = tx.Where("invoke_target like ?", sysJobLog.InvokeTarget+"%")
+	if sysJobLog.JobInvokeTarget != "" {
+		tx = tx.Where("job_invoke_target like ?", sysJobLog.JobInvokeTarget+"%")
 	}
 
 	// 查询数据
@@ -109,14 +109,14 @@ func (r SysJobLog) Select(sysJobLog model.SysJobLog) []model.SysJobLog {
 }
 
 // SelectById 通过ID查询信息
-func (r SysJobLog) SelectById(logId int64) model.SysJobLog {
+func (r SysJobLog) SelectById(id int64) model.SysJobLog {
 	item := model.SysJobLog{}
-	if logId <= 0 {
+	if id <= 0 {
 		return item
 	}
 	tx := db.DB("").Model(&model.SysJobLog{})
 	// 构建查询条件
-	tx = tx.Where("log_id = ?", logId)
+	tx = tx.Where("id = ?", id)
 	// 查询数据
 	if err := tx.Limit(1).Find(&item).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
@@ -132,15 +132,15 @@ func (r SysJobLog) Insert(sysJobLog model.SysJobLog) int64 {
 		logger.Errorf("insert err => %v", err.Error())
 		return 0
 	}
-	return sysJobLog.LogId
+	return sysJobLog.ID
 }
 
 // DeleteByIds 批量删除信息
-func (r SysJobLog) DeleteByIds(logIds []int64) int64 {
-	if len(logIds) <= 0 {
+func (r SysJobLog) DeleteByIds(ids []int64) int64 {
+	if len(ids) <= 0 {
 		return 0
 	}
-	tx := db.DB("").Where("log_id in ?", logIds)
+	tx := db.DB("").Where("id in ?", ids)
 	if err := tx.Delete(&model.SysJobLog{}).Error; err != nil {
 		logger.Errorf("delete err => %v", err.Error())
 		return 0

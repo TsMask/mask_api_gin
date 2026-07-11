@@ -36,13 +36,13 @@ func (s SysJobLog) Find(sysJobLog model.SysJobLog) []model.SysJobLog {
 }
 
 // FindById 通过ID查询
-func (s SysJobLog) FindById(logId int64) model.SysJobLog {
-	return s.sysJobLogRepository.SelectById(logId)
+func (s SysJobLog) FindById(id int64) model.SysJobLog {
+	return s.sysJobLogRepository.SelectById(id)
 }
 
 // DeleteByIds 批量删除
-func (s SysJobLog) DeleteByIds(logIds []int64) int64 {
-	return s.sysJobLogRepository.DeleteByIds(logIds)
+func (s SysJobLog) DeleteByIds(ids []int64) int64 {
+	return s.sysJobLogRepository.DeleteByIds(ids)
 }
 
 // Clean 清空
@@ -70,16 +70,16 @@ func (s SysJobLog) ExportData(rows []model.SysJobLog, fileName string) (string, 
 		}
 		// 状态
 		statusValue := "失败"
-		if row.StatusFlag == constants.STATUS_YES {
+		if row.LogStatus == constants.STATUS_YES {
 			statusValue = "成功"
 		}
 		data = append(data, []string{
-			fmt.Sprintf("%d", row.LogId),
+			fmt.Sprintf("%d", row.ID),
 			row.JobName,
 			sysJobGroup,
-			row.InvokeTarget,
-			row.TargetParams,
-			row.JobMsg,
+			row.JobInvokeTarget,
+			row.JobTargetParams,
+			row.LogMsg,
 			statusValue,
 			date.ParseNumberToDate(row.CreateTime).Format(time.RFC3339),
 		})

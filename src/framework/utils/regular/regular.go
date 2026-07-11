@@ -15,6 +15,16 @@ func regexMatch(pattern, str string) bool {
 	return match
 }
 
+// regex2Match 第三方正则匹配字符串（支持零宽断言等 PCRE 特性）
+func regex2Match(pattern, str string) bool {
+	re := regexp2.MustCompile(pattern, 0)
+	match, err := re.MatchString(str)
+	if err != nil {
+		return false
+	}
+	return match
+}
+
 // ValidHttp 判断是否为http(s)://开头
 func ValidHttp(s string) bool {
 	pattern := `^http(s)?://`
@@ -33,16 +43,6 @@ func ValidUsername(s string) bool {
 func ValidMobile(s string) bool {
 	pattern := `^1[3-9]\d{9}$`
 	return regexMatch(pattern, s)
-}
-
-// regex2Match 第三方正则匹配字符串
-func regex2Match(pattern, str string) bool {
-	re := regexp2.MustCompile(pattern, 0)
-	match, err := re.MatchString(str)
-	if err != nil {
-		return false
-	}
-	return match
 }
 
 // ValidPassword 判断是否为有效密码格式

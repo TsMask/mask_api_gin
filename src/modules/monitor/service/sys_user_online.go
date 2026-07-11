@@ -22,8 +22,8 @@ func (s SysUserOnline) UserInfoToUserOnline(info token.UserInfo) model.SysUserOn
 		UserName:      info.User.UserName,
 		LoginIp:       info.LoginIp,
 		LoginLocation: info.LoginLocation,
-		Browser:       info.Browser,
-		OS:            info.OS,
+		Browser:       info.LoginBrowser,
+		OS:            info.LoginOS,
 		LoginTime:     info.LoginTime,
 	}
 	if info.User.DeptId > 0 && info.User.Dept != nil {

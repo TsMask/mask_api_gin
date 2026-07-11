@@ -34,11 +34,11 @@ func (s SysDictData) Find(sysDictData model.SysDictData) []model.SysDictData {
 }
 
 // FindById 通过ID查询信息
-func (s SysDictData) FindById(dictId int64) model.SysDictData {
-	if dictId <= 0 {
+func (s SysDictData) FindById(id int64) model.SysDictData {
+	if id <= 0 {
 		return model.SysDictData{}
 	}
-	dicts := s.sysDictDataRepository.SelectByIds([]int64{dictId})
+	dicts := s.sysDictDataRepository.SelectByIds([]int64{id})
 	if len(dicts) > 0 {
 		return dicts[0]
 	}
@@ -69,43 +69,43 @@ func (s SysDictData) Update(sysDictData model.SysDictData) int64 {
 }
 
 // DeleteByIds 批量删除信息
-func (s SysDictData) DeleteByIds(dictIds []int64) (int64, error) {
+func (s SysDictData) DeleteByIds(ids []int64) (int64, error) {
 	// 检查是否存在
-	dicts := s.sysDictDataRepository.SelectByIds(dictIds)
+	dicts := s.sysDictDataRepository.SelectByIds(ids)
 	if len(dicts) <= 0 {
 		return 0, fmt.Errorf("没有权限访问字典编码数据！")
 	}
-	if len(dicts) == len(dictIds) {
+	if len(dicts) == len(ids) {
 		for _, v := range dicts {
 			// 刷新缓存
 			s.sysDictTypeService.CacheClean(v.DictType)
 			s.sysDictTypeService.CacheLoad(v.DictType)
 		}
-		rows := s.sysDictDataRepository.DeleteByIds(dictIds)
+		rows := s.sysDictDataRepository.DeleteByIds(ids)
 		return rows, nil
 	}
 	return 0, fmt.Errorf("删除字典数据信息失败！")
 }
 
 // CheckUniqueTypeByLabel 检查同字典类型下字典标签是否唯一
-func (s SysDictData) CheckUniqueTypeByLabel(dictType, dataLabel string, dataId int64) bool {
+func (s SysDictData) CheckUniqueTypeByLabel(dictType, dataLabel string, id int64) bool {
 	uniqueId := s.sysDictDataRepository.CheckUnique(model.SysDictData{
 		DictType:  dictType,
 		DataLabel: dataLabel,
 	})
-	if uniqueId == dataId {
+	if uniqueId == id {
 		return true
 	}
 	return uniqueId == 0
 }
 
 // CheckUniqueTypeByValue 检查同字典类型下字典键值是否唯一
-func (s SysDictData) CheckUniqueTypeByValue(dictType, dataValue string, dataId int64) bool {
+func (s SysDictData) CheckUniqueTypeByValue(dictType, dataValue string, id int64) bool {
 	uniqueId := s.sysDictDataRepository.CheckUnique(model.SysDictData{
 		DictType:  dictType,
 		DataValue: dataValue,
 	})
-	if uniqueId == dataId {
+	if uniqueId == id {
 		return true
 	}
 	return uniqueId == 0
@@ -120,13 +120,13 @@ func (s SysDictData) ExportData(rows []model.SysDictData, fileName string) (stri
 	// 从第二行开始的数据
 	for _, row := range rows {
 		statusValue := "停用"
-		if row.StatusFlag == constants.STATUS_YES {
+		if row.DataStatus == constants.STATUS_YES {
 			statusValue = "正常"
 		}
 		data = append(data, []string{
 			row.DictType,
 			fmt.Sprintf("%d", row.DataSort),
-			fmt.Sprintf("%d", row.DataId),
+			fmt.Sprintf("%d", row.ID),
 			row.DataLabel,
 			row.DataValue,
 			statusValue,

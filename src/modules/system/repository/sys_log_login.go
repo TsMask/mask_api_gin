@@ -1,4 +1,4 @@
-﻿package repository
+package repository
 
 import (
 	"fmt"
@@ -17,11 +17,11 @@ type SysLogLogin struct{}
 
 // sysLogLoginSortMapping 登录日志排序字段映射
 var sysLogLoginSortMapping = map[string]string{
-	"id":         "id",
-	"loginIp":    "login_ip",
-	"userName":   "user_name",
-	"statusFlag": "status_flag",
-	"loginTime":  "login_time",
+	"id":            "id",
+	"createTime":    "create_time",
+	"loginIp":       "login_ip",
+	"loginUserName": "login_user_name",
+	"loginStatus":   "login_status",
 }
 
 // SelectByPage 分页查询集合
@@ -31,31 +31,31 @@ func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) 
 	if v, ok := query["loginIp"]; ok && v != "" {
 		tx = tx.Where("login_ip like ?", v+"%")
 	}
-	if v, ok := query["userName"]; ok && v != "" {
-		tx = tx.Where("user_name like ?", v+"%")
+	if v, ok := query["loginUserName"]; ok && v != "" {
+		tx = tx.Where("login_user_name like ?", v+"%")
 	}
-	if v, ok := query["statusFlag"]; ok && v != "" {
-		tx = tx.Where("status_flag = ?", v)
+	if v, ok := query["loginStatus"]; ok && v != "" {
+		tx = tx.Where("login_status = ?", v)
 	}
 	if v, ok := query["beginTime"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s000", v)
-			tx = tx.Where("login_time >= ?", v)
+			tx = tx.Where("create_time >= ?", v)
 		} else if len(v) == 13 {
-			tx = tx.Where("login_time >= ?", v)
+			tx = tx.Where("create_time >= ?", v)
 		}
 	}
 	if v, ok := query["endTime"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s999", v)
-			tx = tx.Where("login_time <= ?", v)
+			tx = tx.Where("create_time <= ?", v)
 		} else if len(v) == 13 {
-			tx = tx.Where("login_time <= ?", v)
+			tx = tx.Where("create_time <= ?", v)
 		}
 	}
 	if dataScopeSQL != "" {
 		dataScopeSQL = fmt.Sprintf("select distinct user_name from sys_user where %s", dataScopeSQL)
-		tx = tx.Where(fmt.Sprintf("user_name in ( %s )", dataScopeSQL))
+		tx = tx.Where(fmt.Sprintf("login_user_name in ( %s )", dataScopeSQL))
 	}
 
 	// 查询结果
@@ -86,7 +86,7 @@ func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) 
 
 // Insert 新增信息 返回新增的数据ID
 func (r SysLogLogin) Insert(sysLogLogin model.SysLogLogin) int64 {
-	sysLogLogin.LoginTime = time.Now().UnixMilli()
+	sysLogLogin.CreateTime = time.Now().UnixMilli()
 	// 执行插入
 	if err := db.DB("").Create(&sysLogLogin).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())

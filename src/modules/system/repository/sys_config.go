@@ -1,4 +1,4 @@
-﻿package repository
+package repository
 
 import (
 	"fmt"
@@ -17,24 +17,24 @@ type SysConfig struct{}
 
 // sysConfigSortMapping 参数配置排序字段映射
 var sysConfigSortMapping = map[string]string{
-	"configId":   "config_id",
-	"configName": "config_name",
-	"configKey":  "config_key",
-	"configType": "config_type",
-	"createTime": "create_time",
-	"updateTime": "update_time",
+	"id":           "id",
+	"createTime":   "create_time",
+	"updateTime":   "update_time",
+	"configName":   "config_name",
+	"configKey":    "config_key",
+	"configGroup":  "config_group",
+	"configSort":   "config_sort",
+	"configStatus": "config_status",
 }
 
 // SelectByPage 分页查询集合
 func (r SysConfig) SelectByPage(query map[string]string) ([]model.SysConfig, int64) {
 	tx := db.DB("").Model(&model.SysConfig{})
-	tx = tx.Where("del_flag = '0'")
-	// 查询条件拼接
 	if v, ok := query["configName"]; ok && v != "" {
 		tx = tx.Where("config_name like ?", v+"%")
 	}
-	if v, ok := query["configType"]; ok && v != "" {
-		tx = tx.Where("config_type = ?", v)
+	if v, ok := query["configGroup"]; ok && v != "" {
+		tx = tx.Where("config_group = ?", v)
 	}
 	if v, ok := query["configKey"]; ok && v != "" {
 		tx = tx.Where("config_key like ?", v+"%")
@@ -71,7 +71,7 @@ func (r SysConfig) SelectByPage(query map[string]string) ([]model.SysConfig, int
 
 	// 排序
 	orders := db.SortParse(query["sort"], sysConfigSortMapping)
-	tx = db.SortOrDefault(tx, orders, "config_id desc")
+	tx = db.SortOrDefault(tx, orders, "config_sort asc")
 
 	err := tx.Find(&rows).Error
 	if err != nil {
@@ -84,13 +84,12 @@ func (r SysConfig) SelectByPage(query map[string]string) ([]model.SysConfig, int
 // Select 查询集合
 func (r SysConfig) Select(sysConfig model.SysConfig) []model.SysConfig {
 	tx := db.DB("").Model(&model.SysConfig{})
-	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
 	if sysConfig.ConfigName != "" {
 		tx = tx.Where("config_name like ?", sysConfig.ConfigName+"%")
 	}
-	if sysConfig.ConfigType != "" {
-		tx = tx.Where("config_type = ?", sysConfig.ConfigType)
+	if sysConfig.ConfigGroup != "" {
+		tx = tx.Where("config_group = ?", sysConfig.ConfigGroup)
 	}
 	if sysConfig.ConfigKey != "" {
 		tx = tx.Where("config_key like ?", sysConfig.ConfigKey+"%")
@@ -109,14 +108,14 @@ func (r SysConfig) Select(sysConfig model.SysConfig) []model.SysConfig {
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysConfig) SelectByIds(configIds []int64) []model.SysConfig {
+func (r SysConfig) SelectByIds(ids []int64) []model.SysConfig {
 	rows := []model.SysConfig{}
-	if len(configIds) <= 0 {
+	if len(ids) <= 0 {
 		return rows
 	}
 	tx := db.DB("").Model(&model.SysConfig{})
 	// 构建查询条件
-	tx = tx.Where("config_id in ? and del_flag = '0'", configIds)
+	tx = tx.Where("id in ?", ids)
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
@@ -127,7 +126,6 @@ func (r SysConfig) SelectByIds(configIds []int64) []model.SysConfig {
 
 // Insert 新增信息 返回新增数据ID
 func (r SysConfig) Insert(sysConfig model.SysConfig) int64 {
-	sysConfig.DelFlag = "0"
 	if sysConfig.CreateBy != "" {
 		ms := time.Now().UnixMilli()
 		sysConfig.UpdateBy = sysConfig.CreateBy
@@ -139,12 +137,12 @@ func (r SysConfig) Insert(sysConfig model.SysConfig) int64 {
 		logger.Errorf("insert err => %v", err.Error())
 		return 0
 	}
-	return sysConfig.ConfigId
+	return sysConfig.ID
 }
 
 // Update 修改信息 返回受影响行数
 func (r SysConfig) Update(sysConfig model.SysConfig) int64 {
-	if sysConfig.ConfigId <= 0 {
+	if sysConfig.ID <= 0 {
 		return 0
 	}
 	if sysConfig.UpdateBy != "" {
@@ -152,8 +150,8 @@ func (r SysConfig) Update(sysConfig model.SysConfig) int64 {
 	}
 	tx := db.DB("").Model(&model.SysConfig{})
 	// 构建查询条件
-	tx = tx.Where("config_id = ?", sysConfig.ConfigId)
-	tx = tx.Omit("config_id", "create_by", "create_time", "del_flag")
+	tx = tx.Where("id = ?", sysConfig.ID)
+	tx = tx.Omit("id", "create_by", "create_time")
 	// 执行更新
 	if err := tx.Updates(sysConfig).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -162,17 +160,17 @@ func (r SysConfig) Update(sysConfig model.SysConfig) int64 {
 	return tx.RowsAffected
 }
 
-// DeleteByIds 批量删除信息 返回受影响行数
-func (r SysConfig) DeleteByIds(configIds []int64) int64 {
-	if len(configIds) <= 0 {
+// DeleteByIds 批量删除信息 返回受影响行数（物理删除）
+func (r SysConfig) DeleteByIds(ids []int64) int64 {
+	if len(ids) <= 0 {
 		return 0
 	}
 	tx := db.DB("").Model(&model.SysConfig{})
 	// 构建查询条件
-	tx = tx.Where("config_id in ?", configIds)
-	// 执行更新删除标记
-	if err := tx.Update("del_flag", "1").Error; err != nil {
-		logger.Errorf("update err => %v", err.Error())
+	tx = tx.Where("id in ?", ids)
+	// 执行物理删除
+	if err := tx.Delete(&model.SysConfig{}).Error; err != nil {
+		logger.Errorf("delete err => %v", err.Error())
 		return 0
 	}
 	return tx.RowsAffected
@@ -181,17 +179,16 @@ func (r SysConfig) DeleteByIds(configIds []int64) int64 {
 // CheckUnique 检查信息是否唯一 返回数据ID
 func (r SysConfig) CheckUnique(sysConfig model.SysConfig) int64 {
 	tx := db.DB("").Model(&model.SysConfig{})
-	tx = tx.Where("del_flag = '0'")
 	// 查询条件拼接
-	if sysConfig.ConfigType != "" {
-		tx = tx.Where("config_type = ?", sysConfig.ConfigType)
+	if sysConfig.ConfigGroup != "" {
+		tx = tx.Where("config_group = ?", sysConfig.ConfigGroup)
 	}
 	if sysConfig.ConfigKey != "" {
 		tx = tx.Where("config_key = ?", sysConfig.ConfigKey)
 	}
 	// 查询数据
 	var id int64 = 0
-	if err := tx.Select("config_id").Limit(1).Find(&id).Error; err != nil {
+	if err := tx.Select("id").Limit(1).Find(&id).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return id
 	}
@@ -204,7 +201,7 @@ func (r SysConfig) SelectValueByKey(configKey string) string {
 		return ""
 	}
 	tx := db.DB("").Model(&model.SysConfig{})
-	tx.Where("config_key = ? and del_flag = '0'", configKey)
+	tx.Where("config_key = ?", configKey)
 	// 查询数据
 	var configValue string = ""
 	if err := tx.Select("config_value").Limit(1).Find(&configValue).Error; err != nil {

@@ -15,12 +15,11 @@ type DemoORM struct{}
 // demoORMSortMapping 测试ORM排序字段映射
 var demoORMSortMapping = map[string]string{
 	"id":         "id",
-	"title":      "title",
-	"ormType":    "orm_type",
-	"statusFlag": "status_flag",
-	"createBy":   "create_by",
 	"createTime": "create_time",
 	"updateTime": "update_time",
+	"title":      "title",
+	"ormType":    "orm_type",
+	"ormStatus":  "orm_status",
 }
 
 // SelectByPage 分页查询
@@ -29,8 +28,8 @@ func (r DemoORM) SelectByPage(query map[string]string) ([]model.DemoORM, int64) 
 	if v, ok := query["title"]; ok && v != "" {
 		tx = tx.Where("title like ?", v+"%")
 	}
-	if v, ok := query["statusFlag"]; ok && v != "" {
-		tx = tx.Where("status_flag = ?", v)
+	if v, ok := query["ormStatus"]; ok && v != "" {
+		tx = tx.Where("orm_status = ?", v)
 	}
 
 	var total int64 = 0
@@ -58,8 +57,8 @@ func (r DemoORM) Select(demoORM model.DemoORM) []model.DemoORM {
 	if demoORM.Title != "" {
 		tx = tx.Where("title like ?", demoORM.Title+"%")
 	}
-	if demoORM.StatusFlag != "" {
-		tx = tx.Where("status_flag = ?", demoORM.StatusFlag)
+	if demoORM.OrmStatus != "" {
+		tx = tx.Where("orm_status = ?", demoORM.OrmStatus)
 	}
 
 	rows := []model.DemoORM{}

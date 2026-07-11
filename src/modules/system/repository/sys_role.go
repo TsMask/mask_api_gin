@@ -1,4 +1,4 @@
-﻿package repository
+package repository
 
 import (
 	"fmt"
@@ -19,20 +19,20 @@ type SysRole struct{}
 
 // sysRoleSortMapping 角色排序字段映射
 var sysRoleSortMapping = map[string]string{
-	"roleId":     "role_id",
-	"roleName":   "role_name",
-	"roleKey":    "role_key",
-	"roleSort":   "role_sort",
-	"dataScope":  "data_scope",
-	"statusFlag": "status_flag",
-	"createTime": "create_time",
-	"updateTime": "update_time",
+	"id":            "id",
+	"createTime":    "create_time",
+	"updateTime":    "update_time",
+	"roleName":      "role_name",
+	"roleKey":       "role_key",
+	"roleSort":      "role_sort",
+	"roleStatus":    "role_status",
+	"roleDataScope": "role_data_scope",
 }
 
 // SelectByPage 分页查询集合
 func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64) {
 	tx := db.DB("").Model(&model.SysRole{})
-	tx = tx.Where("del_flag = '0'")
+	tx = tx.Where("role_del = '0'")
 	// 查询条件拼接
 	if v, ok := query["roleName"]; ok && v != "" {
 		tx = tx.Where("role_name like ?", v+"%")
@@ -40,8 +40,8 @@ func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64) 
 	if v, ok := query["roleKey"]; ok && v != "" {
 		tx = tx.Where("role_key like ?", v+"%")
 	}
-	if v, ok := query["statusFlag"]; ok && v != "" {
-		tx = tx.Where("status_flag = ?", v)
+	if v, ok := query["roleStatus"]; ok && v != "" {
+		tx = tx.Where("role_status = ?", v)
 	}
 	if v, ok := query["beginTime"]; ok && v != "" {
 		if len(v) == 10 {
@@ -60,9 +60,9 @@ func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64) 
 		}
 	}
 	if v, ok := query["deptId"]; ok && v != "" {
-		tx = tx.Where(`role_id in (
+		tx = tx.Where(`id in (
 		select distinct role_id from sys_role_dept where sys_role_dept.dept_id IN (
-		SELECT dept_id FROM sys_dept WHERE dept_id = ? or find_in_set(? , ancestors )
+		SELECT id FROM sys_dept WHERE id = ? or find_in_set(? , ancestors )
 		))`, v, v)
 	}
 
@@ -94,7 +94,7 @@ func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64) 
 // Select 查询集合
 func (r SysRole) Select(sysRole model.SysRole) []model.SysRole {
 	tx := db.DB("").Model(&model.SysRole{})
-	tx = tx.Where("del_flag = '0'")
+	tx = tx.Where("role_del = '0'")
 	// 查询条件拼接
 	if sysRole.RoleKey != "" {
 		tx = tx.Where("role_key like ?", sysRole.RoleKey+"%")
@@ -102,8 +102,8 @@ func (r SysRole) Select(sysRole model.SysRole) []model.SysRole {
 	if sysRole.RoleName != "" {
 		tx = tx.Where("role_name like ?", sysRole.RoleName+"%")
 	}
-	if sysRole.StatusFlag != "" {
-		tx = tx.Where("status_flag = ?", sysRole.StatusFlag)
+	if sysRole.RoleStatus != "" {
+		tx = tx.Where("role_status = ?", sysRole.RoleStatus)
 	}
 
 	// 查询数据
@@ -123,7 +123,7 @@ func (r SysRole) SelectByIds(roleIds []int64) []model.SysRole {
 	}
 	tx := db.DB("").Model(&model.SysRole{})
 	// 构建查询条件
-	tx = tx.Where("role_id in ? and del_flag = '0'", roleIds)
+	tx = tx.Where("id in ? and role_del = '0'", roleIds)
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
@@ -134,7 +134,7 @@ func (r SysRole) SelectByIds(roleIds []int64) []model.SysRole {
 
 // Insert 新增信息 返回新增数据ID
 func (r SysRole) Insert(d *gorm.DB, sysRole model.SysRole) int64 {
-	sysRole.DelFlag = "0"
+	sysRole.RoleDel = "0"
 	if sysRole.CreateBy != "" {
 		ms := time.Now().UnixMilli()
 		sysRole.UpdateBy = sysRole.CreateBy
@@ -149,12 +149,12 @@ func (r SysRole) Insert(d *gorm.DB, sysRole model.SysRole) int64 {
 		logger.Errorf("insert err => %v", err.Error())
 		return 0
 	}
-	return sysRole.RoleId
+	return sysRole.ID
 }
 
 // Update 修改信息 返回受影响行数
 func (r SysRole) Update(d *gorm.DB, sysRole model.SysRole) int64 {
-	if sysRole.RoleId <= 0 {
+	if sysRole.ID <= 0 {
 		return 0
 	}
 	if sysRole.UpdateBy != "" {
@@ -165,8 +165,8 @@ func (r SysRole) Update(d *gorm.DB, sysRole model.SysRole) int64 {
 	}
 	tx := d.Model(&model.SysRole{})
 	// 构建查询条件
-	tx = tx.Where("role_id = ?", sysRole.RoleId)
-	tx = tx.Omit("role_id", "create_by", "create_time", "del_flag")
+	tx = tx.Where("id = ?", sysRole.ID)
+	tx = tx.Omit("id", "create_by", "create_time", "role_del")
 	// 执行更新
 	if err := tx.Updates(sysRole).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -175,7 +175,7 @@ func (r SysRole) Update(d *gorm.DB, sysRole model.SysRole) int64 {
 	return tx.RowsAffected
 }
 
-// DeleteByIds 批量删除信息 返回受影响行数
+// DeleteByIds 批量删除信息 返回受影响行数（软删除）
 func (r SysRole) DeleteByIds(d *gorm.DB, roleIds []int64) int64 {
 	if len(roleIds) <= 0 {
 		return 0
@@ -185,9 +185,9 @@ func (r SysRole) DeleteByIds(d *gorm.DB, roleIds []int64) int64 {
 	}
 	tx := d.Model(&model.SysRole{})
 	// 构建查询条件
-	tx = tx.Where("role_id in ?", roleIds)
-	// 执行更新删除标记
-	if err := tx.Update("del_flag", "1").Error; err != nil {
+	tx = tx.Where("id in ?", roleIds)
+	// 执行更新删除标记（软删除）
+	if err := tx.Update("role_del", "1").Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
 		return 0
 	}
@@ -197,7 +197,7 @@ func (r SysRole) DeleteByIds(d *gorm.DB, roleIds []int64) int64 {
 // CheckUnique 检查信息是否唯一
 func (r SysRole) CheckUnique(sysRole model.SysRole) int64 {
 	tx := db.DB("").Model(&model.SysRole{})
-	tx = tx.Where("del_flag = '0'")
+	tx = tx.Where("role_del = '0'")
 	// 查询条件拼接
 	if sysRole.RoleName != "" {
 		tx = tx.Where("role_name = ?", sysRole.RoleName)
@@ -208,7 +208,7 @@ func (r SysRole) CheckUnique(sysRole model.SysRole) int64 {
 
 	// 查询数据
 	var id int64 = 0
-	if err := tx.Select("role_id").Limit(1).Find(&id).Error; err != nil {
+	if err := tx.Select("id").Limit(1).Find(&id).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return id
 	}
@@ -225,9 +225,9 @@ func (r SysRole) SelectByUserId(userId int64) []model.SysRole {
 	tx := db.DB("").Model(&model.SysRole{}).
 		Table("sys_role r").
 		Distinct("r.*").
-		Joins("LEFT JOIN sys_user_role ur ON ur.role_id = r.role_id").
-		Joins("LEFT JOIN sys_user u ON u.user_id = ur.user_id").
-		Where("u.del_flag = '0' AND ur.user_id = ?", userId)
+		Joins("LEFT JOIN sys_user_role ur ON ur.role_id = r.id").
+		Joins("LEFT JOIN sys_user u ON u.id = ur.user_id").
+		Where("r.role_del = '0' AND u.user_del = '0' AND ur.user_id = ?", userId)
 
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
@@ -251,7 +251,7 @@ func (r SysRole) SelectByUserIds(userIds []int64) map[int64][]model.SysRole {
 	var rows []userRoleRow
 	tx := db.DB("").Table("sys_user_role ur").
 		Select("ur.user_id, r.*").
-		Joins("JOIN sys_role r ON r.role_id = ur.role_id AND r.del_flag = '0'").
+		Joins("JOIN sys_role r ON r.id = ur.role_id AND r.role_del = '0'").
 		Where("ur.user_id IN ?", userIds)
 	if err := tx.Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())

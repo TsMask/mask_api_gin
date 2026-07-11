@@ -4,15 +4,15 @@ package model
 //
 // https://gorm.io/zh_CN/docs/query.html
 type DemoORM struct {
-	Id         int64  `gorm:"column:id;primaryKey;autoIncrement" json:"id"`                      // 测试ID
-	Title      string `gorm:"column:title" json:"title" binding:"required"`                      // 测试标题
-	OrmType    string `gorm:"column:orm_type" json:"ormType" binding:"required"`                 // orm类型
-	StatusFlag string `gorm:"column:status_flag" json:"statusFlag" binding:"required,oneof=0 1"` // 状态（0关闭 1正常）
-	CreateBy   string `gorm:"column:create_by" json:"createBy"`                                  // 创建者
-	CreateTime int64  `gorm:"column:create_time" json:"createTime"`                              // 创建时间
-	UpdateBy   string `gorm:"column:update_by" json:"updateBy"`                                  // 更新者
-	UpdateTime int64  `gorm:"column:update_time" json:"updateTime"`                              // 更新时间
-	Remark     string `gorm:"column:remark" json:"remark"`                                       // 备注
+	Id         int64  `gorm:"column:id;primaryKey;autoIncrement" json:"id"`                    // 测试ID
+	CreateBy   string `gorm:"column:create_by" json:"createBy"`                                // 创建者
+	CreateTime int64  `gorm:"column:create_time" json:"createTime"`                            // 创建时间
+	UpdateBy   string `gorm:"column:update_by" json:"updateBy"`                                // 更新者
+	UpdateTime int64  `gorm:"column:update_time" json:"updateTime"`                            // 更新时间
+	Remark     string `gorm:"column:remark" json:"remark"`                                     // 备注
+	Title      string `gorm:"column:title" json:"title" binding:"required"`                    // 测试标题
+	OrmType    string `gorm:"column:orm_type" json:"ormType" binding:"required"`               // orm类型
+	OrmStatus  string `gorm:"column:orm_status" json:"ormStatus" binding:"required,oneof=0 1"` // 状态（0关闭 1正常）
 }
 
 func (*DemoORM) TableName() string {

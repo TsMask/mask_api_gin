@@ -1,4 +1,4 @@
-﻿package repository
+package repository
 
 import (
 	"fmt"
@@ -21,55 +21,55 @@ type SysUser struct{}
 
 // sysUserSortMapping 用户排序字段映射
 var sysUserSortMapping = map[string]string{
-	"userId":     "user_id",
-	"deptId":     "dept_id",
-	"userName":   "user_name",
-	"nickName":   "nick_name",
-	"phone":      "phone",
-	"email":      "email",
-	"statusFlag": "status_flag",
-	"loginIp":    "login_ip",
-	"loginTime":  "login_time",
-	"createTime": "create_time",
-	"updateTime": "update_time",
+	"id":            "id",
+	"createTime":    "create_time",
+	"updateTime":    "update_time",
+	"userName":      "user_name",
+	"userNick":      "user_nick",
+	"userPhone":     "user_phone",
+	"userEmail":     "user_email",
+	"userStatus":    "user_status",
+	"userLoginIp":   "user_login_ip",
+	"userLoginTime": "user_login_time",
+	"deptId":        "dept_id",
 }
 
 // SelectByPage 分页查询集合
 func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64) {
 	tx := db.DB("").Model(&model.SysUser{})
-	tx = tx.Where("del_flag = '0'")
+	tx = tx.Where("user_del = '0'")
 	// 查询条件拼接
-	if v, ok := query["userId"]; ok && v != "" {
-		tx = tx.Where("user_id = ?", v)
+	if v, ok := query["id"]; ok && v != "" {
+		tx = tx.Where("id = ?", v)
 	}
 	if v, ok := query["userName"]; ok && v != "" {
 		tx = tx.Where("user_name like ?", v+"%")
 	}
-	if v, ok := query["phone"]; ok && v != "" {
-		tx = tx.Where("phone like ?", v+"%")
+	if v, ok := query["userPhone"]; ok && v != "" {
+		tx = tx.Where("user_phone like ?", v+"%")
 	}
-	if v, ok := query["statusFlag"]; ok && v != "" {
-		tx = tx.Where("status_flag = ?", v)
+	if v, ok := query["userStatus"]; ok && v != "" {
+		tx = tx.Where("user_status = ?", v)
 	}
 	if v, ok := query["beginTime"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s000", v)
-			tx = tx.Where("login_time >= ?", v)
+			tx = tx.Where("user_login_time >= ?", v)
 		} else if len(v) == 13 {
-			tx = tx.Where("login_time >= ?", v)
+			tx = tx.Where("user_login_time >= ?", v)
 		}
 	}
 	if v, ok := query["endTime"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s999", v)
-			tx = tx.Where("login_time <= ?", v)
+			tx = tx.Where("user_login_time <= ?", v)
 		} else if len(v) == 13 {
-			tx = tx.Where("login_time <= ?", v)
+			tx = tx.Where("user_login_time <= ?", v)
 		}
 	}
 	if v, ok := query["deptId"]; ok && v != "" {
 		tx = tx.Where(`(dept_id = ? or dept_id in (
-		select t.dept_id from sys_dept t where find_in_set(?, ancestors)
+		select t.id from sys_dept t where find_in_set(?, ancestors)
 		))`, v, v)
 	}
 	if dataScopeSQL != "" {
@@ -89,9 +89,9 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
-	// 排序，默认按 user_id DESC
+	// 排序，默认按 id DESC
 	orders := db.SortParse(query["sort"], sysUserSortMapping)
-	tx = db.SortOrDefault(tx, orders, "user_id desc")
+	tx = db.SortOrDefault(tx, orders, "id desc")
 
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
@@ -104,24 +104,24 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 // Select 查询集合
 func (r SysUser) Select(sysUser model.SysUser) []model.SysUser {
 	tx := db.DB("").Model(&model.SysUser{})
-	tx = tx.Where("del_flag = '0'")
+	tx = tx.Where("user_del = '0'")
 	// 查询条件拼接
 	if sysUser.UserName != "" {
 		tx = tx.Where("user_name like ?", sysUser.UserName+"%")
 	}
-	if sysUser.Phone != "" {
-		tx = tx.Where("phone like ?", sysUser.Phone+"%")
+	if sysUser.UserPhone != "" {
+		tx = tx.Where("user_phone like ?", sysUser.UserPhone+"%")
 	}
-	if sysUser.StatusFlag != "" {
-		tx = tx.Where("status_flag = ?", sysUser.StatusFlag)
+	if sysUser.UserStatus != "" {
+		tx = tx.Where("user_status = ?", sysUser.UserStatus)
 	}
-	if sysUser.UserId > 0 {
-		tx = tx.Where("user_id = ?", sysUser.UserId)
+	if sysUser.ID > 0 {
+		tx = tx.Where("id = ?", sysUser.ID)
 	}
 
 	// 查询数据
 	rows := []model.SysUser{}
-	if err := tx.Order("login_time desc").Find(&rows).Error; err != nil {
+	if err := tx.Order("id desc").Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return rows
 	}
@@ -136,7 +136,7 @@ func (r SysUser) SelectByIds(userIds []int64) []model.SysUser {
 	}
 	tx := db.DB("").Model(&model.SysUser{})
 	// 构建查询条件
-	tx = tx.Where("user_id in ? and del_flag = '0'", userIds)
+	tx = tx.Where("id in ? and user_del = '0'", userIds)
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
@@ -147,15 +147,15 @@ func (r SysUser) SelectByIds(userIds []int64) []model.SysUser {
 
 // Insert 新增信息
 func (r SysUser) Insert(d *gorm.DB, sysUser model.SysUser) int64 {
-	sysUser.DelFlag = "0"
+	sysUser.UserDel = "0"
 	if sysUser.CreateBy != "" {
 		ms := time.Now().UnixMilli()
 		sysUser.UpdateBy = sysUser.CreateBy
 		sysUser.UpdateTime = ms
 		sysUser.CreateTime = ms
 	}
-	if sysUser.Password != "" {
-		sysUser.Password = crypto.BcryptHash(sysUser.Password)
+	if sysUser.UserPassword != "" {
+		sysUser.UserPassword = crypto.BcryptHash(sysUser.UserPassword)
 	}
 	if d == nil {
 		d = db.DB("")
@@ -165,27 +165,27 @@ func (r SysUser) Insert(d *gorm.DB, sysUser model.SysUser) int64 {
 		logger.Errorf("insert err => %v", err.Error())
 		return 0
 	}
-	return sysUser.UserId
+	return sysUser.ID
 }
 
 // Update 修改信息
 func (r SysUser) Update(d *gorm.DB, sysUser model.SysUser) int64 {
-	if sysUser.UserId <= 0 {
+	if sysUser.ID <= 0 {
 		return 0
 	}
 	if sysUser.UpdateBy != "" {
 		sysUser.UpdateTime = time.Now().UnixMilli()
 	}
-	if sysUser.Password != "" {
-		sysUser.Password = crypto.BcryptHash(sysUser.Password)
+	if sysUser.UserPassword != "" {
+		sysUser.UserPassword = crypto.BcryptHash(sysUser.UserPassword)
 	}
 	if d == nil {
 		d = db.DB("")
 	}
 	tx := d.Model(&model.SysUser{})
 	// 构建查询条件
-	tx = tx.Where("user_id = ?", sysUser.UserId)
-	tx = tx.Omit("user_id", "create_by", "create_time", "del_flag")
+	tx = tx.Where("id = ?", sysUser.ID)
+	tx = tx.Omit("id", "create_by", "create_time", "user_del")
 	// 执行更新
 	if err := tx.Updates(sysUser).Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
@@ -204,9 +204,9 @@ func (r SysUser) DeleteByIds(d *gorm.DB, userIds []int64) int64 {
 	}
 	tx := d.Model(&model.SysUser{})
 	// 构建查询条件
-	tx = tx.Where("user_id in ?", userIds)
-	// 执行更新删除标记
-	if err := tx.Update("del_flag", "1").Error; err != nil {
+	tx = tx.Where("id in ?", userIds)
+	// 执行更新删除标记（软删除）
+	if err := tx.Update("user_del", "1").Error; err != nil {
 		logger.Errorf("update err => %v", err.Error())
 		return 0
 	}
@@ -216,21 +216,21 @@ func (r SysUser) DeleteByIds(d *gorm.DB, userIds []int64) int64 {
 // CheckUnique 检查信息是否唯一
 func (r SysUser) CheckUnique(sysUser model.SysUser) int64 {
 	tx := db.DB("").Model(&model.SysUser{})
-	tx = tx.Where("del_flag = '0'")
+	tx = tx.Where("user_del = '0'")
 	// 查询条件拼接
 	if sysUser.UserName != "" {
 		tx = tx.Where("user_name = ?", sysUser.UserName)
 	}
-	if sysUser.Phone != "" {
-		tx = tx.Where("phone = ?", sysUser.Phone)
+	if sysUser.UserPhone != "" {
+		tx = tx.Where("user_phone = ?", sysUser.UserPhone)
 	}
-	if sysUser.Email != "" {
-		tx = tx.Where("email = ?", sysUser.Email)
+	if sysUser.UserEmail != "" {
+		tx = tx.Where("user_email = ?", sysUser.UserEmail)
 	}
 
 	// 查询数据
 	var id int64 = 0
-	if err := tx.Select("user_id").Limit(1).Find(&id).Error; err != nil {
+	if err := tx.Select("id").Limit(1).Find(&id).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
 		return id
 	}
@@ -245,7 +245,7 @@ func (r SysUser) SelectByUserName(userName string) model.SysUser {
 	}
 	tx := db.DB("").Model(&model.SysUser{})
 	// 构建查询条件
-	tx = tx.Where("user_name = ? and del_flag = '0'", userName)
+	tx = tx.Where("user_name = ? and user_del = '0'", userName)
 	// 查询数据
 	if err := tx.Limit(1).Find(&item).Error; err != nil {
 		logger.Errorf("query find err => %v", err.Error())
@@ -257,31 +257,31 @@ func (r SysUser) SelectByUserName(userName string) model.SysUser {
 // SelectAuthUsersByPage 分页查询集合By分配用户角色
 func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64) {
 	tx := db.DB("").Model(&model.SysUser{})
-	tx = tx.Where("del_flag = '0'")
+	tx = tx.Where("user_del = '0'")
 	// 查询条件拼接
 	if v, ok := query["userName"]; ok && v != "" {
 		tx = tx.Where("user_name like ?", v+"%")
 	}
-	if v, ok := query["phone"]; ok && v != "" {
-		tx = tx.Where("phone like ?", v+"%")
+	if v, ok := query["userPhone"]; ok && v != "" {
+		tx = tx.Where("user_phone like ?", v+"%")
 	}
-	if v, ok := query["statusFlag"]; ok && v != "" {
-		tx = tx.Where("status_flag = ?", v)
+	if v, ok := query["userStatus"]; ok && v != "" {
+		tx = tx.Where("user_status = ?", v)
 	}
 
-	// 分配角色的用户
+	// 分配角色的用户（sys_user 主键 id；sys_user_role 外键 user_id/role_id 不变）
 	if roleId, ok := query["roleId"]; ok && roleId != "" {
 		auth, ok := query["auth"]
 		if ok && parse.Boolean(auth) {
-			tx = tx.Where(`user_id in (
-				select distinct u.user_id from sys_user u
-				inner join sys_user_role ur on u.user_id = ur.user_id
+			tx = tx.Where(`id in (
+				select distinct u.id from sys_user u
+				inner join sys_user_role ur on u.id = ur.user_id
 				and ur.role_id = ?
 			)`, roleId)
 		} else {
-			tx = tx.Where(`user_id not in (
-				select distinct u.user_id from sys_user u
-				inner join sys_user_role ur on u.user_id = ur.user_id
+			tx = tx.Where(`id not in (
+				select distinct u.id from sys_user u
+				inner join sys_user_role ur on u.id = ur.user_id
 				and ur.role_id = ?
 			)`, roleId)
 		}
@@ -303,9 +303,9 @@ func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL str
 	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
-	// 排序，默认按 user_id DESC
+	// 排序，默认按 id DESC
 	orders := db.SortParse(query["sort"], sysUserSortMapping)
-	tx = db.SortOrDefault(tx, orders, "user_id desc")
+	tx = db.SortOrDefault(tx, orders, "id desc")
 
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {

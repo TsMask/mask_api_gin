@@ -41,7 +41,7 @@ func (r SysRole) Find(sysRole model.SysRole) []model.SysRole {
 	rows := r.sysRoleRepository.Select(sysRole)
 	arr := make([]model.SysRole, 0)
 	for _, v := range rows {
-		if v.RoleId == constants.SYS_ROLE_SYSTEM_ID {
+		if v.ID == constants.SYS_ROLE_SYSTEM_ID {
 			continue
 		}
 		arr = append(arr, v)
@@ -103,8 +103,8 @@ func (r SysRole) Update(sysRole model.SysRole) int64 {
 	err := db.Transaction("", func(tx *gorm.DB) error {
 		rows = r.sysRoleRepository.Update(tx, sysRole)
 		if rows > 0 {
-			r.sysRoleMenuRepository.DeleteByRoleIds(tx, []int64{sysRole.RoleId})
-			r.insertRoleMenu(tx, sysRole.RoleId, sysRole.MenuIds)
+			r.sysRoleMenuRepository.DeleteByRoleIds(tx, []int64{sysRole.ID})
+			r.insertRoleMenu(tx, sysRole.ID, sysRole.MenuIds)
 		}
 		return nil
 	})
@@ -112,7 +112,7 @@ func (r SysRole) Update(sysRole model.SysRole) int64 {
 		return 0
 	}
 	// 角色菜单权限变更后清理持有该角色用户的 Token 缓存
-	userIds := r.sysUserRoleRepository.SelectUserIdsByRoleIds([]int64{sysRole.RoleId})
+	userIds := r.sysUserRoleRepository.SelectUserIdsByRoleIds([]int64{sysRole.ID})
 	token.RemoveByUserIds(userIds)
 	return rows
 }
@@ -125,12 +125,8 @@ func (r SysRole) DeleteByIds(roleIds []int64) (int64, error) {
 		return 0, fmt.Errorf("没有权限访问角色数据！")
 	}
 	for _, role := range roles {
-		// 检查是否为已删除
-		if role.DelFlag == "1" {
-			return 0, fmt.Errorf("ID:%d 角色信息已经删除！", role.RoleId)
-		}
 		// 检查分配用户
-		if useCount := r.sysUserRoleRepository.ExistUserByRoleId(role.RoleId); useCount > 0 {
+		if useCount := r.sysUserRoleRepository.ExistUserByRoleId(role.ID); useCount > 0 {
 			return 0, fmt.Errorf("【%s】已分配给用户,不能删除", role.RoleName)
 		}
 	}
@@ -183,15 +179,15 @@ func (r SysRole) UpdateAndDataScope(sysRole model.SysRole) int64 {
 	err := db.Transaction("", func(tx *gorm.DB) error {
 		rows = r.sysRoleRepository.Update(tx, sysRole)
 		if rows > 0 {
-			r.sysRoleDeptRepository.DeleteByRoleIds(tx, []int64{sysRole.RoleId})
-			if sysRole.DataScope == constants.ROLE_SCOPE_CUSTOM && len(sysRole.DeptIds) > 0 {
+			r.sysRoleDeptRepository.DeleteByRoleIds(tx, []int64{sysRole.ID})
+			if sysRole.RoleDataScope == constants.ROLE_SCOPE_CUSTOM && len(sysRole.DeptIds) > 0 {
 				arr := make([]model.SysRoleDept, 0)
 				for _, deptId := range sysRole.DeptIds {
 					if deptId <= 0 {
 						continue
 					}
 					arr = append(arr, model.SysRoleDept{
-						RoleId: sysRole.RoleId, DeptId: deptId,
+						RoleId: sysRole.ID, DeptId: deptId,
 					})
 				}
 				r.sysRoleDeptRepository.BatchInsert(tx, arr)
@@ -245,16 +241,16 @@ func (s SysRole) ExportData(rows []model.SysRole, fileName string) (string, erro
 	for _, row := range rows {
 		// 数据范围
 		dataScope := "空"
-		if v, ok := constants.ROLE_SCOPE_DATA[row.DataScope]; ok {
+		if v, ok := constants.ROLE_SCOPE_DATA[row.RoleDataScope]; ok {
 			dataScope = v
 		}
 		// 角色状态
 		statusValue := "停用"
-		if row.StatusFlag == constants.STATUS_YES {
+		if row.RoleStatus == constants.STATUS_YES {
 			statusValue = "正常"
 		}
 		data = append(data, []string{
-			fmt.Sprintf("%d", row.RoleId),
+			fmt.Sprintf("%d", row.ID),
 			row.RoleName,
 			row.RoleKey,
 			fmt.Sprintf("%d", row.RoleSort),

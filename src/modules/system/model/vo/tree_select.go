@@ -12,7 +12,7 @@ type TreeSelect struct {
 // SysMenuTreeSelect 使用给定的 SysMenu 对象解析为 TreeSelect 对象
 func SysMenuTreeSelect(sysMenu model.SysMenu) TreeSelect {
 	t := TreeSelect{}
-	t.ID = sysMenu.MenuId
+	t.ID = sysMenu.ID
 	t.Label = sysMenu.MenuName
 	t.Children = []TreeSelect{}
 	if len(sysMenu.Children) > 0 {
@@ -27,7 +27,7 @@ func SysMenuTreeSelect(sysMenu model.SysMenu) TreeSelect {
 // SysDeptTreeSelect 使用给定的 SysDept 对象解析为 TreeSelect 对象
 func SysDeptTreeSelect(sysDept model.SysDept) TreeSelect {
 	t := TreeSelect{}
-	t.ID = sysDept.DeptId
+	t.ID = sysDept.ID
 	t.Label = sysDept.DeptName
 	t.Children = []TreeSelect{}
 	if len(sysDept.Children) > 0 {

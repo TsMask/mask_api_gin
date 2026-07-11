@@ -68,15 +68,15 @@ func (s Account) ByUsername(username, password string) (token.UserInfo, error) {
 	if sysUser.UserName != username {
 		return info, fmt.Errorf("user does not exist or password is incorrect")
 	}
-	if sysUser.DelFlag == constants.STATUS_YES {
+	if sysUser.UserDel == constants.STATUS_YES {
 		return info, fmt.Errorf("sorry, your account has been deleted. Sorry, your account has been deleted")
 	}
-	if sysUser.StatusFlag == constants.STATUS_NO {
+	if sysUser.UserStatus == constants.STATUS_NO {
 		return info, fmt.Errorf("sorry, your account has been disabled")
 	}
 
 	// 检验用户密码
-	compareBool := crypto.BcryptCompare(password, sysUser.Password)
+	compareBool := crypto.BcryptCompare(password, sysUser.UserPassword)
 	if compareBool {
 		s.CleanLoginRecordCache(sysUser.UserName) // 清除错误记录次数
 	} else {
@@ -85,14 +85,14 @@ func (s Account) ByUsername(username, password string) (token.UserInfo, error) {
 	}
 
 	// 登录用户信息
-	info.UserId = sysUser.UserId
+	info.UserId = sysUser.ID
 	info.DeptId = sysUser.DeptId
 	info.User = sysUser
 	// 用户权限组标识
-	if config.IsSystemUser(sysUser.UserId) {
+	if config.IsSystemUser(sysUser.ID) {
 		info.Permissions = []string{constants.SYS_PERMISSION_SYSTEM}
 	} else {
-		perms := s.sysMenuService.FindPermsByUserId(sysUser.UserId)
+		perms := s.sysMenuService.FindPermsByUserId(sysUser.ID)
 		info.Permissions = parse.RemoveDuplicates(perms)
 	}
 	return info, nil
@@ -104,25 +104,25 @@ func (s Account) ByUserId(userId int64) (token.UserInfo, error) {
 
 	// 查询用户登录账号
 	sysUser := s.sysUserService.FindById(userId)
-	if sysUser.UserId != userId {
+	if sysUser.ID != userId {
 		return info, fmt.Errorf("user does not exist")
 	}
-	if sysUser.DelFlag == constants.STATUS_YES {
+	if sysUser.UserDel == constants.STATUS_YES {
 		return info, fmt.Errorf("sorry, your account has been deleted. Sorry, your account has been deleted")
 	}
-	if sysUser.StatusFlag == constants.STATUS_NO {
+	if sysUser.UserStatus == constants.STATUS_NO {
 		return info, fmt.Errorf("sorry, your account has been disabled")
 	}
 
 	// 登录用户信息
-	info.UserId = sysUser.UserId
+	info.UserId = sysUser.ID
 	info.DeptId = sysUser.DeptId
 	info.User = sysUser
 	// 用户权限组标识
-	if config.IsSystemUser(sysUser.UserId) {
+	if config.IsSystemUser(sysUser.ID) {
 		info.Permissions = []string{constants.SYS_PERMISSION_SYSTEM}
 	} else {
-		perms := s.sysMenuService.FindPermsByUserId(sysUser.UserId)
+		perms := s.sysMenuService.FindPermsByUserId(sysUser.ID)
 		info.Permissions = parse.RemoveDuplicates(perms)
 	}
 	return info, nil
@@ -131,9 +131,9 @@ func (s Account) ByUserId(userId int64) (token.UserInfo, error) {
 // UpdateLoginDateAndIP 更新登录时间和IP
 func (s Account) UpdateLoginDateAndIP(info token.UserInfo) bool {
 	user := s.sysUserService.FindById(info.UserId)
-	user.Password = "" // 密码不更新
-	user.LoginIp = info.LoginIp
-	user.LoginTime = info.LoginTime
+	user.UserPassword = "" // 密码不更新
+	user.UserLoginIp = info.LoginIp
+	user.UserLoginTime = info.LoginTime
 	return s.sysUserService.Update(user) > 0
 }
 
@@ -148,9 +148,15 @@ func (s Account) CleanLoginRecordCache(userName string) bool {
 func (s Account) passwordRetryCount(userName string) (string, int64, time.Duration, error) {
 	// 验证登录次数和错误锁定时间
 	passwordRetryMaxCount := s.sysConfigService.FindValueByKey("sys.account.passwordRetryMaxCount")
-	passwordRetryLockTime := s.sysConfigService.FindValueByKey("sys.account.passwordRetryLockTime")
 	retryMaxCount := parse.Number(passwordRetryMaxCount)
+	if retryMaxCount <= 0 {
+		retryMaxCount = 3
+	}
+	passwordRetryLockTime := s.sysConfigService.FindValueByKey("sys.account.passwordRetryLockTime")
 	retryLockTime := parse.Number(passwordRetryLockTime)
+	if retryLockTime <= 0 {
+		retryLockTime = 1
+	}
 	// 验证缓存记录次数
 	base64UserName := base64.StdEncoding.EncodeToString([]byte(userName))
 	retryKey := fmt.Sprintf("%s:%s", constants.CACHE_PWD_ERR_COUNT, base64UserName)

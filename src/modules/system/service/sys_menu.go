@@ -112,10 +112,10 @@ func (s SysMenu) FindByRoleId(roleId int64) []int64 {
 	roles := s.sysRoleRepository.SelectByIds([]int64{roleId})
 	if len(roles) > 0 {
 		role := roles[0]
-		if role.RoleId == roleId {
+		if role.ID == roleId {
 			return s.sysMenuRepository.SelectByRoleId(
-				role.RoleId,
-				role.MenuCheckStrictly == "1",
+				role.ID,
+				role.RoleMenuCheckStrictly == "1",
 			)
 		}
 	}
@@ -158,7 +158,7 @@ func (s SysMenu) parseDataToTree(sysMenus []model.SysMenu) []model.SysMenu {
 		mapItem = append(mapItem, item)
 		nodesMap[ParentId] = mapItem
 		// 记录节点ID
-		treeIds = append(treeIds, item.MenuId)
+		treeIds = append(treeIds, item.ID)
 	}
 
 	for key, value := range nodesMap {
@@ -185,7 +185,7 @@ func (s SysMenu) parseDataToTree(sysMenus []model.SysMenu) []model.SysMenu {
 
 // parseDataToTreeComponent 递归函数处理子节点
 func (s SysMenu) parseDataToTreeComponent(node model.SysMenu, nodesMap *map[int64][]model.SysMenu) model.SysMenu {
-	if children, ok := (*nodesMap)[node.MenuId]; ok {
+	if children, ok := (*nodesMap)[node.ID]; ok {
 		node.Children = children
 	}
 	if len(node.Children) > 0 {
@@ -221,25 +221,25 @@ func (s SysMenu) BuildRouteMenus(sysMenus []model.SysMenu, prefix string) []vo.R
 			router.Redirect = redirectPath
 			// 子菜单进入递归
 			router.Children = s.BuildRouteMenus(cMenus, redirectPrefix)
-		} else if item.ParentId == 0 && item.FrameFlag == constants.STATUS_YES && item.MenuType == constants.MENU_TYPE_MENU {
+		} else if item.ParentId == 0 && item.MenuExternal == constants.STATUS_NO && item.MenuType == constants.MENU_TYPE_MENU {
 			// 父菜单 内部跳转 菜单类型
-			menuPath := fmt.Sprintf("/%d", item.MenuId)
+			menuPath := fmt.Sprintf("/%d", item.ID)
 			childPath := menuPath + s.getRouterPath(item)
 			children := vo.Router{
 				Name:      s.getRouteName(item),
 				Path:      childPath,
-				Component: item.Component,
+				Component: item.MenuComponent,
 				Meta:      s.getRouteMeta(item),
 			}
 			router.Meta.HideChildInMenu = true
 			router.Children = append(router.Children, children)
-			router.Name = fmt.Sprint(item.MenuId)
+			router.Name = fmt.Sprint(item.ID)
 			router.Path = menuPath
 			router.Redirect = childPath
 			router.Component = constants.MENU_COMPONENT_LAYOUT_BASIC
-		} else if item.ParentId == 0 && item.FrameFlag == constants.STATUS_YES && regular.ValidHttp(item.MenuPath) {
+		} else if item.ParentId == 0 && item.MenuExternal == constants.STATUS_NO && regular.ValidHttp(item.MenuPath) {
 			// 父菜单 内部跳转 路径链接
-			menuPath := fmt.Sprintf("/%d", item.MenuId)
+			menuPath := fmt.Sprintf("/%d", item.ID)
 			childPath := menuPath + s.getRouterPath(item)
 			children := vo.Router{
 				Name:      s.getRouteName(item),
@@ -249,7 +249,7 @@ func (s SysMenu) BuildRouteMenus(sysMenus []model.SysMenu, prefix string) []vo.R
 			}
 			router.Meta.HideChildInMenu = true
 			router.Children = append(router.Children, children)
-			router.Name = fmt.Sprint(item.MenuId)
+			router.Name = fmt.Sprint(item.ID)
 			router.Path = menuPath
 			router.Redirect = childPath
 			router.Component = constants.MENU_COMPONENT_LAYOUT_BASIC
@@ -268,7 +268,7 @@ func (s SysMenu) getRouteName(sysMenu model.SysMenu) string {
 		routerName = routerName[:5] + "Link"
 	}
 	// 拼上菜单ID防止name重名
-	return fmt.Sprintf("%s_%d", routerName, sysMenu.MenuId)
+	return fmt.Sprintf("%s_%d", routerName, sysMenu.ID)
 }
 
 // getRouterPath 获取路由地址
@@ -281,13 +281,13 @@ func (s SysMenu) getRouterPath(sysMenu model.SysMenu) string {
 	}
 
 	// 路径链接 内部跳转
-	if regular.ValidHttp(routerPath) && sysMenu.FrameFlag == constants.STATUS_YES {
+	if regular.ValidHttp(routerPath) && sysMenu.MenuExternal == constants.STATUS_NO {
 		routerPath = regular.Replace(`/^http(s)?:\/\/+/`, routerPath, "")
 		routerPath = base64.StdEncoding.EncodeToString([]byte(routerPath))
 	}
 
 	// 父菜单 内部跳转
-	if sysMenu.ParentId == 0 && sysMenu.FrameFlag == constants.STATUS_YES {
+	if sysMenu.ParentId == 0 && sysMenu.MenuExternal == constants.STATUS_NO {
 		routerPath = "/" + routerPath
 	}
 
@@ -297,7 +297,7 @@ func (s SysMenu) getRouterPath(sysMenu model.SysMenu) string {
 // getComponent 获取组件信息
 func (s SysMenu) getComponent(sysMenu model.SysMenu) string {
 	// 内部跳转 路径链接
-	if sysMenu.FrameFlag == constants.STATUS_YES && regular.ValidHttp(sysMenu.MenuPath) {
+	if sysMenu.MenuExternal == constants.STATUS_NO && regular.ValidHttp(sysMenu.MenuPath) {
 		return constants.MENU_COMPONENT_LAYOUT_LINK
 	}
 
@@ -307,12 +307,12 @@ func (s SysMenu) getComponent(sysMenu model.SysMenu) string {
 	}
 
 	// 组件路径 内部跳转 菜单类型
-	if sysMenu.Component != "" && sysMenu.FrameFlag == constants.STATUS_YES && sysMenu.MenuType == constants.MENU_TYPE_MENU {
+	if sysMenu.MenuComponent != "" && sysMenu.MenuExternal == constants.STATUS_NO && sysMenu.MenuType == constants.MENU_TYPE_MENU {
 		// 父菜单套外层布局
 		if sysMenu.ParentId == 0 {
 			return constants.MENU_COMPONENT_LAYOUT_BASIC
 		}
-		return sysMenu.Component
+		return sysMenu.MenuComponent
 	}
 
 	return constants.MENU_COMPONENT_LAYOUT_BASIC
@@ -321,19 +321,19 @@ func (s SysMenu) getComponent(sysMenu model.SysMenu) string {
 // getRouteMeta 获取路由元信息
 func (s SysMenu) getRouteMeta(sysMenu model.SysMenu) vo.RouterMeta {
 	meta := vo.RouterMeta{}
-	if sysMenu.Icon == "#" {
+	if sysMenu.MenuIcon == "#" {
 		meta.Icon = ""
 	} else {
-		meta.Icon = sysMenu.Icon
+		meta.Icon = sysMenu.MenuIcon
 	}
 	meta.Title = sysMenu.MenuName
 	meta.HideChildInMenu = false
-	meta.HideInMenu = sysMenu.VisibleFlag == constants.STATUS_NO
-	meta.Cache = sysMenu.CacheFlag == constants.STATUS_YES
+	meta.HideInMenu = sysMenu.MenuVisible == constants.STATUS_NO
+	meta.Cache = sysMenu.MenuCache == constants.STATUS_YES
 	meta.Target = ""
 
 	// 路径链接 非内部跳转
-	if regular.ValidHttp(sysMenu.MenuPath) && sysMenu.FrameFlag == constants.STATUS_NO {
+	if regular.ValidHttp(sysMenu.MenuPath) && sysMenu.MenuExternal == constants.STATUS_YES {
 		meta.Target = "_blank"
 	}
 
@@ -351,7 +351,7 @@ func (s SysMenu) getRouteRedirect(cMenus []model.SysMenu, routerPath string, pre
 	// 重定向为首个显示并启用的子菜单
 	var firstChild *model.SysMenu
 	for _, item := range cMenus {
-		if item.FrameFlag == constants.STATUS_YES && item.VisibleFlag == constants.STATUS_YES {
+		if item.MenuExternal == constants.STATUS_NO && item.MenuVisible == constants.STATUS_YES {
 			firstChild = &item
 			break
 		}
@@ -360,7 +360,7 @@ func (s SysMenu) getRouteRedirect(cMenus []model.SysMenu, routerPath string, pre
 	// 检查内嵌隐藏菜单是否可做重定向
 	if firstChild == nil {
 		for _, item := range cMenus {
-			if item.FrameFlag == constants.STATUS_YES && item.VisibleFlag == constants.STATUS_NO && strings.Contains(item.MenuPath, constants.MENU_PATH_INLINE) {
+			if item.MenuExternal == constants.STATUS_NO && item.MenuVisible == constants.STATUS_NO && strings.Contains(item.MenuPath, constants.MENU_PATH_INLINE) {
 				firstChild = &item
 				break
 			}

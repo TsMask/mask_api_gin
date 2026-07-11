@@ -32,11 +32,11 @@ func (s SysLogLogin) Insert(userName, status, msg string, ilobArr [4]string) int
 	sysSysLogLogin := model.SysLogLogin{
 		LoginIp:       ilobArr[0],
 		LoginLocation: ilobArr[1],
-		OS:            ilobArr[2],
-		Browser:       ilobArr[3],
-		UserName:      userName,
-		StatusFlag:    status,
-		Msg:           msg,
+		LoginOs:       ilobArr[2],
+		LoginBrowser:  ilobArr[3],
+		LoginUserName: userName,
+		LoginStatus:   status,
+		LoginMsg:      msg,
 	}
 	return s.sysLogLoginRepository.Insert(sysSysLogLogin)
 }
@@ -56,19 +56,19 @@ func (s SysLogLogin) ExportData(rows []model.SysLogLogin, fileName string) (stri
 	for _, row := range rows {
 		// 状态
 		statusValue := "失败"
-		if row.StatusFlag == constants.STATUS_YES {
+		if row.LoginStatus == constants.STATUS_YES {
 			statusValue = "成功"
 		}
 		data = append(data, []string{
 			fmt.Sprintf("%d", row.ID),
-			row.UserName,
+			row.LoginUserName,
 			statusValue,
 			row.LoginIp,
 			row.LoginLocation,
-			row.Browser,
-			row.OS,
-			row.Msg,
-			date.ParseNumberToDate(row.LoginTime).Format(time.RFC3339),
+			row.LoginBrowser,
+			row.LoginOs,
+			row.LoginMsg,
+			date.ParseNumberToDate(row.CreateTime).Format(time.RFC3339),
 		})
 	}
 

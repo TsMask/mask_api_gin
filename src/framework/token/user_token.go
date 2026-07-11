@@ -1,4 +1,4 @@
-﻿package token
+package token
 
 import (
 	"encoding/json"
@@ -135,8 +135,8 @@ func UserInfoCreate(info *UserInfo, deviceFingerprint string, ilobArr [4]string)
 	// 设置请求用户登录客户端
 	info.LoginIp = ilobArr[0]
 	info.LoginLocation = ilobArr[1]
-	info.OS = ilobArr[2]
-	info.Browser = ilobArr[3]
+	info.LoginOS = ilobArr[2]
+	info.LoginBrowser = ilobArr[3]
 
 	expiresIn := time.Duration(parse.Number(config.Get("jwt.expiresIn")))
 	now := time.Now()
@@ -144,9 +144,9 @@ func UserInfoCreate(info *UserInfo, deviceFingerprint string, ilobArr [4]string)
 	info.LoginTime = now.UnixMilli()
 	info.ExpireTime = exp.UnixMilli()
 	// 设置新登录IP和登录时间
-	info.User.LoginIp = info.LoginIp
-	info.User.LoginTime = info.LoginTime
-	info.User.Password = ""
+	info.User.UserLoginIp = info.LoginIp
+	info.User.UserLoginTime = info.LoginTime
+	info.User.UserPassword = ""
 	// 登录信息标识缓存
 	tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + info.DeviceId
 	jsonBytes, err := json.Marshal(info)
@@ -165,7 +165,7 @@ func UserInfoCreate(info *UserInfo, deviceFingerprint string, ilobArr [4]string)
 
 // UserInfoUpdate 更新访问用户信息缓存
 func UserInfoUpdate(info UserInfo) {
-	info.User.Password = ""
+	info.User.UserPassword = ""
 	tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + info.DeviceId
 	jsonBytes, err := json.Marshal(info)
 	if err != nil {

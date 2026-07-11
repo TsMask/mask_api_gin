@@ -56,7 +56,7 @@ func (s SysUser) fillUsersDeptAndRoles(users []model.SysUser) {
 		if u.DeptId > 0 {
 			deptIdSet[u.DeptId] = struct{}{}
 		}
-		userIdSet[u.UserId] = struct{}{}
+		userIdSet[u.ID] = struct{}{}
 	}
 
 	// 批量查询部门
@@ -78,12 +78,12 @@ func (s SysUser) fillUsersDeptAndRoles(users []model.SysUser) {
 		if dept, ok := deptMap[users[i].DeptId]; ok {
 			users[i].Dept = &dept
 		}
-		if roleArr, ok := roleMap[users[i].UserId]; ok {
+		if roleArr, ok := roleMap[users[i].ID]; ok {
 			roles := make([]*model.SysRole, 0, len(roleArr))
 			roleIds := make([]int64, 0, len(roleArr))
 			for idx := range roleArr {
 				roles = append(roles, &roleArr[idx])
-				roleIds = append(roleIds, roleArr[idx].RoleId)
+				roleIds = append(roleIds, roleArr[idx].ID)
 			}
 			users[i].Roles = roles
 			users[i].RoleIds = roleIds
@@ -182,10 +182,10 @@ func (s SysUser) Update(sysUser model.SysUser) int64 {
 func (s SysUser) UpdateUserAndRolePost(sysUser model.SysUser) int64 {
 	var rows int64
 	err := db.Transaction("", func(tx *gorm.DB) error {
-		s.sysUserRoleRepository.DeleteByUserIds(tx, []int64{sysUser.UserId})
-		s.insertUserRole(tx, sysUser.UserId, sysUser.RoleIds)
-		s.sysUserPostRepository.DeleteByUserIds(tx, []int64{sysUser.UserId})
-		s.insertUserPost(tx, sysUser.UserId, sysUser.PostIds)
+		s.sysUserRoleRepository.DeleteByUserIds(tx, []int64{sysUser.ID})
+		s.insertUserRole(tx, sysUser.ID, sysUser.RoleIds)
+		s.sysUserPostRepository.DeleteByUserIds(tx, []int64{sysUser.ID})
+		s.insertUserPost(tx, sysUser.ID, sysUser.PostIds)
 		rows = s.sysUserRepository.Update(tx, sysUser)
 		return nil
 	})
@@ -193,7 +193,7 @@ func (s SysUser) UpdateUserAndRolePost(sysUser model.SysUser) int64 {
 		return 0
 	}
 	// 角色或状态变更后清理 Token 缓存，强制重新登录
-	token.RemoveByUserIds([]int64{sysUser.UserId})
+	token.RemoveByUserIds([]int64{sysUser.ID})
 	return rows
 }
 
@@ -236,7 +236,7 @@ func (s SysUser) CheckUniqueByUserName(userName string, userId int64) bool {
 // CheckUniqueByPhone 检查手机号码是否唯一
 func (s SysUser) CheckUniqueByPhone(phone string, userId int64) bool {
 	uniqueId := s.sysUserRepository.CheckUnique(model.SysUser{
-		Phone: phone,
+		UserPhone: phone,
 	})
 	if uniqueId == userId {
 		return true
@@ -247,7 +247,7 @@ func (s SysUser) CheckUniqueByPhone(phone string, userId int64) bool {
 // CheckUniqueByEmail 检查Email是否唯一
 func (s SysUser) CheckUniqueByEmail(email string, userId int64) bool {
 	uniqueId := s.sysUserRepository.CheckUnique(model.SysUser{
-		Email: email,
+		UserEmail: email,
 	})
 	if uniqueId == userId {
 		return true
@@ -261,8 +261,9 @@ func (s SysUser) FindByUserName(userName string) model.SysUser {
 	if userinfo.UserName != userName {
 		return userinfo
 	}
-	s.fillUsersDeptAndRoles([]model.SysUser{userinfo})
-	return userinfo
+	users := []model.SysUser{userinfo}
+	s.fillUsersDeptAndRoles(users)
+	return users[0]
 }
 
 // FindAuthUsersPage 根据条件分页查询分配用户角色列表
@@ -279,35 +280,35 @@ func (s SysUser) ExportData(rows []model.SysUser, fileName string) (string, erro
 		{"用户编号", "登录账号", "用户昵称", "用户邮箱", "手机号码", "用户性别", "帐号状态", "部门编号", "部门名称", "部门负责人", "最后登录IP", "最后登录时间"},
 	}
 	// 读取用户性别字典数据
-	dictSysUserSex := s.sysDictTypeService.FindDataByType("sys_user_sex")
+	dictSysUserGender := s.sysDictTypeService.FindDataByType("sys_user_gender")
 	// 从第二行开始的数据
 	for _, row := range rows {
 		// 用户性别
-		sysUserSex := "未知"
-		for _, v := range dictSysUserSex {
-			if row.Sex == v.DataValue {
-				sysUserSex = v.DataLabel
+		userGender := "未知"
+		for _, v := range dictSysUserGender {
+			if row.UserGender == v.DataValue {
+				userGender = v.DataLabel
 				break
 			}
 		}
 		// 账号状态
 		statusValue := "停用"
-		if row.StatusFlag == constants.STATUS_YES {
+		if row.UserStatus == constants.STATUS_YES {
 			statusValue = "正常"
 		}
 		data = append(data, []string{
-			fmt.Sprintf("%d", row.UserId),
+			fmt.Sprintf("%d", row.ID),
 			row.UserName,
-			row.NickName,
-			row.Email,
-			row.Phone,
-			sysUserSex,
+			row.UserNick,
+			row.UserEmail,
+			row.UserPhone,
+			userGender,
 			statusValue,
-			fmt.Sprintf("%d", row.Dept.DeptId),
+			fmt.Sprintf("%d", row.Dept.ID),
 			row.Dept.DeptName,
-			row.Dept.Leader,
-			row.LoginIp,
-			date.ParseNumberToDate(row.LoginTime).Format(time.RFC3339),
+			row.Dept.DeptLeader,
+			row.UserLoginIp,
+			date.ParseNumberToDate(row.UserLoginTime).Format(time.RFC3339),
 		})
 	}
 
@@ -325,7 +326,7 @@ func (s SysUser) ImportData(rows []map[string]string, operaName string, updateSu
 	// 读取默认初始密码
 	initPassword := s.sysConfigService.FindValueByKey("sys.user.initPassword")
 	// 读取用户性别字典数据
-	dictSysUserSex := s.sysDictTypeService.FindDataByType("sys_user_sex")
+	dictSysUserGender := s.sysDictTypeService.FindDataByType("sys_user_gender")
 
 	// 导入记录
 	successNum := 0
@@ -351,10 +352,10 @@ func (s SysUser) ImportData(rows []map[string]string, operaName string, updateSu
 		}
 
 		// 用户性别转值
-		sysUserSex := "0"
-		for _, v := range dictSysUserSex {
+		userGender := "0"
+		for _, v := range dictSysUserGender {
 			if row["gender"] == v.DataLabel {
-				sysUserSex = v.DataValue
+				userGender = v.DataValue
 				break
 			}
 		}
@@ -369,30 +370,30 @@ func (s SysUser) ImportData(rows []map[string]string, operaName string, updateSu
 
 		// 验证是否存在这个用户
 		newSysUser := s.FindByUserName(row["username"])
-		newSysUser.Password = initPassword
+		newSysUser.UserPassword = initPassword
 		newSysUser.UserName = row["username"]
-		newSysUser.NickName = row["nickname"]
-		newSysUser.Phone = row["phone"]
-		newSysUser.Email = row["email"]
-		newSysUser.StatusFlag = sysUserStatus
-		newSysUser.Sex = sysUserSex
+		newSysUser.UserNick = row["nickname"]
+		newSysUser.UserPhone = row["phone"]
+		newSysUser.UserEmail = row["email"]
+		newSysUser.UserStatus = sysUserStatus
+		newSysUser.UserGender = userGender
 		newSysUser.DeptId = sysUserDeptId
 
 		// 行用户编号
 		rowNo := row["user_id"]
 
 		// 检查手机号码格式并判断是否唯一
-		if newSysUser.Phone != "" {
-			if regular.ValidMobile(newSysUser.Phone) {
-				uniquePhone := s.CheckUniqueByPhone(newSysUser.Phone, newSysUser.UserId)
+		if newSysUser.UserPhone != "" {
+			if regular.ValidMobile(newSysUser.UserPhone) {
+				uniquePhone := s.CheckUniqueByPhone(newSysUser.UserPhone, newSysUser.ID)
 				if !uniquePhone {
-					msg := fmt.Sprintf("用户编号：%s 手机号码：%s 已存在", rowNo, newSysUser.Phone)
+					msg := fmt.Sprintf("用户编号：%s 手机号码：%s 已存在", rowNo, newSysUser.UserPhone)
 					failureNum++
 					failureMsgArr = append(failureMsgArr, msg)
 					continue
 				}
 			} else {
-				msg := fmt.Sprintf("用户编号：%s 手机号码：%s 格式错误", rowNo, newSysUser.Phone)
+				msg := fmt.Sprintf("用户编号：%s 手机号码：%s 格式错误", rowNo, newSysUser.UserPhone)
 				failureNum++
 				failureMsgArr = append(failureMsgArr, msg)
 				continue
@@ -400,24 +401,24 @@ func (s SysUser) ImportData(rows []map[string]string, operaName string, updateSu
 		}
 
 		// 检查邮箱格式并判断是否唯一
-		if newSysUser.Email != "" {
-			if regular.ValidEmail(newSysUser.Email) {
-				uniqueEmail := s.CheckUniqueByEmail(newSysUser.Email, newSysUser.UserId)
+		if newSysUser.UserEmail != "" {
+			if regular.ValidEmail(newSysUser.UserEmail) {
+				uniqueEmail := s.CheckUniqueByEmail(newSysUser.UserEmail, newSysUser.ID)
 				if !uniqueEmail {
-					msg := fmt.Sprintf("用户编号：%s 用户邮箱：%s 已存在", rowNo, newSysUser.Email)
+					msg := fmt.Sprintf("用户编号：%s 用户邮箱：%s 已存在", rowNo, newSysUser.UserEmail)
 					failureNum++
 					failureMsgArr = append(failureMsgArr, msg)
 					continue
 				}
 			} else {
-				msg := fmt.Sprintf("用户编号：%s 用户邮箱：%s 格式错误", rowNo, newSysUser.Email)
+				msg := fmt.Sprintf("用户编号：%s 用户邮箱：%s 格式错误", rowNo, newSysUser.UserEmail)
 				failureNum++
 				failureMsgArr = append(failureMsgArr, msg)
 				continue
 			}
 		}
 
-		if newSysUser.UserId <= 0 {
+		if newSysUser.ID <= 0 {
 			newSysUser.CreateBy = operaName
 			if s.Insert(newSysUser) > 0 {
 				msg := fmt.Sprintf("用户编号：%s 登录账号：%s 导入成功", rowNo, newSysUser.UserName)
@@ -432,8 +433,8 @@ func (s SysUser) ImportData(rows []map[string]string, operaName string, updateSu
 		}
 
 		// 如果用户已存在 同时 是否更新支持
-		if newSysUser.UserId > 0 && updateSupport {
-			newSysUser.Password = "" // 密码不更新
+		if newSysUser.ID > 0 && updateSupport {
+			newSysUser.UserPassword = "" // 密码不更新
 			newSysUser.UpdateBy = operaName
 			rows := s.Update(newSysUser)
 			if rows > 0 {

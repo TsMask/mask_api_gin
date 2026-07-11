@@ -74,18 +74,18 @@ type jobLogData struct {
 }
 
 // SaveLog 日志记录保存
-func (jl *jobLogData) SaveLog(statusFlag string) {
+func (jl *jobLogData) SaveLog(logStatus string) {
 	// 读取任务信息
 	sysJob := jl.Data.SysJob
 
 	// 任务日志不需要记录
-	if sysJob.SaveLog == "" || sysJob.SaveLog == constants.STATUS_NO {
+	if sysJob.JobSaveLog == "" || sysJob.JobSaveLog == constants.STATUS_NO {
 		return
 	}
 
 	// 结果信息key的Name
 	resultName := "failed"
-	if statusFlag == constants.STATUS_YES {
+	if logStatus == constants.STATUS_YES {
 		resultName = "completed"
 	}
 
@@ -103,14 +103,14 @@ func (jl *jobLogData) SaveLog(statusFlag string) {
 	// 创建日志对象
 	duration := time.Since(time.UnixMilli(jl.Timestamp))
 	sysJobLog := monitorModel.SysJobLog{
-		JobName:      sysJob.JobName,
-		JobGroup:     sysJob.JobGroup,
-		InvokeTarget: sysJob.InvokeTarget,
-		TargetParams: sysJob.TargetParams,
-		StatusFlag:   statusFlag,
-		JobMsg:       jobMsg,
-		CostTime:     duration.Milliseconds(),
-		CreateTime:   time.Now().UnixMilli(),
+		JobName:         sysJob.JobName,
+		JobGroup:        sysJob.JobGroup,
+		JobInvokeTarget: sysJob.JobInvokeTarget,
+		JobTargetParams: sysJob.JobTargetParams,
+		LogStatus:       logStatus,
+		LogMsg:          jobMsg,
+		LogCostTime:     duration.Milliseconds(),
+		CreateTime:      time.Now().UnixMilli(),
 	}
 	// 插入数据
 	monitorRepository.NewSysJobLog.Insert(sysJobLog)

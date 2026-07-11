@@ -31,7 +31,7 @@ func TestSimple(t *testing.T) {
 		"ok":   "ok",
 		"data": "data",
 	}, JobOptions{
-		JobId: 101,
+		ID: "101",
 	})
 
 	simpleC := CreateQueue("simple", NewSimple)
@@ -39,15 +39,15 @@ func TestSimple(t *testing.T) {
 		"corn": "*/5 * * * * *",
 		"id":   "102",
 	}, JobOptions{
-		JobId: 102,
-		Cron:  "*/5 * * * * *",
+		ID:   "102",
+		Cron: "*/5 * * * * *",
 	})
 
 	// simpleC.RunJob(map[string]string{
 	// 	"corn": "*/15 * * * * *",
 	// 	"id":   "103",
 	// }, JobOptions{
-	// 	JobId: 103,
+	// 	ID: "103",
 	// 	Cron:  "*/15 * * * * *",
 	// })
 
@@ -93,15 +93,15 @@ func TestFoo(t *testing.T) {
 	foo.RunJob(map[string]string{
 		"data": "2",
 	}, JobOptions{
-		JobId: 2,
+		ID: "2",
 	})
 
 	fooC := CreateQueue("foo", NewFooProcessor)
 	fooC.RunJob(map[string]string{
 		"corn": "*/5 * * * * *",
 	}, JobOptions{
-		JobId: 3,
-		Cron:  "*/5 * * * * *",
+		ID:   "3",
+		Cron: "*/5 * * * * *",
 	})
 
 	select {}
@@ -153,25 +153,25 @@ func TestBar(t *testing.T) {
 	bar.RunJob(map[string]string{
 		"data": "wdf",
 	}, JobOptions{
-		JobId: 752,
+		ID: "752",
 	})
 
 	barC := CreateQueue("bar", NewBarProcessor)
 	barC.RunJob(map[string]string{
 		"corn": "*/5 * * * * *",
 	}, JobOptions{
-		JobId: 756,
-		Cron:  "*/5 * * * * *",
+		ID:   "756",
+		Cron: "*/5 * * * * *",
 	})
 
 	// barDB := CreateQueue("barDB", NewBarProcessor)
 	// barDB.RunJob(JobData{
 	// 	SysJob: model.SysJob{
-	// 		JobID:   "9123",
+	// 		ID:   "9123",
 	// 		JobName: "测试任务",
 	// 	},
 	// }, JobOptions{
-	// 	JobId: "9123",
+	// 	ID: "9123",
 	// })
 
 	select {}

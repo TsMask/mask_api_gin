@@ -35,16 +35,16 @@ func (s SysNoticeController) List(c *gin.Context) {
 
 // Info 通知公告信息
 //
-// GET /:noticeId
+// GET /:id
 func (s SysNoticeController) Info(c *gin.Context) {
-	noticeId := parse.Number(c.Param("noticeId"))
-	if noticeId <= 0 {
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: noticeId is empty"))
+	id := parse.Number(c.Param("id"))
+	if id <= 0 {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id is empty"))
 		return
 	}
 
-	data := s.sysNoticeService.FindById(noticeId)
-	if data.NoticeId == noticeId {
+	data := s.sysNoticeService.FindById(id)
+	if data.ID == id {
 		c.JSON(200, resp.OkData(data))
 		return
 	}
@@ -61,7 +61,7 @@ func (s SysNoticeController) Add(c *gin.Context) {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
-	if body.NoticeId > 0 {
+	if body.ID > 0 {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: noticeId not is empty"))
 		return
 	}
@@ -85,14 +85,14 @@ func (s SysNoticeController) Edit(c *gin.Context) {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
-	if body.NoticeId <= 0 {
+	if body.ID <= 0 {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: noticeId is empty"))
 		return
 	}
 
 	// 检查是否存在
-	noticeInfo := s.sysNoticeService.FindById(body.NoticeId)
-	if noticeInfo.NoticeId != body.NoticeId {
+	noticeInfo := s.sysNoticeService.FindById(body.ID)
+	if noticeInfo.ID != body.ID {
 		c.JSON(200, resp.ErrMsg("没有权限访问公告信息数据！"))
 		return
 	}
@@ -100,7 +100,7 @@ func (s SysNoticeController) Edit(c *gin.Context) {
 	noticeInfo.NoticeTitle = body.NoticeTitle
 	noticeInfo.NoticeType = body.NoticeType
 	noticeInfo.NoticeContent = body.NoticeContent
-	noticeInfo.StatusFlag = body.StatusFlag
+	noticeInfo.NoticeStatus = body.NoticeStatus
 	noticeInfo.Remark = body.Remark
 	noticeInfo.UpdateBy = reqctx.LoginUserToUserName(c)
 	rows := s.sysNoticeService.Update(noticeInfo)
@@ -113,16 +113,16 @@ func (s SysNoticeController) Edit(c *gin.Context) {
 
 // Remove 通知公告删除
 //
-// DELETE /:noticeId
+// DELETE /:id
 func (s SysNoticeController) Remove(c *gin.Context) {
-	noticeId := c.Param("noticeId")
-	if noticeId == "" {
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: noticeId is empty"))
+	idStr := c.Param("id")
+	if idStr == "" {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id is empty"))
 		return
 	}
 
 	// 处理字符转id数组后去重
-	uniqueIDs := parse.RemoveDuplicatesToArray(noticeId, ",")
+	uniqueIDs := parse.RemoveDuplicatesToArray(idStr, ",")
 	// 转换成int64数组类型
 	ids := make([]int64, 0)
 	for _, v := range uniqueIDs {

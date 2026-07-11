@@ -28,11 +28,11 @@ func (s SysConfig) FindByPage(query map[string]string) ([]model.SysConfig, int64
 }
 
 // FindById 通过ID查询信息
-func (s SysConfig) FindById(configId int64) model.SysConfig {
-	if configId <= 0 {
+func (s SysConfig) FindById(id int64) model.SysConfig {
+	if id <= 0 {
 		return model.SysConfig{}
 	}
-	configs := s.sysConfigRepository.SelectByIds([]int64{configId})
+	configs := s.sysConfigRepository.SelectByIds([]int64{id})
 	if len(configs) > 0 {
 		return configs[0]
 	}
@@ -41,11 +41,11 @@ func (s SysConfig) FindById(configId int64) model.SysConfig {
 
 // Insert 新增信息
 func (s SysConfig) Insert(sysConfig model.SysConfig) int64 {
-	configId := s.sysConfigRepository.Insert(sysConfig)
-	if configId > 0 {
+	id := s.sysConfigRepository.Insert(sysConfig)
+	if id > 0 {
 		s.CacheLoad(sysConfig.ConfigKey)
 	}
-	return configId
+	return id
 }
 
 // Update 修改信息
@@ -58,32 +58,28 @@ func (s SysConfig) Update(sysConfig model.SysConfig) int64 {
 }
 
 // DeleteByIds 批量删除信息
-func (s SysConfig) DeleteByIds(configIds []int64) (int64, error) {
+func (s SysConfig) DeleteByIds(ids []int64) (int64, error) {
 	// 检查是否存在
-	configs := s.sysConfigRepository.SelectByIds(configIds)
+	configs := s.sysConfigRepository.SelectByIds(ids)
 	if len(configs) <= 0 {
 		return 0, fmt.Errorf("没有权限访问参数配置数据！")
 	}
 	for _, config := range configs {
-		// 检查是否为内置参数
-		if config.ConfigType == "Y" {
-			return 0, fmt.Errorf("该配置参数属于内置参数，禁止删除！")
-		}
 		// 清除缓存
 		s.CacheClean(config.ConfigKey)
 	}
-	if len(configs) == len(configIds) {
-		return s.sysConfigRepository.DeleteByIds(configIds), nil
+	if len(configs) == len(ids) {
+		return s.sysConfigRepository.DeleteByIds(ids), nil
 	}
 	return 0, fmt.Errorf("删除参数配置信息失败！")
 }
 
 // CheckUniqueByKey 检查参数键名是否唯一
-func (s SysConfig) CheckUniqueByKey(configKey string, configId int64) bool {
+func (s SysConfig) CheckUniqueByKey(configKey string, id int64) bool {
 	uniqueId := s.sysConfigRepository.CheckUnique(model.SysConfig{
 		ConfigKey: configKey,
 	})
-	if uniqueId == configId {
+	if uniqueId == id {
 		return true
 	}
 	return uniqueId == 0
@@ -140,20 +136,16 @@ func (s SysConfig) CacheClean(configKey string) bool {
 func (s SysConfig) ExportData(rows []model.SysConfig, fileName string) (string, error) {
 	// 第一行表头标题
 	data := [][]string{
-		{"参数编号", "参数名称", "参数键名", "参数键值", "系统内置"},
+		{"参数编号", "参数名称", "参数键名", "参数键值", "参数类型"},
 	}
 	// 从第二行开始的数据
 	for _, row := range rows {
-		typeValue := "否"
-		if row.ConfigType == "Y" {
-			typeValue = "是"
-		}
 		data = append(data, []string{
-			fmt.Sprintf("%d", row.ConfigId),
+			fmt.Sprintf("%d", row.ID),
 			row.ConfigName,
 			row.ConfigKey,
 			row.ConfigValue,
-			typeValue,
+			row.ConfigValueType,
 		})
 	}
 

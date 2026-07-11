@@ -36,16 +36,16 @@ func (s SysConfigController) List(c *gin.Context) {
 
 // Info 参数配置信息
 //
-// GET /:configId
+// GET /:id
 func (s SysConfigController) Info(c *gin.Context) {
-	configId := parse.Number(c.Param("configId"))
-	if configId <= 0 {
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: configId is empty"))
+	id := parse.Number(c.Param("id"))
+	if id <= 0 {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id is empty"))
 		return
 	}
 
-	data := s.sysConfigService.FindById(configId)
-	if data.ConfigId == configId {
+	data := s.sysConfigService.FindById(id)
+	if data.ID == id {
 		c.JSON(200, resp.OkData(data))
 		return
 	}
@@ -62,8 +62,8 @@ func (s SysConfigController) Add(c *gin.Context) {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
-	if body.ConfigId > 0 {
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: configId not is empty"))
+	if body.ID > 0 {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id not is empty"))
 		return
 	}
 
@@ -94,27 +94,30 @@ func (s SysConfigController) Edit(c *gin.Context) {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
-	if body.ConfigId <= 0 {
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: configId is empty"))
+	if body.ID <= 0 {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id is empty"))
 		return
 	}
 
 	// 检查是否存在
-	configInfo := s.sysConfigService.FindById(body.ConfigId)
-	if configInfo.ConfigId != body.ConfigId {
+	configInfo := s.sysConfigService.FindById(body.ID)
+	if configInfo.ID != body.ID {
 		c.JSON(200, resp.ErrMsg("没有权限访问参数配置数据！"))
 		return
 	}
 
 	// 检查属性值唯一
-	uniqueConfigKey := s.sysConfigService.CheckUniqueByKey(body.ConfigKey, body.ConfigId)
+	uniqueConfigKey := s.sysConfigService.CheckUniqueByKey(body.ConfigKey, body.ID)
 	if !uniqueConfigKey {
 		msg := fmt.Sprintf("参数配置修改【%s】失败，参数键名已存在", body.ConfigKey)
 		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
 
-	configInfo.ConfigType = body.ConfigType
+	configInfo.ConfigValueType = body.ConfigValueType
+	configInfo.ConfigGroup = body.ConfigGroup
+	configInfo.ConfigSort = body.ConfigSort
+	configInfo.ConfigStatus = body.ConfigStatus
 	configInfo.ConfigName = body.ConfigName
 	configInfo.ConfigKey = body.ConfigKey
 	configInfo.ConfigValue = body.ConfigValue
@@ -130,16 +133,16 @@ func (s SysConfigController) Edit(c *gin.Context) {
 
 // Remove 参数配置删除
 //
-// DELETE /:configId
+// DELETE /:id
 func (s SysConfigController) Remove(c *gin.Context) {
-	configId := c.Param("configId")
-	if configId == "" {
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: configId is empty"))
+	idStr := c.Param("id")
+	if idStr == "" {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id is empty"))
 		return
 	}
 
 	// 处理字符转id数组后去重
-	uniqueIDs := parse.RemoveDuplicatesToArray(configId, ",")
+	uniqueIDs := parse.RemoveDuplicatesToArray(idStr, ",")
 	// 转换成int64数组类型
 	ids := make([]int64, 0)
 	for _, v := range uniqueIDs {

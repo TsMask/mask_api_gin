@@ -63,7 +63,7 @@ func (s SysPost) DeleteByIds(postIds []int64) (int64, error) {
 		return 0, fmt.Errorf("没有权限访问岗位数据！")
 	}
 	for _, post := range posts {
-		if useCount := s.sysUserPostRepository.ExistUserByPostId(post.PostId); useCount > 0 {
+		if useCount := s.sysUserPostRepository.ExistUserByPostId(post.ID); useCount > 0 {
 			return 0, fmt.Errorf("【%s】已分配给用户,不能删除", post.PostName)
 		}
 	}
@@ -109,11 +109,11 @@ func (s SysPost) ExportData(rows []model.SysPost, fileName string) (string, erro
 	// 从第二行开始的数据
 	for _, row := range rows {
 		statusValue := "停用"
-		if row.StatusFlag == constants.STATUS_YES {
+		if row.PostStatus == constants.STATUS_YES {
 			statusValue = "正常"
 		}
 		data = append(data, []string{
-			fmt.Sprintf("%d", row.PostId),
+			fmt.Sprintf("%d", row.ID),
 			row.PostCode,
 			row.PostName,
 			fmt.Sprintf("%d", row.PostSort),

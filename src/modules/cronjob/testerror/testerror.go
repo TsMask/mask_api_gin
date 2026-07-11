@@ -1,4 +1,4 @@
-package bar
+package testerror
 
 import (
 	"time"
@@ -24,7 +24,7 @@ func (p *Processor) Execute(data any) (any, error) {
 
 	options := data.(cron.JobData)
 	sysJob := options.SysJob
-	logger.Infof("重复 %v 任务ID %d", options.Repeat, sysJob.JobId)
+	logger.Infof("重复 %v 任务ID %d", options.Repeat, sysJob.ID)
 
 	// 实现任务处理逻辑
 	i := 0
@@ -32,7 +32,7 @@ func (p *Processor) Execute(data any) (any, error) {
 	for i < 5 {
 		// 获取任务进度
 		progress := p.progress
-		logger.Infof("jonId: %d => 任务进度：%d", sysJob.JobId, progress)
+		logger.Infof("jonId: %d => 任务进度：%d", sysJob.ID, progress)
 		// 延迟响应
 		time.Sleep(time.Second * 2)
 		// 程序中途执行错误
@@ -52,8 +52,8 @@ func (p *Processor) Execute(data any) (any, error) {
 	result := map[string]any{
 		"repeat":       options.Repeat,
 		"jobName":      sysJob.JobName,
-		"invokeTarget": sysJob.InvokeTarget,
-		"targetParams": sysJob.TargetParams,
+		"invokeTarget": sysJob.JobInvokeTarget,
+		"targetParams": sysJob.JobTargetParams,
 	}
 	return result, nil
 }
