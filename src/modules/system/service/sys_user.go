@@ -11,6 +11,7 @@ import (
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/token"
+	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/framework/utils/parse"
@@ -41,6 +42,13 @@ type SysUser struct {
 	sysDictTypeService    *SysDictType            // 字典类型服务
 	sysDictDataService    *SysDictData            // 字典数据服务
 	sysConfigService      *SysConfig              // 参数配置服务
+}
+
+// hashUserPassword hashes the password when non-empty (encryption is service-layer business logic)
+func (s SysUser) hashUserPassword(sysUser *model.SysUser) {
+	if sysUser.UserPassword != "" {
+		sysUser.UserPassword = crypto.BcryptHash(sysUser.UserPassword)
+	}
 }
 
 // fillUsersDeptAndRoles 批量填充用户的部门和角色信息（消除 N+1 查询）
@@ -118,6 +126,13 @@ func (s SysUser) FindById(userId int64) model.SysUser {
 
 // Insert 新增信息
 func (s SysUser) Insert(sysUser model.SysUser) int64 {
+	if sysUser.CreateBy != "" {
+		ms := time.Now().UnixMilli()
+		sysUser.UpdateBy = sysUser.CreateBy
+		sysUser.UpdateTime = ms
+		sysUser.CreateTime = ms
+	}
+	s.hashUserPassword(&sysUser)
 	var insertId int64
 	err := db.Transaction("", func(tx *gorm.DB) error {
 		insertId = s.sysUserRepository.Insert(tx, sysUser)
@@ -175,11 +190,19 @@ func (s SysUser) insertUserPost(d *gorm.DB, userId int64, postIds []int64) int64
 
 // Update 修改信息
 func (s SysUser) Update(sysUser model.SysUser) int64 {
+	if sysUser.UpdateBy != "" {
+		sysUser.UpdateTime = time.Now().UnixMilli()
+	}
+	s.hashUserPassword(&sysUser)
 	return s.sysUserRepository.Update(nil, sysUser)
 }
 
 // UpdateUserAndRolePost 修改用户信息同时更新角色和岗位
 func (s SysUser) UpdateUserAndRolePost(sysUser model.SysUser) int64 {
+	if sysUser.UpdateBy != "" {
+		sysUser.UpdateTime = time.Now().UnixMilli()
+	}
+	s.hashUserPassword(&sysUser)
 	var rows int64
 	err := db.Transaction("", func(tx *gorm.DB) error {
 		s.sysUserRoleRepository.DeleteByUserIds(tx, []int64{sysUser.ID})

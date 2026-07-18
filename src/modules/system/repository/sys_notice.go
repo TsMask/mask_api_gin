@@ -2,7 +2,6 @@ package repository
 
 import (
 	"fmt"
-	"time"
 
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
@@ -132,12 +131,6 @@ func (r SysNotice) SelectByIds(noticeIds []int64) []model.SysNotice {
 // Insert 新增信息 返回新增数据ID
 func (r SysNotice) Insert(sysNotice model.SysNotice) int64 {
 	sysNotice.NoticeDel = "0"
-	if sysNotice.CreateBy != "" {
-		ms := time.Now().UnixMilli()
-		sysNotice.UpdateBy = sysNotice.CreateBy
-		sysNotice.UpdateTime = ms
-		sysNotice.CreateTime = ms
-	}
 	// 执行插入
 	if err := db.DB("").Create(&sysNotice).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
@@ -150,9 +143,6 @@ func (r SysNotice) Insert(sysNotice model.SysNotice) int64 {
 func (r SysNotice) Update(sysNotice model.SysNotice) int64 {
 	if sysNotice.ID <= 0 {
 		return 0
-	}
-	if sysNotice.UpdateBy != "" {
-		sysNotice.UpdateTime = time.Now().UnixMilli()
 	}
 	tx := db.DB("").Model(&model.SysNotice{})
 	// 构建查询条件

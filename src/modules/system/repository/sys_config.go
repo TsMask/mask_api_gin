@@ -2,7 +2,6 @@ package repository
 
 import (
 	"fmt"
-	"time"
 
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
@@ -126,12 +125,6 @@ func (r SysConfig) SelectByIds(ids []int64) []model.SysConfig {
 
 // Insert 新增信息 返回新增数据ID
 func (r SysConfig) Insert(sysConfig model.SysConfig) int64 {
-	if sysConfig.CreateBy != "" {
-		ms := time.Now().UnixMilli()
-		sysConfig.UpdateBy = sysConfig.CreateBy
-		sysConfig.UpdateTime = ms
-		sysConfig.CreateTime = ms
-	}
 	// 执行插入
 	if err := db.DB("").Create(&sysConfig).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
@@ -144,9 +137,6 @@ func (r SysConfig) Insert(sysConfig model.SysConfig) int64 {
 func (r SysConfig) Update(sysConfig model.SysConfig) int64 {
 	if sysConfig.ID <= 0 {
 		return 0
-	}
-	if sysConfig.UpdateBy != "" {
-		sysConfig.UpdateTime = time.Now().UnixMilli()
 	}
 	tx := db.DB("").Model(&model.SysConfig{})
 	// 构建查询条件

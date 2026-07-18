@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"time"
-
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
@@ -109,12 +107,6 @@ func (r SysDictData) SelectByIds(ids []int64) []model.SysDictData {
 
 // Insert 新增信息 返回新增数据ID
 func (r SysDictData) Insert(sysDictData model.SysDictData) int64 {
-	if sysDictData.CreateBy != "" {
-		ms := time.Now().UnixMilli()
-		sysDictData.UpdateBy = sysDictData.CreateBy
-		sysDictData.UpdateTime = ms
-		sysDictData.CreateTime = ms
-	}
 	// 执行插入
 	if err := db.DB("").Create(&sysDictData).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
@@ -127,9 +119,6 @@ func (r SysDictData) Insert(sysDictData model.SysDictData) int64 {
 func (r SysDictData) Update(sysDictData model.SysDictData) int64 {
 	if sysDictData.ID <= 0 {
 		return 0
-	}
-	if sysDictData.UpdateBy != "" {
-		sysDictData.UpdateTime = time.Now().UnixMilli()
 	}
 	tx := db.DB("").Model(&model.SysDictData{})
 	// 构建查询条件

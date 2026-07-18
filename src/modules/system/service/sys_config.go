@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
@@ -41,6 +42,12 @@ func (s SysConfig) FindById(id int64) model.SysConfig {
 
 // Insert 新增信息
 func (s SysConfig) Insert(sysConfig model.SysConfig) int64 {
+	if sysConfig.CreateBy != "" {
+		ms := time.Now().UnixMilli()
+		sysConfig.UpdateBy = sysConfig.CreateBy
+		sysConfig.UpdateTime = ms
+		sysConfig.CreateTime = ms
+	}
 	id := s.sysConfigRepository.Insert(sysConfig)
 	if id > 0 {
 		s.CacheLoad(sysConfig.ConfigKey)
@@ -50,6 +57,9 @@ func (s SysConfig) Insert(sysConfig model.SysConfig) int64 {
 
 // Update 修改信息
 func (s SysConfig) Update(sysConfig model.SysConfig) int64 {
+	if sysConfig.UpdateBy != "" {
+		sysConfig.UpdateTime = time.Now().UnixMilli()
+	}
 	rows := s.sysConfigRepository.Update(sysConfig)
 	if rows > 0 {
 		s.CacheLoad(sysConfig.ConfigKey)

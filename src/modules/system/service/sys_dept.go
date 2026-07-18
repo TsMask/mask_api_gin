@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/db"
@@ -40,11 +41,20 @@ func (s SysDept) FindById(deptId int64) model.SysDept {
 
 // Insert 新增信息
 func (s SysDept) Insert(sysDept model.SysDept) int64 {
+	if sysDept.CreateBy != "" {
+		ms := time.Now().UnixMilli()
+		sysDept.UpdateBy = sysDept.CreateBy
+		sysDept.UpdateTime = ms
+		sysDept.CreateTime = ms
+	}
 	return s.sysDeptRepository.Insert(sysDept)
 }
 
 // Update 修改信息
 func (s SysDept) Update(sysDept model.SysDept) int64 {
+	if sysDept.UpdateBy != "" {
+		sysDept.UpdateTime = time.Now().UnixMilli()
+	}
 	dept := s.sysDeptRepository.SelectById(sysDept.ID)
 	parentDept := s.sysDeptRepository.SelectById(sysDept.ParentId)
 

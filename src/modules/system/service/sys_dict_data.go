@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/utils/date"
@@ -52,6 +53,12 @@ func (s SysDictData) FindByType(dictType string) []model.SysDictData {
 
 // Insert 新增信息
 func (s SysDictData) Insert(sysDictData model.SysDictData) int64 {
+	if sysDictData.CreateBy != "" {
+		ms := time.Now().UnixMilli()
+		sysDictData.UpdateBy = sysDictData.CreateBy
+		sysDictData.UpdateTime = ms
+		sysDictData.CreateTime = ms
+	}
 	insertId := s.sysDictDataRepository.Insert(sysDictData)
 	if insertId > 0 {
 		s.sysDictTypeService.CacheLoad(sysDictData.DictType)
@@ -61,6 +68,9 @@ func (s SysDictData) Insert(sysDictData model.SysDictData) int64 {
 
 // Update 修改信息
 func (s SysDictData) Update(sysDictData model.SysDictData) int64 {
+	if sysDictData.UpdateBy != "" {
+		sysDictData.UpdateTime = time.Now().UnixMilli()
+	}
 	rows := s.sysDictDataRepository.Update(sysDictData)
 	if rows > 0 {
 		s.sysDictTypeService.CacheLoad(sysDictData.DictType)

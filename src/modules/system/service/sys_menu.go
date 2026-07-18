@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
+	"time"
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/db"
@@ -47,13 +48,45 @@ func (s SysMenu) FindById(menuId int64) model.SysMenu {
 	return model.SysMenu{}
 }
 
+// normalizeMenuFields resets fields by menu type (business rule: menu type decides which fields apply)
+func (s SysMenu) normalizeMenuFields(sysMenu *model.SysMenu) {
+	if sysMenu.MenuIcon == "" {
+		sysMenu.MenuIcon = "#"
+	}
+	switch sysMenu.MenuType {
+	case constants.MENU_TYPE_AUTH:
+		sysMenu.MenuComponent = ""
+		sysMenu.MenuExternal = "0"
+		sysMenu.MenuCache = "1"
+		sysMenu.MenuVisible = "1"
+		sysMenu.MenuPath = ""
+		sysMenu.MenuIcon = "#"
+	case constants.MENU_TYPE_DIR:
+		sysMenu.MenuComponent = ""
+		sysMenu.MenuExternal = "0"
+		sysMenu.MenuCache = "1"
+		sysMenu.MenuPerms = ""
+	}
+}
+
 // Insert 新增信息
 func (s SysMenu) Insert(sysMenu model.SysMenu) int64 {
+	if sysMenu.CreateBy != "" {
+		ms := time.Now().UnixMilli()
+		sysMenu.UpdateBy = sysMenu.CreateBy
+		sysMenu.UpdateTime = ms
+		sysMenu.CreateTime = ms
+	}
+	s.normalizeMenuFields(&sysMenu)
 	return s.sysMenuRepository.Insert(sysMenu)
 }
 
 // Update 修改信息
 func (s SysMenu) Update(sysMenu model.SysMenu) int64 {
+	if sysMenu.UpdateBy != "" {
+		sysMenu.UpdateTime = time.Now().UnixMilli()
+	}
+	s.normalizeMenuFields(&sysMenu)
 	return s.sysMenuRepository.Update(sysMenu)
 }
 

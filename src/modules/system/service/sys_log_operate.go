@@ -29,6 +29,9 @@ func (s SysLogOperate) FindByPage(query map[string]string, dataScopeSQL string) 
 
 // Insert 新增信息
 func (s SysLogOperate) Insert(sysLogOperate model.SysLogOperate) int64 {
+	if sysLogOperate.CreateBy != "" {
+		sysLogOperate.CreateTime = time.Now().UnixMilli()
+	}
 	return s.sysLogOperateRepository.Insert(sysLogOperate)
 }
 

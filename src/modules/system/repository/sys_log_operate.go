@@ -2,7 +2,6 @@ package repository
 
 import (
 	"fmt"
-	"time"
 
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
@@ -94,9 +93,6 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 
 // Insert 新增信息
 func (r SysLogOperate) Insert(sysLogOperate model.SysLogOperate) int64 {
-	if sysLogOperate.CreateBy != "" {
-		sysLogOperate.CreateTime = time.Now().UnixMilli()
-	}
 	// 执行插入
 	if err := db.DB("").Create(&sysLogOperate).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())

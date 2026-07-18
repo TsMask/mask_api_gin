@@ -38,6 +38,7 @@ func (s SysLogLogin) Insert(userName, status, msg string, ilobArr [4]string) int
 		LoginStatus:   status,
 		LoginMsg:      msg,
 	}
+	sysSysLogLogin.CreateTime = time.Now().UnixMilli()
 	return s.sysLogLoginRepository.Insert(sysSysLogLogin)
 }
 

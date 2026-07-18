@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/utils/date"
@@ -47,11 +48,20 @@ func (s SysPost) FindById(postId int64) model.SysPost {
 
 // Insert 新增信息
 func (s SysPost) Insert(sysPost model.SysPost) int64 {
+	if sysPost.CreateBy != "" {
+		ms := time.Now().UnixMilli()
+		sysPost.UpdateBy = sysPost.CreateBy
+		sysPost.UpdateTime = ms
+		sysPost.CreateTime = ms
+	}
 	return s.sysPostRepository.Insert(sysPost)
 }
 
 // Update 修改信息
 func (s SysPost) Update(sysPost model.SysPost) int64 {
+	if sysPost.UpdateBy != "" {
+		sysPost.UpdateTime = time.Now().UnixMilli()
+	}
 	return s.sysPostRepository.Update(sysPost)
 }
 

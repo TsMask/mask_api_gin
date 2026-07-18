@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"time"
-
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
@@ -106,12 +104,6 @@ func (r SysPost) SelectByIds(postIds []int64) []model.SysPost {
 
 // Insert 新增信息 返回新增数据ID
 func (r SysPost) Insert(sysPost model.SysPost) int64 {
-	if sysPost.CreateBy != "" {
-		ms := time.Now().UnixMilli()
-		sysPost.UpdateBy = sysPost.CreateBy
-		sysPost.UpdateTime = ms
-		sysPost.CreateTime = ms
-	}
 	// 执行插入
 	if err := db.DB("").Create(&sysPost).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
@@ -124,9 +116,6 @@ func (r SysPost) Insert(sysPost model.SysPost) int64 {
 func (r SysPost) Update(sysPost model.SysPost) int64 {
 	if sysPost.ID <= 0 {
 		return 0
-	}
-	if sysPost.UpdateBy != "" {
-		sysPost.UpdateTime = time.Now().UnixMilli()
 	}
 	tx := db.DB("").Model(&model.SysPost{})
 	// 构建查询条件

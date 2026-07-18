@@ -2,11 +2,9 @@ package repository
 
 import (
 	"fmt"
-	"time"
 
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 
@@ -148,15 +146,6 @@ func (r SysUser) SelectByIds(userIds []int64) []model.SysUser {
 // Insert 新增信息
 func (r SysUser) Insert(d *gorm.DB, sysUser model.SysUser) int64 {
 	sysUser.UserDel = "0"
-	if sysUser.CreateBy != "" {
-		ms := time.Now().UnixMilli()
-		sysUser.UpdateBy = sysUser.CreateBy
-		sysUser.UpdateTime = ms
-		sysUser.CreateTime = ms
-	}
-	if sysUser.UserPassword != "" {
-		sysUser.UserPassword = crypto.BcryptHash(sysUser.UserPassword)
-	}
 	if d == nil {
 		d = db.DB("")
 	}
@@ -172,12 +161,6 @@ func (r SysUser) Insert(d *gorm.DB, sysUser model.SysUser) int64 {
 func (r SysUser) Update(d *gorm.DB, sysUser model.SysUser) int64 {
 	if sysUser.ID <= 0 {
 		return 0
-	}
-	if sysUser.UpdateBy != "" {
-		sysUser.UpdateTime = time.Now().UnixMilli()
-	}
-	if sysUser.UserPassword != "" {
-		sysUser.UserPassword = crypto.BcryptHash(sysUser.UserPassword)
 	}
 	if d == nil {
 		d = db.DB("")

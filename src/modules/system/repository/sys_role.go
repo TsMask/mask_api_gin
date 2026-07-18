@@ -2,7 +2,6 @@ package repository
 
 import (
 	"fmt"
-	"time"
 
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
@@ -135,12 +134,6 @@ func (r SysRole) SelectByIds(roleIds []int64) []model.SysRole {
 // Insert 新增信息 返回新增数据ID
 func (r SysRole) Insert(d *gorm.DB, sysRole model.SysRole) int64 {
 	sysRole.RoleDel = "0"
-	if sysRole.CreateBy != "" {
-		ms := time.Now().UnixMilli()
-		sysRole.UpdateBy = sysRole.CreateBy
-		sysRole.UpdateTime = ms
-		sysRole.CreateTime = ms
-	}
 	if d == nil {
 		d = db.DB("")
 	}
@@ -156,9 +149,6 @@ func (r SysRole) Insert(d *gorm.DB, sysRole model.SysRole) int64 {
 func (r SysRole) Update(d *gorm.DB, sysRole model.SysRole) int64 {
 	if sysRole.ID <= 0 {
 		return 0
-	}
-	if sysRole.UpdateBy != "" {
-		sysRole.UpdateTime = time.Now().UnixMilli()
 	}
 	if d == nil {
 		d = db.DB("")

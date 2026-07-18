@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"time"
 
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
@@ -41,11 +42,20 @@ func (s SysNotice) FindById(noticeId int64) model.SysNotice {
 
 // Insert 新增信息
 func (s SysNotice) Insert(sysNotice model.SysNotice) int64 {
+	if sysNotice.CreateBy != "" {
+		ms := time.Now().UnixMilli()
+		sysNotice.UpdateBy = sysNotice.CreateBy
+		sysNotice.UpdateTime = ms
+		sysNotice.CreateTime = ms
+	}
 	return s.sysNoticeRepository.Insert(sysNotice)
 }
 
 // Update 修改信息
 func (s SysNotice) Update(sysNotice model.SysNotice) int64 {
+	if sysNotice.UpdateBy != "" {
+		sysNotice.UpdateTime = time.Now().UnixMilli()
+	}
 	return s.sysNoticeRepository.Update(sysNotice)
 }
 

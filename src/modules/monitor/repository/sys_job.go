@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"time"
-
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/monitor/model"
@@ -115,12 +113,6 @@ func (r SysJob) SelectByIds(ids []int64) []model.SysJob {
 
 // Insert 新增信息 返回新增数据ID
 func (r SysJob) Insert(sysJob model.SysJob) int64 {
-	if sysJob.CreateBy != "" {
-		ms := time.Now().UnixMilli()
-		sysJob.UpdateBy = sysJob.CreateBy
-		sysJob.UpdateTime = ms
-		sysJob.CreateTime = ms
-	}
 	// 执行插入
 	if err := db.DB("").Create(&sysJob).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
@@ -133,9 +125,6 @@ func (r SysJob) Insert(sysJob model.SysJob) int64 {
 func (r SysJob) Update(sysJob model.SysJob) int64 {
 	if sysJob.ID <= 0 {
 		return 0
-	}
-	if sysJob.UpdateBy != "" {
-		sysJob.UpdateTime = time.Now().UnixMilli()
 	}
 	tx := db.DB("").Model(&model.SysJob{})
 	// 构建查询条件

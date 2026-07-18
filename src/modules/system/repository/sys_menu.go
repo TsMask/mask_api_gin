@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"time"
-
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
@@ -73,31 +71,6 @@ func (r SysMenu) Insert(sysMenu model.SysMenu) int64 {
 	if sysMenu.ID > 0 {
 		return 0
 	}
-	if sysMenu.MenuIcon == "" {
-		sysMenu.MenuIcon = "#"
-	}
-	if sysMenu.CreateBy != "" {
-		ms := time.Now().UnixMilli()
-		sysMenu.UpdateBy = sysMenu.CreateBy
-		sysMenu.UpdateTime = ms
-		sysMenu.CreateTime = ms
-	}
-
-	// 根据菜单类型重置参数
-	switch sysMenu.MenuType {
-	case constants.MENU_TYPE_AUTH:
-		sysMenu.MenuComponent = ""
-		sysMenu.MenuExternal = "0"
-		sysMenu.MenuCache = "1"
-		sysMenu.MenuVisible = "1"
-		sysMenu.MenuPath = ""
-		sysMenu.MenuIcon = "#"
-	case constants.MENU_TYPE_DIR:
-		sysMenu.MenuComponent = ""
-		sysMenu.MenuExternal = "0"
-		sysMenu.MenuCache = "1"
-		sysMenu.MenuPerms = ""
-	}
 
 	// 执行插入
 	if err := db.DB("").Create(&sysMenu).Error; err != nil {
@@ -111,28 +84,6 @@ func (r SysMenu) Insert(sysMenu model.SysMenu) int64 {
 func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
 	if sysMenu.ID <= 0 {
 		return 0
-	}
-	if sysMenu.MenuIcon == "" {
-		sysMenu.MenuIcon = "#"
-	}
-	if sysMenu.UpdateBy != "" {
-		sysMenu.UpdateTime = time.Now().UnixMilli()
-	}
-
-	// 根据菜单类型重置参数
-	switch sysMenu.MenuType {
-	case constants.MENU_TYPE_AUTH:
-		sysMenu.MenuComponent = ""
-		sysMenu.MenuExternal = "0"
-		sysMenu.MenuCache = "1"
-		sysMenu.MenuVisible = "1"
-		sysMenu.MenuPath = ""
-		sysMenu.MenuIcon = "#"
-	case constants.MENU_TYPE_DIR:
-		sysMenu.MenuComponent = ""
-		sysMenu.MenuExternal = "0"
-		sysMenu.MenuCache = "1"
-		sysMenu.MenuPerms = ""
 	}
 
 	tx := db.DB("").Model(&model.SysMenu{})

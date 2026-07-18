@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -63,6 +64,12 @@ func (r SysRole) FindById(roleId int64) model.SysRole {
 
 // Insert 新增信息
 func (r SysRole) Insert(sysRole model.SysRole) int64 {
+	if sysRole.CreateBy != "" {
+		ms := time.Now().UnixMilli()
+		sysRole.UpdateBy = sysRole.CreateBy
+		sysRole.UpdateTime = ms
+		sysRole.CreateTime = ms
+	}
 	var insertId int64
 	err := db.Transaction("", func(tx *gorm.DB) error {
 		insertId = r.sysRoleRepository.Insert(tx, sysRole)
@@ -99,6 +106,9 @@ func (r SysRole) insertRoleMenu(d *gorm.DB, roleId int64, menuIds []int64) int64
 
 // Update 修改信息
 func (r SysRole) Update(sysRole model.SysRole) int64 {
+	if sysRole.UpdateBy != "" {
+		sysRole.UpdateTime = time.Now().UnixMilli()
+	}
 	var rows int64
 	err := db.Transaction("", func(tx *gorm.DB) error {
 		rows = r.sysRoleRepository.Update(tx, sysRole)
@@ -175,6 +185,9 @@ func (r SysRole) CheckUniqueByKey(roleKey string, roleId int64) bool {
 
 // UpdateAndDataScope 修改信息同时更新数据权限信息
 func (r SysRole) UpdateAndDataScope(sysRole model.SysRole) int64 {
+	if sysRole.UpdateBy != "" {
+		sysRole.UpdateTime = time.Now().UnixMilli()
+	}
 	var rows int64
 	err := db.Transaction("", func(tx *gorm.DB) error {
 		rows = r.sysRoleRepository.Update(tx, sysRole)

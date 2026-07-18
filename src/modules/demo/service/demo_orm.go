@@ -34,10 +34,11 @@ func (s DemoORMService) FindById(id int64) model.DemoORM {
 
 // Insert 新增
 func (s DemoORMService) Insert(demoORM model.DemoORM) int64 {
+	ms := time.Now().UnixMilli()
 	demoORM.CreateBy = "system"
-	demoORM.CreateTime = time.Now().UnixMilli()
 	demoORM.UpdateBy = demoORM.CreateBy
-	demoORM.UpdateTime = demoORM.CreateTime
+	demoORM.UpdateTime = ms
+	demoORM.CreateTime = ms
 	return s.demoORMRepository.Insert(demoORM)
 }
 

@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/cron"
@@ -49,6 +50,12 @@ func (s SysJob) FindById(id int64) model.SysJob {
 
 // Insert 新增
 func (s SysJob) Insert(sysJob model.SysJob) int64 {
+	if sysJob.CreateBy != "" {
+		ms := time.Now().UnixMilli()
+		sysJob.UpdateBy = sysJob.CreateBy
+		sysJob.UpdateTime = ms
+		sysJob.CreateTime = ms
+	}
 	insertId := s.sysJobRepository.Insert(sysJob)
 	if insertId > 0 && sysJob.JobStatus == constants.STATUS_YES {
 		sysJob.ID = insertId
@@ -59,6 +66,9 @@ func (s SysJob) Insert(sysJob model.SysJob) int64 {
 
 // Update 修改
 func (s SysJob) Update(sysJob model.SysJob) int64 {
+	if sysJob.UpdateBy != "" {
+		sysJob.UpdateTime = time.Now().UnixMilli()
+	}
 	rows := s.sysJobRepository.Update(sysJob)
 	if rows > 0 {
 		//状态正常添加队列任务

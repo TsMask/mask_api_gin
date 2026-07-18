@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"time"
-
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
@@ -85,12 +83,6 @@ func (r SysDept) SelectMapByIds(deptIds []int64) map[int64]model.SysDept {
 // Insert 新增信息 返回新增数据ID
 func (r SysDept) Insert(sysDept model.SysDept) int64 {
 	sysDept.DeptDel = "0"
-	if sysDept.CreateBy != "" {
-		ms := time.Now().UnixMilli()
-		sysDept.UpdateBy = sysDept.CreateBy
-		sysDept.UpdateTime = ms
-		sysDept.CreateTime = ms
-	}
 	// 执行插入
 	if err := db.DB("").Create(&sysDept).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
@@ -103,9 +95,6 @@ func (r SysDept) Insert(sysDept model.SysDept) int64 {
 func (r SysDept) Update(d *gorm.DB, sysDept model.SysDept) int64 {
 	if sysDept.ID <= 0 {
 		return 0
-	}
-	if sysDept.UpdateBy != "" {
-		sysDept.UpdateTime = time.Now().UnixMilli()
 	}
 	if d == nil {
 		d = db.DB("")

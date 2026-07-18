@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -57,6 +58,12 @@ func (s SysDictType) FindByType(dictType string) model.SysDictType {
 
 // Insert 新增信息
 func (s SysDictType) Insert(sysDictType model.SysDictType) int64 {
+	if sysDictType.CreateBy != "" {
+		ms := time.Now().UnixMilli()
+		sysDictType.UpdateBy = sysDictType.CreateBy
+		sysDictType.UpdateTime = ms
+		sysDictType.CreateTime = ms
+	}
 	insertId := s.sysDictTypeRepository.Insert(sysDictType)
 	if insertId > 0 {
 		s.CacheLoad(sysDictType.DictType)
@@ -66,6 +73,9 @@ func (s SysDictType) Insert(sysDictType model.SysDictType) int64 {
 
 // Update 修改信息
 func (s SysDictType) Update(sysDictType model.SysDictType) int64 {
+	if sysDictType.UpdateBy != "" {
+		sysDictType.UpdateTime = time.Now().UnixMilli()
+	}
 	arr := s.sysDictTypeRepository.SelectByIds([]int64{sysDictType.ID})
 	if len(arr) == 0 {
 		return 0

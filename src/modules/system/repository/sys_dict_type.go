@@ -2,7 +2,6 @@ package repository
 
 import (
 	"fmt"
-	"time"
 
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/logger"
@@ -124,12 +123,6 @@ func (r SysDictType) SelectByIds(ids []int64) []model.SysDictType {
 
 // Insert 新增信息 返回新增数据ID
 func (r SysDictType) Insert(sysDictType model.SysDictType) int64 {
-	if sysDictType.CreateBy != "" {
-		ms := time.Now().UnixMilli()
-		sysDictType.UpdateBy = sysDictType.CreateBy
-		sysDictType.UpdateTime = ms
-		sysDictType.CreateTime = ms
-	}
 	// 执行插入
 	if err := db.DB("").Create(&sysDictType).Error; err != nil {
 		logger.Errorf("insert err => %v", err.Error())
@@ -142,9 +135,6 @@ func (r SysDictType) Insert(sysDictType model.SysDictType) int64 {
 func (r SysDictType) Update(d *gorm.DB, sysDictType model.SysDictType) int64 {
 	if sysDictType.ID <= 0 {
 		return 0
-	}
-	if sysDictType.UpdateBy != "" {
-		sysDictType.UpdateTime = time.Now().UnixMilli()
 	}
 	if d == nil {
 		d = db.DB("")
