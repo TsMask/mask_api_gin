@@ -93,11 +93,17 @@ func (s SysMenu) Update(sysMenu model.SysMenu) int64 {
 // DeleteById 删除信息
 func (s SysMenu) DeleteById(menuId int64) int64 {
 	var rows int64
-	db.Transaction("", func(tx *gorm.DB) error {
-		s.sysRoleMenuRepository.DeleteByMenuIds(tx, []int64{menuId})
-		rows = s.sysMenuRepository.DeleteById(tx, menuId)
-		return nil
+	err := db.Transaction("", func(tx *gorm.DB) error {
+		if _, err := s.sysRoleMenuRepository.DeleteByMenuIds(tx, []int64{menuId}); err != nil {
+			return err
+		}
+		r, err := s.sysMenuRepository.DeleteById(tx, menuId)
+		rows = r
+		return err
 	})
+	if err != nil {
+		return rows
+	}
 	return rows
 }
 

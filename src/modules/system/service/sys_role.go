@@ -9,6 +9,7 @@ import (
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/db"
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/token"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
@@ -72,12 +73,15 @@ func (r SysRole) Insert(sysRole model.SysRole) int64 {
 	}
 	var insertId int64
 	err := db.Transaction("", func(tx *gorm.DB) error {
-		insertId = r.sysRoleRepository.Insert(tx, sysRole)
-		if insertId <= 0 {
-			return fmt.Errorf("insert role failed")
+		id, err := r.sysRoleRepository.Insert(tx, sysRole)
+		if err != nil {
+			return err
 		}
+		insertId = id
 		if len(sysRole.MenuIds) > 0 {
-			r.insertRoleMenu(tx, insertId, sysRole.MenuIds)
+			if _, err := r.insertRoleMenu(tx, insertId, sysRole.MenuIds); err != nil {
+				return err
+			}
 		}
 		return nil
 	})
@@ -88,9 +92,9 @@ func (r SysRole) Insert(sysRole model.SysRole) int64 {
 }
 
 // insertRoleMenu 新增角色菜单信息
-func (r SysRole) insertRoleMenu(d *gorm.DB, roleId int64, menuIds []int64) int64 {
+func (r SysRole) insertRoleMenu(d *gorm.DB, roleId int64, menuIds []int64) (int64, error) {
 	if roleId <= 0 || len(menuIds) <= 0 {
-		return 0
+		return 0, nil
 	}
 	sysRoleMenus := make([]model.SysRoleMenu, 0)
 	for _, menuId := range menuIds {
@@ -111,10 +115,18 @@ func (r SysRole) Update(sysRole model.SysRole) int64 {
 	}
 	var rows int64
 	err := db.Transaction("", func(tx *gorm.DB) error {
-		rows = r.sysRoleRepository.Update(tx, sysRole)
+		affected, err := r.sysRoleRepository.Update(tx, sysRole)
+		rows = affected
+		if err != nil {
+			return err
+		}
 		if rows > 0 {
-			r.sysRoleMenuRepository.DeleteByRoleIds(tx, []int64{sysRole.ID})
-			r.insertRoleMenu(tx, sysRole.ID, sysRole.MenuIds)
+			if _, err := r.sysRoleMenuRepository.DeleteByRoleIds(tx, []int64{sysRole.ID}); err != nil {
+				return err
+			}
+			if _, err := r.insertRoleMenu(tx, sysRole.ID, sysRole.MenuIds); err != nil {
+				return err
+			}
 		}
 		return nil
 	})
@@ -145,10 +157,15 @@ func (r SysRole) DeleteByIds(roleIds []int64) (int64, error) {
 	}
 	var rows int64
 	err := db.Transaction("", func(tx *gorm.DB) error {
-		r.sysRoleMenuRepository.DeleteByRoleIds(tx, roleIds)
-		r.sysRoleDeptRepository.DeleteByRoleIds(tx, roleIds)
-		rows = r.sysRoleRepository.DeleteByIds(tx, roleIds)
-		return nil
+		if _, err := r.sysRoleMenuRepository.DeleteByRoleIds(tx, roleIds); err != nil {
+			return err
+		}
+		if _, err := r.sysRoleDeptRepository.DeleteByRoleIds(tx, roleIds); err != nil {
+			return err
+		}
+		affected, err := r.sysRoleRepository.DeleteByIds(tx, roleIds)
+		rows = affected
+		return err
 	})
 	if err != nil {
 		return 0, err
@@ -190,9 +207,15 @@ func (r SysRole) UpdateAndDataScope(sysRole model.SysRole) int64 {
 	}
 	var rows int64
 	err := db.Transaction("", func(tx *gorm.DB) error {
-		rows = r.sysRoleRepository.Update(tx, sysRole)
+		affected, err := r.sysRoleRepository.Update(tx, sysRole)
+		rows = affected
+		if err != nil {
+			return err
+		}
 		if rows > 0 {
-			r.sysRoleDeptRepository.DeleteByRoleIds(tx, []int64{sysRole.ID})
+			if _, err := r.sysRoleDeptRepository.DeleteByRoleIds(tx, []int64{sysRole.ID}); err != nil {
+				return err
+			}
 			if sysRole.RoleDataScope == constants.ROLE_SCOPE_CUSTOM && len(sysRole.DeptIds) > 0 {
 				arr := make([]model.SysRoleDept, 0)
 				for _, deptId := range sysRole.DeptIds {
@@ -203,7 +226,9 @@ func (r SysRole) UpdateAndDataScope(sysRole model.SysRole) int64 {
 						RoleId: sysRole.ID, DeptId: deptId,
 					})
 				}
-				r.sysRoleDeptRepository.BatchInsert(tx, arr)
+				if _, err := r.sysRoleDeptRepository.BatchInsert(tx, arr); err != nil {
+					return err
+				}
 			}
 		}
 		return nil
@@ -228,7 +253,11 @@ func (r SysRole) InsertAuthUsers(roleId int64, userIds []int64) int64 {
 			UserId: userId, RoleId: roleId,
 		})
 	}
-	rows := r.sysUserRoleRepository.BatchInsert(nil, sysUserRoles)
+	rows, err := r.sysUserRoleRepository.BatchInsert(nil, sysUserRoles)
+	if err != nil {
+		logger.Errorf("insert err => %v", err.Error())
+		return 0
+	}
 	if rows > 0 {
 		token.RemoveByUserIds(userIds)
 	}
@@ -237,7 +266,11 @@ func (r SysRole) InsertAuthUsers(roleId int64, userIds []int64) int64 {
 
 // DeleteAuthUsers 批量取消授权用户角色
 func (r SysRole) DeleteAuthUsers(roleId int64, userIds []int64) int64 {
-	rows := r.sysUserRoleRepository.DeleteByRoleId(nil, roleId, userIds)
+	rows, err := r.sysUserRoleRepository.DeleteByRoleId(nil, roleId, userIds)
+	if err != nil {
+		logger.Errorf("delete err => %v", err.Error())
+		return 0
+	}
 	if rows > 0 {
 		token.RemoveByUserIds(userIds)
 	}

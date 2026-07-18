@@ -31,9 +31,9 @@ func (r SysRoleMenu) ExistRoleByMenuId(menuId int64) int64 {
 }
 
 // DeleteByRoleIds 批量删除关联By角色
-func (r SysRoleMenu) DeleteByRoleIds(d *gorm.DB, roleIds []int64) int64 {
+func (r SysRoleMenu) DeleteByRoleIds(d *gorm.DB, roleIds []int64) (int64, error) {
 	if len(roleIds) <= 0 {
-		return 0
+		return 0, nil
 	}
 	if d == nil {
 		d = db.DB("")
@@ -41,16 +41,15 @@ func (r SysRoleMenu) DeleteByRoleIds(d *gorm.DB, roleIds []int64) int64 {
 	tx := d.Where("role_id in ?", roleIds)
 	// 执行删除
 	if err := tx.Delete(&model.SysRoleMenu{}).Error; err != nil {
-		logger.Errorf("delete err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
 
 // DeleteByMenuIds 批量删除关联By菜单
-func (r SysRoleMenu) DeleteByMenuIds(d *gorm.DB, menuIds []int64) int64 {
+func (r SysRoleMenu) DeleteByMenuIds(d *gorm.DB, menuIds []int64) (int64, error) {
 	if len(menuIds) <= 0 {
-		return 0
+		return 0, nil
 	}
 	if d == nil {
 		d = db.DB("")
@@ -58,24 +57,22 @@ func (r SysRoleMenu) DeleteByMenuIds(d *gorm.DB, menuIds []int64) int64 {
 	tx := d.Where("menu_id in ?", menuIds)
 	// 执行删除
 	if err := tx.Delete(&model.SysRoleMenu{}).Error; err != nil {
-		logger.Errorf("delete err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
 
 // BatchInsert 批量新增信息
-func (r SysRoleMenu) BatchInsert(d *gorm.DB, sysRoleMenus []model.SysRoleMenu) int64 {
+func (r SysRoleMenu) BatchInsert(d *gorm.DB, sysRoleMenus []model.SysRoleMenu) (int64, error) {
 	if len(sysRoleMenus) <= 0 {
-		return 0
+		return 0, nil
 	}
 	if d == nil {
 		d = db.DB("")
 	}
 	tx := d.CreateInBatches(sysRoleMenus, 500)
 	if err := tx.Error; err != nil {
-		logger.Errorf("insert batch err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }

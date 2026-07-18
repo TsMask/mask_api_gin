@@ -144,23 +144,22 @@ func (r SysUser) SelectByIds(userIds []int64) []model.SysUser {
 }
 
 // Insert 新增信息
-func (r SysUser) Insert(d *gorm.DB, sysUser model.SysUser) int64 {
+func (r SysUser) Insert(d *gorm.DB, sysUser model.SysUser) (int64, error) {
 	sysUser.UserDel = "0"
 	if d == nil {
 		d = db.DB("")
 	}
 	// 执行插入
 	if err := d.Create(&sysUser).Error; err != nil {
-		logger.Errorf("insert err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return sysUser.ID
+	return sysUser.ID, nil
 }
 
 // Update 修改信息
-func (r SysUser) Update(d *gorm.DB, sysUser model.SysUser) int64 {
+func (r SysUser) Update(d *gorm.DB, sysUser model.SysUser) (int64, error) {
 	if sysUser.ID <= 0 {
-		return 0
+		return 0, nil
 	}
 	if d == nil {
 		d = db.DB("")
@@ -171,16 +170,15 @@ func (r SysUser) Update(d *gorm.DB, sysUser model.SysUser) int64 {
 	tx = tx.Omit("id", "create_by", "create_time", "user_del")
 	// 执行更新
 	if err := tx.Updates(sysUser).Error; err != nil {
-		logger.Errorf("update err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
 
 // DeleteByIds 批量删除信息
-func (r SysUser) DeleteByIds(d *gorm.DB, userIds []int64) int64 {
+func (r SysUser) DeleteByIds(d *gorm.DB, userIds []int64) (int64, error) {
 	if len(userIds) <= 0 {
-		return 0
+		return 0, nil
 	}
 	if d == nil {
 		d = db.DB("")
@@ -190,10 +188,9 @@ func (r SysUser) DeleteByIds(d *gorm.DB, userIds []int64) int64 {
 	tx = tx.Where("id in ?", userIds)
 	// 执行更新删除标记（软删除）
 	if err := tx.Update("user_del", "1").Error; err != nil {
-		logger.Errorf("update err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
 
 // CheckUnique 检查信息是否唯一

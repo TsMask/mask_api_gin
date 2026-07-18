@@ -132,9 +132,9 @@ func (r SysDictType) Insert(sysDictType model.SysDictType) int64 {
 }
 
 // Update 修改信息 返回受影响的行数
-func (r SysDictType) Update(d *gorm.DB, sysDictType model.SysDictType) int64 {
+func (r SysDictType) Update(d *gorm.DB, sysDictType model.SysDictType) (int64, error) {
 	if sysDictType.ID <= 0 {
-		return 0
+		return 0, nil
 	}
 	if d == nil {
 		d = db.DB("")
@@ -145,10 +145,9 @@ func (r SysDictType) Update(d *gorm.DB, sysDictType model.SysDictType) int64 {
 	tx = tx.Omit("id", "create_by", "create_time")
 	// 执行更新
 	if err := tx.Updates(sysDictType).Error; err != nil {
-		logger.Errorf("update err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
 
 // DeleteByIds 批量删除信息 返回受影响的行数（物理删除）

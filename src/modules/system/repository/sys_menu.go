@@ -99,9 +99,9 @@ func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
 }
 
 // DeleteById 删除信息 返回受影响行数（软删除）
-func (r SysMenu) DeleteById(d *gorm.DB, menuId int64) int64 {
+func (r SysMenu) DeleteById(d *gorm.DB, menuId int64) (int64, error) {
 	if menuId <= 0 {
-		return 0
+		return 0, nil
 	}
 	if d == nil {
 		d = db.DB("")
@@ -111,10 +111,9 @@ func (r SysMenu) DeleteById(d *gorm.DB, menuId int64) int64 {
 	tx = tx.Where("id = ?", menuId)
 	// 执行更新删除标记
 	if err := tx.Update("menu_del", "1").Error; err != nil {
-		logger.Errorf("update err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
 
 // CheckUnique 检查信息是否唯一

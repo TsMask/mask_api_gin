@@ -59,30 +59,38 @@ func (s SysDept) Update(sysDept model.SysDept) int64 {
 	parentDept := s.sysDeptRepository.SelectById(sysDept.ParentId)
 
 	var rows int64
-	db.Transaction("", func(tx *gorm.DB) error {
+	err := db.Transaction("", func(tx *gorm.DB) error {
 		// 上级与当前部门祖级列表更新
 		if parentDept.ID == sysDept.ParentId && dept.ID == sysDept.ID {
 			newAncestors := fmt.Sprintf("%s,%d", parentDept.Ancestors, parentDept.ID)
 			oldAncestors := dept.Ancestors
 			// 祖级列表不一致时更新
 			if newAncestors != oldAncestors {
-				s.updateDeptChildren(tx, dept.ID, newAncestors, oldAncestors)
+				if _, e := s.updateDeptChildren(tx, dept.ID, newAncestors, oldAncestors); e != nil {
+					return e
+				}
 			}
 		}
 		// 如果该部门是启用状态，则启用该部门的所有上级部门
 		if sysDept.DeptStatus == constants.STATUS_YES && parentDept.DeptStatus == constants.STATUS_NO {
-			s.updateDeptStatusNormal(tx, sysDept.Ancestors)
+			if _, e := s.updateDeptStatusNormal(tx, sysDept.Ancestors); e != nil {
+				return e
+			}
 		}
-		rows = s.sysDeptRepository.Update(nil, sysDept)
-		return nil
+		r, e := s.sysDeptRepository.Update(tx, sysDept)
+		rows = r
+		return e
 	})
+	if err != nil {
+		return rows
+	}
 	return rows
 }
 
 // updateDeptStatusNormal 修改所在部门正常状态
-func (s SysDept) updateDeptStatusNormal(d *gorm.DB, ancestors string) int64 {
+func (s SysDept) updateDeptStatusNormal(d *gorm.DB, ancestors string) (int64, error) {
 	if ancestors == "" || ancestors == "0" {
-		return 0
+		return 0, nil
 	}
 	deptIds := make([]int64, 0)
 	for _, v := range strings.Split(ancestors, ",") {
@@ -92,10 +100,10 @@ func (s SysDept) updateDeptStatusNormal(d *gorm.DB, ancestors string) int64 {
 }
 
 // updateDeptChildren 修改子元素关系
-func (s SysDept) updateDeptChildren(d *gorm.DB, deptId int64, newAncestors, oldAncestors string) int64 {
+func (s SysDept) updateDeptChildren(d *gorm.DB, deptId int64, newAncestors, oldAncestors string) (int64, error) {
 	arr := s.sysDeptRepository.SelectChildrenDeptById(deptId)
 	if len(arr) == 0 {
-		return 0
+		return 0, nil
 	}
 	// 替换父ID
 	for i := range arr {
@@ -109,11 +117,17 @@ func (s SysDept) updateDeptChildren(d *gorm.DB, deptId int64, newAncestors, oldA
 // DeleteById 删除信息
 func (s SysDept) DeleteById(deptId int64) int64 {
 	var rows int64
-	db.Transaction("", func(tx *gorm.DB) error {
-		s.sysRoleDeptRepository.DeleteByDeptIds(tx, []int64{deptId})
-		rows = s.sysDeptRepository.DeleteById(tx, deptId)
-		return nil
+	err := db.Transaction("", func(tx *gorm.DB) error {
+		if _, err := s.sysRoleDeptRepository.DeleteByDeptIds(tx, []int64{deptId}); err != nil {
+			return err
+		}
+		r, err := s.sysDeptRepository.DeleteById(tx, deptId)
+		rows = r
+		return err
 	})
+	if err != nil {
+		return rows
+	}
 	return rows
 }
 

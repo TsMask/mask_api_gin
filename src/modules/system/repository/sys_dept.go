@@ -92,9 +92,9 @@ func (r SysDept) Insert(sysDept model.SysDept) int64 {
 }
 
 // Update 修改信息 返回受影响行数
-func (r SysDept) Update(d *gorm.DB, sysDept model.SysDept) int64 {
+func (r SysDept) Update(d *gorm.DB, sysDept model.SysDept) (int64, error) {
 	if sysDept.ID <= 0 {
-		return 0
+		return 0, nil
 	}
 	if d == nil {
 		d = db.DB("")
@@ -105,16 +105,15 @@ func (r SysDept) Update(d *gorm.DB, sysDept model.SysDept) int64 {
 	tx = tx.Omit("id", "create_by", "create_time", "dept_del")
 	// 执行更新
 	if err := tx.Updates(sysDept).Error; err != nil {
-		logger.Errorf("update err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
 
 // DeleteById 删除信息 返回受影响行数（软删除）
-func (r SysDept) DeleteById(d *gorm.DB, deptId int64) int64 {
+func (r SysDept) DeleteById(d *gorm.DB, deptId int64) (int64, error) {
 	if deptId <= 0 {
-		return 0
+		return 0, nil
 	}
 	if d == nil {
 		d = db.DB("")
@@ -124,10 +123,9 @@ func (r SysDept) DeleteById(d *gorm.DB, deptId int64) int64 {
 	tx = tx.Where("id = ?", deptId)
 	// 执行更新删除标记
 	if err := tx.Update("dept_del", "1").Error; err != nil {
-		logger.Errorf("update err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
 
 // CheckUnique 检查信息是否唯一 返回数据ID
@@ -226,9 +224,9 @@ func (r SysDept) SelectChildrenDeptById(deptId int64) []model.SysDept {
 }
 
 // UpdateDeptStatusNormal 修改所在部门正常状态
-func (r SysDept) UpdateDeptStatusNormal(d *gorm.DB, deptIds []int64) int64 {
+func (r SysDept) UpdateDeptStatusNormal(d *gorm.DB, deptIds []int64) (int64, error) {
 	if len(deptIds) <= 0 {
-		return 0
+		return 0, nil
 	}
 	if d == nil {
 		d = db.DB("")
@@ -238,16 +236,15 @@ func (r SysDept) UpdateDeptStatusNormal(d *gorm.DB, deptIds []int64) int64 {
 	tx = tx.Where("id in ?", deptIds)
 	// 执行更新状态标记
 	if err := tx.Update("dept_status", "1").Error; err != nil {
-		logger.Errorf("update err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
 
 // UpdateDeptChildren 修改子元素关系
-func (r SysDept) UpdateDeptChildren(d *gorm.DB, arr []model.SysDept) int64 {
+func (r SysDept) UpdateDeptChildren(d *gorm.DB, arr []model.SysDept) (int64, error) {
 	if len(arr) == 0 {
-		return 0
+		return 0, nil
 	}
 
 	// 逐条更新子部门的 ancestors，使用参数化避免 SQL 注入
@@ -262,10 +259,9 @@ func (r SysDept) UpdateDeptChildren(d *gorm.DB, arr []model.SysDept) int64 {
 		tx := d.Model(&model.SysDept{})
 		tx = tx.Where("id = ?", dept.ID)
 		if err := tx.Update("ancestors", dept.Ancestors).Error; err != nil {
-			logger.Errorf("update dept children err => %v", err.Error())
-			continue
+			return affected, err
 		}
 		affected += tx.RowsAffected
 	}
-	return affected
+	return affected, nil
 }

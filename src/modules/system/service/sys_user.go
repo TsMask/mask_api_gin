@@ -10,6 +10,7 @@ import (
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/db"
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/token"
 	"mask_api_gin/src/framework/utils/crypto"
 	"mask_api_gin/src/framework/utils/date"
@@ -135,12 +136,17 @@ func (s SysUser) Insert(sysUser model.SysUser) int64 {
 	s.hashUserPassword(&sysUser)
 	var insertId int64
 	err := db.Transaction("", func(tx *gorm.DB) error {
-		insertId = s.sysUserRepository.Insert(tx, sysUser)
-		if insertId <= 0 {
-			return fmt.Errorf("insert user failed")
+		id, err := s.sysUserRepository.Insert(tx, sysUser)
+		if err != nil {
+			return err
 		}
-		s.insertUserRole(tx, insertId, sysUser.RoleIds)
-		s.insertUserPost(tx, insertId, sysUser.PostIds)
+		insertId = id
+		if _, err := s.insertUserRole(tx, insertId, sysUser.RoleIds); err != nil {
+			return err
+		}
+		if _, err := s.insertUserPost(tx, insertId, sysUser.PostIds); err != nil {
+			return err
+		}
 		return nil
 	})
 	if err != nil {
@@ -150,9 +156,9 @@ func (s SysUser) Insert(sysUser model.SysUser) int64 {
 }
 
 // insertUserRole 新增用户角色信息
-func (s SysUser) insertUserRole(d *gorm.DB, userId int64, roleIds []int64) int64 {
+func (s SysUser) insertUserRole(d *gorm.DB, userId int64, roleIds []int64) (int64, error) {
 	if userId <= 0 || len(roleIds) <= 0 {
-		return 0
+		return 0, nil
 	}
 
 	var arr []model.SysUserRole
@@ -170,9 +176,9 @@ func (s SysUser) insertUserRole(d *gorm.DB, userId int64, roleIds []int64) int64
 }
 
 // insertUserPost 新增用户岗位信息
-func (s SysUser) insertUserPost(d *gorm.DB, userId int64, postIds []int64) int64 {
+func (s SysUser) insertUserPost(d *gorm.DB, userId int64, postIds []int64) (int64, error) {
 	if userId <= 0 || len(postIds) <= 0 {
-		return 0
+		return 0, nil
 	}
 
 	var arr []model.SysUserPost
@@ -194,7 +200,12 @@ func (s SysUser) Update(sysUser model.SysUser) int64 {
 		sysUser.UpdateTime = time.Now().UnixMilli()
 	}
 	s.hashUserPassword(&sysUser)
-	return s.sysUserRepository.Update(nil, sysUser)
+	rows, err := s.sysUserRepository.Update(nil, sysUser)
+	if err != nil {
+		logger.Errorf("update err => %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // UpdateUserAndRolePost 修改用户信息同时更新角色和岗位
@@ -205,12 +216,21 @@ func (s SysUser) UpdateUserAndRolePost(sysUser model.SysUser) int64 {
 	s.hashUserPassword(&sysUser)
 	var rows int64
 	err := db.Transaction("", func(tx *gorm.DB) error {
-		s.sysUserRoleRepository.DeleteByUserIds(tx, []int64{sysUser.ID})
-		s.insertUserRole(tx, sysUser.ID, sysUser.RoleIds)
-		s.sysUserPostRepository.DeleteByUserIds(tx, []int64{sysUser.ID})
-		s.insertUserPost(tx, sysUser.ID, sysUser.PostIds)
-		rows = s.sysUserRepository.Update(tx, sysUser)
-		return nil
+		if _, err := s.sysUserRoleRepository.DeleteByUserIds(tx, []int64{sysUser.ID}); err != nil {
+			return err
+		}
+		if _, err := s.insertUserRole(tx, sysUser.ID, sysUser.RoleIds); err != nil {
+			return err
+		}
+		if _, err := s.sysUserPostRepository.DeleteByUserIds(tx, []int64{sysUser.ID}); err != nil {
+			return err
+		}
+		if _, err := s.insertUserPost(tx, sysUser.ID, sysUser.PostIds); err != nil {
+			return err
+		}
+		r, err := s.sysUserRepository.Update(tx, sysUser)
+		rows = r
+		return err
 	})
 	if err != nil {
 		return 0
@@ -232,10 +252,15 @@ func (s SysUser) DeleteByIds(userIds []int64) (int64, error) {
 	}
 	var rows int64
 	err := db.Transaction("", func(tx *gorm.DB) error {
-		s.sysUserRoleRepository.DeleteByUserIds(tx, userIds)
-		s.sysUserPostRepository.DeleteByUserIds(tx, userIds)
-		rows = s.sysUserRepository.DeleteByIds(tx, userIds)
-		return nil
+		if _, err := s.sysUserRoleRepository.DeleteByUserIds(tx, userIds); err != nil {
+			return err
+		}
+		if _, err := s.sysUserPostRepository.DeleteByUserIds(tx, userIds); err != nil {
+			return err
+		}
+		r, err := s.sysUserRepository.DeleteByIds(tx, userIds)
+		rows = r
+		return err
 	})
 	if err != nil {
 		return 0, err

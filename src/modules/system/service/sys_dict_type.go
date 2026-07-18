@@ -84,9 +84,15 @@ func (s SysDictType) Update(sysDictType model.SysDictType) int64 {
 	oldDictType := arr[0].DictType
 	var rows int64
 	err := db.Transaction("", func(tx *gorm.DB) error {
-		rows = s.sysDictTypeRepository.Update(tx, sysDictType)
+		affected, err := s.sysDictTypeRepository.Update(tx, sysDictType)
+		rows = affected
+		if err != nil {
+			return err
+		}
 		if rows > 0 && oldDictType != "" && oldDictType != sysDictType.DictType {
-			s.sysDictDataRepository.UpdateDataByDictType(tx, oldDictType, sysDictType.DictType)
+			if _, err := s.sysDictDataRepository.UpdateDataByDictType(tx, oldDictType, sysDictType.DictType); err != nil {
+				return err
+			}
 		}
 		return nil
 	})

@@ -31,9 +31,9 @@ func (r SysUserPost) ExistUserByPostId(postId int64) int64 {
 }
 
 // DeleteByUserIds 批量删除关联By用户
-func (r SysUserPost) DeleteByUserIds(d *gorm.DB, userIds []int64) int64 {
+func (r SysUserPost) DeleteByUserIds(d *gorm.DB, userIds []int64) (int64, error) {
 	if len(userIds) <= 0 {
-		return 0
+		return 0, nil
 	}
 	if d == nil {
 		d = db.DB("")
@@ -41,24 +41,22 @@ func (r SysUserPost) DeleteByUserIds(d *gorm.DB, userIds []int64) int64 {
 	tx := d.Where("user_id in ?", userIds)
 	// 执行删除
 	if err := tx.Delete(&model.SysUserPost{}).Error; err != nil {
-		logger.Errorf("delete err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
 
 // BatchInsert 批量新增信息
-func (r SysUserPost) BatchInsert(d *gorm.DB, sysUserPosts []model.SysUserPost) int64 {
+func (r SysUserPost) BatchInsert(d *gorm.DB, sysUserPosts []model.SysUserPost) (int64, error) {
 	if len(sysUserPosts) <= 0 {
-		return 0
+		return 0, nil
 	}
 	if d == nil {
 		d = db.DB("")
 	}
 	tx := d.CreateInBatches(sysUserPosts, 500)
 	if err := tx.Error; err != nil {
-		logger.Errorf("insert batch err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }

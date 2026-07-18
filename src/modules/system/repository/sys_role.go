@@ -132,23 +132,22 @@ func (r SysRole) SelectByIds(roleIds []int64) []model.SysRole {
 }
 
 // Insert 新增信息 返回新增数据ID
-func (r SysRole) Insert(d *gorm.DB, sysRole model.SysRole) int64 {
+func (r SysRole) Insert(d *gorm.DB, sysRole model.SysRole) (int64, error) {
 	sysRole.RoleDel = "0"
 	if d == nil {
 		d = db.DB("")
 	}
 	// 执行插入
 	if err := d.Create(&sysRole).Error; err != nil {
-		logger.Errorf("insert err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return sysRole.ID
+	return sysRole.ID, nil
 }
 
 // Update 修改信息 返回受影响行数
-func (r SysRole) Update(d *gorm.DB, sysRole model.SysRole) int64 {
+func (r SysRole) Update(d *gorm.DB, sysRole model.SysRole) (int64, error) {
 	if sysRole.ID <= 0 {
-		return 0
+		return 0, nil
 	}
 	if d == nil {
 		d = db.DB("")
@@ -159,16 +158,15 @@ func (r SysRole) Update(d *gorm.DB, sysRole model.SysRole) int64 {
 	tx = tx.Omit("id", "create_by", "create_time", "role_del")
 	// 执行更新
 	if err := tx.Updates(sysRole).Error; err != nil {
-		logger.Errorf("update err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
 
 // DeleteByIds 批量删除信息 返回受影响行数（软删除）
-func (r SysRole) DeleteByIds(d *gorm.DB, roleIds []int64) int64 {
+func (r SysRole) DeleteByIds(d *gorm.DB, roleIds []int64) (int64, error) {
 	if len(roleIds) <= 0 {
-		return 0
+		return 0, nil
 	}
 	if d == nil {
 		d = db.DB("")
@@ -178,10 +176,9 @@ func (r SysRole) DeleteByIds(d *gorm.DB, roleIds []int64) int64 {
 	tx = tx.Where("id in ?", roleIds)
 	// 执行更新删除标记（软删除）
 	if err := tx.Update("role_del", "1").Error; err != nil {
-		logger.Errorf("update err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
 
 // CheckUnique 检查信息是否唯一

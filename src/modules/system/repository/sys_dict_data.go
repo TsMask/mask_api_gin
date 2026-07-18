@@ -187,9 +187,9 @@ func (r SysDictData) ExistDataByDictType(dictType string) int64 {
 }
 
 // UpdateDataByDictType 更新一组字典类型 返回受影响行数
-func (r SysDictData) UpdateDataByDictType(d *gorm.DB, oldDictType string, newDictType string) int64 {
+func (r SysDictData) UpdateDataByDictType(d *gorm.DB, oldDictType string, newDictType string) (int64, error) {
 	if oldDictType == "" || newDictType == "" {
-		return 0
+		return 0, nil
 	}
 	if d == nil {
 		d = db.DB("")
@@ -199,8 +199,7 @@ func (r SysDictData) UpdateDataByDictType(d *gorm.DB, oldDictType string, newDic
 	tx = tx.Where("dict_type = ?", oldDictType)
 	// 执行更新字典类型
 	if err := tx.Update("dict_type", newDictType).Error; err != nil {
-		logger.Errorf("update err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
