@@ -2,7 +2,6 @@ package repository
 
 import (
 	"mask_api_gin/src/framework/database/db"
-	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"
@@ -15,19 +14,18 @@ var NewSysRoleMenu = &SysRoleMenu{}
 type SysRoleMenu struct{}
 
 // ExistRoleByMenuId 存在角色使用数量By菜单
-func (r SysRoleMenu) ExistRoleByMenuId(menuId int64) int64 {
+func (r SysRoleMenu) ExistRoleByMenuId(menuId int64) (int64, error) {
 	if menuId <= 0 {
-		return 0
+		return 0, nil
 	}
 	tx := db.DB("").Model(&model.SysRoleMenu{})
 	tx = tx.Where("menu_id = ?", menuId)
 	// 查询数据
 	var count int64 = 0
 	if err := tx.Count(&count).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return count
+		return count, err
 	}
-	return count
+	return count, nil
 }
 
 // DeleteByRoleIds 批量删除关联By角色

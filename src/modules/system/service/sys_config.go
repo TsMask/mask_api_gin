@@ -7,6 +7,7 @@ import (
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/redis"
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/model"
@@ -25,7 +26,11 @@ type SysConfig struct {
 
 // FindByPage 分页查询列表数据
 func (s SysConfig) FindByPage(query map[string]string) ([]model.SysConfig, int64) {
-	return s.sysConfigRepository.SelectByPage(query)
+	rows, total, err := s.sysConfigRepository.SelectByPage(query)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows, total
 }
 
 // FindById 通过ID查询信息
@@ -33,7 +38,10 @@ func (s SysConfig) FindById(id int64) model.SysConfig {
 	if id <= 0 {
 		return model.SysConfig{}
 	}
-	configs := s.sysConfigRepository.SelectByIds([]int64{id})
+	configs, err := s.sysConfigRepository.SelectByIds([]int64{id})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(configs) > 0 {
 		return configs[0]
 	}
@@ -48,7 +56,11 @@ func (s SysConfig) Insert(sysConfig model.SysConfig) int64 {
 		sysConfig.UpdateTime = ms
 		sysConfig.CreateTime = ms
 	}
-	id := s.sysConfigRepository.Insert(sysConfig)
+	id, err := s.sysConfigRepository.Insert(sysConfig)
+	if err != nil {
+		logger.Errorf("insert err => %v", err.Error())
+		return 0
+	}
 	if id > 0 {
 		s.CacheLoad(sysConfig.ConfigKey)
 	}
@@ -60,7 +72,11 @@ func (s SysConfig) Update(sysConfig model.SysConfig) int64 {
 	if sysConfig.UpdateBy != "" {
 		sysConfig.UpdateTime = time.Now().UnixMilli()
 	}
-	rows := s.sysConfigRepository.Update(sysConfig)
+	rows, err := s.sysConfigRepository.Update(sysConfig)
+	if err != nil {
+		logger.Errorf("update err => %v", err.Error())
+		return 0
+	}
 	if rows > 0 {
 		s.CacheLoad(sysConfig.ConfigKey)
 	}
@@ -70,7 +86,10 @@ func (s SysConfig) Update(sysConfig model.SysConfig) int64 {
 // DeleteByIds 批量删除信息
 func (s SysConfig) DeleteByIds(ids []int64) (int64, error) {
 	// 检查是否存在
-	configs := s.sysConfigRepository.SelectByIds(ids)
+	configs, err := s.sysConfigRepository.SelectByIds(ids)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(configs) <= 0 {
 		return 0, fmt.Errorf("没有权限访问参数配置数据！")
 	}
@@ -79,16 +98,19 @@ func (s SysConfig) DeleteByIds(ids []int64) (int64, error) {
 		s.CacheClean(config.ConfigKey)
 	}
 	if len(configs) == len(ids) {
-		return s.sysConfigRepository.DeleteByIds(ids), nil
+		return s.sysConfigRepository.DeleteByIds(ids)
 	}
 	return 0, fmt.Errorf("删除参数配置信息失败！")
 }
 
 // CheckUniqueByKey 检查参数键名是否唯一
 func (s SysConfig) CheckUniqueByKey(configKey string, id int64) bool {
-	uniqueId := s.sysConfigRepository.CheckUnique(model.SysConfig{
+	uniqueId, err := s.sysConfigRepository.CheckUnique(model.SysConfig{
 		ConfigKey: configKey,
 	})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if uniqueId == id {
 		return true
 	}
@@ -103,7 +125,10 @@ func (s SysConfig) FindValueByKey(configKey string) string {
 		return cacheValue
 	}
 	// 无缓存时读取数据放入缓存中
-	configValue := s.sysConfigRepository.SelectValueByKey(configKey)
+	configValue, err := s.sysConfigRepository.SelectValueByKey(configKey)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if configValue != "" {
 		_ = redis.Set("", cacheKey, configValue, 0)
 		return configValue
@@ -115,7 +140,10 @@ func (s SysConfig) FindValueByKey(configKey string) string {
 func (s SysConfig) CacheLoad(configKey string) {
 	// 查询全部参数
 	if configKey == "*" || configKey == "" {
-		sysConfigs := s.sysConfigRepository.Select(model.SysConfig{})
+		sysConfigs, err := s.sysConfigRepository.Select(model.SysConfig{})
+		if err != nil {
+			logger.Errorf("query err => %v", err.Error())
+		}
 		for _, v := range sysConfigs {
 			key := constants.CACHE_SYS_CONFIG + ":" + v.ConfigKey
 			_ = redis.Del("", key)
@@ -124,7 +152,10 @@ func (s SysConfig) CacheLoad(configKey string) {
 		return
 	}
 	// 指定参数
-	cacheValue := s.sysConfigRepository.SelectValueByKey(configKey)
+	cacheValue, err := s.sysConfigRepository.SelectValueByKey(configKey)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if cacheValue != "" {
 		key := constants.CACHE_SYS_CONFIG + ":" + configKey
 		_ = redis.Del("", key)

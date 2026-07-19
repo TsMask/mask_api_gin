@@ -73,14 +73,20 @@ func (s SysUser) fillUsersDeptAndRoles(users []model.SysUser) {
 	for id := range deptIdSet {
 		deptIds = append(deptIds, id)
 	}
-	deptMap := s.sysDeptRepository.SelectMapByIds(deptIds)
+	deptMap, err := s.sysDeptRepository.SelectMapByIds(deptIds)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 
 	// 批量查询角色
 	userIds := make([]int64, 0, len(userIdSet))
 	for id := range userIdSet {
 		userIds = append(userIds, id)
 	}
-	roleMap := s.sysRoleRepository.SelectByUserIds(userIds)
+	roleMap, err := s.sysRoleRepository.SelectByUserIds(userIds)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 
 	// 填充
 	for i := range users {
@@ -102,14 +108,21 @@ func (s SysUser) fillUsersDeptAndRoles(users []model.SysUser) {
 
 // FindByPage 分页查询列表数据
 func (s SysUser) FindByPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64) {
-	rows, total := s.sysUserRepository.SelectByPage(query, dataScopeSQL)
+	rows, total, err := s.sysUserRepository.SelectByPage(query, dataScopeSQL)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	s.fillUsersDeptAndRoles(rows)
 	return rows, total
 }
 
 // Find 查询数据
 func (s SysUser) Find(sysUser model.SysUser) []model.SysUser {
-	return s.sysUserRepository.Select(sysUser)
+	rows, err := s.sysUserRepository.Select(sysUser)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows
 }
 
 // FindById 通过ID查询信息
@@ -117,7 +130,10 @@ func (s SysUser) FindById(userId int64) model.SysUser {
 	if userId <= 0 {
 		return model.SysUser{}
 	}
-	users := s.sysUserRepository.SelectByIds([]int64{userId})
+	users, err := s.sysUserRepository.SelectByIds([]int64{userId})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(users) > 0 {
 		s.fillUsersDeptAndRoles(users)
 		return users[0]
@@ -243,7 +259,10 @@ func (s SysUser) UpdateUserAndRolePost(sysUser model.SysUser) int64 {
 // DeleteByIds 批量删除信息
 func (s SysUser) DeleteByIds(userIds []int64) (int64, error) {
 	// 检查是否存在
-	users := s.sysUserRepository.SelectByIds(userIds)
+	users, err := s.sysUserRepository.SelectByIds(userIds)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(users) <= 0 {
 		return 0, fmt.Errorf("没有权限访问用户数据！")
 	}
@@ -251,7 +270,7 @@ func (s SysUser) DeleteByIds(userIds []int64) (int64, error) {
 		return 0, fmt.Errorf("删除用户信息失败！")
 	}
 	var rows int64
-	err := db.Transaction("", func(tx *gorm.DB) error {
+	err = db.Transaction("", func(tx *gorm.DB) error {
 		if _, err := s.sysUserRoleRepository.DeleteByUserIds(tx, userIds); err != nil {
 			return err
 		}
@@ -272,9 +291,12 @@ func (s SysUser) DeleteByIds(userIds []int64) (int64, error) {
 
 // CheckUniqueByUserName 检查用户名称是否唯一
 func (s SysUser) CheckUniqueByUserName(userName string, userId int64) bool {
-	uniqueId := s.sysUserRepository.CheckUnique(model.SysUser{
+	uniqueId, err := s.sysUserRepository.CheckUnique(model.SysUser{
 		UserName: userName,
 	})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if uniqueId == userId {
 		return true
 	}
@@ -283,9 +305,12 @@ func (s SysUser) CheckUniqueByUserName(userName string, userId int64) bool {
 
 // CheckUniqueByPhone 检查手机号码是否唯一
 func (s SysUser) CheckUniqueByPhone(phone string, userId int64) bool {
-	uniqueId := s.sysUserRepository.CheckUnique(model.SysUser{
+	uniqueId, err := s.sysUserRepository.CheckUnique(model.SysUser{
 		UserPhone: phone,
 	})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if uniqueId == userId {
 		return true
 	}
@@ -294,9 +319,12 @@ func (s SysUser) CheckUniqueByPhone(phone string, userId int64) bool {
 
 // CheckUniqueByEmail 检查Email是否唯一
 func (s SysUser) CheckUniqueByEmail(email string, userId int64) bool {
-	uniqueId := s.sysUserRepository.CheckUnique(model.SysUser{
+	uniqueId, err := s.sysUserRepository.CheckUnique(model.SysUser{
 		UserEmail: email,
 	})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if uniqueId == userId {
 		return true
 	}
@@ -305,7 +333,10 @@ func (s SysUser) CheckUniqueByEmail(email string, userId int64) bool {
 
 // FindByUserName 通过用户名查询用户信息
 func (s SysUser) FindByUserName(userName string) model.SysUser {
-	userinfo := s.sysUserRepository.SelectByUserName(userName)
+	userinfo, err := s.sysUserRepository.SelectByUserName(userName)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if userinfo.UserName != userName {
 		return userinfo
 	}
@@ -316,7 +347,10 @@ func (s SysUser) FindByUserName(userName string) model.SysUser {
 
 // FindAuthUsersPage 根据条件分页查询分配用户角色列表
 func (s SysUser) FindAuthUsersPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64) {
-	rows, total := s.sysUserRepository.SelectAuthUsersByPage(query, dataScopeSQL)
+	rows, total, err := s.sysUserRepository.SelectAuthUsersByPage(query, dataScopeSQL)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	s.fillUsersDeptAndRoles(rows)
 	return rows, total
 }

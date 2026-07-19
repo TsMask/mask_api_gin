@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/model"
@@ -24,7 +25,11 @@ type SysLogLogin struct {
 
 // FindByPage 分页查询列表数据
 func (s SysLogLogin) FindByPage(query map[string]string, dataScopeSQL string) ([]model.SysLogLogin, int64) {
-	return s.sysLogLoginRepository.SelectByPage(query, dataScopeSQL)
+	rows, total, err := s.sysLogLoginRepository.SelectByPage(query, dataScopeSQL)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows, total
 }
 
 // Insert 新增信息
@@ -39,12 +44,22 @@ func (s SysLogLogin) Insert(userName, status, msg string, ilobArr [4]string) int
 		LoginMsg:      msg,
 	}
 	sysSysLogLogin.CreateTime = time.Now().UnixMilli()
-	return s.sysLogLoginRepository.Insert(sysSysLogLogin)
+	rows, err := s.sysLogLoginRepository.Insert(sysSysLogLogin)
+	if err != nil {
+		logger.Errorf("insert err => %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // Clean 清空系统登录日志
 func (s SysLogLogin) Clean() int64 {
-	return s.sysLogLoginRepository.Clean()
+	rows, err := s.sysLogLoginRepository.Clean()
+	if err != nil {
+		logger.Errorf("clean err => %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // ExportData 导出数据表格

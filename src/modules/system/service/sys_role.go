@@ -35,12 +35,19 @@ type SysRole struct {
 
 // FindByPage 分页查询列表数据
 func (r SysRole) FindByPage(query map[string]string) ([]model.SysRole, int64) {
-	return r.sysRoleRepository.SelectByPage(query)
+	rows, total, err := r.sysRoleRepository.SelectByPage(query)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows, total
 }
 
 // Find 查询列表数据
 func (r SysRole) Find(sysRole model.SysRole) []model.SysRole {
-	rows := r.sysRoleRepository.Select(sysRole)
+	rows, err := r.sysRoleRepository.Select(sysRole)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	arr := make([]model.SysRole, 0)
 	for _, v := range rows {
 		if v.ID == constants.SYS_ROLE_SYSTEM_ID {
@@ -56,7 +63,10 @@ func (r SysRole) FindById(roleId int64) model.SysRole {
 	if roleId <= 0 {
 		return model.SysRole{}
 	}
-	rows := r.sysRoleRepository.SelectByIds([]int64{roleId})
+	rows, err := r.sysRoleRepository.SelectByIds([]int64{roleId})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(rows) > 0 {
 		return rows[0]
 	}
@@ -134,7 +144,10 @@ func (r SysRole) Update(sysRole model.SysRole) int64 {
 		return 0
 	}
 	// 角色菜单权限变更后清理持有该角色用户的 Token 缓存
-	userIds := r.sysUserRoleRepository.SelectUserIdsByRoleIds([]int64{sysRole.ID})
+	userIds, err := r.sysUserRoleRepository.SelectUserIdsByRoleIds([]int64{sysRole.ID})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	token.RemoveByUserIds(userIds)
 	return rows
 }
@@ -142,13 +155,20 @@ func (r SysRole) Update(sysRole model.SysRole) int64 {
 // DeleteByIds 批量删除信息
 func (r SysRole) DeleteByIds(roleIds []int64) (int64, error) {
 	// 检查是否存在
-	roles := r.sysRoleRepository.SelectByIds(roleIds)
+	roles, err := r.sysRoleRepository.SelectByIds(roleIds)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(roles) <= 0 {
 		return 0, fmt.Errorf("没有权限访问角色数据！")
 	}
 	for _, role := range roles {
 		// 检查分配用户
-		if useCount := r.sysUserRoleRepository.ExistUserByRoleId(role.ID); useCount > 0 {
+		useCount, err := r.sysUserRoleRepository.ExistUserByRoleId(role.ID)
+		if err != nil {
+			logger.Errorf("query err => %v", err.Error())
+		}
+		if useCount > 0 {
 			return 0, fmt.Errorf("【%s】已分配给用户,不能删除", role.RoleName)
 		}
 	}
@@ -156,7 +176,7 @@ func (r SysRole) DeleteByIds(roleIds []int64) (int64, error) {
 		return 0, fmt.Errorf("删除角色信息失败！")
 	}
 	var rows int64
-	err := db.Transaction("", func(tx *gorm.DB) error {
+	err = db.Transaction("", func(tx *gorm.DB) error {
 		if _, err := r.sysRoleMenuRepository.DeleteByRoleIds(tx, roleIds); err != nil {
 			return err
 		}
@@ -175,14 +195,21 @@ func (r SysRole) DeleteByIds(roleIds []int64) (int64, error) {
 
 // FindByUserId 根据用户ID获取角色选择框列表
 func (r SysRole) FindByUserId(userId int64) []model.SysRole {
-	return r.sysRoleRepository.SelectByUserId(userId)
+	rows, err := r.sysRoleRepository.SelectByUserId(userId)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows
 }
 
 // CheckUniqueByName 检查角色名称是否唯一
 func (r SysRole) CheckUniqueByName(roleName string, roleId int64) bool {
-	uniqueId := r.sysRoleRepository.CheckUnique(model.SysRole{
+	uniqueId, err := r.sysRoleRepository.CheckUnique(model.SysRole{
 		RoleName: roleName,
 	})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if uniqueId == roleId {
 		return true
 	}
@@ -191,9 +218,12 @@ func (r SysRole) CheckUniqueByName(roleName string, roleId int64) bool {
 
 // CheckUniqueByKey 检查角色权限是否唯一
 func (r SysRole) CheckUniqueByKey(roleKey string, roleId int64) bool {
-	uniqueId := r.sysRoleRepository.CheckUnique(model.SysRole{
+	uniqueId, err := r.sysRoleRepository.CheckUnique(model.SysRole{
 		RoleKey: roleKey,
 	})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if uniqueId == roleId {
 		return true
 	}

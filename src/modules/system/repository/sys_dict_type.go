@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"mask_api_gin/src/framework/database/db"
-	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"
@@ -27,7 +26,7 @@ var sysDictTypeSortMapping = map[string]string{
 }
 
 // SelectByPage 分页查询集合
-func (r SysDictType) SelectByPage(query map[string]string) ([]model.SysDictType, int64) {
+func (r SysDictType) SelectByPage(query map[string]string) ([]model.SysDictType, int64, error) {
 	tx := db.DB("").Model(&model.SysDictType{})
 	// 查询条件拼接
 	if v, ok := query["dictName"]; ok && v != "" {
@@ -62,7 +61,7 @@ func (r SysDictType) SelectByPage(query map[string]string) ([]model.SysDictType,
 
 	// 查询数量为0直接返回
 	if err := tx.Count(&total).Error; err != nil || total <= 0 {
-		return rows, total
+		return rows, total, nil
 	}
 
 	// 查询数据分页
@@ -75,14 +74,13 @@ func (r SysDictType) SelectByPage(query map[string]string) ([]model.SysDictType,
 
 	err := tx.Find(&rows).Error
 	if err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows, total
+		return rows, total, err
 	}
-	return rows, total
+	return rows, total, nil
 }
 
 // Select 查询集合
-func (r SysDictType) Select(sysDictType model.SysDictType) []model.SysDictType {
+func (r SysDictType) Select(sysDictType model.SysDictType) ([]model.SysDictType, error) {
 	tx := db.DB("").Model(&model.SysDictType{})
 	// 查询条件拼接
 	if sysDictType.DictName != "" {
@@ -98,37 +96,34 @@ func (r SysDictType) Select(sysDictType model.SysDictType) []model.SysDictType {
 	// 查询数据
 	rows := []model.SysDictType{}
 	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysDictType) SelectByIds(ids []int64) []model.SysDictType {
+func (r SysDictType) SelectByIds(ids []int64) ([]model.SysDictType, error) {
 	rows := []model.SysDictType{}
 	if len(ids) <= 0 {
-		return rows
+		return rows, nil
 	}
 	tx := db.DB("").Model(&model.SysDictType{})
 	// 构建查询条件
 	tx = tx.Where("id in ?", ids)
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }
 
 // Insert 新增信息 返回新增数据ID
-func (r SysDictType) Insert(sysDictType model.SysDictType) int64 {
+func (r SysDictType) Insert(sysDictType model.SysDictType) (int64, error) {
 	// 执行插入
 	if err := db.DB("").Create(&sysDictType).Error; err != nil {
-		logger.Errorf("insert err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return sysDictType.ID
+	return sysDictType.ID, nil
 }
 
 // Update 修改信息 返回受影响的行数
@@ -151,23 +146,22 @@ func (r SysDictType) Update(d *gorm.DB, sysDictType model.SysDictType) (int64, e
 }
 
 // DeleteByIds 批量删除信息 返回受影响的行数（物理删除）
-func (r SysDictType) DeleteByIds(ids []int64) int64 {
+func (r SysDictType) DeleteByIds(ids []int64) (int64, error) {
 	if len(ids) <= 0 {
-		return 0
+		return 0, nil
 	}
 	tx := db.DB("").Model(&model.SysDictType{})
 	// 构建查询条件
 	tx = tx.Where("id in ?", ids)
 	// 执行物理删除
 	if err := tx.Delete(&model.SysDictType{}).Error; err != nil {
-		logger.Errorf("delete err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
 
 // CheckUnique 检查信息是否唯一 返回数据ID
-func (r SysDictType) CheckUnique(sysDictType model.SysDictType) int64 {
+func (r SysDictType) CheckUnique(sysDictType model.SysDictType) (int64, error) {
 	tx := db.DB("").Model(&model.SysDictType{})
 	// 查询条件拼接
 	if sysDictType.DictName != "" {
@@ -179,24 +173,22 @@ func (r SysDictType) CheckUnique(sysDictType model.SysDictType) int64 {
 	// 查询数据
 	var id int64 = 0
 	if err := tx.Select("id").Limit(1).Find(&id).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return id
+		return id, err
 	}
-	return id
+	return id, nil
 }
 
 // SelectByType 通过字典类型查询信息
-func (r SysDictType) SelectByType(dictType string) model.SysDictType {
+func (r SysDictType) SelectByType(dictType string) (model.SysDictType, error) {
 	item := model.SysDictType{}
 	if dictType == "" {
-		return item
+		return item, nil
 	}
 	tx := db.DB("").Model(&model.SysDictType{})
 	tx = tx.Where("dict_type = ?", dictType)
 	// 查询数据
 	if err := tx.Limit(1).Find(&item).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return item
+		return item, err
 	}
-	return item
+	return item, nil
 }

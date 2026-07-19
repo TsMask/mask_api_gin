@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/model"
@@ -24,7 +25,11 @@ type SysLogOperate struct {
 
 // FindByPage 分页查询列表数据
 func (s SysLogOperate) FindByPage(query map[string]string, dataScopeSQL string) ([]model.SysLogOperate, int64) {
-	return s.sysLogOperateRepository.SelectByPage(query, dataScopeSQL)
+	rows, total, err := s.sysLogOperateRepository.SelectByPage(query, dataScopeSQL)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows, total
 }
 
 // Insert 新增信息
@@ -32,12 +37,22 @@ func (s SysLogOperate) Insert(sysLogOperate model.SysLogOperate) int64 {
 	if sysLogOperate.CreateBy != "" {
 		sysLogOperate.CreateTime = time.Now().UnixMilli()
 	}
-	return s.sysLogOperateRepository.Insert(sysLogOperate)
+	rows, err := s.sysLogOperateRepository.Insert(sysLogOperate)
+	if err != nil {
+		logger.Errorf("insert err => %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // Clean 清空操作日志
 func (s SysLogOperate) Clean() int64 {
-	return s.sysLogOperateRepository.Clean()
+	rows, err := s.sysLogOperateRepository.Clean()
+	if err != nil {
+		logger.Errorf("clean err => %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // ExportData 导出数据表格

@@ -8,6 +8,7 @@ import (
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/db"
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/framework/utils/regular"
 	"mask_api_gin/src/modules/system/model"
@@ -33,7 +34,11 @@ type SysMenu struct {
 
 // Find 查询数据
 func (s SysMenu) Find(sysMenu model.SysMenu, userId int64) []model.SysMenu {
-	return s.sysMenuRepository.Select(sysMenu, userId)
+	rows, err := s.sysMenuRepository.Select(sysMenu, userId)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows
 }
 
 // FindById 通过ID查询信息
@@ -41,7 +46,10 @@ func (s SysMenu) FindById(menuId int64) model.SysMenu {
 	if menuId <= 0 {
 		return model.SysMenu{}
 	}
-	menus := s.sysMenuRepository.SelectByIds([]int64{menuId})
+	menus, err := s.sysMenuRepository.SelectByIds([]int64{menuId})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(menus) > 0 {
 		return menus[0]
 	}
@@ -78,7 +86,12 @@ func (s SysMenu) Insert(sysMenu model.SysMenu) int64 {
 		sysMenu.CreateTime = ms
 	}
 	s.normalizeMenuFields(&sysMenu)
-	return s.sysMenuRepository.Insert(sysMenu)
+	rows, err := s.sysMenuRepository.Insert(sysMenu)
+	if err != nil {
+		logger.Errorf("insert err => %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // Update 修改信息
@@ -87,7 +100,12 @@ func (s SysMenu) Update(sysMenu model.SysMenu) int64 {
 		sysMenu.UpdateTime = time.Now().UnixMilli()
 	}
 	s.normalizeMenuFields(&sysMenu)
-	return s.sysMenuRepository.Update(sysMenu)
+	rows, err := s.sysMenuRepository.Update(sysMenu)
+	if err != nil {
+		logger.Errorf("update err => %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // DeleteById 删除信息
@@ -109,20 +127,31 @@ func (s SysMenu) DeleteById(menuId int64) int64 {
 
 // ExistChildrenByMenuIdAndStatus 菜单下同状态存在子节点数量
 func (s SysMenu) ExistChildrenByMenuIdAndStatus(menuId int64, status string) int64 {
-	return s.sysMenuRepository.ExistChildrenByMenuIdAndStatus(menuId, status)
+	rows, err := s.sysMenuRepository.ExistChildrenByMenuIdAndStatus(menuId, status)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows
 }
 
 // ExistRoleByMenuId 菜单分配给的角色数量
 func (s SysMenu) ExistRoleByMenuId(menuId int64) int64 {
-	return s.sysRoleMenuRepository.ExistRoleByMenuId(menuId)
+	rows, err := s.sysRoleMenuRepository.ExistRoleByMenuId(menuId)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows
 }
 
 // CheckUniqueParentIdByMenuName 检查同级下菜单名称是否唯一
 func (s SysMenu) CheckUniqueParentIdByMenuName(parentId int64, menuName string, menuId int64) bool {
-	uniqueId := s.sysMenuRepository.CheckUnique(model.SysMenu{
+	uniqueId, err := s.sysMenuRepository.CheckUnique(model.SysMenu{
 		MenuName: menuName,
 		ParentId: parentId,
 	})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if uniqueId == menuId {
 		return true
 	}
@@ -131,10 +160,13 @@ func (s SysMenu) CheckUniqueParentIdByMenuName(parentId int64, menuName string, 
 
 // CheckUniqueParentIdByMenuPath 检查同级下路由地址是否唯一（针对目录和菜单）
 func (s SysMenu) CheckUniqueParentIdByMenuPath(parentId int64, menuPath string, menuId int64) bool {
-	uniqueId := s.sysMenuRepository.CheckUnique(model.SysMenu{
+	uniqueId, err := s.sysMenuRepository.CheckUnique(model.SysMenu{
 		MenuPath: menuPath,
 		ParentId: parentId,
 	})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if uniqueId == menuId {
 		return true
 	}
@@ -143,19 +175,30 @@ func (s SysMenu) CheckUniqueParentIdByMenuPath(parentId int64, menuPath string, 
 
 // FindPermsByUserId 根据用户ID查询权限标识
 func (s SysMenu) FindPermsByUserId(userId int64) []string {
-	return s.sysMenuRepository.SelectPermsByUserId(userId)
+	rows, err := s.sysMenuRepository.SelectPermsByUserId(userId)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows
 }
 
 // FindByRoleId 根据角色ID查询菜单树信息
 func (s SysMenu) FindByRoleId(roleId int64) []int64 {
-	roles := s.sysRoleRepository.SelectByIds([]int64{roleId})
+	roles, err := s.sysRoleRepository.SelectByIds([]int64{roleId})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(roles) > 0 {
 		role := roles[0]
 		if role.ID == roleId {
-			return s.sysMenuRepository.SelectByRoleId(
+			menuIds, err := s.sysMenuRepository.SelectByRoleId(
 				role.ID,
 				role.RoleMenuCheckStrictly == "1",
 			)
+			if err != nil {
+				logger.Errorf("query err => %v", err.Error())
+			}
+			return menuIds
 		}
 	}
 	return []int64{}
@@ -163,13 +206,19 @@ func (s SysMenu) FindByRoleId(roleId int64) []int64 {
 
 // BuildTreeMenusByUserId 根据用户ID查询菜单树状嵌套
 func (s SysMenu) BuildTreeMenusByUserId(userId int64) []model.SysMenu {
-	arr := s.sysMenuRepository.SelectTreeByUserId(userId)
+	arr, err := s.sysMenuRepository.SelectTreeByUserId(userId)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	return s.parseDataToTree(arr)
 }
 
 // BuildTreeSelectByUserId 根据用户ID查询菜单树状结构
 func (s SysMenu) BuildTreeSelectByUserId(sysMenu model.SysMenu, userId int64) []vo.TreeSelect {
-	arr := s.sysMenuRepository.Select(sysMenu, userId)
+	arr, err := s.sysMenuRepository.Select(sysMenu, userId)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	menus := s.parseDataToTree(arr)
 	tree := make([]vo.TreeSelect, 0)
 	for _, v := range menus {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"mask_api_gin/src/framework/database/db"
-	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
 )
 
@@ -26,7 +25,7 @@ var sysLogOperateSortMapping = map[string]string{
 }
 
 // SelectByPage 分页查询集合
-func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysLogOperate, int64) {
+func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysLogOperate, int64, error) {
 	tx := db.DB("").Model(&model.SysLogOperate{})
 	// 查询条件拼接
 	if v, ok := query["title"]; ok && v != "" {
@@ -71,7 +70,7 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 
 	// 查询数量为0直接返回
 	if err := tx.Count(&total).Error; err != nil || total <= 0 {
-		return rows, total
+		return rows, total, nil
 	}
 
 	// 查询数据分页
@@ -85,28 +84,25 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 	// 查询数据
 	err := tx.Find(&rows).Error
 	if err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows, total
+		return rows, total, err
 	}
-	return rows, total
+	return rows, total, nil
 }
 
 // Insert 新增信息
-func (r SysLogOperate) Insert(sysLogOperate model.SysLogOperate) int64 {
+func (r SysLogOperate) Insert(sysLogOperate model.SysLogOperate) (int64, error) {
 	// 执行插入
 	if err := db.DB("").Create(&sysLogOperate).Error; err != nil {
-		logger.Errorf("insert err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return sysLogOperate.ID
+	return sysLogOperate.ID, nil
 }
 
 // Clean 清空信息
-func (r SysLogOperate) Clean() int64 {
+func (r SysLogOperate) Clean() (int64, error) {
 	tx := db.DB("").Where("1 = 1").Delete(&model.SysLogOperate{})
 	if err := tx.Error; err != nil {
-		logger.Errorf("delete err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }

@@ -7,6 +7,7 @@ import (
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/db"
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/model/vo"
@@ -31,12 +32,20 @@ type SysDept struct {
 
 // Find 查询数据
 func (s SysDept) Find(sysDept model.SysDept, dataScopeSQL string) []model.SysDept {
-	return s.sysDeptRepository.Select(sysDept, dataScopeSQL)
+	rows, err := s.sysDeptRepository.Select(sysDept, dataScopeSQL)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows
 }
 
 // FindById 根据ID查询信息
 func (s SysDept) FindById(deptId int64) model.SysDept {
-	return s.sysDeptRepository.SelectById(deptId)
+	item, err := s.sysDeptRepository.SelectById(deptId)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return item
 }
 
 // Insert 新增信息
@@ -47,7 +56,12 @@ func (s SysDept) Insert(sysDept model.SysDept) int64 {
 		sysDept.UpdateTime = ms
 		sysDept.CreateTime = ms
 	}
-	return s.sysDeptRepository.Insert(sysDept)
+	rows, err := s.sysDeptRepository.Insert(sysDept)
+	if err != nil {
+		logger.Errorf("insert err => %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // Update 修改信息
@@ -55,11 +69,17 @@ func (s SysDept) Update(sysDept model.SysDept) int64 {
 	if sysDept.UpdateBy != "" {
 		sysDept.UpdateTime = time.Now().UnixMilli()
 	}
-	dept := s.sysDeptRepository.SelectById(sysDept.ID)
-	parentDept := s.sysDeptRepository.SelectById(sysDept.ParentId)
+	dept, err := s.sysDeptRepository.SelectById(sysDept.ID)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	parentDept, err := s.sysDeptRepository.SelectById(sysDept.ParentId)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 
 	var rows int64
-	err := db.Transaction("", func(tx *gorm.DB) error {
+	err = db.Transaction("", func(tx *gorm.DB) error {
 		// 上级与当前部门祖级列表更新
 		if parentDept.ID == sysDept.ParentId && dept.ID == sysDept.ID {
 			newAncestors := fmt.Sprintf("%s,%d", parentDept.Ancestors, parentDept.ID)
@@ -101,7 +121,10 @@ func (s SysDept) updateDeptStatusNormal(d *gorm.DB, ancestors string) (int64, er
 
 // updateDeptChildren 修改子元素关系
 func (s SysDept) updateDeptChildren(d *gorm.DB, deptId int64, newAncestors, oldAncestors string) (int64, error) {
-	arr := s.sysDeptRepository.SelectChildrenDeptById(deptId)
+	arr, err := s.sysDeptRepository.SelectChildrenDeptById(deptId)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(arr) == 0 {
 		return 0, nil
 	}
@@ -133,14 +156,21 @@ func (s SysDept) DeleteById(deptId int64) int64 {
 
 // FindDeptIdsByRoleId 根据角色ID查询包含的部门ID
 func (s SysDept) FindDeptIdsByRoleId(roleId int64) []int64 {
-	roles := s.sysRoleRepository.SelectByIds([]int64{roleId})
+	roles, err := s.sysRoleRepository.SelectByIds([]int64{roleId})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(roles) > 0 {
 		role := roles[0]
 		if role.ID == roleId {
-			return s.sysDeptRepository.SelectDeptIdsByRoleId(
+			deptIds, err := s.sysDeptRepository.SelectDeptIdsByRoleId(
 				role.ID,
 				role.RoleDeptCheckStrictly == "1",
 			)
+			if err != nil {
+				logger.Errorf("query err => %v", err.Error())
+			}
+			return deptIds
 		}
 	}
 	return []int64{}
@@ -148,20 +178,31 @@ func (s SysDept) FindDeptIdsByRoleId(roleId int64) []int64 {
 
 // ExistChildrenByDeptId 部门下存在子节点数量
 func (s SysDept) ExistChildrenByDeptId(deptId int64) int64 {
-	return s.sysDeptRepository.ExistChildrenByDeptId(deptId)
+	rows, err := s.sysDeptRepository.ExistChildrenByDeptId(deptId)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows
 }
 
 // ExistUserByDeptId 部门下存在用户数量
 func (s SysDept) ExistUserByDeptId(deptId int64) int64 {
-	return s.sysDeptRepository.ExistUserByDeptId(deptId)
+	rows, err := s.sysDeptRepository.ExistUserByDeptId(deptId)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows
 }
 
 // CheckUniqueParentIdByDeptName 检查同级下部门名称唯一
 func (s SysDept) CheckUniqueParentIdByDeptName(parentId int64, deptName string, deptId int64) bool {
-	uniqueId := s.sysDeptRepository.CheckUnique(model.SysDept{
+	uniqueId, err := s.sysDeptRepository.CheckUnique(model.SysDept{
 		DeptName: deptName,
 		ParentId: parentId,
 	})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if uniqueId == deptId {
 		return true
 	}
@@ -170,7 +211,10 @@ func (s SysDept) CheckUniqueParentIdByDeptName(parentId int64, deptName string, 
 
 // BuildTreeSelect 查询部门树状结构
 func (s SysDept) BuildTreeSelect(sysDept model.SysDept, dataScopeSQL string) []vo.TreeSelect {
-	arr := s.sysDeptRepository.Select(sysDept, dataScopeSQL)
+	arr, err := s.sysDeptRepository.Select(sysDept, dataScopeSQL)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	treeArr := s.parseDataToTree(arr)
 	tree := make([]vo.TreeSelect, 0)
 	for _, item := range treeArr {

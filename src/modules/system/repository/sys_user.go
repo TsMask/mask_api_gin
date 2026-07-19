@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"mask_api_gin/src/framework/database/db"
-	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 
@@ -33,7 +32,7 @@ var sysUserSortMapping = map[string]string{
 }
 
 // SelectByPage 分页查询集合
-func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64) {
+func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64, error) {
 	tx := db.DB("").Model(&model.SysUser{})
 	tx = tx.Where("user_del = '0'")
 	// 查询条件拼接
@@ -80,7 +79,7 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 
 	// 查询数量为0直接返回
 	if err := tx.Count(&total).Error; err != nil || total <= 0 {
-		return rows, total
+		return rows, total, nil
 	}
 
 	// 查询数据分页
@@ -93,14 +92,13 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows, total
+		return rows, total, err
 	}
-	return rows, total
+	return rows, total, nil
 }
 
 // Select 查询集合
-func (r SysUser) Select(sysUser model.SysUser) []model.SysUser {
+func (r SysUser) Select(sysUser model.SysUser) ([]model.SysUser, error) {
 	tx := db.DB("").Model(&model.SysUser{})
 	tx = tx.Where("user_del = '0'")
 	// 查询条件拼接
@@ -120,27 +118,25 @@ func (r SysUser) Select(sysUser model.SysUser) []model.SysUser {
 	// 查询数据
 	rows := []model.SysUser{}
 	if err := tx.Order("id desc").Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysUser) SelectByIds(userIds []int64) []model.SysUser {
+func (r SysUser) SelectByIds(userIds []int64) ([]model.SysUser, error) {
 	rows := []model.SysUser{}
 	if len(userIds) <= 0 {
-		return rows
+		return rows, nil
 	}
 	tx := db.DB("").Model(&model.SysUser{})
 	// 构建查询条件
 	tx = tx.Where("id in ? and user_del = '0'", userIds)
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }
 
 // Insert 新增信息
@@ -194,7 +190,7 @@ func (r SysUser) DeleteByIds(d *gorm.DB, userIds []int64) (int64, error) {
 }
 
 // CheckUnique 检查信息是否唯一
-func (r SysUser) CheckUnique(sysUser model.SysUser) int64 {
+func (r SysUser) CheckUnique(sysUser model.SysUser) (int64, error) {
 	tx := db.DB("").Model(&model.SysUser{})
 	tx = tx.Where("user_del = '0'")
 	// 查询条件拼接
@@ -211,31 +207,29 @@ func (r SysUser) CheckUnique(sysUser model.SysUser) int64 {
 	// 查询数据
 	var id int64 = 0
 	if err := tx.Select("id").Limit(1).Find(&id).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return id
+		return id, err
 	}
-	return id
+	return id, nil
 }
 
 // SelectByUserName 通过登录账号查询信息
-func (r SysUser) SelectByUserName(userName string) model.SysUser {
+func (r SysUser) SelectByUserName(userName string) (model.SysUser, error) {
 	item := model.SysUser{}
 	if userName == "" {
-		return item
+		return item, nil
 	}
 	tx := db.DB("").Model(&model.SysUser{})
 	// 构建查询条件
 	tx = tx.Where("user_name = ? and user_del = '0'", userName)
 	// 查询数据
 	if err := tx.Limit(1).Find(&item).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return item
+		return item, err
 	}
-	return item
+	return item, nil
 }
 
 // SelectAuthUsersByPage 分页查询集合By分配用户角色
-func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64) {
+func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64, error) {
 	tx := db.DB("").Model(&model.SysUser{})
 	tx = tx.Where("user_del = '0'")
 	// 查询条件拼接
@@ -276,7 +270,7 @@ func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL str
 
 	// 查询数量为0直接返回
 	if err := tx.Count(&total).Error; err != nil || total <= 0 {
-		return rows, total
+		return rows, total, nil
 	}
 
 	// 查询数据分页
@@ -289,8 +283,7 @@ func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL str
 
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows, total
+		return rows, total, err
 	}
-	return rows, total
+	return rows, total, nil
 }

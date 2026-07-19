@@ -7,6 +7,7 @@ import (
 
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/cron"
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/monitor/model"
@@ -28,12 +29,20 @@ type SysJob struct {
 
 // FindByPage 分页查询
 func (s SysJob) FindByPage(query map[string]string) ([]model.SysJob, int64) {
-	return s.sysJobRepository.SelectByPage(query)
+	rows, total, err := s.sysJobRepository.SelectByPage(query)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows, total
 }
 
 // Find 查询
 func (s SysJob) Find(sysJob model.SysJob) []model.SysJob {
-	return s.sysJobRepository.Select(sysJob)
+	rows, err := s.sysJobRepository.Select(sysJob)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows
 }
 
 // FindById 通过ID查询
@@ -41,7 +50,10 @@ func (s SysJob) FindById(id int64) model.SysJob {
 	if id <= 0 {
 		return model.SysJob{}
 	}
-	jobs := s.sysJobRepository.SelectByIds([]int64{id})
+	jobs, err := s.sysJobRepository.SelectByIds([]int64{id})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(jobs) > 0 {
 		return jobs[0]
 	}
@@ -56,7 +68,11 @@ func (s SysJob) Insert(sysJob model.SysJob) int64 {
 		sysJob.UpdateTime = ms
 		sysJob.CreateTime = ms
 	}
-	insertId := s.sysJobRepository.Insert(sysJob)
+	insertId, err := s.sysJobRepository.Insert(sysJob)
+	if err != nil {
+		logger.Errorf("insert err => %v", err.Error())
+		return 0
+	}
 	if insertId > 0 && sysJob.JobStatus == constants.STATUS_YES {
 		sysJob.ID = insertId
 		s.insertQueueJob(sysJob, true)
@@ -69,7 +85,11 @@ func (s SysJob) Update(sysJob model.SysJob) int64 {
 	if sysJob.UpdateBy != "" {
 		sysJob.UpdateTime = time.Now().UnixMilli()
 	}
-	rows := s.sysJobRepository.Update(sysJob)
+	rows, err := s.sysJobRepository.Update(sysJob)
+	if err != nil {
+		logger.Errorf("update err => %v", err.Error())
+		return 0
+	}
 	if rows > 0 {
 		//状态正常添加队列任务
 		if sysJob.JobStatus == constants.STATUS_YES {
@@ -86,7 +106,10 @@ func (s SysJob) Update(sysJob model.SysJob) int64 {
 // DeleteByIds 批量删除
 func (s SysJob) DeleteByIds(ids []int64) (int64, error) {
 	// 检查是否存在
-	jobs := s.sysJobRepository.SelectByIds(ids)
+	jobs, err := s.sysJobRepository.SelectByIds(ids)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(jobs) <= 0 {
 		return 0, fmt.Errorf("没有权限访问调度任务数据！")
 	}
@@ -95,17 +118,20 @@ func (s SysJob) DeleteByIds(ids []int64) (int64, error) {
 		for _, job := range jobs {
 			s.deleteQueueJob(job)
 		}
-		return s.sysJobRepository.DeleteByIds(ids), nil
+		return s.sysJobRepository.DeleteByIds(ids)
 	}
 	return 0, fmt.Errorf("删除调度任务信息失败！")
 }
 
 // CheckUniqueByJobName 校验调度任务名称和组是否唯一
 func (s SysJob) CheckUniqueByJobName(jobName, jobGroup string, id int64) bool {
-	uniqueId := s.sysJobRepository.CheckUnique(model.SysJob{
+	uniqueId, err := s.sysJobRepository.CheckUnique(model.SysJob{
 		JobName:  jobName,
 		JobGroup: jobGroup,
 	})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if uniqueId == id {
 		return true
 	}
@@ -167,9 +193,12 @@ func (s SysJob) Reset() {
 		return
 	}
 	// 查询系统中定义状态为正常启用的任务
-	sysJobs := s.sysJobRepository.Select(model.SysJob{
+	sysJobs, err := s.sysJobRepository.Select(model.SysJob{
 		JobStatus: constants.STATUS_YES,
 	})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	for _, sysJob := range sysJobs {
 		for _, name := range queueNames {
 			if name == sysJob.JobInvokeTarget {

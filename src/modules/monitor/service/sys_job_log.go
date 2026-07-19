@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/monitor/model"
@@ -27,27 +28,49 @@ type SysJobLog struct {
 
 // FindByPage 分页查询
 func (s SysJobLog) FindByPage(query map[string]string) ([]model.SysJobLog, int64) {
-	return s.sysJobLogRepository.SelectByPage(query)
+	rows, total, err := s.sysJobLogRepository.SelectByPage(query)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows, total
 }
 
 // Find 查询
 func (s SysJobLog) Find(sysJobLog model.SysJobLog) []model.SysJobLog {
-	return s.sysJobLogRepository.Select(sysJobLog)
+	rows, err := s.sysJobLogRepository.Select(sysJobLog)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows
 }
 
 // FindById 通过ID查询
 func (s SysJobLog) FindById(id int64) model.SysJobLog {
-	return s.sysJobLogRepository.SelectById(id)
+	item, err := s.sysJobLogRepository.SelectById(id)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return item
 }
 
 // DeleteByIds 批量删除
 func (s SysJobLog) DeleteByIds(ids []int64) int64 {
-	return s.sysJobLogRepository.DeleteByIds(ids)
+	rows, err := s.sysJobLogRepository.DeleteByIds(ids)
+	if err != nil {
+		logger.Errorf("delete err => %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // Clean 清空
 func (s SysJobLog) Clean() int64 {
-	return s.sysJobLogRepository.Clean()
+	rows, err := s.sysJobLogRepository.Clean()
+	if err != nil {
+		logger.Errorf("clean err => %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // ExportData 导出数据表格

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"mask_api_gin/src/framework/constants"
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/model"
@@ -26,12 +27,20 @@ type SysPost struct {
 
 // FindByPage 分页查询列表数据
 func (s SysPost) FindByPage(query map[string]string) ([]model.SysPost, int64) {
-	return s.sysPostRepository.SelectByPage(query)
+	rows, total, err := s.sysPostRepository.SelectByPage(query)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows, total
 }
 
 // Find 查询列表数据
 func (s SysPost) Find(sysPost model.SysPost) []model.SysPost {
-	return s.sysPostRepository.Select(sysPost)
+	rows, err := s.sysPostRepository.Select(sysPost)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows
 }
 
 // FindById 通过ID查询信息
@@ -39,7 +48,10 @@ func (s SysPost) FindById(postId int64) model.SysPost {
 	if postId <= 0 {
 		return model.SysPost{}
 	}
-	posts := s.sysPostRepository.SelectByIds([]int64{postId})
+	posts, err := s.sysPostRepository.SelectByIds([]int64{postId})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(posts) > 0 {
 		return posts[0]
 	}
@@ -54,7 +66,12 @@ func (s SysPost) Insert(sysPost model.SysPost) int64 {
 		sysPost.UpdateTime = ms
 		sysPost.CreateTime = ms
 	}
-	return s.sysPostRepository.Insert(sysPost)
+	rows, err := s.sysPostRepository.Insert(sysPost)
+	if err != nil {
+		logger.Errorf("insert err => %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // Update 修改信息
@@ -62,32 +79,47 @@ func (s SysPost) Update(sysPost model.SysPost) int64 {
 	if sysPost.UpdateBy != "" {
 		sysPost.UpdateTime = time.Now().UnixMilli()
 	}
-	return s.sysPostRepository.Update(sysPost)
+	rows, err := s.sysPostRepository.Update(sysPost)
+	if err != nil {
+		logger.Errorf("update err => %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // DeleteByIds 批量删除信息
 func (s SysPost) DeleteByIds(postIds []int64) (int64, error) {
 	// 检查是否存在
-	posts := s.sysPostRepository.SelectByIds(postIds)
+	posts, err := s.sysPostRepository.SelectByIds(postIds)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(posts) <= 0 {
 		return 0, fmt.Errorf("没有权限访问岗位数据！")
 	}
 	for _, post := range posts {
-		if useCount := s.sysUserPostRepository.ExistUserByPostId(post.ID); useCount > 0 {
+		useCount, err := s.sysUserPostRepository.ExistUserByPostId(post.ID)
+		if err != nil {
+			logger.Errorf("query err => %v", err.Error())
+		}
+		if useCount > 0 {
 			return 0, fmt.Errorf("【%s】已分配给用户,不能删除", post.PostName)
 		}
 	}
 	if len(posts) == len(postIds) {
-		return s.sysPostRepository.DeleteByIds(postIds), nil
+		return s.sysPostRepository.DeleteByIds(postIds)
 	}
 	return 0, fmt.Errorf("删除岗位信息失败！")
 }
 
 // CheckUniqueByName 检查岗位名称是否唯一
 func (s SysPost) CheckUniqueByName(postName string, postId int64) bool {
-	uniqueId := s.sysPostRepository.CheckUnique(model.SysPost{
+	uniqueId, err := s.sysPostRepository.CheckUnique(model.SysPost{
 		PostName: postName,
 	})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if uniqueId == postId {
 		return true
 	}
@@ -96,9 +128,12 @@ func (s SysPost) CheckUniqueByName(postName string, postId int64) bool {
 
 // CheckUniqueByCode 检查岗位编码是否唯一
 func (s SysPost) CheckUniqueByCode(postCode string, postId int64) bool {
-	uniqueId := s.sysPostRepository.CheckUnique(model.SysPost{
+	uniqueId, err := s.sysPostRepository.CheckUnique(model.SysPost{
 		PostCode: postCode,
 	})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if uniqueId == postId {
 		return true
 	}
@@ -107,7 +142,11 @@ func (s SysPost) CheckUniqueByCode(postCode string, postId int64) bool {
 
 // FindByUserId 根据用户ID获取岗位选择框列表
 func (s SysPost) FindByUserId(userId int64) []model.SysPost {
-	return s.sysPostRepository.SelectByUserId(userId)
+	rows, err := s.sysPostRepository.SelectByUserId(userId)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows
 }
 
 // ExportData 导出数据表格

@@ -2,7 +2,6 @@ package repository
 
 import (
 	"mask_api_gin/src/framework/database/db"
-	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"
@@ -15,34 +14,32 @@ var NewSysUserRole = &SysUserRole{}
 type SysUserRole struct{}
 
 // ExistUserByRoleId 存在用户使用数量
-func (r SysUserRole) ExistUserByRoleId(roleId int64) int64 {
+func (r SysUserRole) ExistUserByRoleId(roleId int64) (int64, error) {
 	if roleId <= 0 {
-		return 0
+		return 0, nil
 	}
 	tx := db.DB("").Model(&model.SysUserRole{})
 	tx = tx.Where("role_id = ?", roleId)
 	// 查询数据
 	var count int64 = 0
 	if err := tx.Count(&count).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return count
+		return count, err
 	}
-	return count
+	return count, nil
 }
 
 // SelectUserIdsByRoleIds 通过角色ID列表查询关联的用户ID
-func (r SysUserRole) SelectUserIdsByRoleIds(roleIds []int64) []int64 {
+func (r SysUserRole) SelectUserIdsByRoleIds(roleIds []int64) ([]int64, error) {
 	if len(roleIds) == 0 {
-		return nil
+		return nil, nil
 	}
 	tx := db.DB("").Model(&model.SysUserRole{})
 	tx = tx.Where("role_id in ?", roleIds)
 	var userIds []int64
 	if err := tx.Distinct("user_id").Pluck("user_id", &userIds).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return nil
+		return nil, err
 	}
-	return userIds
+	return userIds, nil
 }
 
 // DeleteByUserIds 批量删除关联By用户

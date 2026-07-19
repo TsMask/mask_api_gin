@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"mask_api_gin/src/framework/database/db"
-	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/monitor/model"
 )
 
@@ -25,7 +24,7 @@ var sysJobLogSortMapping = map[string]string{
 }
 
 // SelectByPage 分页查询集合
-func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int64) {
+func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int64, error) {
 	tx := db.DB("").Model(&model.SysJobLog{})
 	// 查询条件拼接
 	if v, ok := query["jobName"]; ok && v != "" {
@@ -63,7 +62,7 @@ func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int
 
 	// 查询数量为0直接返回
 	if err := tx.Count(&total).Error; err != nil || total <= 0 {
-		return rows, total
+		return rows, total, nil
 	}
 
 	// 查询数据分页
@@ -76,14 +75,13 @@ func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int
 
 	err := tx.Find(&rows).Error
 	if err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows, total
+		return rows, total, err
 	}
-	return rows, total
+	return rows, total, nil
 }
 
 // Select 查询集合
-func (r SysJobLog) Select(sysJobLog model.SysJobLog) []model.SysJobLog {
+func (r SysJobLog) Select(sysJobLog model.SysJobLog) ([]model.SysJobLog, error) {
 	tx := db.DB("").Model(&model.SysJobLog{})
 	// 查询条件拼接
 	if sysJobLog.JobName != "" {
@@ -102,58 +100,53 @@ func (r SysJobLog) Select(sysJobLog model.SysJobLog) []model.SysJobLog {
 	// 查询数据
 	rows := []model.SysJobLog{}
 	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }
 
 // SelectById 通过ID查询信息
-func (r SysJobLog) SelectById(id int64) model.SysJobLog {
+func (r SysJobLog) SelectById(id int64) (model.SysJobLog, error) {
 	item := model.SysJobLog{}
 	if id <= 0 {
-		return item
+		return item, nil
 	}
 	tx := db.DB("").Model(&model.SysJobLog{})
 	// 构建查询条件
 	tx = tx.Where("id = ?", id)
 	// 查询数据
 	if err := tx.Limit(1).Find(&item).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return item
+		return item, err
 	}
-	return item
+	return item, nil
 }
 
 // Insert 新增信息
-func (r SysJobLog) Insert(sysJobLog model.SysJobLog) int64 {
+func (r SysJobLog) Insert(sysJobLog model.SysJobLog) (int64, error) {
 	// 执行插入
 	if err := db.DB("").Create(&sysJobLog).Error; err != nil {
-		logger.Errorf("insert err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return sysJobLog.ID
+	return sysJobLog.ID, nil
 }
 
 // DeleteByIds 批量删除信息
-func (r SysJobLog) DeleteByIds(ids []int64) int64 {
+func (r SysJobLog) DeleteByIds(ids []int64) (int64, error) {
 	if len(ids) <= 0 {
-		return 0
+		return 0, nil
 	}
 	tx := db.DB("").Where("id in ?", ids)
 	if err := tx.Delete(&model.SysJobLog{}).Error; err != nil {
-		logger.Errorf("delete err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
 
 // Clean 清空集合数据
-func (r SysJobLog) Clean() int64 {
+func (r SysJobLog) Clean() (int64, error) {
 	tx := db.DB("").Where("1 = 1").Delete(&model.SysJobLog{})
 	if err := tx.Error; err != nil {
-		logger.Errorf("delete err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }

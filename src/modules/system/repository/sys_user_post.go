@@ -2,7 +2,6 @@ package repository
 
 import (
 	"mask_api_gin/src/framework/database/db"
-	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"
@@ -15,19 +14,18 @@ var NewSysUserPost = &SysUserPost{}
 type SysUserPost struct{}
 
 // ExistUserByPostId 存在用户使用数量
-func (r SysUserPost) ExistUserByPostId(postId int64) int64 {
+func (r SysUserPost) ExistUserByPostId(postId int64) (int64, error) {
 	if postId <= 0 {
-		return 0
+		return 0, nil
 	}
 	tx := db.DB("").Model(&model.SysUserPost{})
 	tx = tx.Where("post_id = ?", postId)
 	// 查询数据
 	var count int64 = 0
 	if err := tx.Count(&count).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return count
+		return count, err
 	}
-	return count
+	return count, nil
 }
 
 // DeleteByUserIds 批量删除关联By用户

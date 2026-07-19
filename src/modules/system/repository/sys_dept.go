@@ -2,7 +2,6 @@ package repository
 
 import (
 	"mask_api_gin/src/framework/database/db"
-	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"
@@ -15,7 +14,7 @@ var NewSysDept = &SysDept{}
 type SysDept struct{}
 
 // Select 查询集合
-func (r SysDept) Select(sysDept model.SysDept, dataScopeSQL string) []model.SysDept {
+func (r SysDept) Select(sysDept model.SysDept, dataScopeSQL string) ([]model.SysDept, error) {
 	tx := db.DB("").Model(&model.SysDept{})
 	tx = tx.Where("dept_del = '0'")
 	// 查询条件拼接
@@ -38,16 +37,15 @@ func (r SysDept) Select(sysDept model.SysDept, dataScopeSQL string) []model.SysD
 	// 查询数据
 	rows := []model.SysDept{}
 	if err := tx.Order("parent_id, dept_sort asc").Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }
 
 // SelectById 通过ID查询信息
-func (r SysDept) SelectById(deptId int64) model.SysDept {
+func (r SysDept) SelectById(deptId int64) (model.SysDept, error) {
 	if deptId <= 0 {
-		return model.SysDept{}
+		return model.SysDept{}, nil
 	}
 	tx := db.DB("").Model(&model.SysDept{})
 	// 构建查询条件
@@ -55,40 +53,37 @@ func (r SysDept) SelectById(deptId int64) model.SysDept {
 	// 查询数据
 	item := model.SysDept{}
 	if err := tx.Limit(1).Find(&item).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return item
+		return item, err
 	}
-	return item
+	return item, nil
 }
 
 // SelectMapByIds 批量通过ID查询信息，返回 deptId → SysDept 的映射
-func (r SysDept) SelectMapByIds(deptIds []int64) map[int64]model.SysDept {
+func (r SysDept) SelectMapByIds(deptIds []int64) (map[int64]model.SysDept, error) {
 	result := make(map[int64]model.SysDept)
 	if len(deptIds) <= 0 {
-		return result
+		return result, nil
 	}
 	tx := db.DB("").Model(&model.SysDept{})
 	tx = tx.Where("id in ? and dept_del = '0'", deptIds)
 	rows := []model.SysDept{}
 	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return result
+		return result, err
 	}
 	for _, dept := range rows {
 		result[dept.ID] = dept
 	}
-	return result
+	return result, nil
 }
 
 // Insert 新增信息 返回新增数据ID
-func (r SysDept) Insert(sysDept model.SysDept) int64 {
+func (r SysDept) Insert(sysDept model.SysDept) (int64, error) {
 	sysDept.DeptDel = "0"
 	// 执行插入
 	if err := db.DB("").Create(&sysDept).Error; err != nil {
-		logger.Errorf("insert err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return sysDept.ID
+	return sysDept.ID, nil
 }
 
 // Update 修改信息 返回受影响行数
@@ -129,7 +124,7 @@ func (r SysDept) DeleteById(d *gorm.DB, deptId int64) (int64, error) {
 }
 
 // CheckUnique 检查信息是否唯一 返回数据ID
-func (r SysDept) CheckUnique(sysDept model.SysDept) int64 {
+func (r SysDept) CheckUnique(sysDept model.SysDept) (int64, error) {
 	tx := db.DB("").Model(&model.SysDept{})
 	tx = tx.Where("dept_del = '0'")
 	// 查询条件拼接
@@ -143,16 +138,15 @@ func (r SysDept) CheckUnique(sysDept model.SysDept) int64 {
 	// 查询数据
 	var id int64 = 0
 	if err := tx.Select("id").Limit(1).Find(&id).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return id
+		return id, err
 	}
-	return id
+	return id, nil
 }
 
 // ExistChildrenByDeptId 存在子节点数量
-func (r SysDept) ExistChildrenByDeptId(deptId int64) int64 {
+func (r SysDept) ExistChildrenByDeptId(deptId int64) (int64, error) {
 	if deptId <= 0 {
-		return 0
+		return 0, nil
 	}
 	tx := db.DB("").Model(&model.SysDept{})
 	tx = tx.Where("dept_del = '0' and dept_status = '1'")
@@ -160,32 +154,30 @@ func (r SysDept) ExistChildrenByDeptId(deptId int64) int64 {
 	// 查询数据
 	var count int64 = 0
 	if err := tx.Count(&count).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return count
+		return count, err
 	}
-	return count
+	return count, nil
 }
 
 // ExistUserByDeptId 存在用户使用数量
-func (r SysDept) ExistUserByDeptId(deptId int64) int64 {
+func (r SysDept) ExistUserByDeptId(deptId int64) (int64, error) {
 	if deptId <= 0 {
-		return 0
+		return 0, nil
 	}
 	tx := db.DB("").Model(&model.SysUser{})
 	tx = tx.Where("user_del = '0' and dept_id = ?", deptId)
 	// 查询数据
 	var count int64 = 0
 	if err := tx.Count(&count).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return count
+		return count, err
 	}
-	return count
+	return count, nil
 }
 
 // SelectDeptIdsByRoleId 通过角色ID查询包含的部门ID
-func (r SysDept) SelectDeptIdsByRoleId(roleId int64, deptCheckStrictly bool) []int64 {
+func (r SysDept) SelectDeptIdsByRoleId(roleId int64, deptCheckStrictly bool) ([]int64, error) {
 	if roleId <= 0 {
-		return []int64{}
+		return []int64{}, nil
 	}
 
 	tx := db.DB("").Model(&model.SysDept{})
@@ -203,24 +195,22 @@ func (r SysDept) SelectDeptIdsByRoleId(roleId int64, deptCheckStrictly bool) []i
 	// 查询数据
 	rows := []int64{}
 	if err := tx.Distinct("id").Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }
 
 // SelectChildrenDeptById 根据ID查询所有子部门
-func (r SysDept) SelectChildrenDeptById(deptId int64) []model.SysDept {
+func (r SysDept) SelectChildrenDeptById(deptId int64) ([]model.SysDept, error) {
 	tx := db.DB("").Model(&model.SysDept{})
 	tx = tx.Where("dept_del = '0'")
 	tx = tx.Where("find_in_set(?, ancestors)", deptId)
 	// 查询数据
 	rows := []model.SysDept{}
 	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }
 
 // UpdateDeptStatusNormal 修改所在部门正常状态

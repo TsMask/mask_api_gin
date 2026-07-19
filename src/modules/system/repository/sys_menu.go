@@ -3,7 +3,6 @@ package repository
 import (
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/db"
-	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"
@@ -16,7 +15,7 @@ var NewSysMenu = &SysMenu{}
 type SysMenu struct{}
 
 // Select 查询集合 userId为0是系统管理员
-func (r SysMenu) Select(sysMenu model.SysMenu, userId int64) []model.SysMenu {
+func (r SysMenu) Select(sysMenu model.SysMenu, userId int64) ([]model.SysMenu, error) {
 	tx := db.DB("").Model(&model.SysMenu{})
 	tx = tx.Where("menu_del = '0'")
 	// 查询条件拼接
@@ -42,48 +41,45 @@ func (r SysMenu) Select(sysMenu model.SysMenu, userId int64) []model.SysMenu {
 	rows := []model.SysMenu{}
 	tx.Order("parent_id, menu_sort")
 	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysMenu) SelectByIds(menuIds []int64) []model.SysMenu {
+func (r SysMenu) SelectByIds(menuIds []int64) ([]model.SysMenu, error) {
 	rows := []model.SysMenu{}
 	if len(menuIds) <= 0 {
-		return rows
+		return rows, nil
 	}
 	tx := db.DB("").Model(&model.SysMenu{})
 	// 构建查询条件
 	tx = tx.Where("id in ? and menu_del = '0'", menuIds)
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }
 
 // Insert 新增信息
-func (r SysMenu) Insert(sysMenu model.SysMenu) int64 {
+func (r SysMenu) Insert(sysMenu model.SysMenu) (int64, error) {
 	sysMenu.MenuDel = "0"
 	if sysMenu.ID > 0 {
-		return 0
+		return 0, nil
 	}
 
 	// 执行插入
 	if err := db.DB("").Create(&sysMenu).Error; err != nil {
-		logger.Errorf("insert err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return sysMenu.ID
+	return sysMenu.ID, nil
 }
 
 // Update 修改信息
-func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
+func (r SysMenu) Update(sysMenu model.SysMenu) (int64, error) {
 	if sysMenu.ID <= 0 {
-		return 0
+		return 0, nil
 	}
 
 	tx := db.DB("").Model(&model.SysMenu{})
@@ -92,10 +88,9 @@ func (r SysMenu) Update(sysMenu model.SysMenu) int64 {
 	tx = tx.Omit("id", "create_by", "create_time", "menu_del")
 	// 执行更新
 	if err := tx.Updates(sysMenu).Error; err != nil {
-		logger.Errorf("update err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
 
 // DeleteById 删除信息 返回受影响行数（软删除）
@@ -117,7 +112,7 @@ func (r SysMenu) DeleteById(d *gorm.DB, menuId int64) (int64, error) {
 }
 
 // CheckUnique 检查信息是否唯一
-func (r SysMenu) CheckUnique(sysMenu model.SysMenu) int64 {
+func (r SysMenu) CheckUnique(sysMenu model.SysMenu) (int64, error) {
 	tx := db.DB("").Model(&model.SysMenu{})
 	tx = tx.Where("menu_del = '0'")
 	// 查询条件拼接
@@ -134,16 +129,15 @@ func (r SysMenu) CheckUnique(sysMenu model.SysMenu) int64 {
 	// 查询数据
 	var id int64 = 0
 	if err := tx.Select("id").Limit(1).Find(&id).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return id
+		return id, err
 	}
-	return id
+	return id, nil
 }
 
 // ExistChildrenByMenuIdAndStatus 菜单下同状态存在子节点数量
-func (r SysMenu) ExistChildrenByMenuIdAndStatus(menuId int64, menuStatus string) int64 {
+func (r SysMenu) ExistChildrenByMenuIdAndStatus(menuId int64, menuStatus string) (int64, error) {
 	if menuId <= 0 {
-		return 0
+		return 0, nil
 	}
 	tx := db.DB("").Model(&model.SysMenu{})
 	// 构建查询条件
@@ -155,17 +149,16 @@ func (r SysMenu) ExistChildrenByMenuIdAndStatus(menuId int64, menuStatus string)
 	// 查询数据
 	var count int64 = 0
 	if err := tx.Count(&count).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return count
+		return count, err
 	}
-	return count
+	return count, nil
 }
 
 // SelectPermsByUserId 根据用户ID查询权限标识
-func (r SysMenu) SelectPermsByUserId(userId int64) []string {
+func (r SysMenu) SelectPermsByUserId(userId int64) ([]string, error) {
 	rows := []string{}
 	if userId <= 0 {
-		return rows
+		return rows, nil
 	}
 
 	tx := db.DB("").Model(&model.SysMenu{}).
@@ -180,16 +173,15 @@ func (r SysMenu) SelectPermsByUserId(userId int64) []string {
 
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }
 
 // SelectByRoleId 根据角色ID查询菜单树信息
-func (r SysMenu) SelectByRoleId(roleId int64, menuCheckStrictly bool) []int64 {
+func (r SysMenu) SelectByRoleId(roleId int64, menuCheckStrictly bool) ([]int64, error) {
 	if roleId <= 0 {
-		return []int64{}
+		return []int64{}, nil
 	}
 
 	tx := db.DB("").Model(&model.SysMenu{})
@@ -207,16 +199,15 @@ func (r SysMenu) SelectByRoleId(roleId int64, menuCheckStrictly bool) []int64 {
 	// 查询数据
 	rows := []int64{}
 	if err := tx.Distinct("id").Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }
 
 // SelectTreeByUserId 根据用户ID查询菜单 0为管理员查询全部菜单，其他为用户ID查询权限
-func (r SysMenu) SelectTreeByUserId(userId int64) []model.SysMenu {
+func (r SysMenu) SelectTreeByUserId(userId int64) ([]model.SysMenu, error) {
 	if userId < 0 {
-		return []model.SysMenu{}
+		return []model.SysMenu{}, nil
 	}
 
 	tx := db.DB("").Model(&model.SysMenu{})
@@ -237,8 +228,7 @@ func (r SysMenu) SelectTreeByUserId(userId int64) []model.SysMenu {
 	rows := []model.SysMenu{}
 	tx.Order("parent_id, menu_sort")
 	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }

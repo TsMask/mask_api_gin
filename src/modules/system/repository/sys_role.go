@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"mask_api_gin/src/framework/database/db"
-	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"
@@ -29,7 +28,7 @@ var sysRoleSortMapping = map[string]string{
 }
 
 // SelectByPage 分页查询集合
-func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64) {
+func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64, error) {
 	tx := db.DB("").Model(&model.SysRole{})
 	tx = tx.Where("role_del = '0'")
 	// 查询条件拼接
@@ -71,7 +70,7 @@ func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64) 
 
 	// 查询数量为0直接返回
 	if err := tx.Count(&total).Error; err != nil || total <= 0 {
-		return rows, total
+		return rows, total, nil
 	}
 
 	// 查询数据分页
@@ -84,14 +83,13 @@ func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64) 
 
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows, total
+		return rows, total, err
 	}
-	return rows, total
+	return rows, total, nil
 }
 
 // Select 查询集合
-func (r SysRole) Select(sysRole model.SysRole) []model.SysRole {
+func (r SysRole) Select(sysRole model.SysRole) ([]model.SysRole, error) {
 	tx := db.DB("").Model(&model.SysRole{})
 	tx = tx.Where("role_del = '0'")
 	// 查询条件拼接
@@ -108,27 +106,25 @@ func (r SysRole) Select(sysRole model.SysRole) []model.SysRole {
 	// 查询数据
 	rows := []model.SysRole{}
 	if err := tx.Order("role_sort asc").Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysRole) SelectByIds(roleIds []int64) []model.SysRole {
+func (r SysRole) SelectByIds(roleIds []int64) ([]model.SysRole, error) {
 	rows := []model.SysRole{}
 	if len(roleIds) <= 0 {
-		return rows
+		return rows, nil
 	}
 	tx := db.DB("").Model(&model.SysRole{})
 	// 构建查询条件
 	tx = tx.Where("id in ? and role_del = '0'", roleIds)
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }
 
 // Insert 新增信息 返回新增数据ID
@@ -182,7 +178,7 @@ func (r SysRole) DeleteByIds(d *gorm.DB, roleIds []int64) (int64, error) {
 }
 
 // CheckUnique 检查信息是否唯一
-func (r SysRole) CheckUnique(sysRole model.SysRole) int64 {
+func (r SysRole) CheckUnique(sysRole model.SysRole) (int64, error) {
 	tx := db.DB("").Model(&model.SysRole{})
 	tx = tx.Where("role_del = '0'")
 	// 查询条件拼接
@@ -196,17 +192,16 @@ func (r SysRole) CheckUnique(sysRole model.SysRole) int64 {
 	// 查询数据
 	var id int64 = 0
 	if err := tx.Select("id").Limit(1).Find(&id).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return id
+		return id, err
 	}
-	return id
+	return id, nil
 }
 
 // SelectByUserId 根据用户ID获取角色信息
-func (r SysRole) SelectByUserId(userId int64) []model.SysRole {
+func (r SysRole) SelectByUserId(userId int64) ([]model.SysRole, error) {
 	rows := []model.SysRole{}
 	if userId <= 0 {
-		return rows
+		return rows, nil
 	}
 
 	tx := db.DB("").Model(&model.SysRole{}).
@@ -218,17 +213,16 @@ func (r SysRole) SelectByUserId(userId int64) []model.SysRole {
 
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }
 
 // SelectByUserIds 批量根据用户ID获取角色信息，返回 userId → []SysRole 的映射
-func (r SysRole) SelectByUserIds(userIds []int64) map[int64][]model.SysRole {
+func (r SysRole) SelectByUserIds(userIds []int64) (map[int64][]model.SysRole, error) {
 	result := make(map[int64][]model.SysRole)
 	if len(userIds) <= 0 {
-		return result
+		return result, nil
 	}
 
 	type userRoleRow struct {
@@ -241,11 +235,10 @@ func (r SysRole) SelectByUserIds(userIds []int64) map[int64][]model.SysRole {
 		Joins("JOIN sys_role r ON r.id = ur.role_id AND r.role_del = '0'").
 		Where("ur.user_id IN ?", userIds)
 	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return result
+		return result, err
 	}
 	for _, row := range rows {
 		result[row.UserId] = append(result[row.UserId], row.SysRole)
 	}
-	return result
+	return result, nil
 }

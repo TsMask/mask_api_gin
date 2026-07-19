@@ -2,7 +2,6 @@ package repository
 
 import (
 	"mask_api_gin/src/framework/database/db"
-	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/system/model"
 )
 
@@ -24,7 +23,7 @@ var sysPostSortMapping = map[string]string{
 }
 
 // SelectByPage 分页查询集合
-func (r SysPost) SelectByPage(query map[string]string) ([]model.SysPost, int64) {
+func (r SysPost) SelectByPage(query map[string]string) ([]model.SysPost, int64, error) {
 	tx := db.DB("").Model(&model.SysPost{})
 	// 查询条件拼接
 	if v, ok := query["postCode"]; ok && v != "" {
@@ -43,7 +42,7 @@ func (r SysPost) SelectByPage(query map[string]string) ([]model.SysPost, int64) 
 
 	// 查询数量为0直接返回
 	if err := tx.Count(&total).Error; err != nil || total <= 0 {
-		return rows, total
+		return rows, total, nil
 	}
 
 	// 查询数据分页
@@ -56,14 +55,13 @@ func (r SysPost) SelectByPage(query map[string]string) ([]model.SysPost, int64) 
 
 	err := tx.Find(&rows).Error
 	if err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows, total
+		return rows, total, err
 	}
-	return rows, total
+	return rows, total, nil
 }
 
 // Select 查询集合
-func (r SysPost) Select(sysPost model.SysPost) []model.SysPost {
+func (r SysPost) Select(sysPost model.SysPost) ([]model.SysPost, error) {
 	tx := db.DB("").Model(&model.SysPost{})
 	// 查询条件拼接
 	if sysPost.PostCode != "" {
@@ -79,43 +77,40 @@ func (r SysPost) Select(sysPost model.SysPost) []model.SysPost {
 	// 查询数据
 	rows := []model.SysPost{}
 	if err := tx.Order("post_sort asc").Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }
 
 // SelectByIds 通过ID查询信息
-func (r SysPost) SelectByIds(postIds []int64) []model.SysPost {
+func (r SysPost) SelectByIds(postIds []int64) ([]model.SysPost, error) {
 	rows := []model.SysPost{}
 	if len(postIds) <= 0 {
-		return rows
+		return rows, nil
 	}
 	tx := db.DB("").Model(&model.SysPost{})
 	// 构建查询条件
 	tx = tx.Where("id in ?", postIds)
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }
 
 // Insert 新增信息 返回新增数据ID
-func (r SysPost) Insert(sysPost model.SysPost) int64 {
+func (r SysPost) Insert(sysPost model.SysPost) (int64, error) {
 	// 执行插入
 	if err := db.DB("").Create(&sysPost).Error; err != nil {
-		logger.Errorf("insert err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return sysPost.ID
+	return sysPost.ID, nil
 }
 
 // Update 修改信息 返回受影响行数
-func (r SysPost) Update(sysPost model.SysPost) int64 {
+func (r SysPost) Update(sysPost model.SysPost) (int64, error) {
 	if sysPost.ID <= 0 {
-		return 0
+		return 0, nil
 	}
 	tx := db.DB("").Model(&model.SysPost{})
 	// 构建查询条件
@@ -123,30 +118,28 @@ func (r SysPost) Update(sysPost model.SysPost) int64 {
 	tx = tx.Omit("id", "create_by", "create_time")
 	// 执行更新
 	if err := tx.Updates(sysPost).Error; err != nil {
-		logger.Errorf("update err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
 
 // DeleteByIds 批量删除信息 返回受影响行数（物理删除）
-func (r SysPost) DeleteByIds(postIds []int64) int64 {
+func (r SysPost) DeleteByIds(postIds []int64) (int64, error) {
 	if len(postIds) <= 0 {
-		return 0
+		return 0, nil
 	}
 	tx := db.DB("").Model(&model.SysPost{})
 	// 构建查询条件
 	tx = tx.Where("id in ?", postIds)
 	// 执行物理删除
 	if err := tx.Delete(&model.SysPost{}).Error; err != nil {
-		logger.Errorf("delete err => %v", err.Error())
-		return 0
+		return 0, err
 	}
-	return tx.RowsAffected
+	return tx.RowsAffected, nil
 }
 
 // CheckUnique 检查信息是否唯一 返回ID
-func (r SysPost) CheckUnique(sysPost model.SysPost) int64 {
+func (r SysPost) CheckUnique(sysPost model.SysPost) (int64, error) {
 	tx := db.DB("").Model(&model.SysPost{})
 	// 查询条件拼接
 	if sysPost.PostName != "" {
@@ -159,25 +152,23 @@ func (r SysPost) CheckUnique(sysPost model.SysPost) int64 {
 	// 查询数据
 	var id int64 = 0
 	if err := tx.Select("id").Limit(1).Find(&id).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return id
+		return id, err
 	}
-	return id
+	return id, nil
 }
 
 // SelectByUserId 根据用户ID获取岗位选择框列表
-func (r SysPost) SelectByUserId(userId int64) []model.SysPost {
+func (r SysPost) SelectByUserId(userId int64) ([]model.SysPost, error) {
 	rows := []model.SysPost{}
 	if userId <= 0 {
-		return rows
+		return rows, nil
 	}
 	tx := db.DB("").Model(&model.SysPost{})
 	// 构建查询条件（sys_post 主键 id；sys_user_post 外键 post_id/user_id）
 	tx = tx.Where("id in (select post_id from sys_user_post where user_id = ?)", userId)
 	// 查询数据
 	if err := tx.Order("post_sort").Find(&rows).Error; err != nil {
-		logger.Errorf("query find err => %v", err.Error())
-		return rows
+		return rows, err
 	}
-	return rows
+	return rows, nil
 }

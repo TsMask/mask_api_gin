@@ -11,6 +11,7 @@ import (
 	"mask_api_gin/src/framework/constants"
 	"mask_api_gin/src/framework/database/db"
 	"mask_api_gin/src/framework/database/redis"
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/framework/utils/date"
 	"mask_api_gin/src/framework/utils/file"
 	"mask_api_gin/src/modules/system/model"
@@ -31,12 +32,20 @@ type SysDictType struct {
 
 // FindByPage 分页查询列表数据
 func (s SysDictType) FindByPage(query map[string]string) ([]model.SysDictType, int64) {
-	return s.sysDictTypeRepository.SelectByPage(query)
+	rows, total, err := s.sysDictTypeRepository.SelectByPage(query)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows, total
 }
 
 // Find 查询数据
 func (s SysDictType) Find(sysDictType model.SysDictType) []model.SysDictType {
-	return s.sysDictTypeRepository.Select(sysDictType)
+	rows, err := s.sysDictTypeRepository.Select(sysDictType)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows
 }
 
 // FindById 通过ID查询信息
@@ -44,7 +53,10 @@ func (s SysDictType) FindById(id int64) model.SysDictType {
 	if id <= 0 {
 		return model.SysDictType{}
 	}
-	dictTypes := s.sysDictTypeRepository.SelectByIds([]int64{id})
+	dictTypes, err := s.sysDictTypeRepository.SelectByIds([]int64{id})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(dictTypes) > 0 {
 		return dictTypes[0]
 	}
@@ -53,7 +65,11 @@ func (s SysDictType) FindById(id int64) model.SysDictType {
 
 // FindByType 根据字典类型查询信息
 func (s SysDictType) FindByType(dictType string) model.SysDictType {
-	return s.sysDictTypeRepository.SelectByType(dictType)
+	item, err := s.sysDictTypeRepository.SelectByType(dictType)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return item
 }
 
 // Insert 新增信息
@@ -64,7 +80,11 @@ func (s SysDictType) Insert(sysDictType model.SysDictType) int64 {
 		sysDictType.UpdateTime = ms
 		sysDictType.CreateTime = ms
 	}
-	insertId := s.sysDictTypeRepository.Insert(sysDictType)
+	insertId, err := s.sysDictTypeRepository.Insert(sysDictType)
+	if err != nil {
+		logger.Errorf("insert err => %v", err.Error())
+		return 0
+	}
 	if insertId > 0 {
 		s.CacheLoad(sysDictType.DictType)
 	}
@@ -76,14 +96,17 @@ func (s SysDictType) Update(sysDictType model.SysDictType) int64 {
 	if sysDictType.UpdateBy != "" {
 		sysDictType.UpdateTime = time.Now().UnixMilli()
 	}
-	arr := s.sysDictTypeRepository.SelectByIds([]int64{sysDictType.ID})
+	arr, err := s.sysDictTypeRepository.SelectByIds([]int64{sysDictType.ID})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(arr) == 0 {
 		return 0
 	}
 	// 同字典类型被修改时，同步更新修改
 	oldDictType := arr[0].DictType
 	var rows int64
-	err := db.Transaction("", func(tx *gorm.DB) error {
+	err = db.Transaction("", func(tx *gorm.DB) error {
 		affected, err := s.sysDictTypeRepository.Update(tx, sysDictType)
 		rows = affected
 		if err != nil {
@@ -107,29 +130,43 @@ func (s SysDictType) Update(sysDictType model.SysDictType) int64 {
 // DeleteByIds 批量删除信息
 func (s SysDictType) DeleteByIds(ids []int64) (int64, error) {
 	// 检查是否存在
-	arr := s.sysDictTypeRepository.SelectByIds(ids)
+	arr, err := s.sysDictTypeRepository.SelectByIds(ids)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(arr) <= 0 {
 		return 0, fmt.Errorf("没有权限访问字典类型数据！")
 	}
 	for _, v := range arr {
 		// 字典类型下级含有数据
-		if useCount := s.sysDictDataRepository.ExistDataByDictType(v.DictType); useCount > 0 {
+		useCount, err := s.sysDictDataRepository.ExistDataByDictType(v.DictType)
+		if err != nil {
+			logger.Errorf("query err => %v", err.Error())
+		}
+		if useCount > 0 {
 			return 0, fmt.Errorf("【%s】存在字典数据,不能删除", v.DictName)
 		}
 		// 清除缓存
 		s.CacheClean(v.DictType)
 	}
 	if len(arr) == len(ids) {
-		return s.sysDictTypeRepository.DeleteByIds(ids), nil
+		rows, err := s.sysDictTypeRepository.DeleteByIds(ids)
+		if err != nil {
+			return 0, err
+		}
+		return rows, nil
 	}
 	return 0, fmt.Errorf("删除字典数据信息失败！")
 }
 
 // CheckUniqueByName 检查字典名称是否唯一
 func (s SysDictType) CheckUniqueByName(dictName string, id int64) bool {
-	uniqueId := s.sysDictTypeRepository.CheckUnique(model.SysDictType{
+	uniqueId, err := s.sysDictTypeRepository.CheckUnique(model.SysDictType{
 		DictName: dictName,
 	})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if uniqueId == id {
 		return true
 	}
@@ -138,9 +175,12 @@ func (s SysDictType) CheckUniqueByName(dictName string, id int64) bool {
 
 // CheckUniqueByType 检查字典类型是否唯一
 func (s SysDictType) CheckUniqueByType(dictType string, id int64) bool {
-	uniqueId := s.sysDictTypeRepository.CheckUnique(model.SysDictType{
+	uniqueId, err := s.sysDictTypeRepository.CheckUnique(model.SysDictType{
 		DictType: dictType,
 	})
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if uniqueId == id {
 		return true
 	}
@@ -157,10 +197,14 @@ func (s SysDictType) FindDataByType(dictType string) []model.SysDictData {
 			data = []model.SysDictData{}
 		}
 	} else {
-		data = s.sysDictDataRepository.Select(model.SysDictData{
+		rows, err := s.sysDictDataRepository.Select(model.SysDictData{
 			DataStatus: constants.STATUS_YES,
 			DictType:   dictType,
 		})
+		if err != nil {
+			logger.Errorf("query err => %v", err.Error())
+		}
+		data = rows
 		if len(data) > 0 {
 			_ = redis.Del("", key)
 			values, _ := json.Marshal(data)
@@ -182,7 +226,10 @@ func (s SysDictType) CacheLoad(dictType string) {
 		sysDictData.DictType = ""
 	}
 
-	arr := s.sysDictDataRepository.Select(sysDictData)
+	arr, err := s.sysDictDataRepository.Select(sysDictData)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if len(arr) == 0 {
 		return
 	}

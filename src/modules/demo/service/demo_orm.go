@@ -3,6 +3,7 @@ package service
 import (
 	"time"
 
+	"mask_api_gin/src/framework/logger"
 	"mask_api_gin/src/modules/demo/model"
 	"mask_api_gin/src/modules/demo/repository"
 )
@@ -19,17 +20,29 @@ type DemoORMService struct {
 
 // FindByPage 分页查询
 func (s DemoORMService) FindByPage(query map[string]string) ([]model.DemoORM, int64) {
-	return s.demoORMRepository.SelectByPage(query)
+	rows, total, err := s.demoORMRepository.SelectByPage(query)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows, total
 }
 
 // Find 查询集合
 func (s DemoORMService) Find(demoORM model.DemoORM) []model.DemoORM {
-	return s.demoORMRepository.Select(demoORM)
+	rows, err := s.demoORMRepository.Select(demoORM)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows
 }
 
 // FindById 通过ID查询
 func (s DemoORMService) FindById(id int64) model.DemoORM {
-	return s.demoORMRepository.SelectById(id)
+	item, err := s.demoORMRepository.SelectById(id)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return item
 }
 
 // Insert 新增
@@ -39,7 +52,12 @@ func (s DemoORMService) Insert(demoORM model.DemoORM) int64 {
 	demoORM.UpdateBy = demoORM.CreateBy
 	demoORM.UpdateTime = ms
 	demoORM.CreateTime = ms
-	return s.demoORMRepository.Insert(demoORM)
+	rows, err := s.demoORMRepository.Insert(demoORM)
+	if err != nil {
+		logger.Errorf("insert err => %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // Update 更新
@@ -47,7 +65,10 @@ func (s DemoORMService) Update(demoORM model.DemoORM) int64 {
 	if demoORM.Id <= 0 {
 		return 0
 	}
-	item := s.demoORMRepository.SelectById(demoORM.Id)
+	item, err := s.demoORMRepository.SelectById(demoORM.Id)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
 	if item.Id <= 0 {
 		return 0
 	}
@@ -57,15 +78,30 @@ func (s DemoORMService) Update(demoORM model.DemoORM) int64 {
 	item.Remark = demoORM.Remark
 	item.UpdateBy = "system"
 	item.UpdateTime = time.Now().UnixMilli()
-	return s.demoORMRepository.Update(item)
+	rows, err := s.demoORMRepository.Update(item)
+	if err != nil {
+		logger.Errorf("update err => %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // DeleteByIds 批量删除
 func (s DemoORMService) DeleteByIds(ids []int64) int64 {
-	return s.demoORMRepository.DeleteByIds(ids)
+	rows, err := s.demoORMRepository.DeleteByIds(ids)
+	if err != nil {
+		logger.Errorf("delete err => %v", err.Error())
+		return 0
+	}
+	return rows
 }
 
 // Clean 清空测试ORM表
 func (s DemoORMService) Clean() int64 {
-	return s.demoORMRepository.Clean()
+	rows, err := s.demoORMRepository.Clean()
+	if err != nil {
+		logger.Errorf("clean err => %v", err.Error())
+		return 0
+	}
+	return rows
 }
