@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -24,6 +26,8 @@ type Logger struct {
 	logger      *log.Logger    // 日志实例
 	logLevelMap map[int]string // 日志等级标识名
 	logDay      int            // 日志当前日
+	mu          sync.Mutex     // 保护写入与分割互斥，避免并发占用句柄
+	closed      atomic.Bool    // 是否已关闭，阻止关闭后再分割/写入
 }
 
 const (
@@ -81,42 +85,69 @@ func NewLogger(env, fileDir, fileName string, level, maxDay, maxSize int) (*Logg
 
 // checkFile 检查文件分割，自定时调用
 func (l *Logger) checkFile() {
-	fileInfo, err := l.fileHandle.Stat()
-	if err != nil {
-		l.logger.Printf("failed to get log file info: %v\n", err)
+	if l.closed.Load() {
 		return
 	}
 
-	currTime := time.Now()
-	if l.logDay != currTime.Day() {
-		l.logDay = currTime.Day()
-		l.rotateFile(currTime.AddDate(0, 0, -1).Format("2006-01-02"))
-		// 移除超过保存最长天数的文件
-		l.removeOldFile(currTime.AddDate(0, 0, -l.maxDay))
-	} else if fileInfo.Size() >= l.maxSize {
-		l.rotateFile(currTime.Format("2006-01-02_150405"))
-	} else if time.Since(fileInfo.ModTime()).Hours() > 24 {
-		l.rotateFile(fileInfo.ModTime().Format("2006-01-02"))
+	// 加锁读取文件信息，避免与 rotateFile/Close 并发访问句柄
+	l.mu.Lock()
+	fileInfo, err := l.fileHandle.Stat()
+	l.mu.Unlock()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "logger: failed to get log file info: %v\n", err)
+	} else {
+		currTime := time.Now()
+		if l.logDay != currTime.Day() {
+			l.logDay = currTime.Day()
+			l.rotateFile(currTime.AddDate(0, 0, -1).Format("2006-01-02"))
+			// 移除超过保存最长天数的文件
+			l.removeOldFile(currTime.AddDate(0, 0, -l.maxDay))
+		} else if fileInfo.Size() >= l.maxSize {
+			l.rotateFile(currTime.Format("2006-01-02_150405"))
+		} else if time.Since(fileInfo.ModTime()).Hours() > 24 {
+			l.rotateFile(fileInfo.ModTime().Format("2006-01-02"))
+		}
 	}
 
-	time.AfterFunc(1*time.Minute, l.checkFile)
+	// 无论是否触发分割都继续定时，避免一次 Stat 失败就永久停止分割
+	if !l.closed.Load() {
+		time.AfterFunc(1*time.Minute, l.checkFile)
+	}
 }
 
 // rotateFile 检查文件大小进行分割
 func (l *Logger) rotateFile(timeFormat string) {
-	_ = l.fileHandle.Close()
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if l.closed.Load() {
+		return
+	}
+
+	// 必须先刷新缓冲区：否则缓冲数据丢失，且缓冲器仍引用已关闭的句柄，
+	// Windows 上会导致句柄占用、文件无法重命名分割
+	if l.bufWriter != nil {
+		_ = l.bufWriter.Flush()
+	}
+
+	// 关闭当前文件句柄（句柄释放后方可重命名）
+	if err := l.fileHandle.Close(); err != nil {
+		fmt.Fprintf(os.Stderr, "logger: failed to close log file: %v\n", err)
+	}
 
 	newFileName := fmt.Sprintf("%s.%s", l.fileName, timeFormat)
 	newFilePath := filepath.Join(l.filePath, newFileName)
 	oldFilePath := filepath.Join(l.filePath, l.fileName)
 
 	// 重命名
-	_ = os.Rename(oldFilePath, newFilePath)
+	if err := os.Rename(oldFilePath, newFilePath); err != nil {
+		fmt.Fprintf(os.Stderr, "logger: failed to rename log file: %v\n", err)
+	}
 
 	// 新文件句柄
 	fileHandle, err := os.OpenFile(oldFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		l.logger.Printf("failed to open log file: %v\n", err)
+		fmt.Fprintf(os.Stderr, "logger: failed to open log file: %v\n", err)
 		return
 	}
 
@@ -142,29 +173,25 @@ func (l *Logger) removeOldFile(oldFileDate time.Time) {
 		return
 	}
 
+	prefix := l.fileName + "."
 	for _, file := range files {
-		// 跳过非指定日志文件名
-		if !strings.HasPrefix(file.Name(), l.fileName+".") {
+		// 分割文件名格式：fileName.date 或 fileName.date_time，截取 fileName. 之后的后缀
+		suffix := strings.TrimPrefix(file.Name(), prefix)
+		if suffix == file.Name() {
 			continue
 		}
-		idx := strings.LastIndex(file.Name(), ".")
-		if idx == -1 {
+		// 日期部分固定 10 位（2006-01-02），后缀不足则不是分割文件，跳过避免越界
+		if len(suffix) < 10 {
 			continue
 		}
-		dateStr := file.Name()[idx+1 : idx+11]
-
-		// 解析日期字符串
-		fileDate, err := time.Parse("2006-01-02", dateStr)
+		fileDate, err := time.Parse("2006-01-02", suffix[:10])
 		if err != nil {
-			l.Errorf("logger RemoveOldFile Parse err: %v", err.Error())
 			continue
 		}
 
 		// 判断文件日期是否在给定日期之前
 		if fileDate.Before(oldFileDate) {
-			// 删除旧文件
-			err := os.Remove(filepath.Join(l.filePath, file.Name()))
-			if err != nil {
+			if err := os.Remove(filepath.Join(l.filePath, file.Name())); err != nil {
 				l.Errorf("logger RemoveOldFile Remove err: %v", err.Error())
 				continue
 			}
@@ -178,9 +205,14 @@ func (l *Logger) writeLog(level int, format string, args ...interface{}) {
 	if level < l.level {
 		return
 	}
+	if l.closed.Load() {
+		return
+	}
 
 	logMsg := fmt.Sprintf("[%s] %s\n", l.logLevelMap[level], fmt.Sprintf(format, args...))
+	l.mu.Lock()
 	_ = l.logger.Output(4, logMsg)
+	l.mu.Unlock()
 }
 
 func (l *Logger) Infof(format string, args ...interface{}) {
@@ -197,11 +229,15 @@ func (l *Logger) Errorf(format string, args ...interface{}) {
 
 // Close 日志关闭
 func (l *Logger) Close() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.closed.Store(true)
+
 	if l.bufWriter != nil {
 		_ = l.bufWriter.Flush()
 	}
 
 	if err := l.fileHandle.Close(); err != nil {
-		l.logger.Printf("failed to close log file: %v\n", err)
+		fmt.Fprintf(os.Stderr, "logger: failed to close log file: %v\n", err)
 	}
 }
