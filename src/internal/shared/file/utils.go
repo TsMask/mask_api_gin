@@ -3,6 +3,7 @@ package file
 import (
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"mask_api_gin/src/internal/config"
@@ -51,10 +52,8 @@ func UploadAllowReadFilePath(filePath string) error {
 		return fmt.Errorf("禁止目录上跳级别")
 	}
 	ext := filepath.Ext(filePath)
-	for _, allow := range UploadWhiteList() {
-		if ext == allow {
-			return nil
-		}
+	if slices.Contains(UploadWhiteList(), ext) {
+		return nil
 	}
 	return fmt.Errorf("限定下载的文件规则：%s", ext)
 }

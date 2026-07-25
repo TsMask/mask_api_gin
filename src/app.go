@@ -39,6 +39,10 @@ func RunServer() error {
 
 // 模块路由注册
 func modulesSetup(app *gin.Engine) {
+	// 接口操作日志中间件注入操作日志钩子（须在路由注册之前）
+	system.RegisterOnOperateLog()
+	job.RegisterOnJobLog()
+
 	demo.Setup(app) // 演示模块（可移除）
 
 	auth.Setup(app)    // 认证模块

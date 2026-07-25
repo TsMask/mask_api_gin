@@ -1,8 +1,8 @@
 package testjob
 
 import (
-	"mask_api_gin/src/internal/infra/cron"
 	"mask_api_gin/src/internal/shared/logger"
+	"mask_api_gin/src/modules/monitor/model"
 )
 
 var NewProcessor = &Processor{}
@@ -11,14 +11,11 @@ var NewProcessor = &Processor{}
 type Processor struct{}
 
 func (p Processor) Execute(data any) (any, error) {
-	options := data.(cron.JobData)
-
-	sysJob := options.SysJob
-	logger.Infof("重复 %v 任务ID %d", options.Repeat, sysJob.ID)
+	sysJob := data.(model.SysJob)
+	logger.Infof("任务ID %d", sysJob.ID)
 
 	// 返回结果，用于记录执行结果
 	result := map[string]any{
-		"repeat":       options.Repeat,
 		"jobName":      sysJob.JobName,
 		"invokeTarget": sysJob.JobInvokeTarget,
 		"targetParams": sysJob.JobTargetParams,

@@ -26,21 +26,35 @@ func InitLogger() {
 
 // Close 关闭程序日志写入
 func Close() {
-	logWriter.Close()
+	if logWriter != nil {
+		logWriter.Close()
+	}
 }
 
 // Infof 信息级日志
 func Infof(format string, v ...any) {
+	if logWriter == nil {
+		log.Printf("[INFO] "+format, v...)
+		return
+	}
 	logWriter.Infof(format, v...)
 }
 
 // Warnf 告警级日志
 func Warnf(format string, v ...any) {
+	if logWriter == nil {
+		log.Printf("[WARN] "+format, v...)
+		return
+	}
 	logWriter.Warnf(format, v...)
 }
 
 // Errorf 错误级日志
 func Errorf(format string, v ...any) {
+	if logWriter == nil {
+		log.Printf("[ERROR] "+format, v...)
+		return
+	}
 	logWriter.Errorf(format, v...)
 }
 

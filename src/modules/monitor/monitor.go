@@ -14,7 +14,7 @@ func Setup(router *gin.Engine) {
 	logger.Infof("开始加载 ====> monitor 模块路由")
 
 	// 启动时需要的初始参数
-	InitLoad()
+	initLoad()
 
 	// 服务器信息
 	system := controller.NewSystem
@@ -155,8 +155,9 @@ func Setup(router *gin.Engine) {
 
 }
 
-// InitLoad 初始参数
-func InitLoad() {
+// initLoad 初始参数
+func initLoad() {
+	sysJobService := service.NewSysJob
 	// 启动时，初始化调度任务
-	service.NewSysJob.Reset()
+	sysJobService.Reset()
 }

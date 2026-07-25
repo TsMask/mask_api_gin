@@ -5,11 +5,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/infra/cron"
-	"mask_api_gin/src/internal/shared/logger"
+	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/shared/date"
 	"mask_api_gin/src/internal/shared/file"
+	"mask_api_gin/src/internal/shared/logger"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/repository"
 	systemService "mask_api_gin/src/modules/system/service"
@@ -151,26 +151,22 @@ func (s SysJob) insertQueueJob(sysJob model.SysJob, repeat bool) bool {
 		return false
 	}
 
-	// 给执行任务数据参数
-	options := cron.JobData{
-		Repeat: repeat,
-		SysJob: sysJob,
-	}
-
 	// 不是重复任务的情况，立即执行一次
 	if !repeat {
 		// 执行单次任务
-		status := queue.RunJob(options, cron.JobOptions{
-			ID: fmt.Sprintf("%d", sysJob.ID),
+		status := queue.RunJob(sysJob, cron.JobOptions{
+			ID:         fmt.Sprintf("%d", sysJob.ID),
+			Concurrent: sysJob.JobConcurrent == "1",
 		})
 		// 执行中或等待中的都返回正常
 		return status == cron.Active || status == cron.Waiting
 	}
 
 	// 执行重复任务
-	queue.RunJob(options, cron.JobOptions{
-		ID:   fmt.Sprintf("%d", sysJob.ID),
-		Cron: sysJob.JobCron,
+	queue.RunJob(sysJob, cron.JobOptions{
+		ID:         fmt.Sprintf("%d", sysJob.ID),
+		Cron:       sysJob.JobCron,
+		Concurrent: sysJob.JobConcurrent == "1",
 	})
 	return true
 }

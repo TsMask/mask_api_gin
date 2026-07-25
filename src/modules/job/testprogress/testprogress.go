@@ -3,8 +3,8 @@ package testprogress
 import (
 	"time"
 
-	"mask_api_gin/src/internal/infra/cron"
 	"mask_api_gin/src/internal/shared/logger"
+	"mask_api_gin/src/modules/monitor/model"
 )
 
 var NewProcessor = &Processor{
@@ -22,9 +22,8 @@ func (p *Processor) Execute(data any) (any, error) {
 	logger.Infof("执行 %d 次，上次进度： %d ", p.count, p.progress)
 	p.count++
 
-	options := data.(cron.JobData)
-	sysJob := options.SysJob
-	logger.Infof("重复 %v 任务ID %d", options.Repeat, sysJob.ID)
+	sysJob := data.(model.SysJob)
+	logger.Infof("任务ID %d", sysJob.ID)
 
 	// 实现任务处理逻辑
 	i := 0
@@ -42,7 +41,6 @@ func (p *Processor) Execute(data any) (any, error) {
 
 	// 返回结果，用于记录执行结果
 	result := map[string]any{
-		"repeat":       options.Repeat,
 		"jobName":      sysJob.JobName,
 		"invokeTarget": sysJob.JobInvokeTarget,
 		"targetParams": sysJob.JobTargetParams,

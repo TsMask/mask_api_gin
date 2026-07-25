@@ -15,24 +15,7 @@ func Setup(router *gin.Engine) {
 	logger.Infof("开始加载 ====> system 模块路由")
 
 	// 启动时需要的初始参数
-	// Inject operate-log persistence so the middleware stays decoupled from the business model.
-	middleware.OperateLogSink = func(rec middleware.OperateLogRecord) {
-		service.NewSysLogOperate.Insert(model.SysLogOperate{
-			Title:           rec.Title,
-			OperateType:     rec.OperateType,
-			OperateFunction: rec.OperateFunction,
-			OperateUrl:      rec.OperateUrl,
-			OperateMethod:   rec.OperateMethod,
-			OperateIp:       rec.OperateIp,
-			OperateLocation: rec.OperateLocation,
-			CreateBy:        rec.CreateBy,
-			OperateParam:    rec.OperateParam,
-			OperateStatus:   rec.OperateStatus,
-			OperateMsg:      rec.OperateMsg,
-			OperateCostTime: rec.OperateCostTime,
-		})
-	}
-	InitLoad()
+	initLoad()
 
 	// 参数配置信息
 	sysConfigGroup := router.Group("/system/config")
@@ -481,11 +464,34 @@ func Setup(router *gin.Engine) {
 }
 
 // InitLoad 初始参数
-func InitLoad() {
+func initLoad() {
 	// 启动时，刷新缓存-参数配置
 	service.NewSysConfig.CacheClean("*")
 	service.NewSysConfig.CacheLoad("*")
 	// 启动时，刷新缓存-字典类型数据
 	service.NewSysDictType.CacheClean("*")
 	service.NewSysDictType.CacheLoad("*")
+}
+
+// RegisterOnOperateLog 注入操作日志持久化钩子。
+//
+// 将中间件发出的操作事件映射为操作日志并落库；中间件本身不依赖任何业务模型。
+// 需在路由注册（触发操作日志）之前调用。
+func RegisterOnOperateLog() {
+	middleware.OnOperateLog = func(rec middleware.OperateLogRecord) {
+		service.NewSysLogOperate.Insert(model.SysLogOperate{
+			Title:           rec.Title,
+			OperateType:     rec.OperateType,
+			OperateFunction: rec.OperateFunction,
+			OperateUrl:      rec.OperateUrl,
+			OperateMethod:   rec.OperateMethod,
+			OperateIp:       rec.OperateIp,
+			OperateLocation: rec.OperateLocation,
+			CreateBy:        rec.CreateBy,
+			OperateParam:    rec.OperateParam,
+			OperateStatus:   rec.OperateStatus,
+			OperateMsg:      rec.OperateMsg,
+			OperateCostTime: rec.OperateCostTime,
+		})
+	}
 }

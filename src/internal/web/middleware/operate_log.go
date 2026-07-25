@@ -142,8 +142,8 @@ func OperateLog(options Options) gin.HandlerFunc {
 		operaLog.OperateCostTime = duration.Milliseconds()
 
 		// 保存操作记录到数据库
-		if OperateLogSink != nil {
-			OperateLogSink(operaLog)
+		if OnOperateLog != nil {
+			OnOperateLog(operaLog)
 		}
 	}
 }
@@ -202,5 +202,5 @@ type OperateLogRecord struct {
 	OperateCostTime int64
 }
 
-// OperateLogSink persists an operate-log record. Injected by the business module at startup; nil drops the record.
-var OperateLogSink func(OperateLogRecord)
+// OnOperateLog persists an operate-log record. Injected by the business module at startup; nil drops the record.
+var OnOperateLog func(OperateLogRecord)

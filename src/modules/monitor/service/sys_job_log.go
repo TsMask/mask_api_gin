@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"mask_api_gin/src/internal/shared/constants"
-	"mask_api_gin/src/internal/shared/logger"
 	"mask_api_gin/src/internal/shared/date"
 	"mask_api_gin/src/internal/shared/file"
+	"mask_api_gin/src/internal/shared/logger"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/repository"
 	systemService "mask_api_gin/src/modules/system/service"
@@ -51,6 +51,11 @@ func (s SysJobLog) FindById(id int64) model.SysJobLog {
 		logger.Errorf("query err => %v", err.Error())
 	}
 	return item
+}
+
+// Insert 新增
+func (s SysJobLog) Insert(sysJobLog model.SysJobLog) (int64, error) {
+	return s.sysJobLogRepository.Insert(sysJobLog)
 }
 
 // DeleteByIds 批量删除
