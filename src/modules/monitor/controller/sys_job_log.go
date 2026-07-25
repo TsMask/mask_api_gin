@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/framework/reqctx"
-	"mask_api_gin/src/framework/resp"
-	"mask_api_gin/src/framework/utils/parse"
+	"mask_api_gin/src/internal/server/reqctx"
+	"mask_api_gin/src/internal/server/resp"
+	"mask_api_gin/src/internal/core/utils/parse"
 	"mask_api_gin/src/modules/monitor/service"
 )
 

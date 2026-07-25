@@ -5,12 +5,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/framework/reqctx"
-	"mask_api_gin/src/framework/resp"
-	"mask_api_gin/src/framework/token"
-	"mask_api_gin/src/framework/utils/crypto"
-	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/regular"
+	"mask_api_gin/src/internal/server/reqctx"
+	"mask_api_gin/src/internal/server/resp"
+	"mask_api_gin/src/internal/server/token"
+	"mask_api_gin/src/internal/core/utils/crypto"
+	"mask_api_gin/src/internal/core/utils/parse"
+	"mask_api_gin/src/internal/core/utils/regular"
 	"mask_api_gin/src/modules/system/service"
 )
 

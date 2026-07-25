@@ -3,12 +3,12 @@ package src
 import (
 	"embed"
 
-	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/cron"
-	"mask_api_gin/src/framework/database/db"
-	"mask_api_gin/src/framework/database/redis"
-	"mask_api_gin/src/framework/ip2region"
-	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/internal/config"
+	"mask_api_gin/src/internal/infra/cron"
+	"mask_api_gin/src/internal/infra/database/db"
+	"mask_api_gin/src/internal/infra/database/redis"
+	"mask_api_gin/src/internal/infra/ip2region"
+	"mask_api_gin/src/internal/core/logger"
 )
 
 // ConfigurationInit 配置中心初始加载

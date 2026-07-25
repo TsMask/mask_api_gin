@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/database/redis"
-	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/internal/core/constants"
+	"mask_api_gin/src/internal/infra/database/redis"
+	"mask_api_gin/src/internal/server/resp"
 	"mask_api_gin/src/modules/monitor/model"
 )
 

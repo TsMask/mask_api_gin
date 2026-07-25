@@ -30,10 +30,10 @@ RUN go mod download
 
 ## 进行源码编译，生产文件 api
 RUN go build -o api -ldflags="-s -w \ 
-    -X 'mask_api_gin/src/framework/config.Name=${NAME}' \ 
-    -X 'mask_api_gin/src/framework/config.Version=${VERSION}' \ 
-    -X 'mask_api_gin/src/framework/config.BuildTime=$(date)' \ 
-    -X 'mask_api_gin/src/framework/config.GoVer=$(go version)'"
+    -X 'mask_api_gin/src/internal/config.Name=${NAME}' \ 
+    -X 'mask_api_gin/src/internal/config.Version=${VERSION}' \ 
+    -X 'mask_api_gin/src/internal/config.BuildTime=$(date)' \ 
+    -X 'mask_api_gin/src/internal/config.GoVer=$(go version)'"
 
 ## 暴露端口要与程序端口一致
 EXPOSE 6275

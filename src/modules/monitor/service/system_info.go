@@ -14,8 +14,8 @@ import (
 	"github.com/shirou/gopsutil/v4/mem"
 	"github.com/shirou/gopsutil/v4/net"
 
-	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/utils/parse"
+	"mask_api_gin/src/internal/config"
+	"mask_api_gin/src/internal/core/utils/parse"
 )
 
 // NewSystemInfo 服务层实例化

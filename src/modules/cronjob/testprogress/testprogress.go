@@ -3,8 +3,8 @@ package testprogress
 import (
 	"time"
 
-	"mask_api_gin/src/framework/cron"
-	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/internal/infra/cron"
+	"mask_api_gin/src/internal/core/logger"
 )
 
 var NewProcessor = &Processor{

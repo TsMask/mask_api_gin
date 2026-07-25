@@ -6,12 +6,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/reqctx"
-	"mask_api_gin/src/framework/resp"
-	"mask_api_gin/src/framework/utils/file"
-	"mask_api_gin/src/framework/utils/parse"
-	"mask_api_gin/src/framework/utils/regular"
+	"mask_api_gin/src/internal/config"
+	"mask_api_gin/src/internal/server/reqctx"
+	"mask_api_gin/src/internal/server/resp"
+	"mask_api_gin/src/internal/core/utils/file"
+	"mask_api_gin/src/internal/core/utils/parse"
+	"mask_api_gin/src/internal/core/utils/regular"
 	authService "mask_api_gin/src/modules/auth/service"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"

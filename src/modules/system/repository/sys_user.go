@@ -3,8 +3,8 @@ package repository
 import (
 	"fmt"
 
-	"mask_api_gin/src/framework/database/db"
-	"mask_api_gin/src/framework/utils/parse"
+	"mask_api_gin/src/internal/infra/database/db"
+	"mask_api_gin/src/internal/core/utils/parse"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"

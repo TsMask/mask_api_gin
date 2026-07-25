@@ -3,9 +3,9 @@ package service
 import (
 	"fmt"
 
-	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/database/redis"
-	"mask_api_gin/src/framework/utils/parse"
+	"mask_api_gin/src/internal/core/constants"
+	"mask_api_gin/src/internal/infra/database/redis"
+	"mask_api_gin/src/internal/core/utils/parse"
 	systemModel "mask_api_gin/src/modules/system/model"
 	systemService "mask_api_gin/src/modules/system/service"
 )

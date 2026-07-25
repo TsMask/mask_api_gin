@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/internal/core/logger"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )

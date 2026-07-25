@@ -11,10 +11,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/resp"
-	"mask_api_gin/src/framework/utils/date"
-	"mask_api_gin/src/framework/utils/file"
+	"mask_api_gin/src/internal/core/constants"
+	"mask_api_gin/src/internal/server/resp"
+	"mask_api_gin/src/internal/core/utils/date"
+	"mask_api_gin/src/internal/core/utils/file"
 )
 
 // NewFile 实例化控制层

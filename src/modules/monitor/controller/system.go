@@ -3,7 +3,7 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/internal/server/resp"
 	"mask_api_gin/src/modules/monitor/service"
 )
 

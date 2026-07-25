@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/database/db"
+	"mask_api_gin/src/internal/core/constants"
+	"mask_api_gin/src/internal/infra/database/db"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"

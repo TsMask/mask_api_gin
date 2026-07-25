@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/engine"
+	"mask_api_gin/src/internal/config"
+	"mask_api_gin/src/internal/server/engine"
 	"mask_api_gin/src/modules/auth"
 	"mask_api_gin/src/modules/common"
 	"mask_api_gin/src/modules/cronjob"

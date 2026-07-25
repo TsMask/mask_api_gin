@@ -7,12 +7,12 @@ import (
 
 	"gorm.io/gorm"
 
-	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/database/db"
-	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/token"
-	"mask_api_gin/src/framework/utils/date"
-	"mask_api_gin/src/framework/utils/file"
+	"mask_api_gin/src/internal/core/constants"
+	"mask_api_gin/src/internal/infra/database/db"
+	"mask_api_gin/src/internal/core/logger"
+	"mask_api_gin/src/internal/server/token"
+	"mask_api_gin/src/internal/core/utils/date"
+	"mask_api_gin/src/internal/core/utils/file"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )

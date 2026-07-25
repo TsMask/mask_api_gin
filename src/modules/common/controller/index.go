@@ -3,8 +3,8 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/resp"
+	"mask_api_gin/src/internal/config"
+	"mask_api_gin/src/internal/server/resp"
 )
 
 // NewIndex 实例化控制层

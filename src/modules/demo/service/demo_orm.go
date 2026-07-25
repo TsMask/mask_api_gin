@@ -3,7 +3,7 @@ package service
 import (
 	"time"
 
-	"mask_api_gin/src/framework/logger"
+	"mask_api_gin/src/internal/core/logger"
 	"mask_api_gin/src/modules/demo/model"
 	"mask_api_gin/src/modules/demo/repository"
 )

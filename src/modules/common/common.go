@@ -3,8 +3,8 @@ package common
 import (
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/middleware"
+	"mask_api_gin/src/internal/core/logger"
+	"mask_api_gin/src/internal/server/middleware"
 	"mask_api_gin/src/modules/common/controller"
 )
 

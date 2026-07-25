@@ -1,7 +1,7 @@
 package cronjob
 
 import (
-	"mask_api_gin/src/framework/cron"
+	"mask_api_gin/src/internal/infra/cron"
 	"mask_api_gin/src/modules/cronjob/testerror"
 	"mask_api_gin/src/modules/cronjob/testjob"
 	"mask_api_gin/src/modules/cronjob/testprogress"

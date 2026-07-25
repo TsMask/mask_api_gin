@@ -7,12 +7,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mojocn/base64Captcha"
 
-	"mask_api_gin/src/framework/config"
-	"mask_api_gin/src/framework/constants"
-	"mask_api_gin/src/framework/database/redis"
-	"mask_api_gin/src/framework/logger"
-	"mask_api_gin/src/framework/resp"
-	"mask_api_gin/src/framework/utils/parse"
+	"mask_api_gin/src/internal/config"
+	"mask_api_gin/src/internal/core/constants"
+	"mask_api_gin/src/internal/infra/database/redis"
+	"mask_api_gin/src/internal/core/logger"
+	"mask_api_gin/src/internal/server/resp"
+	"mask_api_gin/src/internal/core/utils/parse"
 	systemService "mask_api_gin/src/modules/system/service"
 )
 
