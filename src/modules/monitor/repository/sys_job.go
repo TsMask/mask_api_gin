@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"mask_api_gin/src/internal/infra/database/db"
+	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/modules/monitor/model"
 )
 
@@ -27,7 +27,7 @@ var sysJobSortMapping = map[string]string{
 
 // SelectByPage 分页查询集合
 func (r SysJob) SelectByPage(query map[string]string) ([]model.SysJob, int64, error) {
-	tx := db.DB("").Model(&model.SysJob{})
+	tx := database.DB("").Model(&model.SysJob{})
 	// 查询条件拼接
 	if v, ok := query["jobName"]; ok && v != "" {
 		tx = tx.Where("job_name like ?", v+"%")
@@ -52,12 +52,12 @@ func (r SysJob) SelectByPage(query map[string]string) ([]model.SysJob, int64, er
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序
-	orders := db.SortParse(query["sort"], sysJobSortMapping)
-	tx = db.SortOrDefault(tx, orders, "id desc")
+	orders := database.SortParse(query["sort"], sysJobSortMapping)
+	tx = database.SortOrDefault(tx, orders, "id desc")
 
 	err := tx.Find(&rows).Error
 	if err != nil {
@@ -68,7 +68,7 @@ func (r SysJob) SelectByPage(query map[string]string) ([]model.SysJob, int64, er
 
 // Select 查询集合
 func (r SysJob) Select(sysJob model.SysJob) ([]model.SysJob, error) {
-	tx := db.DB("").Model(&model.SysJob{})
+	tx := database.DB("").Model(&model.SysJob{})
 	// 查询条件拼接
 	if sysJob.JobName != "" {
 		tx = tx.Where("job_name like ?", sysJob.JobName+"%")
@@ -97,7 +97,7 @@ func (r SysJob) SelectByIds(ids []int64) ([]model.SysJob, error) {
 	if len(ids) <= 0 {
 		return rows, nil
 	}
-	tx := db.DB("").Model(&model.SysJob{})
+	tx := database.DB("").Model(&model.SysJob{})
 	// 构建查询条件
 	tx = tx.Where("id in ?", ids)
 	// 查询数据
@@ -110,7 +110,7 @@ func (r SysJob) SelectByIds(ids []int64) ([]model.SysJob, error) {
 // Insert 新增信息 返回新增数据ID
 func (r SysJob) Insert(sysJob model.SysJob) (int64, error) {
 	// 执行插入
-	if err := db.DB("").Create(&sysJob).Error; err != nil {
+	if err := database.DB("").Create(&sysJob).Error; err != nil {
 		return 0, err
 	}
 	return sysJob.ID, nil
@@ -121,7 +121,7 @@ func (r SysJob) Update(sysJob model.SysJob) (int64, error) {
 	if sysJob.ID <= 0 {
 		return 0, nil
 	}
-	tx := db.DB("").Model(&model.SysJob{})
+	tx := database.DB("").Model(&model.SysJob{})
 	// 构建查询条件
 	tx = tx.Where("id = ?", sysJob.ID)
 	tx = tx.Omit("id", "create_by", "create_time")
@@ -137,7 +137,7 @@ func (r SysJob) DeleteByIds(ids []int64) (int64, error) {
 	if len(ids) <= 0 {
 		return 0, nil
 	}
-	tx := db.DB("").Where("id in ?", ids)
+	tx := database.DB("").Where("id in ?", ids)
 	if err := tx.Delete(&model.SysJob{}).Error; err != nil {
 		return 0, err
 	}
@@ -146,7 +146,7 @@ func (r SysJob) DeleteByIds(ids []int64) (int64, error) {
 
 // CheckUnique 校验信息是否唯一
 func (r SysJob) CheckUnique(sysJob model.SysJob) (int64, error) {
-	tx := db.DB("").Model(&model.SysJob{})
+	tx := database.DB("").Model(&model.SysJob{})
 	// 查询条件拼接
 	if sysJob.JobName != "" {
 		tx = tx.Where("job_name = ?", sysJob.JobName)

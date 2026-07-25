@@ -6,10 +6,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/internal/core/constants"
-	"mask_api_gin/src/internal/server/reqctx"
-	"mask_api_gin/src/internal/server/resp"
-	"mask_api_gin/src/internal/core/utils/parse"
+	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/web/reqctx"
+	"mask_api_gin/src/internal/web/resp"
+	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 )
@@ -48,7 +48,7 @@ func (s SysDeptController) List(c *gin.Context) {
 		DeptName:   query.DeptName,
 		DeptStatus: query.DeptStatus,
 	}
-	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_dept", "")
+	dataScopeSQL := service.DataScopeSQL(c, "sys_dept", "")
 	data := s.sysDeptService.Find(sysDept, dataScopeSQL)
 	c.JSON(200, resp.OkData(data))
 }
@@ -249,7 +249,7 @@ func (s SysDeptController) ExcludeChild(c *gin.Context) {
 		return
 	}
 	deptId := parse.Number(deptIdStr)
-	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_dept", "")
+	dataScopeSQL := service.DataScopeSQL(c, "sys_dept", "")
 	data := s.sysDeptService.Find(model.SysDept{}, dataScopeSQL)
 
 	// 过滤排除节点
@@ -288,7 +288,7 @@ func (s SysDeptController) Tree(c *gin.Context) {
 		DeptName:   query.DeptName,
 		DeptStatus: query.DeptStatus,
 	}
-	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_dept", "")
+	dataScopeSQL := service.DataScopeSQL(c, "sys_dept", "")
 	data := s.sysDeptService.BuildTreeSelect(sysDept, dataScopeSQL)
 	c.JSON(200, resp.OkData(data))
 }
@@ -303,7 +303,7 @@ func (s SysDeptController) TreeRole(c *gin.Context) {
 		return
 	}
 
-	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_dept", "")
+	dataScopeSQL := service.DataScopeSQL(c, "sys_dept", "")
 	deptTreeSelect := s.sysDeptService.BuildTreeSelect(model.SysDept{}, dataScopeSQL)
 	checkedKeys := s.sysDeptService.FindDeptIdsByRoleId(roleId)
 	c.JSON(200, resp.OkData(map[string]any{

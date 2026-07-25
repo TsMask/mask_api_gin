@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/internal/server/reqctx"
-	"mask_api_gin/src/internal/server/resp"
+	"mask_api_gin/src/internal/web/reqctx"
+	"mask_api_gin/src/internal/web/resp"
 	"mask_api_gin/src/modules/system/service"
 )
 
@@ -28,7 +28,7 @@ type SysLogOperateController struct {
 // GET /list
 func (s SysLogOperateController) List(c *gin.Context) {
 	query := reqctx.QueryMap(c)
-	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
+	dataScopeSQL := service.DataScopeSQL(c, "sys_user", "sys_user")
 	rows, total := s.sysLogOperateService.FindByPage(query, dataScopeSQL)
 	c.JSON(200, resp.OkData(map[string]any{"rows": rows, "total": total}))
 }
@@ -47,7 +47,7 @@ func (s SysLogOperateController) Clean(c *gin.Context) {
 func (s SysLogOperateController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	query := reqctx.QueryMap(c)
-	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
+	dataScopeSQL := service.DataScopeSQL(c, "sys_user", "sys_user")
 	rows, total := s.sysLogOperateService.FindByPage(query, dataScopeSQL)
 	if total == 0 {
 		c.JSON(200, resp.ErrMsg("export data record as empty"))

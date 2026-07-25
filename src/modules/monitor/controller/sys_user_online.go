@@ -8,12 +8,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/internal/core/constants"
-	"mask_api_gin/src/internal/infra/database/redis"
-	"mask_api_gin/src/internal/server/reqctx"
-	"mask_api_gin/src/internal/server/resp"
-	"mask_api_gin/src/internal/server/token"
-	"mask_api_gin/src/internal/core/utils/parse"
+	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/infra/cache"
+	"mask_api_gin/src/internal/web/reqctx"
+	"mask_api_gin/src/internal/web/resp"
+	"mask_api_gin/src/internal/web/token"
+	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/service"
 )
@@ -37,7 +37,7 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 	query := reqctx.QueryMap(c)
 
 	// SCAN 获取所有 key（仅名称），排序保证顺序确定性
-	keys, _ := redis.GetKeys("", constants.CACHE_TOKEN_DEVICE+":*")
+	keys, _ := cache.GetKeys("", constants.CACHE_TOKEN_DEVICE+":*")
 	sort.Strings(keys)
 
 	total := int64(len(keys))
@@ -65,7 +65,7 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 	}
 	pageKeys := keys[start:end]
 
-	values, _ := redis.GetBatch("", pageKeys)
+	values, _ := cache.GetBatch("", pageKeys)
 
 	// 解析当前页数据
 	list := make([]model.SysUserOnline, 0, len(values))
@@ -171,7 +171,7 @@ func (s SysUserOnlineController) Logout(c *gin.Context) {
 	uniqueIDs := parse.RemoveDuplicatesToArray(tokenIdStr, ",")
 	for _, v := range uniqueIDs {
 		key := constants.CACHE_TOKEN_DEVICE + ":" + v
-		if err := redis.Del("", key); err != nil {
+		if err := cache.Del("", key); err != nil {
 			c.JSON(200, resp.ErrMsg(err.Error()))
 			return
 		}

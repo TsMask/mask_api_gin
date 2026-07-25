@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"mask_api_gin/src/internal/infra/database/db"
+	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"
@@ -19,7 +19,7 @@ func (r SysRoleDept) DeleteByRoleIds(d *gorm.DB, roleIds []int64) (int64, error)
 		return 0, nil
 	}
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	tx := d.Where("role_id in ?", roleIds)
 	// 执行删除
@@ -35,7 +35,7 @@ func (r SysRoleDept) DeleteByDeptIds(d *gorm.DB, deptIds []int64) (int64, error)
 		return 0, nil
 	}
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	tx := d.Where("dept_id in ?", deptIds)
 	// 执行删除
@@ -51,7 +51,7 @@ func (r SysRoleDept) BatchInsert(d *gorm.DB, sysRoleDepts []model.SysRoleDept) (
 		return 0, nil
 	}
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	tx := d.CreateInBatches(sysRoleDepts, 500)
 	if err := tx.Error; err != nil {

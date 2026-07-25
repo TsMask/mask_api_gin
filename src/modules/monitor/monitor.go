@@ -3,8 +3,8 @@ package monitor
 import (
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/internal/core/logger"
-	"mask_api_gin/src/internal/server/middleware"
+	"mask_api_gin/src/internal/shared/logger"
+	"mask_api_gin/src/internal/web/middleware"
 	"mask_api_gin/src/modules/monitor/controller"
 	"mask_api_gin/src/modules/monitor/service"
 )

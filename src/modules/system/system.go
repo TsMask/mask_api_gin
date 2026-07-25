@@ -3,9 +3,10 @@ package system
 import (
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/internal/core/logger"
-	"mask_api_gin/src/internal/server/middleware"
+	"mask_api_gin/src/internal/shared/logger"
+	"mask_api_gin/src/internal/web/middleware"
 	"mask_api_gin/src/modules/system/controller"
+	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 )
 
@@ -14,6 +15,23 @@ func Setup(router *gin.Engine) {
 	logger.Infof("开始加载 ====> system 模块路由")
 
 	// 启动时需要的初始参数
+	// Inject operate-log persistence so the middleware stays decoupled from the business model.
+	middleware.OperateLogSink = func(rec middleware.OperateLogRecord) {
+		service.NewSysLogOperate.Insert(model.SysLogOperate{
+			Title:           rec.Title,
+			OperateType:     rec.OperateType,
+			OperateFunction: rec.OperateFunction,
+			OperateUrl:      rec.OperateUrl,
+			OperateMethod:   rec.OperateMethod,
+			OperateIp:       rec.OperateIp,
+			OperateLocation: rec.OperateLocation,
+			CreateBy:        rec.CreateBy,
+			OperateParam:    rec.OperateParam,
+			OperateStatus:   rec.OperateStatus,
+			OperateMsg:      rec.OperateMsg,
+			OperateCostTime: rec.OperateCostTime,
+		})
+	}
 	InitLoad()
 
 	// 参数配置信息

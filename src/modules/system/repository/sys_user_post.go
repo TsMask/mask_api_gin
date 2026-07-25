@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"mask_api_gin/src/internal/infra/database/db"
+	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"
@@ -18,7 +18,7 @@ func (r SysUserPost) ExistUserByPostId(postId int64) (int64, error) {
 	if postId <= 0 {
 		return 0, nil
 	}
-	tx := db.DB("").Model(&model.SysUserPost{})
+	tx := database.DB("").Model(&model.SysUserPost{})
 	tx = tx.Where("post_id = ?", postId)
 	// 查询数据
 	var count int64 = 0
@@ -34,7 +34,7 @@ func (r SysUserPost) DeleteByUserIds(d *gorm.DB, userIds []int64) (int64, error)
 		return 0, nil
 	}
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	tx := d.Where("user_id in ?", userIds)
 	// 执行删除
@@ -50,7 +50,7 @@ func (r SysUserPost) BatchInsert(d *gorm.DB, sysUserPosts []model.SysUserPost) (
 		return 0, nil
 	}
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	tx := d.CreateInBatches(sysUserPosts, 500)
 	if err := tx.Error; err != nil {

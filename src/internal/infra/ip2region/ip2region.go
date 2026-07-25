@@ -1,7 +1,7 @@
 package ip2region
 
 import (
-	"mask_api_gin/src/internal/core/logger"
+	"mask_api_gin/src/internal/shared/logger"
 
 	"embed"
 	"strings"

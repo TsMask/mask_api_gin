@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"mask_api_gin/src/internal/infra/database/db"
+	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"
@@ -18,7 +18,7 @@ func (r SysUserRole) ExistUserByRoleId(roleId int64) (int64, error) {
 	if roleId <= 0 {
 		return 0, nil
 	}
-	tx := db.DB("").Model(&model.SysUserRole{})
+	tx := database.DB("").Model(&model.SysUserRole{})
 	tx = tx.Where("role_id = ?", roleId)
 	// 查询数据
 	var count int64 = 0
@@ -33,7 +33,7 @@ func (r SysUserRole) SelectUserIdsByRoleIds(roleIds []int64) ([]int64, error) {
 	if len(roleIds) == 0 {
 		return nil, nil
 	}
-	tx := db.DB("").Model(&model.SysUserRole{})
+	tx := database.DB("").Model(&model.SysUserRole{})
 	tx = tx.Where("role_id in ?", roleIds)
 	var userIds []int64
 	if err := tx.Distinct("user_id").Pluck("user_id", &userIds).Error; err != nil {
@@ -48,7 +48,7 @@ func (r SysUserRole) DeleteByUserIds(d *gorm.DB, userIds []int64) (int64, error)
 		return 0, nil
 	}
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	tx := d.Where("user_id in ?", userIds)
 	// 执行删除
@@ -64,7 +64,7 @@ func (r SysUserRole) DeleteByRoleId(d *gorm.DB, roleId int64, userIds []int64) (
 		return 0, nil
 	}
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	tx := d.Where("role_id = ?", roleId).Where("user_id in ?", userIds)
 	// 执行删除
@@ -80,7 +80,7 @@ func (r SysUserRole) BatchInsert(d *gorm.DB, sysUserRoles []model.SysUserRole) (
 		return 0, nil
 	}
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	tx := d.CreateInBatches(sysUserRoles, 500)
 	if err := tx.Error; err != nil {

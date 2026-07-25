@@ -2,16 +2,17 @@ package service
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"mask_api_gin/src/internal/config"
-	"mask_api_gin/src/internal/core/constants"
-	"mask_api_gin/src/internal/infra/database/redis"
-	"mask_api_gin/src/internal/server/token"
-	"mask_api_gin/src/internal/core/utils/crypto"
-	"mask_api_gin/src/internal/core/utils/parse"
+	"mask_api_gin/src/internal/infra/cache"
+	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/shared/crypto"
+	"mask_api_gin/src/internal/shared/parse"
+	"mask_api_gin/src/internal/web/token"
 	"mask_api_gin/src/modules/system/model/vo"
 	systemService "mask_api_gin/src/modules/system/service"
 )
@@ -43,7 +44,7 @@ func (s Account) ValidateCaptcha(code, uuid string) error {
 		return fmt.Errorf("captcha empty")
 	}
 	verifyKey := constants.CACHE_CAPTCHA_CODE + ":" + uuid
-	captcha, _ := redis.GetAndDel("", verifyKey)
+	captcha, _ := cache.GetAndDel("", verifyKey)
 	if captcha == "" {
 		return fmt.Errorf("captcha expire")
 	}
@@ -80,14 +81,20 @@ func (s Account) ByUsername(username, password string) (token.UserInfo, error) {
 	if compareBool {
 		s.CleanLoginRecordCache(sysUser.UserName) // 清除错误记录次数
 	} else {
-		_, _ = redis.IncrWithExpire("", retryKey, int64(lockTime.Seconds()))
+		_, _ = cache.IncrWithExpire("", retryKey, int64(lockTime.Seconds()))
 		return info, fmt.Errorf("user does not exist or password is incorrect")
 	}
 
 	// 登录用户信息
 	info.UserId = sysUser.ID
 	info.DeptId = sysUser.DeptId
-	info.User = sysUser
+	info.UserName = sysUser.UserName
+	roleKeys := make([]string, 0, len(sysUser.Roles))
+	for _, r := range sysUser.Roles {
+		roleKeys = append(roleKeys, r.RoleKey)
+	}
+	info.RoleKeys = roleKeys
+	info.User, _ = json.Marshal(sysUser)
 	// 用户权限组标识
 	if config.IsSystemUser(sysUser.ID) {
 		info.Permissions = []string{constants.SYS_PERMISSION_SYSTEM}
@@ -117,7 +124,13 @@ func (s Account) ByUserId(userId int64) (token.UserInfo, error) {
 	// 登录用户信息
 	info.UserId = sysUser.ID
 	info.DeptId = sysUser.DeptId
-	info.User = sysUser
+	info.UserName = sysUser.UserName
+	roleKeys := make([]string, 0, len(sysUser.Roles))
+	for _, r := range sysUser.Roles {
+		roleKeys = append(roleKeys, r.RoleKey)
+	}
+	info.RoleKeys = roleKeys
+	info.User, _ = json.Marshal(sysUser)
 	// 用户权限组标识
 	if config.IsSystemUser(sysUser.ID) {
 		info.Permissions = []string{constants.SYS_PERMISSION_SYSTEM}
@@ -141,7 +154,7 @@ func (s Account) UpdateLoginDateAndIP(info token.UserInfo) bool {
 func (s Account) CleanLoginRecordCache(userName string) bool {
 	base64UserName := base64.StdEncoding.EncodeToString([]byte(userName))
 	cacheKey := fmt.Sprintf("%s:%s", constants.CACHE_PWD_ERR_COUNT, base64UserName)
-	return redis.Del("", cacheKey) == nil
+	return cache.Del("", cacheKey) == nil
 }
 
 // passwordRetryCount 密码重试次数
@@ -160,7 +173,7 @@ func (s Account) passwordRetryCount(userName string) (string, int64, time.Durati
 	// 验证缓存记录次数
 	base64UserName := base64.StdEncoding.EncodeToString([]byte(userName))
 	retryKey := fmt.Sprintf("%s:%s", constants.CACHE_PWD_ERR_COUNT, base64UserName)
-	retryCount, err := redis.Get("", retryKey)
+	retryCount, err := cache.Get("", retryKey)
 	if retryCount == "" || err != nil {
 		retryCount = "0"
 	}

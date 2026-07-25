@@ -6,11 +6,11 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mask_api_gin/src/internal/config"
-	"mask_api_gin/src/internal/core/constants"
-	"mask_api_gin/src/internal/server/reqctx"
-	"mask_api_gin/src/internal/server/resp"
-	"mask_api_gin/src/internal/core/utils/parse"
-	"mask_api_gin/src/internal/core/utils/regular"
+	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/web/reqctx"
+	"mask_api_gin/src/internal/web/resp"
+	"mask_api_gin/src/internal/shared/parse"
+	"mask_api_gin/src/internal/shared/regular"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 )

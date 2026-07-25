@@ -1,16 +1,17 @@
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/internal/server/reqctx"
-	"mask_api_gin/src/internal/server/resp"
-	"mask_api_gin/src/internal/server/token"
-	"mask_api_gin/src/internal/core/utils/crypto"
-	"mask_api_gin/src/internal/core/utils/parse"
-	"mask_api_gin/src/internal/core/utils/regular"
+	"mask_api_gin/src/internal/shared/crypto"
+	"mask_api_gin/src/internal/shared/parse"
+	"mask_api_gin/src/internal/shared/regular"
+	"mask_api_gin/src/internal/web/reqctx"
+	"mask_api_gin/src/internal/web/resp"
+	"mask_api_gin/src/internal/web/token"
 	"mask_api_gin/src/modules/system/service"
 )
 
@@ -132,7 +133,7 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 	rows := s.sysUserService.Update(userInfo)
 	if rows > 0 {
 		// 更新缓存用户信息
-		info.User = userInfo
+		info.User, _ = json.Marshal(userInfo)
 		// 更新信息
 		token.UserInfoUpdate(info)
 		c.JSON(200, resp.Ok(nil))

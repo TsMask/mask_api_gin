@@ -3,7 +3,7 @@ package repository
 import (
 	"fmt"
 
-	"mask_api_gin/src/internal/infra/database/db"
+	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/modules/system/model"
 )
 
@@ -27,7 +27,7 @@ var sysConfigSortMapping = map[string]string{
 
 // SelectByPage 分页查询集合
 func (r SysConfig) SelectByPage(query map[string]string) ([]model.SysConfig, int64, error) {
-	tx := db.DB("").Model(&model.SysConfig{})
+	tx := database.DB("").Model(&model.SysConfig{})
 	if v, ok := query["configName"]; ok && v != "" {
 		tx = tx.Where("config_name like ?", v+"%")
 	}
@@ -64,12 +64,12 @@ func (r SysConfig) SelectByPage(query map[string]string) ([]model.SysConfig, int
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序
-	orders := db.SortParse(query["sort"], sysConfigSortMapping)
-	tx = db.SortOrDefault(tx, orders, "config_sort asc")
+	orders := database.SortParse(query["sort"], sysConfigSortMapping)
+	tx = database.SortOrDefault(tx, orders, "config_sort asc")
 
 	err := tx.Find(&rows).Error
 	if err != nil {
@@ -80,7 +80,7 @@ func (r SysConfig) SelectByPage(query map[string]string) ([]model.SysConfig, int
 
 // Select 查询集合
 func (r SysConfig) Select(sysConfig model.SysConfig) ([]model.SysConfig, error) {
-	tx := db.DB("").Model(&model.SysConfig{})
+	tx := database.DB("").Model(&model.SysConfig{})
 	// 查询条件拼接
 	if sysConfig.ConfigName != "" {
 		tx = tx.Where("config_name like ?", sysConfig.ConfigName+"%")
@@ -109,7 +109,7 @@ func (r SysConfig) SelectByIds(ids []int64) ([]model.SysConfig, error) {
 	if len(ids) <= 0 {
 		return rows, nil
 	}
-	tx := db.DB("").Model(&model.SysConfig{})
+	tx := database.DB("").Model(&model.SysConfig{})
 	// 构建查询条件
 	tx = tx.Where("id in ?", ids)
 	// 查询数据
@@ -122,7 +122,7 @@ func (r SysConfig) SelectByIds(ids []int64) ([]model.SysConfig, error) {
 // Insert 新增信息 返回新增数据ID
 func (r SysConfig) Insert(sysConfig model.SysConfig) (int64, error) {
 	// 执行插入
-	if err := db.DB("").Create(&sysConfig).Error; err != nil {
+	if err := database.DB("").Create(&sysConfig).Error; err != nil {
 		return 0, err
 	}
 	return sysConfig.ID, nil
@@ -133,7 +133,7 @@ func (r SysConfig) Update(sysConfig model.SysConfig) (int64, error) {
 	if sysConfig.ID <= 0 {
 		return 0, nil
 	}
-	tx := db.DB("").Model(&model.SysConfig{})
+	tx := database.DB("").Model(&model.SysConfig{})
 	// 构建查询条件
 	tx = tx.Where("id = ?", sysConfig.ID)
 	tx = tx.Omit("id", "create_by", "create_time")
@@ -149,7 +149,7 @@ func (r SysConfig) DeleteByIds(ids []int64) (int64, error) {
 	if len(ids) <= 0 {
 		return 0, nil
 	}
-	tx := db.DB("").Model(&model.SysConfig{})
+	tx := database.DB("").Model(&model.SysConfig{})
 	// 构建查询条件
 	tx = tx.Where("id in ?", ids)
 	// 执行物理删除
@@ -161,7 +161,7 @@ func (r SysConfig) DeleteByIds(ids []int64) (int64, error) {
 
 // CheckUnique 检查信息是否唯一 返回数据ID
 func (r SysConfig) CheckUnique(sysConfig model.SysConfig) (int64, error) {
-	tx := db.DB("").Model(&model.SysConfig{})
+	tx := database.DB("").Model(&model.SysConfig{})
 	// 查询条件拼接
 	if sysConfig.ConfigGroup != "" {
 		tx = tx.Where("config_group = ?", sysConfig.ConfigGroup)
@@ -182,7 +182,7 @@ func (r SysConfig) SelectValueByKey(configKey string) (string, error) {
 	if configKey == "" {
 		return "", nil
 	}
-	tx := db.DB("").Model(&model.SysConfig{})
+	tx := database.DB("").Model(&model.SysConfig{})
 	tx.Where("config_key = ?", configKey)
 	// 查询数据
 	var configValue string = ""

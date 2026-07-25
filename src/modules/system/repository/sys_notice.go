@@ -3,7 +3,7 @@ package repository
 import (
 	"fmt"
 
-	"mask_api_gin/src/internal/infra/database/db"
+	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/modules/system/model"
 )
 
@@ -26,7 +26,7 @@ var sysNoticeSortMapping = map[string]string{
 
 // SelectByPage 分页查询集合
 func (r SysNotice) SelectByPage(query map[string]string) ([]model.SysNotice, int64, error) {
-	tx := db.DB("").Model(&model.SysNotice{})
+	tx := database.DB("").Model(&model.SysNotice{})
 	tx = tx.Where("notice_del = '0'")
 	// 查询条件拼接
 	if v, ok := query["noticeTitle"]; ok && v != "" {
@@ -68,12 +68,12 @@ func (r SysNotice) SelectByPage(query map[string]string) ([]model.SysNotice, int
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序
-	orders := db.SortParse(query["sort"], sysNoticeSortMapping)
-	tx = db.SortOrDefault(tx, orders, "id desc")
+	orders := database.SortParse(query["sort"], sysNoticeSortMapping)
+	tx = database.SortOrDefault(tx, orders, "id desc")
 
 	err := tx.Find(&rows).Error
 	if err != nil {
@@ -84,7 +84,7 @@ func (r SysNotice) SelectByPage(query map[string]string) ([]model.SysNotice, int
 
 // Select 查询集合
 func (r SysNotice) Select(sysNotice model.SysNotice) ([]model.SysNotice, error) {
-	tx := db.DB("").Model(&model.SysNotice{})
+	tx := database.DB("").Model(&model.SysNotice{})
 	tx = tx.Where("notice_del = '0'")
 	// 查询条件拼接
 	if sysNotice.NoticeTitle != "" {
@@ -114,7 +114,7 @@ func (r SysNotice) SelectByIds(noticeIds []int64) ([]model.SysNotice, error) {
 	if len(noticeIds) <= 0 {
 		return rows, nil
 	}
-	tx := db.DB("").Model(&model.SysNotice{})
+	tx := database.DB("").Model(&model.SysNotice{})
 	// 构建查询条件
 	tx = tx.Where("id in ? and notice_del = '0'", noticeIds)
 	// 查询数据
@@ -128,7 +128,7 @@ func (r SysNotice) SelectByIds(noticeIds []int64) ([]model.SysNotice, error) {
 func (r SysNotice) Insert(sysNotice model.SysNotice) (int64, error) {
 	sysNotice.NoticeDel = "0"
 	// 执行插入
-	if err := db.DB("").Create(&sysNotice).Error; err != nil {
+	if err := database.DB("").Create(&sysNotice).Error; err != nil {
 		return 0, err
 	}
 	return sysNotice.ID, nil
@@ -139,7 +139,7 @@ func (r SysNotice) Update(sysNotice model.SysNotice) (int64, error) {
 	if sysNotice.ID <= 0 {
 		return 0, nil
 	}
-	tx := db.DB("").Model(&model.SysNotice{})
+	tx := database.DB("").Model(&model.SysNotice{})
 	// 构建查询条件
 	tx = tx.Where("id = ?", sysNotice.ID)
 	tx = tx.Omit("id", "create_by", "create_time", "notice_del")
@@ -155,7 +155,7 @@ func (r SysNotice) DeleteByIds(noticeIds []int64) (int64, error) {
 	if len(noticeIds) <= 0 {
 		return 0, nil
 	}
-	tx := db.DB("").Model(&model.SysNotice{})
+	tx := database.DB("").Model(&model.SysNotice{})
 	// 构建查询条件
 	tx = tx.Where("id in ?", noticeIds)
 	// 执行更新删除标记

@@ -3,7 +3,7 @@ package repository
 import (
 	"fmt"
 
-	"mask_api_gin/src/internal/infra/database/db"
+	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"
@@ -27,7 +27,7 @@ var sysDictTypeSortMapping = map[string]string{
 
 // SelectByPage 分页查询集合
 func (r SysDictType) SelectByPage(query map[string]string) ([]model.SysDictType, int64, error) {
-	tx := db.DB("").Model(&model.SysDictType{})
+	tx := database.DB("").Model(&model.SysDictType{})
 	// 查询条件拼接
 	if v, ok := query["dictName"]; ok && v != "" {
 		tx = tx.Where("dict_name like ?", v+"%")
@@ -65,12 +65,12 @@ func (r SysDictType) SelectByPage(query map[string]string) ([]model.SysDictType,
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序
-	orders := db.SortParse(query["sort"], sysDictTypeSortMapping)
-	tx = db.SortOrDefault(tx, orders, "id desc")
+	orders := database.SortParse(query["sort"], sysDictTypeSortMapping)
+	tx = database.SortOrDefault(tx, orders, "id desc")
 
 	err := tx.Find(&rows).Error
 	if err != nil {
@@ -81,7 +81,7 @@ func (r SysDictType) SelectByPage(query map[string]string) ([]model.SysDictType,
 
 // Select 查询集合
 func (r SysDictType) Select(sysDictType model.SysDictType) ([]model.SysDictType, error) {
-	tx := db.DB("").Model(&model.SysDictType{})
+	tx := database.DB("").Model(&model.SysDictType{})
 	// 查询条件拼接
 	if sysDictType.DictName != "" {
 		tx = tx.Where("dict_name like ?", sysDictType.DictName+"%")
@@ -107,7 +107,7 @@ func (r SysDictType) SelectByIds(ids []int64) ([]model.SysDictType, error) {
 	if len(ids) <= 0 {
 		return rows, nil
 	}
-	tx := db.DB("").Model(&model.SysDictType{})
+	tx := database.DB("").Model(&model.SysDictType{})
 	// 构建查询条件
 	tx = tx.Where("id in ?", ids)
 	// 查询数据
@@ -120,7 +120,7 @@ func (r SysDictType) SelectByIds(ids []int64) ([]model.SysDictType, error) {
 // Insert 新增信息 返回新增数据ID
 func (r SysDictType) Insert(sysDictType model.SysDictType) (int64, error) {
 	// 执行插入
-	if err := db.DB("").Create(&sysDictType).Error; err != nil {
+	if err := database.DB("").Create(&sysDictType).Error; err != nil {
 		return 0, err
 	}
 	return sysDictType.ID, nil
@@ -132,7 +132,7 @@ func (r SysDictType) Update(d *gorm.DB, sysDictType model.SysDictType) (int64, e
 		return 0, nil
 	}
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	tx := d.Model(&model.SysDictType{})
 	// 构建查询条件
@@ -150,7 +150,7 @@ func (r SysDictType) DeleteByIds(ids []int64) (int64, error) {
 	if len(ids) <= 0 {
 		return 0, nil
 	}
-	tx := db.DB("").Model(&model.SysDictType{})
+	tx := database.DB("").Model(&model.SysDictType{})
 	// 构建查询条件
 	tx = tx.Where("id in ?", ids)
 	// 执行物理删除
@@ -162,7 +162,7 @@ func (r SysDictType) DeleteByIds(ids []int64) (int64, error) {
 
 // CheckUnique 检查信息是否唯一 返回数据ID
 func (r SysDictType) CheckUnique(sysDictType model.SysDictType) (int64, error) {
-	tx := db.DB("").Model(&model.SysDictType{})
+	tx := database.DB("").Model(&model.SysDictType{})
 	// 查询条件拼接
 	if sysDictType.DictName != "" {
 		tx = tx.Where("dict_name = ?", sysDictType.DictName)
@@ -184,7 +184,7 @@ func (r SysDictType) SelectByType(dictType string) (model.SysDictType, error) {
 	if dictType == "" {
 		return item, nil
 	}
-	tx := db.DB("").Model(&model.SysDictType{})
+	tx := database.DB("").Model(&model.SysDictType{})
 	tx = tx.Where("dict_type = ?", dictType)
 	// 查询数据
 	if err := tx.Limit(1).Find(&item).Error; err != nil {

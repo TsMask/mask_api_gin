@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/internal/core/constants"
-	"mask_api_gin/src/internal/infra/database/redis"
-	"mask_api_gin/src/internal/server/resp"
+	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/infra/cache"
+	"mask_api_gin/src/internal/web/resp"
 	"mask_api_gin/src/modules/monitor/model"
 )
 
@@ -25,9 +25,9 @@ type SysCacheController struct{}
 // GET /
 func (s SysCacheController) Info(c *gin.Context) {
 	c.JSON(200, resp.OkData(map[string]any{
-		"info":         redis.Info(""),
-		"dbSize":       redis.KeySize(""),
-		"commandStats": redis.CommandStats(""),
+		"info":         cache.Info(""),
+		"dbSize":       cache.KeySize(""),
+		"commandStats": cache.CommandStats(""),
 	}))
 }
 
@@ -61,7 +61,7 @@ func (s SysCacheController) Keys(c *gin.Context) {
 	}
 
 	caches := []model.SysCache{}
-	cacheKeys, _ := redis.GetKeys("", query.CacheName+":*")
+	cacheKeys, _ := cache.GetKeys("", query.CacheName+":*")
 	for _, key := range cacheKeys {
 		caches = append(caches, model.NewKeys(query.CacheName, key))
 	}
@@ -83,7 +83,7 @@ func (s SysCacheController) Value(c *gin.Context) {
 		return
 	}
 
-	cacheValue, err := redis.Get("", query.CacheName+":"+query.CacheKey)
+	cacheValue, err := cache.Get("", query.CacheName+":"+query.CacheKey)
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
@@ -118,11 +118,11 @@ func (s SysCacheController) CleanNames(c *gin.Context) {
 		model.NewNames("密码错误次数", constants.CACHE_PWD_ERR_COUNT),
 	}
 	for _, v := range caches {
-		cacheKeys, err := redis.GetKeys("", v.CacheName+":*")
+		cacheKeys, err := cache.GetKeys("", v.CacheName+":*")
 		if err != nil {
 			continue
 		}
-		_ = redis.DelKeys("", cacheKeys)
+		_ = cache.DelKeys("", cacheKeys)
 	}
 	c.JSON(200, resp.Ok(nil))
 }
@@ -144,13 +144,13 @@ func (s SysCacheController) CleanKeys(c *gin.Context) {
 		return
 	}
 
-	cacheKeys, err := redis.GetKeys("", query.CacheName+":*")
+	cacheKeys, err := cache.GetKeys("", query.CacheName+":*")
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 
-	if err = redis.DelKeys("", cacheKeys); err != nil {
+	if err = cache.DelKeys("", cacheKeys); err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
@@ -171,7 +171,7 @@ func (s SysCacheController) CleanValue(c *gin.Context) {
 		return
 	}
 
-	err := redis.Del("", query.CacheName+":"+query.CacheKey)
+	err := cache.Del("", query.CacheName+":"+query.CacheKey)
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return

@@ -3,7 +3,7 @@ package repository
 import (
 	"fmt"
 
-	"mask_api_gin/src/internal/infra/database/db"
+	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/modules/monitor/model"
 )
 
@@ -25,7 +25,7 @@ var sysJobLogSortMapping = map[string]string{
 
 // SelectByPage 分页查询集合
 func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int64, error) {
-	tx := db.DB("").Model(&model.SysJobLog{})
+	tx := database.DB("").Model(&model.SysJobLog{})
 	// 查询条件拼接
 	if v, ok := query["jobName"]; ok && v != "" {
 		tx = tx.Where("job_name = ?", v)
@@ -66,12 +66,12 @@ func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序
-	orders := db.SortParse(query["sort"], sysJobLogSortMapping)
-	tx = db.SortOrDefault(tx, orders, "id desc")
+	orders := database.SortParse(query["sort"], sysJobLogSortMapping)
+	tx = database.SortOrDefault(tx, orders, "id desc")
 
 	err := tx.Find(&rows).Error
 	if err != nil {
@@ -82,7 +82,7 @@ func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int
 
 // Select 查询集合
 func (r SysJobLog) Select(sysJobLog model.SysJobLog) ([]model.SysJobLog, error) {
-	tx := db.DB("").Model(&model.SysJobLog{})
+	tx := database.DB("").Model(&model.SysJobLog{})
 	// 查询条件拼接
 	if sysJobLog.JobName != "" {
 		tx = tx.Where("job_name like ?", sysJobLog.JobName+"%")
@@ -111,7 +111,7 @@ func (r SysJobLog) SelectById(id int64) (model.SysJobLog, error) {
 	if id <= 0 {
 		return item, nil
 	}
-	tx := db.DB("").Model(&model.SysJobLog{})
+	tx := database.DB("").Model(&model.SysJobLog{})
 	// 构建查询条件
 	tx = tx.Where("id = ?", id)
 	// 查询数据
@@ -124,7 +124,7 @@ func (r SysJobLog) SelectById(id int64) (model.SysJobLog, error) {
 // Insert 新增信息
 func (r SysJobLog) Insert(sysJobLog model.SysJobLog) (int64, error) {
 	// 执行插入
-	if err := db.DB("").Create(&sysJobLog).Error; err != nil {
+	if err := database.DB("").Create(&sysJobLog).Error; err != nil {
 		return 0, err
 	}
 	return sysJobLog.ID, nil
@@ -135,7 +135,7 @@ func (r SysJobLog) DeleteByIds(ids []int64) (int64, error) {
 	if len(ids) <= 0 {
 		return 0, nil
 	}
-	tx := db.DB("").Where("id in ?", ids)
+	tx := database.DB("").Where("id in ?", ids)
 	if err := tx.Delete(&model.SysJobLog{}).Error; err != nil {
 		return 0, err
 	}
@@ -144,7 +144,7 @@ func (r SysJobLog) DeleteByIds(ids []int64) (int64, error) {
 
 // Clean 清空集合数据
 func (r SysJobLog) Clean() (int64, error) {
-	tx := db.DB("").Where("1 = 1").Delete(&model.SysJobLog{})
+	tx := database.DB("").Where("1 = 1").Delete(&model.SysJobLog{})
 	if err := tx.Error; err != nil {
 		return 0, err
 	}

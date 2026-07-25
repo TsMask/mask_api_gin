@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mask_api_gin/src/internal/config"
-	"mask_api_gin/src/internal/server/resp"
+	"mask_api_gin/src/internal/web/resp"
 )
 
 // NewIndex 实例化控制层

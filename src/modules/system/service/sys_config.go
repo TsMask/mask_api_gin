@@ -5,11 +5,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"mask_api_gin/src/internal/core/constants"
-	"mask_api_gin/src/internal/infra/database/redis"
-	"mask_api_gin/src/internal/core/logger"
-	"mask_api_gin/src/internal/core/utils/date"
-	"mask_api_gin/src/internal/core/utils/file"
+	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/infra/cache"
+	"mask_api_gin/src/internal/shared/logger"
+	"mask_api_gin/src/internal/shared/date"
+	"mask_api_gin/src/internal/shared/file"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )
@@ -121,7 +121,7 @@ func (s SysConfig) CheckUniqueByKey(configKey string, id int64) bool {
 func (s SysConfig) FindValueByKey(configKey string) string {
 	cacheKey := constants.CACHE_SYS_CONFIG + ":" + configKey
 	// 从缓存中读取
-	if cacheValue, err := redis.Get("", cacheKey); cacheValue != "" || err != nil {
+	if cacheValue, err := cache.Get("", cacheKey); cacheValue != "" || err != nil {
 		return cacheValue
 	}
 	// 无缓存时读取数据放入缓存中
@@ -130,7 +130,7 @@ func (s SysConfig) FindValueByKey(configKey string) string {
 		logger.Errorf("query err => %v", err.Error())
 	}
 	if configValue != "" {
-		_ = redis.Set("", cacheKey, configValue, 0)
+		_ = cache.Set("", cacheKey, configValue, 0)
 		return configValue
 	}
 	return ""
@@ -146,8 +146,8 @@ func (s SysConfig) CacheLoad(configKey string) {
 		}
 		for _, v := range sysConfigs {
 			key := constants.CACHE_SYS_CONFIG + ":" + v.ConfigKey
-			_ = redis.Del("", key)
-			_ = redis.Set("", key, v.ConfigValue, 0)
+			_ = cache.Del("", key)
+			_ = cache.Set("", key, v.ConfigValue, 0)
 		}
 		return
 	}
@@ -158,19 +158,19 @@ func (s SysConfig) CacheLoad(configKey string) {
 	}
 	if cacheValue != "" {
 		key := constants.CACHE_SYS_CONFIG + ":" + configKey
-		_ = redis.Del("", key)
-		_ = redis.Set("", key, cacheValue, 0)
+		_ = cache.Del("", key)
+		_ = cache.Set("", key, cacheValue, 0)
 	}
 }
 
 // CacheClean 清空参数缓存数据 传入*清除全部
 func (s SysConfig) CacheClean(configKey string) bool {
 	key := constants.CACHE_SYS_CONFIG + ":" + configKey
-	keys, err := redis.GetKeys("", key)
+	keys, err := cache.GetKeys("", key)
 	if err != nil {
 		return false
 	}
-	return redis.DelKeys("", keys) == nil
+	return cache.DelKeys("", keys) == nil
 }
 
 // ExportData 导出数据表格

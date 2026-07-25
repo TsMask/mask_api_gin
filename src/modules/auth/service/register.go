@@ -3,9 +3,9 @@ package service
 import (
 	"fmt"
 
-	"mask_api_gin/src/internal/core/constants"
-	"mask_api_gin/src/internal/infra/database/redis"
-	"mask_api_gin/src/internal/core/utils/parse"
+	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/infra/cache"
+	"mask_api_gin/src/internal/shared/parse"
 	systemModel "mask_api_gin/src/modules/system/model"
 	systemService "mask_api_gin/src/modules/system/service"
 )
@@ -33,11 +33,11 @@ func (s Register) ValidateCaptcha(code, uuid string) error {
 		return fmt.Errorf("captcha empty")
 	}
 	verifyKey := constants.CACHE_CAPTCHA_CODE + ":" + uuid
-	captcha, _ := redis.Get("", verifyKey)
+	captcha, _ := cache.Get("", verifyKey)
 	if captcha == "" {
 		return fmt.Errorf("captcha expire")
 	}
-	_ = redis.Del("", verifyKey)
+	_ = cache.Del("", verifyKey)
 	if captcha != code {
 		return fmt.Errorf("captcha error")
 	}

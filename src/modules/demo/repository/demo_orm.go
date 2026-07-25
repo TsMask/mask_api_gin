@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"mask_api_gin/src/internal/infra/database/db"
+	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/modules/demo/model"
 )
 
@@ -23,7 +23,7 @@ var demoORMSortMapping = map[string]string{
 
 // SelectByPage 分页查询
 func (r DemoORM) SelectByPage(query map[string]string) ([]model.DemoORM, int64, error) {
-	tx := db.DB("").Model(&model.DemoORM{})
+	tx := database.DB("").Model(&model.DemoORM{})
 	if v, ok := query["title"]; ok && v != "" {
 		tx = tx.Where("title like ?", v+"%")
 	}
@@ -37,12 +37,12 @@ func (r DemoORM) SelectByPage(query map[string]string) ([]model.DemoORM, int64, 
 	}
 
 	rows := []model.DemoORM{}
-	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序
-	orders := db.SortParse(query["sort"], demoORMSortMapping)
-	tx = db.SortOrDefault(tx, orders, "id desc")
+	orders := database.SortParse(query["sort"], demoORMSortMapping)
+	tx = database.SortOrDefault(tx, orders, "id desc")
 
 	if err := tx.Find(&rows).Error; err != nil {
 		return rows, total, err
@@ -52,7 +52,7 @@ func (r DemoORM) SelectByPage(query map[string]string) ([]model.DemoORM, int64, 
 
 // Select 查询集合
 func (r DemoORM) Select(demoORM model.DemoORM) ([]model.DemoORM, error) {
-	tx := db.DB("").Model(&model.DemoORM{})
+	tx := database.DB("").Model(&model.DemoORM{})
 	if demoORM.Title != "" {
 		tx = tx.Where("title like ?", demoORM.Title+"%")
 	}
@@ -73,7 +73,7 @@ func (r DemoORM) SelectById(id int64) (model.DemoORM, error) {
 	if id <= 0 {
 		return item, nil
 	}
-	tx := db.DB("").Model(&model.DemoORM{})
+	tx := database.DB("").Model(&model.DemoORM{})
 	tx = tx.Where("id = ?", id)
 	if err := tx.Limit(1).Find(&item).Error; err != nil {
 		return item, err
@@ -83,7 +83,7 @@ func (r DemoORM) SelectById(id int64) (model.DemoORM, error) {
 
 // Insert 新增
 func (r DemoORM) Insert(demoORM model.DemoORM) (int64, error) {
-	if err := db.DB("").Create(&demoORM).Error; err != nil {
+	if err := database.DB("").Create(&demoORM).Error; err != nil {
 		return 0, err
 	}
 	return demoORM.Id, nil
@@ -94,7 +94,7 @@ func (r DemoORM) Update(demoORM model.DemoORM) (int64, error) {
 	if demoORM.Id <= 0 {
 		return 0, nil
 	}
-	tx := db.DB("").Model(&model.DemoORM{})
+	tx := database.DB("").Model(&model.DemoORM{})
 	tx = tx.Where("id = ?", demoORM.Id)
 	if err := tx.Omit("id", "create_by", "create_time").Updates(demoORM).Error; err != nil {
 		return 0, err
@@ -107,7 +107,7 @@ func (r DemoORM) DeleteByIds(ids []int64) (int64, error) {
 	if len(ids) <= 0 {
 		return 0, nil
 	}
-	tx := db.DB("").Where("id in ?", ids)
+	tx := database.DB("").Where("id in ?", ids)
 	if err := tx.Delete(&model.DemoORM{}).Error; err != nil {
 		return 0, err
 	}
@@ -116,7 +116,7 @@ func (r DemoORM) DeleteByIds(ids []int64) (int64, error) {
 
 // Clean 清空表
 func (r DemoORM) Clean() (int64, error) {
-	tx := db.DB("").Where("1 = 1").Delete(&model.DemoORM{})
+	tx := database.DB("").Where("1 = 1").Delete(&model.DemoORM{})
 	if err := tx.Error; err != nil {
 		return 0, err
 	}

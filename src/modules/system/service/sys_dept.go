@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"mask_api_gin/src/internal/core/constants"
-	"mask_api_gin/src/internal/infra/database/db"
-	"mask_api_gin/src/internal/core/logger"
-	"mask_api_gin/src/internal/core/utils/parse"
+	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/infra/database"
+	"mask_api_gin/src/internal/shared/logger"
+	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/model/vo"
 	"mask_api_gin/src/modules/system/repository"
@@ -79,7 +79,7 @@ func (s SysDept) Update(sysDept model.SysDept) int64 {
 	}
 
 	var rows int64
-	err = db.Transaction("", func(tx *gorm.DB) error {
+	err = database.Transaction("", func(tx *gorm.DB) error {
 		// 上级与当前部门祖级列表更新
 		if parentDept.ID == sysDept.ParentId && dept.ID == sysDept.ID {
 			newAncestors := fmt.Sprintf("%s,%d", parentDept.Ancestors, parentDept.ID)
@@ -140,7 +140,7 @@ func (s SysDept) updateDeptChildren(d *gorm.DB, deptId int64, newAncestors, oldA
 // DeleteById 删除信息
 func (s SysDept) DeleteById(deptId int64) int64 {
 	var rows int64
-	err := db.Transaction("", func(tx *gorm.DB) error {
+	err := database.Transaction("", func(tx *gorm.DB) error {
 		if _, err := s.sysRoleDeptRepository.DeleteByDeptIds(tx, []int64{deptId}); err != nil {
 			return err
 		}

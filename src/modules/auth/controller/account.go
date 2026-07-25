@@ -7,11 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mask_api_gin/src/internal/config"
-	"mask_api_gin/src/internal/core/constants"
-	"mask_api_gin/src/internal/server/reqctx"
-	"mask_api_gin/src/internal/server/resp"
-	"mask_api_gin/src/internal/server/token"
-	"mask_api_gin/src/internal/core/utils/parse"
+	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/shared/parse"
+	"mask_api_gin/src/internal/web/reqctx"
+	"mask_api_gin/src/internal/web/resp"
+	"mask_api_gin/src/internal/web/token"
 	"mask_api_gin/src/modules/auth/model"
 	"mask_api_gin/src/modules/auth/service"
 	systemService "mask_api_gin/src/modules/system/service"
@@ -188,7 +188,7 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 	}
 	s.accountService.UpdateLoginDateAndIP(info)
 	s.sysLogLoginService.Insert(
-		info.User.UserName, constants.STATUS_YES, "刷新访问令牌成功",
+		info.UserName, constants.STATUS_YES, "刷新访问令牌成功",
 		[4]string{ipaddr, location, os, browser},
 	)
 

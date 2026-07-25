@@ -7,11 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mask_api_gin/src/internal/config"
-	"mask_api_gin/src/internal/server/reqctx"
-	"mask_api_gin/src/internal/server/resp"
-	"mask_api_gin/src/internal/core/utils/file"
-	"mask_api_gin/src/internal/core/utils/parse"
-	"mask_api_gin/src/internal/core/utils/regular"
+	"mask_api_gin/src/internal/web/reqctx"
+	"mask_api_gin/src/internal/web/resp"
+	"mask_api_gin/src/internal/shared/file"
+	"mask_api_gin/src/internal/shared/parse"
+	"mask_api_gin/src/internal/shared/regular"
 	authService "mask_api_gin/src/modules/auth/service"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
@@ -40,7 +40,7 @@ type SysUserController struct {
 // GET /list
 func (s SysUserController) List(c *gin.Context) {
 	queryMap := reqctx.QueryMap(c)
-	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
+	dataScopeSQL := service.DataScopeSQL(c, "sys_user", "sys_user")
 	rows, total := s.sysUserService.FindByPage(queryMap, dataScopeSQL)
 	c.JSON(200, resp.OkData(map[string]any{"rows": rows, "total": total}))
 }
@@ -432,7 +432,7 @@ func (s SysUserController) Unlock(c *gin.Context) {
 func (s SysUserController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	queryMap := reqctx.QueryMap(c)
-	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
+	dataScopeSQL := service.DataScopeSQL(c, "sys_user", "sys_user")
 	rows, total := s.sysUserService.FindByPage(queryMap, dataScopeSQL)
 	if total == 0 {
 		c.JSON(200, resp.ErrMsg("export data record as empty"))

@@ -3,7 +3,7 @@ package repository
 import (
 	"fmt"
 
-	"mask_api_gin/src/internal/infra/database/db"
+	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/modules/system/model"
 )
 
@@ -24,7 +24,7 @@ var sysLogLoginSortMapping = map[string]string{
 
 // SelectByPage 分页查询集合
 func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysLogLogin, int64, error) {
-	tx := db.DB("").Model(&model.SysLogLogin{})
+	tx := database.DB("").Model(&model.SysLogLogin{})
 	// 查询条件拼接
 	if v, ok := query["loginIp"]; ok && v != "" {
 		tx = tx.Where("login_ip like ?", v+"%")
@@ -66,12 +66,12 @@ func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) 
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序
-	orders := db.SortParse(query["sort"], sysLogLoginSortMapping)
-	tx = db.SortOrDefault(tx, orders, "id desc")
+	orders := database.SortParse(query["sort"], sysLogLoginSortMapping)
+	tx = database.SortOrDefault(tx, orders, "id desc")
 
 	// 查询数据
 	err := tx.Find(&rows).Error
@@ -84,7 +84,7 @@ func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) 
 // Insert 新增信息 返回新增的数据ID
 func (r SysLogLogin) Insert(sysLogLogin model.SysLogLogin) (int64, error) {
 	// 执行插入
-	if err := db.DB("").Create(&sysLogLogin).Error; err != nil {
+	if err := database.DB("").Create(&sysLogLogin).Error; err != nil {
 		return 0, err
 	}
 	return sysLogLogin.ID, nil
@@ -92,7 +92,7 @@ func (r SysLogLogin) Insert(sysLogLogin model.SysLogLogin) (int64, error) {
 
 // Clean 清空信息
 func (r SysLogLogin) Clean() (int64, error) {
-	tx := db.DB("").Where("1 = 1").Delete(&model.SysLogLogin{})
+	tx := database.DB("").Where("1 = 1").Delete(&model.SysLogLogin{})
 	if err := tx.Error; err != nil {
 		return 0, err
 	}

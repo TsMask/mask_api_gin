@@ -7,12 +7,12 @@ import (
 
 	"gorm.io/gorm"
 
-	"mask_api_gin/src/internal/core/constants"
-	"mask_api_gin/src/internal/infra/database/db"
-	"mask_api_gin/src/internal/core/logger"
-	"mask_api_gin/src/internal/server/token"
-	"mask_api_gin/src/internal/core/utils/date"
-	"mask_api_gin/src/internal/core/utils/file"
+	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/infra/database"
+	"mask_api_gin/src/internal/shared/logger"
+	"mask_api_gin/src/internal/web/token"
+	"mask_api_gin/src/internal/shared/date"
+	"mask_api_gin/src/internal/shared/file"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )
@@ -82,7 +82,7 @@ func (r SysRole) Insert(sysRole model.SysRole) int64 {
 		sysRole.CreateTime = ms
 	}
 	var insertId int64
-	err := db.Transaction("", func(tx *gorm.DB) error {
+	err := database.Transaction("", func(tx *gorm.DB) error {
 		id, err := r.sysRoleRepository.Insert(tx, sysRole)
 		if err != nil {
 			return err
@@ -124,7 +124,7 @@ func (r SysRole) Update(sysRole model.SysRole) int64 {
 		sysRole.UpdateTime = time.Now().UnixMilli()
 	}
 	var rows int64
-	err := db.Transaction("", func(tx *gorm.DB) error {
+	err := database.Transaction("", func(tx *gorm.DB) error {
 		affected, err := r.sysRoleRepository.Update(tx, sysRole)
 		rows = affected
 		if err != nil {
@@ -176,7 +176,7 @@ func (r SysRole) DeleteByIds(roleIds []int64) (int64, error) {
 		return 0, fmt.Errorf("删除角色信息失败！")
 	}
 	var rows int64
-	err = db.Transaction("", func(tx *gorm.DB) error {
+	err = database.Transaction("", func(tx *gorm.DB) error {
 		if _, err := r.sysRoleMenuRepository.DeleteByRoleIds(tx, roleIds); err != nil {
 			return err
 		}
@@ -236,7 +236,7 @@ func (r SysRole) UpdateAndDataScope(sysRole model.SysRole) int64 {
 		sysRole.UpdateTime = time.Now().UnixMilli()
 	}
 	var rows int64
-	err := db.Transaction("", func(tx *gorm.DB) error {
+	err := database.Transaction("", func(tx *gorm.DB) error {
 		affected, err := r.sysRoleRepository.Update(tx, sysRole)
 		rows = affected
 		if err != nil {

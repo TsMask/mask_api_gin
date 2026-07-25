@@ -8,11 +8,11 @@ import (
 	"github.com/mojocn/base64Captcha"
 
 	"mask_api_gin/src/internal/config"
-	"mask_api_gin/src/internal/core/constants"
-	"mask_api_gin/src/internal/infra/database/redis"
-	"mask_api_gin/src/internal/core/logger"
-	"mask_api_gin/src/internal/server/resp"
-	"mask_api_gin/src/internal/core/utils/parse"
+	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/infra/cache"
+	"mask_api_gin/src/internal/shared/logger"
+	"mask_api_gin/src/internal/web/resp"
+	"mask_api_gin/src/internal/shared/parse"
 	systemService "mask_api_gin/src/modules/system/service"
 )
 
@@ -80,7 +80,7 @@ func (s CaptchaController) Image(c *gin.Context) {
 			data["uuid"] = id
 			data["img"] = item.EncodeB64string()
 			verifyKey = constants.CACHE_CAPTCHA_CODE + ":" + id
-			_ = redis.Set("", verifyKey, answer, captchaExpiration)
+			_ = cache.Set("", verifyKey, answer, captchaExpiration)
 		}
 	}
 	if captchaType == "char" {
@@ -113,13 +113,13 @@ func (s CaptchaController) Image(c *gin.Context) {
 			data["uuid"] = id
 			data["img"] = item.EncodeB64string()
 			verifyKey = constants.CACHE_CAPTCHA_CODE + ":" + id
-			_ = redis.Set("", verifyKey, strings.ToLower(answer), captchaExpiration)
+			_ = cache.Set("", verifyKey, strings.ToLower(answer), captchaExpiration)
 		}
 	}
 
 	// 本地开发下返回验证码结果，方便接口调试
 	if config.Env() == "local" {
-		text, _ := redis.Get("", verifyKey)
+		text, _ := cache.Get("", verifyKey)
 		data["text"] = text
 		c.JSON(200, resp.OkData(data))
 		return

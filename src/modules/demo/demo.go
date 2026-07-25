@@ -3,7 +3,7 @@ package demo
 import (
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/internal/core/logger"
+	"mask_api_gin/src/internal/shared/logger"
 	"mask_api_gin/src/modules/demo/controller"
 )
 

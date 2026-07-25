@@ -3,8 +3,8 @@ package repository
 import (
 	"fmt"
 
-	"mask_api_gin/src/internal/infra/database/db"
-	"mask_api_gin/src/internal/core/utils/parse"
+	"mask_api_gin/src/internal/infra/database"
+	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"
@@ -33,7 +33,7 @@ var sysUserSortMapping = map[string]string{
 
 // SelectByPage 分页查询集合
 func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64, error) {
-	tx := db.DB("").Model(&model.SysUser{})
+	tx := database.DB("").Model(&model.SysUser{})
 	tx = tx.Where("user_del = '0'")
 	// 查询条件拼接
 	if v, ok := query["id"]; ok && v != "" {
@@ -83,12 +83,12 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序，默认按 id DESC
-	orders := db.SortParse(query["sort"], sysUserSortMapping)
-	tx = db.SortOrDefault(tx, orders, "id desc")
+	orders := database.SortParse(query["sort"], sysUserSortMapping)
+	tx = database.SortOrDefault(tx, orders, "id desc")
 
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
@@ -99,7 +99,7 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 
 // Select 查询集合
 func (r SysUser) Select(sysUser model.SysUser) ([]model.SysUser, error) {
-	tx := db.DB("").Model(&model.SysUser{})
+	tx := database.DB("").Model(&model.SysUser{})
 	tx = tx.Where("user_del = '0'")
 	// 查询条件拼接
 	if sysUser.UserName != "" {
@@ -129,7 +129,7 @@ func (r SysUser) SelectByIds(userIds []int64) ([]model.SysUser, error) {
 	if len(userIds) <= 0 {
 		return rows, nil
 	}
-	tx := db.DB("").Model(&model.SysUser{})
+	tx := database.DB("").Model(&model.SysUser{})
 	// 构建查询条件
 	tx = tx.Where("id in ? and user_del = '0'", userIds)
 	// 查询数据
@@ -143,7 +143,7 @@ func (r SysUser) SelectByIds(userIds []int64) ([]model.SysUser, error) {
 func (r SysUser) Insert(d *gorm.DB, sysUser model.SysUser) (int64, error) {
 	sysUser.UserDel = "0"
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	// 执行插入
 	if err := d.Create(&sysUser).Error; err != nil {
@@ -158,7 +158,7 @@ func (r SysUser) Update(d *gorm.DB, sysUser model.SysUser) (int64, error) {
 		return 0, nil
 	}
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	tx := d.Model(&model.SysUser{})
 	// 构建查询条件
@@ -177,7 +177,7 @@ func (r SysUser) DeleteByIds(d *gorm.DB, userIds []int64) (int64, error) {
 		return 0, nil
 	}
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	tx := d.Model(&model.SysUser{})
 	// 构建查询条件
@@ -191,7 +191,7 @@ func (r SysUser) DeleteByIds(d *gorm.DB, userIds []int64) (int64, error) {
 
 // CheckUnique 检查信息是否唯一
 func (r SysUser) CheckUnique(sysUser model.SysUser) (int64, error) {
-	tx := db.DB("").Model(&model.SysUser{})
+	tx := database.DB("").Model(&model.SysUser{})
 	tx = tx.Where("user_del = '0'")
 	// 查询条件拼接
 	if sysUser.UserName != "" {
@@ -218,7 +218,7 @@ func (r SysUser) SelectByUserName(userName string) (model.SysUser, error) {
 	if userName == "" {
 		return item, nil
 	}
-	tx := db.DB("").Model(&model.SysUser{})
+	tx := database.DB("").Model(&model.SysUser{})
 	// 构建查询条件
 	tx = tx.Where("user_name = ? and user_del = '0'", userName)
 	// 查询数据
@@ -230,7 +230,7 @@ func (r SysUser) SelectByUserName(userName string) (model.SysUser, error) {
 
 // SelectAuthUsersByPage 分页查询集合By分配用户角色
 func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64, error) {
-	tx := db.DB("").Model(&model.SysUser{})
+	tx := database.DB("").Model(&model.SysUser{})
 	tx = tx.Where("user_del = '0'")
 	// 查询条件拼接
 	if v, ok := query["userName"]; ok && v != "" {
@@ -274,12 +274,12 @@ func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL str
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := db.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序，默认按 id DESC
-	orders := db.SortParse(query["sort"], sysUserSortMapping)
-	tx = db.SortOrDefault(tx, orders, "id desc")
+	orders := database.SortParse(query["sort"], sysUserSortMapping)
+	tx = database.SortOrDefault(tx, orders, "id desc")
 
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {

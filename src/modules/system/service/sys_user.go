@@ -8,15 +8,15 @@ import (
 
 	"gorm.io/gorm"
 
-	"mask_api_gin/src/internal/core/constants"
-	"mask_api_gin/src/internal/infra/database/db"
-	"mask_api_gin/src/internal/core/logger"
-	"mask_api_gin/src/internal/server/token"
-	"mask_api_gin/src/internal/core/utils/crypto"
-	"mask_api_gin/src/internal/core/utils/date"
-	"mask_api_gin/src/internal/core/utils/file"
-	"mask_api_gin/src/internal/core/utils/parse"
-	"mask_api_gin/src/internal/core/utils/regular"
+	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/infra/database"
+	"mask_api_gin/src/internal/shared/logger"
+	"mask_api_gin/src/internal/web/token"
+	"mask_api_gin/src/internal/shared/crypto"
+	"mask_api_gin/src/internal/shared/date"
+	"mask_api_gin/src/internal/shared/file"
+	"mask_api_gin/src/internal/shared/parse"
+	"mask_api_gin/src/internal/shared/regular"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )
@@ -151,7 +151,7 @@ func (s SysUser) Insert(sysUser model.SysUser) int64 {
 	}
 	s.hashUserPassword(&sysUser)
 	var insertId int64
-	err := db.Transaction("", func(tx *gorm.DB) error {
+	err := database.Transaction("", func(tx *gorm.DB) error {
 		id, err := s.sysUserRepository.Insert(tx, sysUser)
 		if err != nil {
 			return err
@@ -231,7 +231,7 @@ func (s SysUser) UpdateUserAndRolePost(sysUser model.SysUser) int64 {
 	}
 	s.hashUserPassword(&sysUser)
 	var rows int64
-	err := db.Transaction("", func(tx *gorm.DB) error {
+	err := database.Transaction("", func(tx *gorm.DB) error {
 		if _, err := s.sysUserRoleRepository.DeleteByUserIds(tx, []int64{sysUser.ID}); err != nil {
 			return err
 		}
@@ -270,7 +270,7 @@ func (s SysUser) DeleteByIds(userIds []int64) (int64, error) {
 		return 0, fmt.Errorf("删除用户信息失败！")
 	}
 	var rows int64
-	err = db.Transaction("", func(tx *gorm.DB) error {
+	err = database.Transaction("", func(tx *gorm.DB) error {
 		if _, err := s.sysUserRoleRepository.DeleteByUserIds(tx, userIds); err != nil {
 			return err
 		}

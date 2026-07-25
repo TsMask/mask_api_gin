@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"mask_api_gin/src/internal/infra/database/db"
+	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"
@@ -18,7 +18,7 @@ func (r SysRoleMenu) ExistRoleByMenuId(menuId int64) (int64, error) {
 	if menuId <= 0 {
 		return 0, nil
 	}
-	tx := db.DB("").Model(&model.SysRoleMenu{})
+	tx := database.DB("").Model(&model.SysRoleMenu{})
 	tx = tx.Where("menu_id = ?", menuId)
 	// 查询数据
 	var count int64 = 0
@@ -34,7 +34,7 @@ func (r SysRoleMenu) DeleteByRoleIds(d *gorm.DB, roleIds []int64) (int64, error)
 		return 0, nil
 	}
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	tx := d.Where("role_id in ?", roleIds)
 	// 执行删除
@@ -50,7 +50,7 @@ func (r SysRoleMenu) DeleteByMenuIds(d *gorm.DB, menuIds []int64) (int64, error)
 		return 0, nil
 	}
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	tx := d.Where("menu_id in ?", menuIds)
 	// 执行删除
@@ -66,7 +66,7 @@ func (r SysRoleMenu) BatchInsert(d *gorm.DB, sysRoleMenus []model.SysRoleMenu) (
 		return 0, nil
 	}
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	tx := d.CreateInBatches(sysRoleMenus, 500)
 	if err := tx.Error; err != nil {

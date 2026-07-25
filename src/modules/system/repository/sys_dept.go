@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"mask_api_gin/src/internal/infra/database/db"
+	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"
@@ -15,7 +15,7 @@ type SysDept struct{}
 
 // Select 查询集合
 func (r SysDept) Select(sysDept model.SysDept, dataScopeSQL string) ([]model.SysDept, error) {
-	tx := db.DB("").Model(&model.SysDept{})
+	tx := database.DB("").Model(&model.SysDept{})
 	tx = tx.Where("dept_del = '0'")
 	// 查询条件拼接
 	if sysDept.ID > 0 {
@@ -47,7 +47,7 @@ func (r SysDept) SelectById(deptId int64) (model.SysDept, error) {
 	if deptId <= 0 {
 		return model.SysDept{}, nil
 	}
-	tx := db.DB("").Model(&model.SysDept{})
+	tx := database.DB("").Model(&model.SysDept{})
 	// 构建查询条件
 	tx = tx.Where("id = ? and dept_del = '0'", deptId)
 	// 查询数据
@@ -64,7 +64,7 @@ func (r SysDept) SelectMapByIds(deptIds []int64) (map[int64]model.SysDept, error
 	if len(deptIds) <= 0 {
 		return result, nil
 	}
-	tx := db.DB("").Model(&model.SysDept{})
+	tx := database.DB("").Model(&model.SysDept{})
 	tx = tx.Where("id in ? and dept_del = '0'", deptIds)
 	rows := []model.SysDept{}
 	if err := tx.Find(&rows).Error; err != nil {
@@ -80,7 +80,7 @@ func (r SysDept) SelectMapByIds(deptIds []int64) (map[int64]model.SysDept, error
 func (r SysDept) Insert(sysDept model.SysDept) (int64, error) {
 	sysDept.DeptDel = "0"
 	// 执行插入
-	if err := db.DB("").Create(&sysDept).Error; err != nil {
+	if err := database.DB("").Create(&sysDept).Error; err != nil {
 		return 0, err
 	}
 	return sysDept.ID, nil
@@ -92,7 +92,7 @@ func (r SysDept) Update(d *gorm.DB, sysDept model.SysDept) (int64, error) {
 		return 0, nil
 	}
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	tx := d.Model(&model.SysDept{})
 	// 构建查询条件
@@ -111,7 +111,7 @@ func (r SysDept) DeleteById(d *gorm.DB, deptId int64) (int64, error) {
 		return 0, nil
 	}
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	tx := d.Model(&model.SysDept{})
 	// 构建查询条件
@@ -125,7 +125,7 @@ func (r SysDept) DeleteById(d *gorm.DB, deptId int64) (int64, error) {
 
 // CheckUnique 检查信息是否唯一 返回数据ID
 func (r SysDept) CheckUnique(sysDept model.SysDept) (int64, error) {
-	tx := db.DB("").Model(&model.SysDept{})
+	tx := database.DB("").Model(&model.SysDept{})
 	tx = tx.Where("dept_del = '0'")
 	// 查询条件拼接
 	if sysDept.DeptName != "" {
@@ -148,7 +148,7 @@ func (r SysDept) ExistChildrenByDeptId(deptId int64) (int64, error) {
 	if deptId <= 0 {
 		return 0, nil
 	}
-	tx := db.DB("").Model(&model.SysDept{})
+	tx := database.DB("").Model(&model.SysDept{})
 	tx = tx.Where("dept_del = '0' and dept_status = '1'")
 	tx = tx.Where("parent_id = ?", deptId)
 	// 查询数据
@@ -164,7 +164,7 @@ func (r SysDept) ExistUserByDeptId(deptId int64) (int64, error) {
 	if deptId <= 0 {
 		return 0, nil
 	}
-	tx := db.DB("").Model(&model.SysUser{})
+	tx := database.DB("").Model(&model.SysUser{})
 	tx = tx.Where("user_del = '0' and dept_id = ?", deptId)
 	// 查询数据
 	var count int64 = 0
@@ -180,7 +180,7 @@ func (r SysDept) SelectDeptIdsByRoleId(roleId int64, deptCheckStrictly bool) ([]
 		return []int64{}, nil
 	}
 
-	tx := db.DB("").Model(&model.SysDept{})
+	tx := database.DB("").Model(&model.SysDept{})
 	tx = tx.Where("dept_del = '0'")
 	tx = tx.Where("id in (SELECT DISTINCT dept_id FROM sys_role_dept WHERE role_id = ?)", roleId)
 	// 父子互相关联显示，取所有子节点
@@ -202,7 +202,7 @@ func (r SysDept) SelectDeptIdsByRoleId(roleId int64, deptCheckStrictly bool) ([]
 
 // SelectChildrenDeptById 根据ID查询所有子部门
 func (r SysDept) SelectChildrenDeptById(deptId int64) ([]model.SysDept, error) {
-	tx := db.DB("").Model(&model.SysDept{})
+	tx := database.DB("").Model(&model.SysDept{})
 	tx = tx.Where("dept_del = '0'")
 	tx = tx.Where("find_in_set(?, ancestors)", deptId)
 	// 查询数据
@@ -219,7 +219,7 @@ func (r SysDept) UpdateDeptStatusNormal(d *gorm.DB, deptIds []int64) (int64, err
 		return 0, nil
 	}
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	tx := d.Model(&model.SysDept{})
 	// 构建查询条件
@@ -239,7 +239,7 @@ func (r SysDept) UpdateDeptChildren(d *gorm.DB, arr []model.SysDept) (int64, err
 
 	// 逐条更新子部门的 ancestors，使用参数化避免 SQL 注入
 	if d == nil {
-		d = db.DB("")
+		d = database.DB("")
 	}
 	var affected int64
 	for _, dept := range arr {

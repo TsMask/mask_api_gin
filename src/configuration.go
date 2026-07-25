@@ -4,11 +4,11 @@ import (
 	"embed"
 
 	"mask_api_gin/src/internal/config"
+	"mask_api_gin/src/internal/infra/cache"
 	"mask_api_gin/src/internal/infra/cron"
-	"mask_api_gin/src/internal/infra/database/db"
-	"mask_api_gin/src/internal/infra/database/redis"
+	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/internal/infra/ip2region"
-	"mask_api_gin/src/internal/core/logger"
+	"mask_api_gin/src/internal/shared/logger"
 )
 
 // ConfigurationInit 配置中心初始加载
@@ -20,9 +20,9 @@ func ConfigurationInit(assetsDir, configDir *embed.FS) {
 	// 初始程序日志
 	logger.InitLogger()
 	// 连接数据库实例
-	db.Connect()
+	database.Connect()
 	// 连接Redis实例
-	redis.Connect()
+	cache.Connect()
 	// 启动调度任务实例
 	cron.StartCron()
 }
@@ -32,9 +32,9 @@ func ConfigurationClose() {
 	// 停止调度任务实例
 	cron.StopCron()
 	// 关闭Redis实例
-	redis.Close()
+	cache.Close()
 	// 关闭数据库实例
-	db.Close()
+	database.Close()
 	// 关闭程序日志
 	logger.Close()
 }

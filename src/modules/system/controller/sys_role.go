@@ -1,16 +1,17 @@
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
 	"slices"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/internal/core/constants"
-	"mask_api_gin/src/internal/server/reqctx"
-	"mask_api_gin/src/internal/server/resp"
-	"mask_api_gin/src/internal/core/utils/parse"
+	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/shared/parse"
+	"mask_api_gin/src/internal/web/reqctx"
+	"mask_api_gin/src/internal/web/resp"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 )
@@ -117,8 +118,12 @@ func (s SysRoleController) Edit(c *gin.Context) {
 		c.JSON(401, resp.CodeMsg(resp.CODE_AUTH_INVALID, err.Error()))
 		return
 	}
-	if len(info.User.RoleIds) > 0 {
-		if slices.Contains(info.User.RoleIds, body.ID) {
+	var user model.SysUser
+	if len(info.User) > 0 {
+		_ = json.Unmarshal(info.User, &user)
+	}
+	if len(user.RoleIds) > 0 {
+		if slices.Contains(user.RoleIds, body.ID) {
 			c.JSON(200, resp.ErrMsg("不允许操作分配给自己的角色"))
 			return
 		}
@@ -311,7 +316,7 @@ func (s SysRoleController) UserAuthList(c *gin.Context) {
 	}
 
 	query := reqctx.QueryMap(c)
-	dataScopeSQL := reqctx.LoginUserToDataScopeSQL(c, "sys_user", "sys_user")
+	dataScopeSQL := service.DataScopeSQL(c, "sys_user", "sys_user")
 	rows, total := s.sysUserService.FindAuthUsersPage(query, dataScopeSQL)
 	c.JSON(200, resp.OkData(map[string]any{"rows": rows, "total": total}))
 }

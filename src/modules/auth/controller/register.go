@@ -5,10 +5,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/internal/core/constants"
-	"mask_api_gin/src/internal/server/reqctx"
-	"mask_api_gin/src/internal/server/resp"
-	"mask_api_gin/src/internal/core/utils/regular"
+	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/web/reqctx"
+	"mask_api_gin/src/internal/web/resp"
+	"mask_api_gin/src/internal/shared/regular"
 	"mask_api_gin/src/modules/auth/model"
 	"mask_api_gin/src/modules/auth/service"
 	systemService "mask_api_gin/src/modules/system/service"

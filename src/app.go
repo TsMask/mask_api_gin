@@ -6,11 +6,11 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mask_api_gin/src/internal/config"
-	"mask_api_gin/src/internal/server/engine"
+	"mask_api_gin/src/internal/web/engine"
 	"mask_api_gin/src/modules/auth"
 	"mask_api_gin/src/modules/common"
-	"mask_api_gin/src/modules/cronjob"
 	"mask_api_gin/src/modules/demo"
+	"mask_api_gin/src/modules/job"
 	"mask_api_gin/src/modules/monitor"
 	"mask_api_gin/src/modules/system"
 )
@@ -44,6 +44,6 @@ func modulesSetup(app *gin.Engine) {
 	auth.Setup(app)    // 认证模块
 	common.Setup(app)  // 通用模块
 	system.Setup(app)  // 系统模块
-	cronjob.Setup()    // 任务模块
+	job.Setup()        // 任务模块
 	monitor.Setup(app) // 监控模块（对任务名称绑定放最后）
 }

@@ -8,12 +8,12 @@ import (
 
 	"gorm.io/gorm"
 
-	"mask_api_gin/src/internal/core/constants"
-	"mask_api_gin/src/internal/infra/database/db"
-	"mask_api_gin/src/internal/infra/database/redis"
-	"mask_api_gin/src/internal/core/logger"
-	"mask_api_gin/src/internal/core/utils/date"
-	"mask_api_gin/src/internal/core/utils/file"
+	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/infra/database"
+	"mask_api_gin/src/internal/infra/cache"
+	"mask_api_gin/src/internal/shared/logger"
+	"mask_api_gin/src/internal/shared/date"
+	"mask_api_gin/src/internal/shared/file"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )
@@ -106,7 +106,7 @@ func (s SysDictType) Update(sysDictType model.SysDictType) int64 {
 	// 同字典类型被修改时，同步更新修改
 	oldDictType := arr[0].DictType
 	var rows int64
-	err = db.Transaction("", func(tx *gorm.DB) error {
+	err = database.Transaction("", func(tx *gorm.DB) error {
 		affected, err := s.sysDictTypeRepository.Update(tx, sysDictType)
 		rows = affected
 		if err != nil {
@@ -191,7 +191,7 @@ func (s SysDictType) CheckUniqueByType(dictType string, id int64) bool {
 func (s SysDictType) FindDataByType(dictType string) []model.SysDictData {
 	var data []model.SysDictData
 	key := constants.CACHE_SYS_DICT + ":" + dictType
-	jsonStr, _ := redis.Get("", key)
+	jsonStr, _ := cache.Get("", key)
 	if len(jsonStr) > 7 {
 		if err := json.Unmarshal([]byte(jsonStr), &data); err != nil {
 			data = []model.SysDictData{}
@@ -206,9 +206,9 @@ func (s SysDictType) FindDataByType(dictType string) []model.SysDictData {
 		}
 		data = rows
 		if len(data) > 0 {
-			_ = redis.Del("", key)
+			_ = cache.Del("", key)
 			values, _ := json.Marshal(data)
-			_ = redis.Set("", key, string(values), 0)
+			_ = cache.Set("", key, string(values), 0)
 		}
 	}
 	return data
@@ -248,20 +248,20 @@ func (s SysDictType) CacheLoad(dictType string) {
 	// 放入缓存
 	for k, v := range m {
 		key := constants.CACHE_SYS_DICT + ":" + k
-		_ = redis.Del("", key)
+		_ = cache.Del("", key)
 		values, _ := json.Marshal(v)
-		_ = redis.Set("", key, string(values), 0)
+		_ = cache.Set("", key, string(values), 0)
 	}
 }
 
 // CacheClean 清空字典缓存数据 传入*清除全部
 func (s SysDictType) CacheClean(dictType string) bool {
 	key := constants.CACHE_SYS_DICT + ":" + dictType
-	keys, err := redis.GetKeys("", key)
+	keys, err := cache.GetKeys("", key)
 	if err != nil {
 		return false
 	}
-	return redis.DelKeys("", keys) == nil
+	return cache.DelKeys("", keys) == nil
 }
 
 // ExportData 导出数据表格

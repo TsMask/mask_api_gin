@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"mask_api_gin/src/internal/core/constants"
-	"mask_api_gin/src/internal/infra/database/db"
-	"mask_api_gin/src/internal/core/logger"
-	"mask_api_gin/src/internal/core/utils/parse"
-	"mask_api_gin/src/internal/core/utils/regular"
+	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/infra/database"
+	"mask_api_gin/src/internal/shared/logger"
+	"mask_api_gin/src/internal/shared/parse"
+	"mask_api_gin/src/internal/shared/regular"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/model/vo"
 	"mask_api_gin/src/modules/system/repository"
@@ -111,7 +111,7 @@ func (s SysMenu) Update(sysMenu model.SysMenu) int64 {
 // DeleteById 删除信息
 func (s SysMenu) DeleteById(menuId int64) int64 {
 	var rows int64
-	err := db.Transaction("", func(tx *gorm.DB) error {
+	err := database.Transaction("", func(tx *gorm.DB) error {
 		if _, err := s.sysRoleMenuRepository.DeleteByMenuIds(tx, []int64{menuId}); err != nil {
 			return err
 		}

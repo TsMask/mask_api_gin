@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"mask_api_gin/src/internal/core/constants"
+	"mask_api_gin/src/internal/shared/constants"
 	monitorModel "mask_api_gin/src/modules/monitor/model"
 	monitorRepository "mask_api_gin/src/modules/monitor/repository"
 )
