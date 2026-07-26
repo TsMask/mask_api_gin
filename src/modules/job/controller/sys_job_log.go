@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/internal/web/reqctx"
 	"mask_api_gin/src/internal/web/resp"
-	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/modules/job/service"
 )
 
@@ -38,8 +38,8 @@ func (s SysJobLogController) List(c *gin.Context) {
 				c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id no found"))
 				return
 			}
-			query["jobName"] = job.JobName
-			query["jobGroup"] = job.JobGroup
+			query["job_name"] = job.JobName
+			query["job_group"] = job.JobGroup
 		}
 	}
 	rows, total := s.sysJobLogService.FindByPage(query)
@@ -108,8 +108,8 @@ func (s SysJobLogController) Export(c *gin.Context) {
 	if idStr := c.Query("id"); idStr != "" {
 		if id := parse.Number(idStr); id > 0 {
 			job := s.sysJobService.FindById(id)
-			query["jobName"] = job.JobName
-			query["jobGroup"] = job.JobGroup
+			query["job_name"] = job.JobName
+			query["job_group"] = job.JobGroup
 		}
 	}
 	rows, total := s.sysJobLogService.FindByPage(query)

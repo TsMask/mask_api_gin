@@ -28,16 +28,16 @@ var sysConfigSortMapping = map[string]string{
 // SelectByPage 分页查询集合
 func (r SysConfig) SelectByPage(query map[string]string) ([]model.SysConfig, int64, error) {
 	tx := database.DB("").Model(&model.SysConfig{})
-	if v, ok := query["configName"]; ok && v != "" {
+	if v, ok := query["config_name"]; ok && v != "" {
 		tx = tx.Where("config_name like ?", v+"%")
 	}
-	if v, ok := query["configGroup"]; ok && v != "" {
+	if v, ok := query["config_group"]; ok && v != "" {
 		tx = tx.Where("config_group = ?", v)
 	}
-	if v, ok := query["configKey"]; ok && v != "" {
+	if v, ok := query["config_key"]; ok && v != "" {
 		tx = tx.Where("config_key like ?", v+"%")
 	}
-	if v, ok := query["beginTime"]; ok && v != "" {
+	if v, ok := query["begin_time"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s000", v)
 			tx = tx.Where("create_time >= ?", v)
@@ -45,7 +45,7 @@ func (r SysConfig) SelectByPage(query map[string]string) ([]model.SysConfig, int
 			tx = tx.Where("create_time >= ?", v)
 		}
 	}
-	if v, ok := query["endTime"]; ok && v != "" {
+	if v, ok := query["end_time"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s999", v)
 			tx = tx.Where("create_time <= ?", v)
@@ -64,7 +64,7 @@ func (r SysConfig) SelectByPage(query map[string]string) ([]model.SysConfig, int
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["page_num"], query["page_size"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序

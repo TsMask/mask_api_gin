@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/internal/web/reqctx"
 	"mask_api_gin/src/internal/web/resp"
-	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 )
@@ -192,9 +192,9 @@ func (s SysDictDataController) Remove(c *gin.Context) {
 
 // DictType 字典数据列表（指定字典类型）
 //
-// GET /type/:dictType
+// GET /type/:dict_type
 func (s SysDictDataController) DictType(c *gin.Context) {
-	dictType := c.Param("dictType")
+	dictType := c.Param("dict_type")
 	if dictType == "" {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: dictType is empty"))
 		return

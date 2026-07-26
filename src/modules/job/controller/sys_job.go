@@ -7,9 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/internal/web/reqctx"
 	"mask_api_gin/src/internal/web/resp"
-	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/modules/job/model"
 	"mask_api_gin/src/modules/job/service"
 )
@@ -206,8 +206,8 @@ func (s SysJobController) Remove(c *gin.Context) {
 // PUT /status
 func (s SysJobController) Status(c *gin.Context) {
 	var body struct {
-		JobId     int64  `json:"jobId" binding:"required"`
-		JobStatus string `json:"jobStatus" binding:"required,oneof=0 1"`
+		JobId     int64  `json:"job_id" binding:"required"`
+		JobStatus string `json:"job_status" binding:"required,oneof=0 1"`
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))

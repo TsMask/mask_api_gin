@@ -128,7 +128,7 @@ func (s AccountController) Logout(c *gin.Context) {
 // POST /auth/refresh-token
 func (s AccountController) RefreshToken(c *gin.Context) {
 	var body struct {
-		RefreshToken string `json:"refreshToken" binding:"required"` // 刷新令牌
+		RefreshToken string `json:"refresh_token" binding:"required"` // 刷新令牌
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))

@@ -7,10 +7,10 @@ import (
 
 	"mask_api_gin/src/internal/config"
 	"mask_api_gin/src/internal/shared/constants"
-	"mask_api_gin/src/internal/web/reqctx"
-	"mask_api_gin/src/internal/web/resp"
 	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/internal/shared/regular"
+	"mask_api_gin/src/internal/web/reqctx"
+	"mask_api_gin/src/internal/web/resp"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 )
@@ -32,10 +32,10 @@ type SysMenuController struct {
 // GET /list
 func (s SysMenuController) List(c *gin.Context) {
 	query := model.SysMenu{}
-	if v, ok := c.GetQuery("menuName"); ok {
+	if v, ok := c.GetQuery("menu_name"); ok {
 		query.MenuName = v
 	}
-	if v, ok := c.GetQuery("menuStatus"); ok {
+	if v, ok := c.GetQuery("menu_status"); ok {
 		query.MenuStatus = v
 	}
 
@@ -215,7 +215,7 @@ func (s SysMenuController) Edit(c *gin.Context) {
 
 // Remove 菜单删除
 //
-// DELETE /:menuId
+// DELETE /:menu_id
 func (s SysMenuController) Remove(c *gin.Context) {
 	id := parse.Number(c.Param("id"))
 	if id <= 0 {
@@ -260,10 +260,10 @@ func (s SysMenuController) Remove(c *gin.Context) {
 // GET /tree
 func (s SysMenuController) Tree(c *gin.Context) {
 	query := model.SysMenu{}
-	if v, ok := c.GetQuery("menuName"); ok {
+	if v, ok := c.GetQuery("menu_name"); ok {
 		query.MenuName = v
 	}
-	if v, ok := c.GetQuery("menuStatus"); ok {
+	if v, ok := c.GetQuery("menu_status"); ok {
 		query.MenuStatus = v
 	}
 
@@ -277,19 +277,19 @@ func (s SysMenuController) Tree(c *gin.Context) {
 
 // TreeRole 菜单树结构列表（指定角色）
 //
-// GET /tree/role/:roleId
+// GET /tree/role/:role_id
 func (s SysMenuController) TreeRole(c *gin.Context) {
-	roleId := parse.Number(c.Param("roleId"))
+	roleId := parse.Number(c.Param("role_id"))
 	if roleId <= 0 {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: roleId is empty"))
 		return
 	}
 
 	sysMenu := model.SysMenu{}
-	if v, ok := c.GetQuery("menuName"); ok {
+	if v, ok := c.GetQuery("menu_name"); ok {
 		sysMenu.MenuName = v
 	}
-	if v, ok := c.GetQuery("menuStatus"); ok {
+	if v, ok := c.GetQuery("menu_status"); ok {
 		sysMenu.MenuStatus = v
 	}
 

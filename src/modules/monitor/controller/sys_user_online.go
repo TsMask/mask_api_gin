@@ -1,4 +1,4 @@
-﻿package controller
+package controller
 
 import (
 	"encoding/json"
@@ -8,12 +8,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/infra/cache"
+	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/internal/web/reqctx"
 	"mask_api_gin/src/internal/web/resp"
 	"mask_api_gin/src/internal/web/token"
-	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/modules/monitor/model"
 	"mask_api_gin/src/modules/monitor/service"
 )
@@ -47,11 +47,11 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 	}
 
 	// 分页：只取当前页的 key，避免全量 mget
-	pn := int(parse.Number(query["pageNum"]))
+	pn := int(parse.Number(query["page_num"]))
 	if pn < 1 {
 		pn = 1
 	}
-	ps := int(parse.Number(query["pageSize"]))
+	ps := int(parse.Number(query["page_size"]))
 	if ps < 1 {
 		ps = 10
 	}
@@ -85,7 +85,7 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 	}
 
 	// 过滤
-	if v, ok := query["tokenId"]; ok && v != "" {
+	if v, ok := query["token_id"]; ok && v != "" {
 		filtered := make([]model.SysUserOnline, 0, len(list))
 		for _, o := range list {
 			if strings.Contains(o.TokenID, v) {
@@ -94,7 +94,7 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 		}
 		list = filtered
 	}
-	if v, ok := query["userName"]; ok && v != "" {
+	if v, ok := query["user_name"]; ok && v != "" {
 		filtered := make([]model.SysUserOnline, 0, len(list))
 		for _, o := range list {
 			if strings.Contains(o.UserName, v) {
@@ -103,7 +103,7 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 		}
 		list = filtered
 	}
-	if v, ok := query["loginIp"]; ok && v != "" {
+	if v, ok := query["login_ip"]; ok && v != "" {
 		filtered := make([]model.SysUserOnline, 0, len(list))
 		for _, o := range list {
 			if strings.Contains(o.LoginIp, v) {
@@ -112,7 +112,7 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 		}
 		list = filtered
 	}
-	if v, ok := query["deptName"]; ok && v != "" {
+	if v, ok := query["dept_name"]; ok && v != "" {
 		filtered := make([]model.SysUserOnline, 0, len(list))
 		for _, o := range list {
 			if strings.Contains(o.DeptName, v) {
@@ -160,9 +160,9 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 
 // Logout 在线用户强制退出
 //
-// DELETE /logout/:tokenId
+// DELETE /logout/:token_id
 func (s SysUserOnlineController) Logout(c *gin.Context) {
-	tokenIdStr := c.Param("tokenId")
+	tokenIdStr := c.Param("token_id")
 	if tokenIdStr == "" || strings.Contains(tokenIdStr, "*") {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: tokenId is empty"))
 		return

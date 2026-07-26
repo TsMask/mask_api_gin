@@ -32,16 +32,16 @@ func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64, 
 	tx := database.DB("").Model(&model.SysRole{})
 	tx = tx.Where("role_del = '0'")
 	// 查询条件拼接
-	if v, ok := query["roleName"]; ok && v != "" {
+	if v, ok := query["role_name"]; ok && v != "" {
 		tx = tx.Where("role_name like ?", v+"%")
 	}
-	if v, ok := query["roleKey"]; ok && v != "" {
+	if v, ok := query["role_key"]; ok && v != "" {
 		tx = tx.Where("role_key like ?", v+"%")
 	}
-	if v, ok := query["roleStatus"]; ok && v != "" {
+	if v, ok := query["role_status"]; ok && v != "" {
 		tx = tx.Where("role_status = ?", v)
 	}
-	if v, ok := query["beginTime"]; ok && v != "" {
+	if v, ok := query["begin_time"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s000", v)
 			tx = tx.Where("create_time >= ?", v)
@@ -49,7 +49,7 @@ func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64, 
 			tx = tx.Where("create_time >= ?", v)
 		}
 	}
-	if v, ok := query["endTime"]; ok && v != "" {
+	if v, ok := query["end_time"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s999", v)
 			tx = tx.Where("create_time <= ?", v)
@@ -57,7 +57,7 @@ func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64, 
 			tx = tx.Where("create_time <= ?", v)
 		}
 	}
-	if v, ok := query["deptId"]; ok && v != "" {
+	if v, ok := query["dept_id"]; ok && v != "" {
 		tx = tx.Where(`id in (
 		select distinct role_id from sys_role_dept where sys_role_dept.dept_id IN (
 		SELECT id FROM sys_dept WHERE id = ? or find_in_set(? , ancestors )
@@ -74,7 +74,7 @@ func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64, 
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["page_num"], query["page_size"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序，默认按 role_sort ASC

@@ -7,11 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mask_api_gin/src/internal/config"
-	"mask_api_gin/src/internal/web/reqctx"
-	"mask_api_gin/src/internal/web/resp"
 	"mask_api_gin/src/internal/shared/file"
 	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/internal/shared/regular"
+	"mask_api_gin/src/internal/web/reqctx"
+	"mask_api_gin/src/internal/web/resp"
 	authService "mask_api_gin/src/modules/auth/service"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
@@ -327,7 +327,7 @@ func (s SysUserController) Remove(c *gin.Context) {
 // PUT /password
 func (s SysUserController) Password(c *gin.Context) {
 	var body struct {
-		UserID   int64  `json:"userId" binding:"required"`
+		UserID   int64  `json:"user_id" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
@@ -369,8 +369,8 @@ func (s SysUserController) Password(c *gin.Context) {
 // PUT /status
 func (s SysUserController) Status(c *gin.Context) {
 	var body struct {
-		UserID     int64  `json:"userId" binding:"required"`
-		UserStatus string `json:"userStatus" binding:"required,oneof=0 1"`
+		UserID     int64  `json:"user_id" binding:"required"`
+		UserStatus string `json:"user_status" binding:"required,oneof=0 1"`
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
@@ -410,9 +410,9 @@ func (s SysUserController) Status(c *gin.Context) {
 
 // Unlock 用户账户解锁
 //
-// PUT /unlock/:userName
+// PUT /unlock/:user_name
 func (s SysUserController) Unlock(c *gin.Context) {
-	userName := c.Param("userName")
+	userName := c.Param("user_name")
 	if userName == "" {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: userName is empty"))
 		return
@@ -472,8 +472,8 @@ func (s SysUserController) Template(c *gin.Context) {
 // POST /import
 func (s SysUserController) Import(c *gin.Context) {
 	var body struct {
-		FilePath string `json:"filePath" binding:"required"` // 上传的文件地址
-		Update   bool   `json:"update"`                      // 允许进行更新
+		FilePath string `json:"file_path" binding:"required"` // 上传的文件地址
+		Update   bool   `json:"update"`                       // 允许进行更新
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))

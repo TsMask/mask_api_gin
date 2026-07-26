@@ -4,10 +4,10 @@ import "strings"
 
 // SysCache 缓存信息对象
 type SysCache struct {
-	CacheName  string `json:"cacheName"`  // 缓存名称
-	CacheKey   string `json:"cacheKey"`   // 缓存键名
-	CacheValue string `json:"cacheValue"` // 缓存内容
-	Remark     string `json:"remark"`     // 备注
+	CacheName  string `json:"cache_name"`  // 缓存名称
+	CacheKey   string `json:"cache_key"`   // 缓存键名
+	CacheValue string `json:"cache_value"` // 缓存内容
+	Remark     string `json:"remark"`      // 备注
 }
 
 // NewNames 创建新的缓存名称列表项实例

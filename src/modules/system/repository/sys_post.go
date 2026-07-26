@@ -26,13 +26,13 @@ var sysPostSortMapping = map[string]string{
 func (r SysPost) SelectByPage(query map[string]string) ([]model.SysPost, int64, error) {
 	tx := database.DB("").Model(&model.SysPost{})
 	// 查询条件拼接
-	if v, ok := query["postCode"]; ok && v != "" {
+	if v, ok := query["post_code"]; ok && v != "" {
 		tx = tx.Where("post_code like ?", v+"%")
 	}
-	if v, ok := query["postName"]; ok && v != "" {
+	if v, ok := query["post_name"]; ok && v != "" {
 		tx = tx.Where("post_name like ?", v+"%")
 	}
-	if v, ok := query["postStatus"]; ok && v != "" {
+	if v, ok := query["post_status"]; ok && v != "" {
 		tx = tx.Where("post_status = ?", v)
 	}
 
@@ -46,7 +46,7 @@ func (r SysPost) SelectByPage(query map[string]string) ([]model.SysPost, int64, 
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["page_num"], query["page_size"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序，默认按 post_sort ASC

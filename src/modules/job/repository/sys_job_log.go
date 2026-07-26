@@ -27,19 +27,19 @@ var sysJobLogSortMapping = map[string]string{
 func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int64, error) {
 	tx := database.DB("").Model(&model.SysJobLog{})
 	// 查询条件拼接
-	if v, ok := query["jobName"]; ok && v != "" {
+	if v, ok := query["job_name"]; ok && v != "" {
 		tx = tx.Where("job_name = ?", v)
 	}
-	if v, ok := query["jobGroup"]; ok && v != "" {
+	if v, ok := query["job_group"]; ok && v != "" {
 		tx = tx.Where("job_group = ?", v)
 	}
-	if v, ok := query["logStatus"]; ok && v != "" {
+	if v, ok := query["log_status"]; ok && v != "" {
 		tx = tx.Where("log_status = ?", v)
 	}
-	if v, ok := query["jobInvokeTarget"]; ok && v != "" {
+	if v, ok := query["job_invoke_target"]; ok && v != "" {
 		tx = tx.Where("job_invoke_target like ?", v+"%")
 	}
-	if v, ok := query["beginTime"]; ok && v != "" {
+	if v, ok := query["begin_time"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s000", v)
 			tx = tx.Where("create_time >= ?", v)
@@ -47,7 +47,7 @@ func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int
 			tx = tx.Where("create_time >= ?", v)
 		}
 	}
-	if v, ok := query["endTime"]; ok && v != "" {
+	if v, ok := query["end_time"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s999", v)
 			tx = tx.Where("create_time <= ?", v)
@@ -66,7 +66,7 @@ func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["page_num"], query["page_size"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序

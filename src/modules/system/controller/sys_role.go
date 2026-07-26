@@ -217,8 +217,8 @@ func (s SysRoleController) Remove(c *gin.Context) {
 // PUT /status
 func (s SysRoleController) Status(c *gin.Context) {
 	var body struct {
-		RoleID     int64  `json:"roleId" binding:"required"`               // 角色ID
-		RoleStatus string `json:"roleStatus" binding:"required,oneof=0 1"` // 状态
+		RoleID     int64  `json:"role_id" binding:"required"`               // 角色ID
+		RoleStatus string `json:"role_status" binding:"required,oneof=0 1"` // 状态
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
@@ -261,10 +261,10 @@ func (s SysRoleController) Status(c *gin.Context) {
 // PUT /data-scope
 func (s SysRoleController) DataScope(c *gin.Context) {
 	var body struct {
-		RoleID                int64   `json:"roleId" binding:"required"`                          // 角色ID
-		DeptIds               []int64 `json:"deptIds"`                                            // 部门组（数据权限）
-		RoleDataScope         string  `json:"roleDataScope" binding:"required,oneof=1 2 3 4 5"`   // 数据范围（1全部 2自定 3本部门 4本部门及以下 5仅本人）
-		RoleDeptCheckStrictly string  `json:"roleDeptCheckStrictly" binding:"required,oneof=0 1"` // 部门树选择项是否关联显示（0：父子不互相关联显示 1：父子互相关联显示）
+		RoleID                int64   `json:"role_id" binding:"required"`                            // 角色ID
+		DeptIds               []int64 `json:"dept_ids"`                                              // 部门组（数据权限）
+		RoleDataScope         string  `json:"role_data_scope" binding:"required,oneof=1 2 3 4 5"`    // 数据范围（1全部 2自定 3本部门 4本部门及以下 5仅本人）
+		RoleDeptCheckStrictly string  `json:"role_dept_check_strictly" binding:"required,oneof=0 1"` // 部门树选择项是否关联显示（0：父子不互相关联显示 1：父子互相关联显示）
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
@@ -302,7 +302,7 @@ func (s SysRoleController) DataScope(c *gin.Context) {
 //
 // GET /user/list
 func (s SysRoleController) UserAuthList(c *gin.Context) {
-	roleId := parse.Number(c.Query("roleId"))
+	roleId := parse.Number(c.Query("role_id"))
 	if roleId <= 0 {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: roleId is empty"))
 		return
@@ -326,9 +326,9 @@ func (s SysRoleController) UserAuthList(c *gin.Context) {
 // PUT /user/auth
 func (s SysRoleController) UserAuthChecked(c *gin.Context) {
 	var body struct {
-		RoleID  int64   `json:"roleId" binding:"required"`  // 角色ID
-		UserIds []int64 `json:"userIds" binding:"required"` // 用户ID组
-		Auth    bool    `json:"auth" binding:"omitempty"`   // 选择操作 添加true 取消false
+		RoleID  int64   `json:"role_id" binding:"required"`  // 角色ID
+		UserIds []int64 `json:"user_ids" binding:"required"` // 用户ID组
+		Auth    bool    `json:"auth" binding:"omitempty"`    // 选择操作 添加true 取消false
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))

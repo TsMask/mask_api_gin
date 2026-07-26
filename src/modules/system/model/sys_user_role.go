@@ -2,8 +2,8 @@ package model
 
 // SysUserRole 用户和角色关联表
 type SysUserRole struct {
-	UserId int64 `json:"userId" gorm:"column:user_id;primaryKey"` // 用户ID
-	RoleId int64 `json:"roleId" gorm:"column:role_id;primaryKey"` // 角色ID
+	UserId int64 `json:"user_id" gorm:"column:user_id;primaryKey"` // 用户ID
+	RoleId int64 `json:"role_id" gorm:"column:role_id;primaryKey"` // 角色ID
 }
 
 // TableName 表名称

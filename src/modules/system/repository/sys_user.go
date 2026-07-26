@@ -39,16 +39,16 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 	if v, ok := query["id"]; ok && v != "" {
 		tx = tx.Where("id = ?", v)
 	}
-	if v, ok := query["userName"]; ok && v != "" {
+	if v, ok := query["user_name"]; ok && v != "" {
 		tx = tx.Where("user_name like ?", v+"%")
 	}
-	if v, ok := query["userPhone"]; ok && v != "" {
+	if v, ok := query["user_phone"]; ok && v != "" {
 		tx = tx.Where("user_phone like ?", v+"%")
 	}
-	if v, ok := query["userStatus"]; ok && v != "" {
+	if v, ok := query["user_status"]; ok && v != "" {
 		tx = tx.Where("user_status = ?", v)
 	}
-	if v, ok := query["beginTime"]; ok && v != "" {
+	if v, ok := query["begin_time"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s000", v)
 			tx = tx.Where("user_login_time >= ?", v)
@@ -56,7 +56,7 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 			tx = tx.Where("user_login_time >= ?", v)
 		}
 	}
-	if v, ok := query["endTime"]; ok && v != "" {
+	if v, ok := query["end_time"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s999", v)
 			tx = tx.Where("user_login_time <= ?", v)
@@ -64,7 +64,7 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 			tx = tx.Where("user_login_time <= ?", v)
 		}
 	}
-	if v, ok := query["deptId"]; ok && v != "" {
+	if v, ok := query["dept_id"]; ok && v != "" {
 		tx = tx.Where(`(dept_id = ? or dept_id in (
 		select t.id from sys_dept t where find_in_set(?, ancestors)
 		))`, v, v)
@@ -83,7 +83,7 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["page_num"], query["page_size"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序，默认按 id DESC
@@ -233,18 +233,18 @@ func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL str
 	tx := database.DB("").Model(&model.SysUser{})
 	tx = tx.Where("user_del = '0'")
 	// 查询条件拼接
-	if v, ok := query["userName"]; ok && v != "" {
+	if v, ok := query["user_name"]; ok && v != "" {
 		tx = tx.Where("user_name like ?", v+"%")
 	}
-	if v, ok := query["userPhone"]; ok && v != "" {
+	if v, ok := query["user_phone"]; ok && v != "" {
 		tx = tx.Where("user_phone like ?", v+"%")
 	}
-	if v, ok := query["userStatus"]; ok && v != "" {
+	if v, ok := query["user_status"]; ok && v != "" {
 		tx = tx.Where("user_status = ?", v)
 	}
 
 	// 分配角色的用户（sys_user 主键 id；sys_user_role 外键 user_id/role_id 不变）
-	if roleId, ok := query["roleId"]; ok && roleId != "" {
+	if roleId, ok := query["role_id"]; ok && roleId != "" {
 		auth, ok := query["auth"]
 		if ok && parse.Boolean(auth) {
 			tx = tx.Where(`id in (
@@ -274,7 +274,7 @@ func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL str
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["page_num"], query["page_size"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序，默认按 id DESC

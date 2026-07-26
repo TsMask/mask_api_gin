@@ -47,10 +47,10 @@ const (
 
 // Options Option 操作日志参数
 type Options struct {
-	Title              string `json:"title"`              // 标题
-	OperateType        string `json:"operateType"`        // 类型，默认常量 OPERATE_TYPE_OTHER
-	IsSaveRequestData  bool   `json:"isSaveRequestData"`  // 是否保存请求的参数
-	IsSaveResponseData bool   `json:"isSaveResponseData"` // 是否保存响应的参数
+	Title            string `json:"title"`              // 标题
+	OperateType      string `json:"operate_type"`       // 类型，默认常量 OPERATE_TYPE_OTHER
+	SaveRequestData  bool   `json:"save_request_data"`  // 是否保存请求的参数
+	SaveResponseData bool   `json:"save_response_data"` // 是否保存响应的参数
 }
 
 // OptionNew 操作日志参数默认值
@@ -62,10 +62,10 @@ type Options struct {
 // 注意之后JSON反序列使用：c.ShouldBindBodyWithJSON(&params)
 func OptionNew(title, operateType string) Options {
 	return Options{
-		Title:              title,
-		OperateType:        operateType,
-		IsSaveRequestData:  true,
-		IsSaveResponseData: true,
+		Title:            title,
+		OperateType:      operateType,
+		SaveRequestData:  true,
+		SaveResponseData: true,
 	}
 }
 
@@ -105,7 +105,7 @@ func OperateLog(options Options) gin.HandlerFunc {
 		}
 
 		// 是否需要保存request，参数和值
-		if options.IsSaveRequestData {
+		if options.SaveRequestData {
 			params := reqctx.RequestParamsMap(c)
 			// 敏感属性字段进行掩码
 			processSensitiveFields(params)
@@ -129,7 +129,7 @@ func OperateLog(options Options) gin.HandlerFunc {
 		}
 
 		// 是否需要保存response，参数和值
-		if options.IsSaveResponseData {
+		if options.SaveResponseData {
 			contentDisposition := c.Writer.Header().Get("Content-Disposition")
 			contentType := c.Writer.Header().Get("Content-Type")
 			content := contentType + contentDisposition

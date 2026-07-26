@@ -26,16 +26,16 @@ var sysLogLoginSortMapping = map[string]string{
 func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysLogLogin, int64, error) {
 	tx := database.DB("").Model(&model.SysLogLogin{})
 	// 查询条件拼接
-	if v, ok := query["loginIp"]; ok && v != "" {
+	if v, ok := query["login_ip"]; ok && v != "" {
 		tx = tx.Where("login_ip like ?", v+"%")
 	}
-	if v, ok := query["loginUserName"]; ok && v != "" {
+	if v, ok := query["login_user_name"]; ok && v != "" {
 		tx = tx.Where("login_user_name like ?", v+"%")
 	}
-	if v, ok := query["loginStatus"]; ok && v != "" {
+	if v, ok := query["login_status"]; ok && v != "" {
 		tx = tx.Where("login_status = ?", v)
 	}
-	if v, ok := query["beginTime"]; ok && v != "" {
+	if v, ok := query["begin_time"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s000", v)
 			tx = tx.Where("create_time >= ?", v)
@@ -43,7 +43,7 @@ func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) 
 			tx = tx.Where("create_time >= ?", v)
 		}
 	}
-	if v, ok := query["endTime"]; ok && v != "" {
+	if v, ok := query["end_time"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s999", v)
 			tx = tx.Where("create_time <= ?", v)
@@ -66,7 +66,7 @@ func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) 
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["page_num"], query["page_size"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序

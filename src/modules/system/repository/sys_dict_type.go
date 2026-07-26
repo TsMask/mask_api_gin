@@ -29,16 +29,16 @@ var sysDictTypeSortMapping = map[string]string{
 func (r SysDictType) SelectByPage(query map[string]string) ([]model.SysDictType, int64, error) {
 	tx := database.DB("").Model(&model.SysDictType{})
 	// 查询条件拼接
-	if v, ok := query["dictName"]; ok && v != "" {
+	if v, ok := query["dict_name"]; ok && v != "" {
 		tx = tx.Where("dict_name like ?", v+"%")
 	}
-	if v, ok := query["dictType"]; ok && v != "" {
+	if v, ok := query["dict_type"]; ok && v != "" {
 		tx = tx.Where("dict_type like ?", v+"%")
 	}
-	if v, ok := query["dictStatus"]; ok && v != "" {
+	if v, ok := query["dict_status"]; ok && v != "" {
 		tx = tx.Where("dict_status = ?", v)
 	}
-	if v, ok := query["beginTime"]; ok && v != "" {
+	if v, ok := query["begin_time"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s000", v)
 			tx = tx.Where("create_time >= ?", v)
@@ -46,7 +46,7 @@ func (r SysDictType) SelectByPage(query map[string]string) ([]model.SysDictType,
 			tx = tx.Where("create_time >= ?", v)
 		}
 	}
-	if v, ok := query["endTime"]; ok && v != "" {
+	if v, ok := query["end_time"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s999", v)
 			tx = tx.Where("create_time <= ?", v)
@@ -65,7 +65,7 @@ func (r SysDictType) SelectByPage(query map[string]string) ([]model.SysDictType,
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["page_num"], query["page_size"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序

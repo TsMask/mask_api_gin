@@ -29,19 +29,19 @@ func (r SysNotice) SelectByPage(query map[string]string) ([]model.SysNotice, int
 	tx := database.DB("").Model(&model.SysNotice{})
 	tx = tx.Where("notice_del = '0'")
 	// 查询条件拼接
-	if v, ok := query["noticeTitle"]; ok && v != "" {
+	if v, ok := query["notice_title"]; ok && v != "" {
 		tx = tx.Where("notice_title like ?", v+"%")
 	}
-	if v, ok := query["noticeType"]; ok && v != "" {
+	if v, ok := query["notice_type"]; ok && v != "" {
 		tx = tx.Where("notice_type = ?", v)
 	}
-	if v, ok := query["createBy"]; ok && v != "" {
+	if v, ok := query["create_by"]; ok && v != "" {
 		tx = tx.Where("create_by like ?", v+"%")
 	}
-	if v, ok := query["noticeStatus"]; ok && v != "" {
+	if v, ok := query["notice_status"]; ok && v != "" {
 		tx = tx.Where("notice_status = ?", v)
 	}
-	if v, ok := query["beginTime"]; ok && v != "" {
+	if v, ok := query["begin_time"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s000", v)
 			tx = tx.Where("create_time >= ?", v)
@@ -49,7 +49,7 @@ func (r SysNotice) SelectByPage(query map[string]string) ([]model.SysNotice, int
 			tx = tx.Where("create_time >= ?", v)
 		}
 	}
-	if v, ok := query["endTime"]; ok && v != "" {
+	if v, ok := query["end_time"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s999", v)
 			tx = tx.Where("create_time <= ?", v)
@@ -68,7 +68,7 @@ func (r SysNotice) SelectByPage(query map[string]string) ([]model.SysNotice, int
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["page_num"], query["page_size"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序

@@ -67,7 +67,7 @@ func (s SysProfileController) Info(c *gin.Context) {
 // PUT /
 func (s SysProfileController) UpdateProfile(c *gin.Context) {
 	var body struct {
-		NickName string `json:"nickName" binding:"required"`           // 昵称
+		NickName string `json:"nick_name" binding:"required"`          // 昵称
 		Gender   string `json:"gender" binding:"required,oneof=0 1 2"` // 性别
 		Phone    string `json:"phone"`                                 // 手机号
 		Email    string `json:"email"`                                 // 邮箱
@@ -147,8 +147,8 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 // PUT /password
 func (s SysProfileController) UpdatePassword(c *gin.Context) {
 	var body struct {
-		OldPassword string `json:"oldPassword" binding:"required"` // 旧密码
-		NewPassword string `json:"newPassword" binding:"required"` // 新密码
+		OldPassword string `json:"old_password" binding:"required"` // 旧密码
+		NewPassword string `json:"new_password" binding:"required"` // 新密码
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))

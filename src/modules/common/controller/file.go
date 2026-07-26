@@ -12,9 +12,9 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mask_api_gin/src/internal/shared/constants"
-	"mask_api_gin/src/internal/web/resp"
 	"mask_api_gin/src/internal/shared/date"
 	"mask_api_gin/src/internal/shared/file"
+	"mask_api_gin/src/internal/web/resp"
 )
 
 // NewFile 实例化控制层
@@ -27,9 +27,9 @@ type FileController struct{}
 
 // Download 下载文件
 //
-// GET /download/:filePath
+// GET /download/:file_path
 func (s FileController) Download(c *gin.Context) {
-	filePath := c.Param("filePath")
+	filePath := c.Param("file_path")
 	if len(filePath) < 8 {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: filePath not is base64 string"))
 		return
@@ -168,8 +168,8 @@ func (s FileController) ChunkCheck(c *gin.Context) {
 func (s FileController) ChunkMerge(c *gin.Context) {
 	var body struct {
 		Identifier string `json:"identifier" binding:"required"` // 唯一标识
-		FileName   string `json:"fileName" binding:"required"`   // 文件名
-		SubPath    string `json:"subPath"`                       // 子路径类型
+		FileName   string `json:"file_name" binding:"required"`  // 文件名
+		SubPath    string `json:"sub_path"`                      // 子路径类型
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, fmt.Sprintf("bind err: %s", resp.FormatBindError(err))))

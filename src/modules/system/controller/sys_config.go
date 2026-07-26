@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/internal/web/reqctx"
 	"mask_api_gin/src/internal/web/resp"
-	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 )
@@ -169,9 +169,9 @@ func (s SysConfigController) Refresh(c *gin.Context) {
 
 // ConfigKey 参数配置根据参数键名
 //
-// GET /config-key/:configKey
+// GET /config-key/:config_key
 func (s SysConfigController) ConfigKey(c *gin.Context) {
-	configKey := c.Param("configKey")
+	configKey := c.Param("config_key")
 	if configKey == "" {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: configKey is empty"))
 		return

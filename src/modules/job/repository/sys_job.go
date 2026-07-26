@@ -29,16 +29,16 @@ var sysJobSortMapping = map[string]string{
 func (r SysJob) SelectByPage(query map[string]string) ([]model.SysJob, int64, error) {
 	tx := database.DB("").Model(&model.SysJob{})
 	// 查询条件拼接
-	if v, ok := query["jobName"]; ok && v != "" {
+	if v, ok := query["job_name"]; ok && v != "" {
 		tx = tx.Where("job_name like ?", v+"%")
 	}
-	if v, ok := query["jobGroup"]; ok && v != "" {
+	if v, ok := query["job_group"]; ok && v != "" {
 		tx = tx.Where("job_group = ?", v)
 	}
-	if v, ok := query["jobInvokeTarget"]; ok && v != "" {
+	if v, ok := query["job_invoke_target"]; ok && v != "" {
 		tx = tx.Where("job_invoke_target like ?", v+"%")
 	}
-	if v, ok := query["jobStatus"]; ok && v != "" {
+	if v, ok := query["job_status"]; ok && v != "" {
 		tx = tx.Where("job_status = ?", v)
 	}
 
@@ -52,7 +52,7 @@ func (r SysJob) SelectByPage(query map[string]string) ([]model.SysJob, int64, er
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["page_num"], query["page_size"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序

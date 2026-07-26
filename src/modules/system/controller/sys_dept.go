@@ -7,9 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/internal/web/reqctx"
 	"mask_api_gin/src/internal/web/resp"
-	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 )
@@ -241,9 +241,9 @@ func (s SysDeptController) Remove(c *gin.Context) {
 
 // ExcludeChild 部门列表（排除节点）
 //
-// GET /list/exclude/:deptId
+// GET /list/exclude/:dept_id
 func (s SysDeptController) ExcludeChild(c *gin.Context) {
-	deptIdStr := c.Param("deptId")
+	deptIdStr := c.Param("dept_id")
 	if deptIdStr == "" {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: deptId is empty"))
 		return
@@ -295,9 +295,9 @@ func (s SysDeptController) Tree(c *gin.Context) {
 
 // TreeRole 部门树结构列表（指定角色）
 //
-// GET /tree/role/:roleId
+// GET /tree/role/:role_id
 func (s SysDeptController) TreeRole(c *gin.Context) {
-	roleId := parse.Number(c.Param("roleId"))
+	roleId := parse.Number(c.Param("role_id"))
 	if roleId <= 0 {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: roleId is empty"))
 		return

@@ -27,7 +27,7 @@ func (r DemoORM) SelectByPage(query map[string]string) ([]model.DemoORM, int64, 
 	if v, ok := query["title"]; ok && v != "" {
 		tx = tx.Where("title like ?", v+"%")
 	}
-	if v, ok := query["ormStatus"]; ok && v != "" {
+	if v, ok := query["orm_status"]; ok && v != "" {
 		tx = tx.Where("orm_status = ?", v)
 	}
 
@@ -37,7 +37,7 @@ func (r DemoORM) SelectByPage(query map[string]string) ([]model.DemoORM, int64, 
 	}
 
 	rows := []model.DemoORM{}
-	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["page_num"], query["page_size"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序

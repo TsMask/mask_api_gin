@@ -31,19 +31,19 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 	if v, ok := query["title"]; ok && v != "" {
 		tx = tx.Where("title like ?", v+"%")
 	}
-	if v, ok := query["operateType"]; ok && v != "" {
+	if v, ok := query["operate_type"]; ok && v != "" {
 		tx = tx.Where("operate_type = ?", v)
 	}
-	if v, ok := query["createBy"]; ok && v != "" {
+	if v, ok := query["create_by"]; ok && v != "" {
 		tx = tx.Where("create_by like ?", v+"%")
 	}
-	if v, ok := query["operateIp"]; ok && v != "" {
+	if v, ok := query["operate_ip"]; ok && v != "" {
 		tx = tx.Where("operate_ip like ?", v+"%")
 	}
-	if v, ok := query["operateStatus"]; ok && v != "" {
+	if v, ok := query["operate_status"]; ok && v != "" {
 		tx = tx.Where("operate_status = ?", v)
 	}
-	if v, ok := query["beginTime"]; ok && v != "" {
+	if v, ok := query["begin_time"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s000", v)
 			tx = tx.Where("create_time >= ?", v)
@@ -51,7 +51,7 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 			tx = tx.Where("create_time >= ?", v)
 		}
 	}
-	if v, ok := query["endTime"]; ok && v != "" {
+	if v, ok := query["end_time"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s999", v)
 			tx = tx.Where("create_time <= ?", v)
@@ -74,7 +74,7 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["page_num"], query["page_size"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序

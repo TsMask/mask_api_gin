@@ -29,13 +29,13 @@ var sysDictDataSortMapping = map[string]string{
 func (r SysDictData) SelectByPage(query map[string]string) ([]model.SysDictData, int64, error) {
 	tx := database.DB("").Model(&model.SysDictData{})
 	// 查询条件拼接
-	if v, ok := query["dictType"]; ok && v != "" {
+	if v, ok := query["dict_type"]; ok && v != "" {
 		tx = tx.Where("dict_type = ?", v)
 	}
-	if v, ok := query["dataLabel"]; ok && v != "" {
+	if v, ok := query["data_label"]; ok && v != "" {
 		tx = tx.Where("data_label like ?", v+"%")
 	}
-	if v, ok := query["dataStatus"]; ok && v != "" {
+	if v, ok := query["data_status"]; ok && v != "" {
 		tx = tx.Where("data_status = ?", v)
 	}
 
@@ -49,7 +49,7 @@ func (r SysDictData) SelectByPage(query map[string]string) ([]model.SysDictData,
 	}
 
 	// 查询数据分页
-	pageNum, pageSize := database.PageNumSize(query["pageNum"], query["pageSize"])
+	pageNum, pageSize := database.PageNumSize(query["page_num"], query["page_size"])
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序，默认按 data_sort ASC

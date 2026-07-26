@@ -50,7 +50,7 @@ func Setup(router *gin.Engine) {
 			middleware.OperateLog(middleware.OptionNew("参数配置信息", middleware.OPERATE_TYPE_OTHER)),
 			sysConfig.Refresh,
 		)
-		sysConfigGroup.GET("/config-key/:configKey",
+		sysConfigGroup.GET("/config-key/:config_key",
 			middleware.RateLimit(middleware.LimitOption{
 				Time:  120,
 				Count: 15,
@@ -92,7 +92,7 @@ func Setup(router *gin.Engine) {
 			middleware.OperateLog(middleware.OptionNew("部门信息", middleware.OPERATE_TYPE_DELETE)),
 			sysDept.Remove,
 		)
-		sysDeptGroup.GET("/list/exclude/:deptId",
+		sysDeptGroup.GET("/list/exclude/:dept_id",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"system:dept:list"}}),
 			sysDept.ExcludeChild,
 		)
@@ -100,7 +100,7 @@ func Setup(router *gin.Engine) {
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"system:dept:list", "system:user:list"}}),
 			sysDept.Tree,
 		)
-		sysDeptGroup.GET("/tree/role/:roleId",
+		sysDeptGroup.GET("/tree/role/:role_id",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"system:dept:query", "system:user:edit"}}),
 			sysDept.TreeRole,
 		)
@@ -133,7 +133,7 @@ func Setup(router *gin.Engine) {
 			middleware.OperateLog(middleware.OptionNew("字典数据信息", middleware.OPERATE_TYPE_DELETE)),
 			sysDictData.Remove,
 		)
-		sysDictDataGroup.GET("/type/:dictType",
+		sysDictDataGroup.GET("/type/:dict_type",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"system:dict:query"}}),
 			sysDictData.DictType,
 		)
@@ -258,7 +258,7 @@ func Setup(router *gin.Engine) {
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"system:menu:list", "system:role:query"}}),
 			sysMenu.Tree,
 		)
-		sysMenuGroup.GET("/tree/role/:roleId",
+		sysMenuGroup.GET("/tree/role/:role_id",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"system:menu:list", "system:role:query"}}),
 			sysMenu.TreeRole,
 		)
@@ -431,7 +431,7 @@ func Setup(router *gin.Engine) {
 		)
 		sysUserGroup.PUT("/password",
 			middleware.RepeatSubmit(5),
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"system:user:resetPwd"}}),
+			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"system:user:passwd"}}),
 			middleware.OperateLog(middleware.OptionNew("用户信息", middleware.OPERATE_TYPE_UPDATE)),
 			sysUser.Password,
 		)
@@ -441,7 +441,7 @@ func Setup(router *gin.Engine) {
 			middleware.OperateLog(middleware.OptionNew("用户信息", middleware.OPERATE_TYPE_UPDATE)),
 			sysUser.Status,
 		)
-		sysUserGroup.PUT("/unlock/:userName",
+		sysUserGroup.PUT("/unlock/:user_name",
 			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"system:user:unlock"}}),
 			middleware.OperateLog(middleware.OptionNew("用户信息", middleware.OPERATE_TYPE_CLEAN)),
 			sysUser.Unlock,
