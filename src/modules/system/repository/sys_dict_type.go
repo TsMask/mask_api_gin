@@ -17,12 +17,12 @@ type SysDictType struct{}
 
 // sysDictTypeSortMapping 字典类型排序字段映射
 var sysDictTypeSortMapping = map[string]string{
-	"id":         "id",
-	"createTime": "create_time",
-	"updateTime": "update_time",
-	"dictName":   "dict_name",
-	"dictType":   "dict_type",
-	"dictStatus": "dict_status",
+	"id":          "id",
+	"create_time": "create_time",
+	"update_time": "update_time",
+	"dict_name":   "dict_name",
+	"dict_type":   "dict_type",
+	"dict_status": "dict_status",
 }
 
 // SelectByPage 分页查询集合

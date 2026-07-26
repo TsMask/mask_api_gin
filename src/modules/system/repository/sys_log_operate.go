@@ -15,13 +15,13 @@ type SysLogOperate struct{}
 
 // sysLogOperateSortMapping 操作日志排序字段映射
 var sysLogOperateSortMapping = map[string]string{
-	"id":              "id",
-	"createBy":        "create_by",
-	"createTime":      "create_time",
-	"title":           "title",
-	"operateType":     "operate_type",
-	"operateCostTime": "operate_cost_time",
-	"operateStatus":   "operate_status",
+	"id":                "id",
+	"create_by":         "create_by",
+	"create_time":       "create_time",
+	"title":             "title",
+	"operate_type":      "operate_type",
+	"operate_cost_time": "operate_cost_time",
+	"operate_status":    "operate_status",
 }
 
 // SelectByPage 分页查询集合

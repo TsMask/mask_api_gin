@@ -15,12 +15,12 @@ type SysJobLog struct{}
 
 // sysJobLogSortMapping 调度任务日志排序字段映射
 var sysJobLogSortMapping = map[string]string{
-	"id":              "id",
-	"jobName":         "job_name",
-	"jobGroup":        "job_group",
-	"jobInvokeTarget": "job_invoke_target",
-	"logStatus":       "log_status",
-	"createTime":      "create_time",
+	"id":                "id",
+	"job_name":          "job_name",
+	"job_group":         "job_group",
+	"job_invoke_target": "job_invoke_target",
+	"log_status":        "log_status",
+	"create_time":       "create_time",
 }
 
 // SelectByPage 分页查询集合

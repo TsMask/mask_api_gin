@@ -13,13 +13,13 @@ type SysPost struct{}
 
 // sysPostSortMapping 岗位排序字段映射
 var sysPostSortMapping = map[string]string{
-	"id":         "id",
-	"createTime": "create_time",
-	"updateTime": "update_time",
-	"postCode":   "post_code",
-	"postName":   "post_name",
-	"postSort":   "post_sort",
-	"postStatus": "post_status",
+	"id":          "id",
+	"create_time": "create_time",
+	"update_time": "update_time",
+	"post_code":   "post_code",
+	"post_name":   "post_name",
+	"post_sort":   "post_sort",
+	"post_status": "post_status",
 }
 
 // SelectByPage 分页查询集合

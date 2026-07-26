@@ -15,11 +15,11 @@ type SysLogLogin struct{}
 
 // sysLogLoginSortMapping 登录日志排序字段映射
 var sysLogLoginSortMapping = map[string]string{
-	"id":            "id",
-	"createTime":    "create_time",
-	"loginIp":       "login_ip",
-	"loginUserName": "login_user_name",
-	"loginStatus":   "login_status",
+	"id":              "id",
+	"create_time":     "create_time",
+	"login_ip":        "login_ip",
+	"login_user_name": "login_user_name",
+	"login_status":    "login_status",
 }
 
 // SelectByPage 分页查询集合

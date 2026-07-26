@@ -15,14 +15,14 @@ type SysDictData struct{}
 
 // sysDictDataSortMapping 字典数据排序字段映射
 var sysDictDataSortMapping = map[string]string{
-	"id":         "id",
-	"createTime": "create_time",
-	"updateTime": "update_time",
-	"dictType":   "dict_type",
-	"dataSort":   "data_sort",
-	"tagClass":   "tag_class",
-	"tagType":    "tag_type",
-	"dataStatus": "data_status",
+	"id":          "id",
+	"create_time": "create_time",
+	"update_time": "update_time",
+	"dict_type":   "dict_type",
+	"data_sort":   "data_sort",
+	"tag_class":   "tag_class",
+	"tag_type":    "tag_type",
+	"data_status": "data_status",
 }
 
 // SelectByPage 分页查询集合

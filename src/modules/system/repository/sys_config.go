@@ -15,14 +15,14 @@ type SysConfig struct{}
 
 // sysConfigSortMapping 参数配置排序字段映射
 var sysConfigSortMapping = map[string]string{
-	"id":           "id",
-	"createTime":   "create_time",
-	"updateTime":   "update_time",
-	"configName":   "config_name",
-	"configKey":    "config_key",
-	"configGroup":  "config_group",
-	"configSort":   "config_sort",
-	"configStatus": "config_status",
+	"id":            "id",
+	"create_time":   "create_time",
+	"update_time":   "update_time",
+	"config_name":   "config_name",
+	"config_key":    "config_key",
+	"config_group":  "config_group",
+	"config_sort":   "config_sort",
+	"config_status": "config_status",
 }
 
 // SelectByPage 分页查询集合

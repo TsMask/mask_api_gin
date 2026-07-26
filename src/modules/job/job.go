@@ -12,9 +12,7 @@ import (
 	"mask_api_gin/src/internal/web/middleware"
 	"mask_api_gin/src/modules/job/controller"
 	"mask_api_gin/src/modules/job/model"
-	"mask_api_gin/src/modules/job/processors/testerror"
-	"mask_api_gin/src/modules/job/processors/testjob"
-	"mask_api_gin/src/modules/job/processors/testprogress"
+	"mask_api_gin/src/modules/job/processors/examples"
 	"mask_api_gin/src/modules/job/service"
 )
 
@@ -113,9 +111,9 @@ func initLoad() {
 	service.NewSysJob.Reset()
 
 	// 初始化定时任务处理
-	cron.CreateQueue("test_job", testjob.NewProcessor)
-	cron.CreateQueue("test_progress", testprogress.NewProcessor)
-	cron.CreateQueue("test_error", testerror.NewProcessor)
+	cron.CreateQueue("test_job", examples.NewBasicProcessor)
+	cron.CreateQueue("test_progress", examples.NewProgressProcessor)
+	cron.CreateQueue("test_error", examples.NewErrorProcessor)
 }
 
 // RegisterOnJobLog 注入任务执行日志持久化钩子。

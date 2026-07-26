@@ -17,14 +17,14 @@ type SysRole struct{}
 
 // sysRoleSortMapping 角色排序字段映射
 var sysRoleSortMapping = map[string]string{
-	"id":            "id",
-	"createTime":    "create_time",
-	"updateTime":    "update_time",
-	"roleName":      "role_name",
-	"roleKey":       "role_key",
-	"roleSort":      "role_sort",
-	"roleStatus":    "role_status",
-	"roleDataScope": "role_data_scope",
+	"id":              "id",
+	"create_time":     "create_time",
+	"update_time":     "update_time",
+	"role_name":       "role_name",
+	"role_key":        "role_key",
+	"role_sort":       "role_sort",
+	"role_status":     "role_status",
+	"role_data_scope": "role_data_scope",
 }
 
 // SelectByPage 分页查询集合

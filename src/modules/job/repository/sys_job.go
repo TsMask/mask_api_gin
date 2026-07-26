@@ -13,16 +13,16 @@ type SysJob struct{}
 
 // sysJobSortMapping 调度任务排序字段映射
 var sysJobSortMapping = map[string]string{
-	"id":               "id",
-	"jobName":          "job_name",
-	"jobGroup":         "job_group",
-	"jobInvokeTarget":  "job_invoke_target",
-	"jobCron":          "job_cron",
-	"jobMisfirePolicy": "job_misfire_policy",
-	"jobConcurrent":    "job_concurrent",
-	"jobStatus":        "job_status",
-	"createTime":       "create_time",
-	"updateTime":       "update_time",
+	"id":                 "id",
+	"job_name":           "job_name",
+	"job_group":          "job_group",
+	"job_invoke_target":  "job_invoke_target",
+	"job_cron":           "job_cron",
+	"job_misfire_policy": "job_misfire_policy",
+	"job_concurrent":     "job_concurrent",
+	"job_status":         "job_status",
+	"create_time":        "create_time",
+	"update_time":        "update_time",
 }
 
 // SelectByPage 分页查询集合

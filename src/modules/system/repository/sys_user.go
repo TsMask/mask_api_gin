@@ -18,17 +18,17 @@ type SysUser struct{}
 
 // sysUserSortMapping 用户排序字段映射
 var sysUserSortMapping = map[string]string{
-	"id":            "id",
-	"createTime":    "create_time",
-	"updateTime":    "update_time",
-	"userName":      "user_name",
-	"userNick":      "user_nick",
-	"userPhone":     "user_phone",
-	"userEmail":     "user_email",
-	"userStatus":    "user_status",
-	"userLoginIp":   "user_login_ip",
-	"userLoginTime": "user_login_time",
-	"deptId":        "dept_id",
+	"id":              "id",
+	"create_time":     "create_time",
+	"update_time":     "update_time",
+	"user_name":       "user_name",
+	"user_nick":       "user_nick",
+	"user_phone":      "user_phone",
+	"user_email":      "user_email",
+	"user_status":     "user_status",
+	"user_login_ip":   "user_login_ip",
+	"user_login_time": "user_login_time",
+	"dept_id":         "dept_id",
 }
 
 // SelectByPage 分页查询集合

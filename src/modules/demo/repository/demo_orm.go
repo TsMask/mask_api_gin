@@ -13,12 +13,12 @@ type DemoORM struct{}
 
 // demoORMSortMapping 测试ORM排序字段映射
 var demoORMSortMapping = map[string]string{
-	"id":         "id",
-	"createTime": "create_time",
-	"updateTime": "update_time",
-	"title":      "title",
-	"ormType":    "orm_type",
-	"ormStatus":  "orm_status",
+	"id":          "id",
+	"create_time": "create_time",
+	"update_time": "update_time",
+	"title":       "title",
+	"orm_type":    "orm_type",
+	"orm_status":  "orm_status",
 }
 
 // SelectByPage 分页查询

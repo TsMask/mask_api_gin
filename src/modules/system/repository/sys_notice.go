@@ -15,13 +15,13 @@ type SysNotice struct{}
 
 // sysNoticeSortMapping 通知公告排序字段映射
 var sysNoticeSortMapping = map[string]string{
-	"id":           "id",
-	"createBy":     "create_by",
-	"createTime":   "create_time",
-	"updateTime":   "update_time",
-	"noticeTitle":  "notice_title",
-	"noticeType":   "notice_type",
-	"noticeStatus": "notice_status",
+	"id":            "id",
+	"create_by":     "create_by",
+	"create_time":   "create_time",
+	"update_time":   "update_time",
+	"notice_title":  "notice_title",
+	"notice_type":   "notice_type",
+	"notice_status": "notice_status",
 }
 
 // SelectByPage 分页查询集合
