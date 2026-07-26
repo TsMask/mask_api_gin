@@ -57,7 +57,7 @@ type Options struct {
 //
 // 标题 "title":"--"
 //
-// 类型 "operateType": OPERATE_TYPE_OTHER
+// 类型 "operate_type": OPERATE_TYPE_OTHER
 //
 // 注意之后JSON反序列使用：c.ShouldBindBodyWithJSON(&params)
 func OptionNew(title, operateType string) Options {

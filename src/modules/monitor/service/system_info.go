@@ -32,7 +32,7 @@ func (s SystemInfo) ProjectInfo() map[string]string {
 		appDir = ""
 	}
 	return map[string]string{
-		"appDir":  appDir,
+		"app_dir": appDir,
 		"env":     config.Env(),
 		"name":    config.Name,
 		"version": config.Version,
@@ -60,20 +60,20 @@ func (s SystemInfo) SystemInfo() map[string]any {
 	// 获取程序运行时间
 	runTime := time.Since(config.RunTime()).Abs().Seconds()
 	return map[string]any{
-		"platform":        info.Platform,
-		"platformVersion": info.PlatformVersion,
-		"arch":            info.KernelArch,
-		"archVersion":     info.KernelVersion,
-		"os":              info.OS,
-		"hostname":        info.Hostname,
-		"bootTime":        int64(bootTime),
-		"processId":       os.Getpid(),
-		"runArch":         runtime.GOARCH,
-		"runVersion":      runtime.Version(),
-		"runTime":         int64(runTime),
-		"homeDir":         homeDir,
-		"cmd":             cmd,
-		"execCommand":     strings.Join(os.Args, " "),
+		"platform":         info.Platform,
+		"platform_version": info.PlatformVersion,
+		"arch":             info.KernelArch,
+		"arch_version":     info.KernelVersion,
+		"os":               info.OS,
+		"hostname":         info.Hostname,
+		"boot_time":        int64(bootTime),
+		"process_id":       os.Getpid(),
+		"run_arch":         runtime.GOARCH,
+		"run_version":      runtime.Version(),
+		"run_time":         int64(runTime),
+		"home_dir":         homeDir,
+		"cmd":              cmd,
+		"exec_command":     strings.Join(os.Args, " "),
 	}
 }
 
@@ -88,9 +88,9 @@ func (s SystemInfo) TimeInfo() map[string]string {
 	timezoneName := now.Format("MST")
 
 	return map[string]string{
-		"current":      current,
-		"timezone":     timezone,
-		"timezoneName": timezoneName,
+		"current":       current,
+		"timezone":      timezone,
+		"timezone_name": timezoneName,
 	}
 }
 
@@ -107,13 +107,13 @@ func (s SystemInfo) MemoryInfo() map[string]string {
 	runtime.ReadMemStats(&memStats)
 
 	return map[string]string{
-		"usage":     fmt.Sprintf("%.2f", memInfo.UsedPercent),            // 内存利用率
-		"freemem":   parse.Bit(float64(memInfo.Available)),               // 可用内存大小（GB）
-		"totalmem":  parse.Bit(float64(memInfo.Total)),                   // 总内存大小（GB）
-		"rss":       parse.Bit(float64(memStats.Sys)),                    // 常驻内存大小（RSS）
-		"heapTotal": parse.Bit(float64(memStats.HeapSys)),                // 堆总大小
-		"heapUsed":  parse.Bit(float64(memStats.HeapAlloc)),              // 堆已使用大小
-		"external":  parse.Bit(float64(memStats.Sys - memStats.HeapSys)), // 外部内存大小（非堆）
+		"usage":      fmt.Sprintf("%.2f", memInfo.UsedPercent),            // 内存利用率
+		"freemem":    parse.Bit(float64(memInfo.Available)),               // 可用内存大小（GB）
+		"totalmem":   parse.Bit(float64(memInfo.Total)),                   // 总内存大小（GB）
+		"rss":        parse.Bit(float64(memStats.Sys)),                    // 常驻内存大小（RSS）
+		"heap_total": parse.Bit(float64(memStats.HeapSys)),                // 堆总大小
+		"heap_used":  parse.Bit(float64(memStats.HeapAlloc)),              // 堆已使用大小
+		"external":   parse.Bit(float64(memStats.Sys - memStats.HeapSys)), // 外部内存大小（非堆）
 	}
 }
 
@@ -138,10 +138,10 @@ func (s SystemInfo) CPUInfo() map[string]any {
 	}
 
 	return map[string]any{
-		"model":    model,
-		"speed":    speed,
-		"core":     core,
-		"coreUsed": used,
+		"model":     model,
+		"speed":     speed,
+		"core":      core,
+		"core_used": used,
 	}
 }
 

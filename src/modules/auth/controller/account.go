@@ -92,12 +92,12 @@ func (s AccountController) Login(c *gin.Context) {
 	)
 
 	c.JSON(200, resp.OkData(map[string]any{
-		"tokenType":        constants.HEADER_PREFIX,
-		"accessToken":      accessToken,
-		"expiresIn":        expiresIn,
-		"refreshToken":     refreshToken,
-		"refreshExpiresIn": refreshExpiresIn,
-		"userId":           info.UserId,
+		"token_type":         constants.HEADER_PREFIX,
+		"access_token":       accessToken,
+		"expires_in":         expiresIn,
+		"refresh_token":      refreshToken,
+		"refresh_expires_in": refreshExpiresIn,
+		"user_id":            info.UserId,
 	}))
 }
 
@@ -194,12 +194,12 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 
 	// 返回访问令牌和刷新令牌
 	c.JSON(200, resp.OkData(map[string]any{
-		"tokenType":        constants.HEADER_PREFIX,
-		"accessToken":      accessToken,
-		"expiresIn":        expiresIn,
-		"refreshToken":     refreshToken,
-		"refreshExpiresIn": refreshExpiresIn,
-		"userId":           userId,
+		"token_type":         constants.HEADER_PREFIX,
+		"access_token":       accessToken,
+		"expires_in":         expiresIn,
+		"refresh_token":      refreshToken,
+		"refresh_expires_in": refreshExpiresIn,
+		"user_id":            userId,
 	}))
 }
 

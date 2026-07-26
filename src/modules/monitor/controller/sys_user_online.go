@@ -194,19 +194,19 @@ func compareUserOnline(a, b model.SysUserOnline, sortStr string) bool {
 
 		var cmp int
 		switch field {
-		case "tokenId":
+		case "token_id":
 			cmp = strings.Compare(a.TokenID, b.TokenID)
-		case "userName":
+		case "user_name":
 			cmp = strings.Compare(a.UserName, b.UserName)
-		case "loginIp":
+		case "login_ip":
 			cmp = strings.Compare(a.LoginIp, b.LoginIp)
-		case "deptName":
+		case "dept_name":
 			cmp = strings.Compare(a.DeptName, b.DeptName)
 		case "browser":
 			cmp = strings.Compare(a.Browser, b.Browser)
 		case "os":
 			cmp = strings.Compare(a.OS, b.OS)
-		case "loginTime":
+		case "login_time":
 			if a.LoginTime < b.LoginTime {
 				cmp = -1
 			} else if a.LoginTime > b.LoginTime {

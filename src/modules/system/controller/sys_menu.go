@@ -300,7 +300,7 @@ func (s SysMenuController) TreeRole(c *gin.Context) {
 	menuTreeSelect := s.sysMenuService.BuildTreeSelectByUserId(sysMenu, userId)
 	checkedKeys := s.sysMenuService.FindByRoleId(roleId)
 	c.JSON(200, resp.OkData(map[string]any{
-		"menus":       menuTreeSelect,
-		"checkedKeys": checkedKeys,
+		"menus":        menuTreeSelect,
+		"checked_keys": checkedKeys,
 	}))
 }

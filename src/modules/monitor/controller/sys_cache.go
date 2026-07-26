@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/infra/cache"
+	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/web/resp"
 	"mask_api_gin/src/modules/monitor/model"
 )
@@ -25,9 +25,9 @@ type SysCacheController struct{}
 // GET /
 func (s SysCacheController) Info(c *gin.Context) {
 	c.JSON(200, resp.OkData(map[string]any{
-		"info":         cache.Info(""),
-		"dbSize":       cache.KeySize(""),
-		"commandStats": cache.CommandStats(""),
+		"info":          cache.Info(""),
+		"db_size":       cache.KeySize(""),
+		"command_stats": cache.CommandStats(""),
 	}))
 }
 

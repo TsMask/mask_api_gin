@@ -307,7 +307,7 @@ func (s SysDeptController) TreeRole(c *gin.Context) {
 	deptTreeSelect := s.sysDeptService.BuildTreeSelect(model.SysDept{}, dataScopeSQL)
 	checkedKeys := s.sysDeptService.FindDeptIdsByRoleId(roleId)
 	c.JSON(200, resp.OkData(map[string]any{
-		"depts":       deptTreeSelect,
-		"checkedKeys": checkedKeys,
+		"depts":        deptTreeSelect,
+		"checked_keys": checkedKeys,
 	}))
 }

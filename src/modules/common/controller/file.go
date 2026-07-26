@@ -132,10 +132,10 @@ func (s FileController) Upload(c *gin.Context) {
 	urlPath = filepath.ToSlash(urlPath)
 
 	c.JSON(200, resp.OkData(map[string]string{
-		"url":              "//" + c.Request.Host + urlPath,
-		"filePath":         urlPath,
-		"newFileName":      filepath.Base(dst),
-		"originalFileName": formFile.Filename,
+		"url":                "//" + c.Request.Host + urlPath,
+		"file_path":          urlPath,
+		"file_name":          filepath.Base(dst),
+		"file_name_original": formFile.Filename,
 	}))
 }
 
@@ -217,10 +217,10 @@ func (s FileController) ChunkMerge(c *gin.Context) {
 	urlPath = filepath.ToSlash(urlPath)
 
 	c.JSON(200, resp.OkData(map[string]string{
-		"url":              "//" + c.Request.Host + urlPath,
-		"filePath":         urlPath,
-		"newFileName":      filepath.Base(finalPath),
-		"originalFileName": body.FileName,
+		"url":                "//" + c.Request.Host + urlPath,
+		"file_path":          urlPath,
+		"file_name":          filepath.Base(finalPath),
+		"file_name_original": body.FileName,
 	}))
 }
 

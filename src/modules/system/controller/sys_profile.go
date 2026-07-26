@@ -56,9 +56,9 @@ func (s SysProfileController) Info(c *gin.Context) {
 	}
 
 	c.JSON(200, resp.OkData(map[string]any{
-		"user":      info.User,
-		"roleGroup": parse.RemoveDuplicates(roleGroup),
-		"postGroup": parse.RemoveDuplicates(postGroup),
+		"user":       info.User,
+		"role_group": parse.RemoveDuplicates(roleGroup),
+		"post_group": parse.RemoveDuplicates(postGroup),
 	}))
 }
 

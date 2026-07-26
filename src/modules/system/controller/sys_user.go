@@ -63,11 +63,11 @@ func (s SysUserController) Info(c *gin.Context) {
 	// 新增用户时，用户ID为0
 	if id == 0 {
 		c.JSON(200, resp.OkData(map[string]any{
-			"user":    map[string]any{},
-			"roleIds": []string{},
-			"postIds": []string{},
-			"roles":   roles,
-			"posts":   posts,
+			"user":     map[string]any{},
+			"role_ids": []string{},
+			"post_ids": []string{},
+			"roles":    roles,
+			"posts":    posts,
 		}))
 		return
 	}
@@ -93,11 +93,11 @@ func (s SysUserController) Info(c *gin.Context) {
 	}
 
 	c.JSON(200, resp.OkData(map[string]any{
-		"user":    userInfo,
-		"roleIds": roleIds,
-		"postIds": postIds,
-		"roles":   roles,
-		"posts":   posts,
+		"user":     userInfo,
+		"role_ids": roleIds,
+		"post_ids": postIds,
+		"roles":    roles,
+		"posts":    posts,
 	}))
 }
 
