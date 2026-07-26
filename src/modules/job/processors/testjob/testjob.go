@@ -2,7 +2,7 @@ package testjob
 
 import (
 	"mask_api_gin/src/internal/shared/logger"
-	"mask_api_gin/src/modules/monitor/model"
+	"mask_api_gin/src/modules/job/model"
 )
 
 var NewProcessor = &Processor{}

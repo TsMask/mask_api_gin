@@ -9,7 +9,7 @@ import (
 	"mask_api_gin/src/internal/web/reqctx"
 	"mask_api_gin/src/internal/web/resp"
 	"mask_api_gin/src/internal/shared/parse"
-	"mask_api_gin/src/modules/monitor/service"
+	"mask_api_gin/src/modules/job/service"
 )
 
 // NewSysJobLog 实例化控制层
@@ -20,7 +20,7 @@ var NewSysJobLog = &SysJobLogController{
 
 // SysJobLogController 调度任务日志信息 控制层处理
 //
-// PATH /monitor/job/log
+// PATH /job/log
 type SysJobLogController struct {
 	sysJobService    *service.SysJob    // 调度任务服务
 	sysJobLogService *service.SysJobLog // 调度任务日志服务

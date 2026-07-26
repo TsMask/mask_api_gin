@@ -4,17 +4,114 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
 	"mask_api_gin/src/internal/infra/cron"
 	"mask_api_gin/src/internal/shared/constants"
-	"mask_api_gin/src/modules/job/testerror"
-	"mask_api_gin/src/modules/job/testjob"
-	"mask_api_gin/src/modules/job/testprogress"
-	"mask_api_gin/src/modules/monitor/model"
-	"mask_api_gin/src/modules/monitor/service"
+	"mask_api_gin/src/internal/shared/logger"
+	"mask_api_gin/src/internal/web/middleware"
+	"mask_api_gin/src/modules/job/controller"
+	"mask_api_gin/src/modules/job/model"
+	"mask_api_gin/src/modules/job/processors/testerror"
+	"mask_api_gin/src/modules/job/processors/testjob"
+	"mask_api_gin/src/modules/job/processors/testprogress"
+	"mask_api_gin/src/modules/job/service"
 )
 
 // Setup 模块注册
-func Setup() {
+func Setup(router *gin.Engine) {
+	logger.Infof("开始加载 ====> job 模块路由")
+
+	// 启动时加载
+	initLoad()
+
+	// 调度任务信息
+	sysJobGroup := router.Group("/job")
+	sysJob := controller.NewSysJob
+	{
+		sysJobGroup.GET("/list",
+			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:list"}}),
+			sysJob.List,
+		)
+		sysJobGroup.GET("/:id",
+			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:query"}}),
+			sysJob.Info,
+		)
+		sysJobGroup.POST("",
+			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:add"}}),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_INSERT)),
+			sysJob.Add,
+		)
+		sysJobGroup.PUT("",
+			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:edit"}}),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_UPDATE)),
+			sysJob.Edit,
+		)
+		sysJobGroup.DELETE("/:id",
+			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:remove"}}),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_DELETE)),
+			sysJob.Remove,
+		)
+		sysJobGroup.PUT("/status",
+			middleware.RepeatSubmit(5),
+			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:status"}}),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_UPDATE)),
+			sysJob.Status,
+		)
+		sysJobGroup.PUT("/run/:id",
+			middleware.RepeatSubmit(10),
+			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:status"}}),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_UPDATE)),
+			sysJob.Run,
+		)
+		sysJobGroup.PUT("/reset",
+			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:status"}}),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_OTHER)),
+			sysJob.Reset,
+		)
+		sysJobGroup.GET("/export",
+			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:export"}}),
+			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_EXPORT)),
+			sysJob.Export,
+		)
+	}
+
+	// 调度任务日志信息
+	sysJobLogGroup := router.Group("/job/log")
+	sysJobLog := controller.NewSysJobLog
+	{
+		sysJobLogGroup.GET("/list",
+			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:list"}}),
+			sysJobLog.List,
+		)
+		sysJobLogGroup.GET("/:id",
+			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:query"}}),
+			sysJobLog.Info,
+		)
+		sysJobLogGroup.DELETE("/:id",
+			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:remove"}}),
+			middleware.OperateLog(middleware.OptionNew("调度任务日志信息", middleware.OPERATE_TYPE_DELETE)),
+			sysJobLog.Remove,
+		)
+		sysJobLogGroup.DELETE("/clean",
+			middleware.RepeatSubmit(5),
+			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:remove"}}),
+			middleware.OperateLog(middleware.OptionNew("调度任务日志信息", middleware.OPERATE_TYPE_CLEAN)),
+			sysJobLog.Clean,
+		)
+		sysJobLogGroup.GET("/export",
+			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:export"}}),
+			middleware.OperateLog(middleware.OptionNew("调度任务日志信息", middleware.OPERATE_TYPE_EXPORT)),
+			sysJobLog.Export,
+		)
+	}
+}
+
+// initLoad 初始加载
+func initLoad() {
+	// 启动时，初始化调度任务
+	service.NewSysJob.Reset()
+
 	// 初始化定时任务处理
 	cron.CreateQueue("test_job", testjob.NewProcessor)
 	cron.CreateQueue("test_progress", testprogress.NewProcessor)

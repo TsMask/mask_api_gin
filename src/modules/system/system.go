@@ -14,7 +14,7 @@ import (
 func Setup(router *gin.Engine) {
 	logger.Infof("开始加载 ====> system 模块路由")
 
-	// 启动时需要的初始参数
+	// 启动时加载
 	initLoad()
 
 	// 参数配置信息
@@ -463,7 +463,7 @@ func Setup(router *gin.Engine) {
 	}
 }
 
-// InitLoad 初始参数
+// initLoad 初始加载
 func initLoad() {
 	// 启动时，刷新缓存-参数配置
 	service.NewSysConfig.CacheClean("*")

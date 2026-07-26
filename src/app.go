@@ -39,7 +39,7 @@ func RunServer() error {
 
 // 模块路由注册
 func modulesSetup(app *gin.Engine) {
-	// 接口操作日志中间件注入操作日志钩子（须在路由注册之前）
+	// 注入操作日志与任务执行日志持久化钩子（须在路由注册/任务初始化之前）
 	system.RegisterOnOperateLog()
 	job.RegisterOnJobLog()
 
@@ -48,6 +48,6 @@ func modulesSetup(app *gin.Engine) {
 	auth.Setup(app)    // 认证模块
 	common.Setup(app)  // 通用模块
 	system.Setup(app)  // 系统模块
-	job.Setup()        // 任务模块
-	monitor.Setup(app) // 监控模块（对任务名称绑定放最后）
+	job.Setup(app)     // 任务模块
+	monitor.Setup(app) // 监控模块
 }

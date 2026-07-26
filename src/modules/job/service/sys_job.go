@@ -10,8 +10,8 @@ import (
 	"mask_api_gin/src/internal/shared/date"
 	"mask_api_gin/src/internal/shared/file"
 	"mask_api_gin/src/internal/shared/logger"
-	"mask_api_gin/src/modules/monitor/model"
-	"mask_api_gin/src/modules/monitor/repository"
+	"mask_api_gin/src/modules/job/model"
+	"mask_api_gin/src/modules/job/repository"
 	systemService "mask_api_gin/src/modules/system/service"
 )
 

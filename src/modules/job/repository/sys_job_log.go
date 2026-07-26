@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"mask_api_gin/src/internal/infra/database"
-	"mask_api_gin/src/modules/monitor/model"
+	"mask_api_gin/src/modules/job/model"
 )
 
 // NewSysJobLog 实例化数据层

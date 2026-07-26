@@ -6,15 +6,11 @@ import (
 	"mask_api_gin/src/internal/shared/logger"
 	"mask_api_gin/src/internal/web/middleware"
 	"mask_api_gin/src/modules/monitor/controller"
-	"mask_api_gin/src/modules/monitor/service"
 )
 
 // Setup 模块路由注册
 func Setup(router *gin.Engine) {
 	logger.Infof("开始加载 ====> monitor 模块路由")
-
-	// 启动时需要的初始参数
-	initLoad()
 
 	// 服务器信息
 	system := controller.NewSystem
@@ -71,93 +67,4 @@ func Setup(router *gin.Engine) {
 			sysCache.CleanValue,
 		)
 	}
-
-	// 调度任务信息
-	sysJobGroup := router.Group("/monitor/job")
-	sysJob := controller.NewSysJob
-	{
-		sysJobGroup.GET("/list",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:list"}}),
-			sysJob.List,
-		)
-		sysJobGroup.GET("/:id",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:query"}}),
-			sysJob.Info,
-		)
-		sysJobGroup.POST("",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:add"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_INSERT)),
-			sysJob.Add,
-		)
-		sysJobGroup.PUT("",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:edit"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_UPDATE)),
-			sysJob.Edit,
-		)
-		sysJobGroup.DELETE("/:id",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_DELETE)),
-			sysJob.Remove,
-		)
-		sysJobGroup.PUT("/status",
-			middleware.RepeatSubmit(5),
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:status"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_UPDATE)),
-			sysJob.Status,
-		)
-		sysJobGroup.PUT("/run/:id",
-			middleware.RepeatSubmit(10),
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:status"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_UPDATE)),
-			sysJob.Run,
-		)
-		sysJobGroup.PUT("/reset",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:status"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_OTHER)),
-			sysJob.Reset,
-		)
-		sysJobGroup.GET("/export",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:export"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_EXPORT)),
-			sysJob.Export,
-		)
-	}
-
-	// 调度任务日志信息
-	sysJobLogGroup := router.Group("/monitor/job/log")
-	sysJobLog := controller.NewSysJobLog
-	{
-		sysJobLogGroup.GET("/list",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:list"}}),
-			sysJobLog.List,
-		)
-		sysJobLogGroup.GET("/:id",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:query"}}),
-			sysJobLog.Info,
-		)
-		sysJobLogGroup.DELETE("/:id",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务日志信息", middleware.OPERATE_TYPE_DELETE)),
-			sysJobLog.Remove,
-		)
-		sysJobLogGroup.DELETE("/clean",
-			middleware.RepeatSubmit(5),
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:remove"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务日志信息", middleware.OPERATE_TYPE_CLEAN)),
-			sysJobLog.Clean,
-		)
-		sysJobLogGroup.GET("/export",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:job:export"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务日志信息", middleware.OPERATE_TYPE_EXPORT)),
-			sysJobLog.Export,
-		)
-	}
-
-}
-
-// initLoad 初始参数
-func initLoad() {
-	sysJobService := service.NewSysJob
-	// 启动时，初始化调度任务
-	sysJobService.Reset()
 }

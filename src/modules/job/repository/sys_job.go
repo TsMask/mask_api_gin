@@ -2,7 +2,7 @@ package repository
 
 import (
 	"mask_api_gin/src/internal/infra/database"
-	"mask_api_gin/src/modules/monitor/model"
+	"mask_api_gin/src/modules/job/model"
 )
 
 // NewSysJob 实例化数据层

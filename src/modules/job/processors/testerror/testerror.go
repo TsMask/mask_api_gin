@@ -1,10 +1,10 @@
-package testprogress
+package testerror
 
 import (
 	"time"
 
 	"mask_api_gin/src/internal/shared/logger"
-	"mask_api_gin/src/modules/monitor/model"
+	"mask_api_gin/src/modules/job/model"
 )
 
 var NewProcessor = &Processor{
@@ -28,12 +28,20 @@ func (p *Processor) Execute(data any) (any, error) {
 	// 实现任务处理逻辑
 	i := 0
 	p.progress = i
-	for i < 20 {
+	for i < 5 {
 		// 获取任务进度
 		progress := p.progress
 		logger.Infof("jonId: %d => 任务进度：%d", sysJob.ID, progress)
 		// 延迟响应
 		time.Sleep(time.Second * 2)
+		// 程序中途执行错误
+		if i == 3 {
+			// arr := [1]int{1}
+			// arr[i] = 3
+			// fmt.Println(arr)
+			// return "i = 3"
+			panic("程序中途执行错误")
+		}
 		i++
 		// 改变任务进度
 		p.progress = i

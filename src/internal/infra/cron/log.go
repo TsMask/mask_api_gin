@@ -3,7 +3,7 @@ package cron
 // JobLogRecord 任务执行事件记录
 //
 // 引擎在任务成功或失败时发出，由业务模块注入的 OnJobLog 持久化。
-// Data 为 RunJob 传入的原始负载，业务侧自行类型断言（如 monitor 的 JobData）。
+// Data 为 RunJob 传入的原始负载，业务侧自行类型断言（如 job 模块的 SysJob）。
 type JobLogRecord struct {
 	Timestamp int64      // 执行开始时间（毫秒）
 	Status    string     // constants.STATUS_YES 成功 / constants.STATUS_NO 失败
