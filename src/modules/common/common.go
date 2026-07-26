@@ -14,28 +14,24 @@ func Setup(router *gin.Engine) {
 
 	// 路由主页
 	router.GET("/",
-		middleware.RateLimit(middleware.LimitOption{
-			Time:  300,
-			Count: 10,
-			Type:  middleware.LIMIT_IP,
-		}),
+		middleware.RateLimit(300, 10, middleware.RateLimitIP),
 		controller.NewIndex.Handler,
 	)
 
 	// 通用请求
 	commonGroup := router.Group("/common")
 	{
-		commonGroup.POST("/hash", middleware.AuthorizeUser(nil), controller.NewCommon.Hash)
+		commonGroup.POST("/hash", middleware.AuthorizeLogin(), controller.NewCommon.Hash)
 	}
 
 	// 文件操作
 	fileGroup := router.Group("/file")
 	file := controller.NewFile
 	{
-		fileGroup.POST("/upload", middleware.AuthorizeUser(nil), file.Upload)
-		fileGroup.POST("/chunk-check", middleware.AuthorizeUser(nil), file.ChunkCheck)
-		fileGroup.POST("/chunk-upload", middleware.AuthorizeUser(nil), file.ChunkUpload)
-		fileGroup.POST("/chunk-merge", middleware.AuthorizeUser(nil), file.ChunkMerge)
-		fileGroup.GET("/download/:file_path", middleware.AuthorizeUser(nil), file.Download)
+		fileGroup.POST("/upload", middleware.AuthorizeLogin(), file.Upload)
+		fileGroup.POST("/chunk-check", middleware.AuthorizeLogin(), file.ChunkCheck)
+		fileGroup.POST("/chunk-upload", middleware.AuthorizeLogin(), file.ChunkUpload)
+		fileGroup.POST("/chunk-merge", middleware.AuthorizeLogin(), file.ChunkMerge)
+		fileGroup.GET("/download/:file_path", middleware.AuthorizeLogin(), file.Download)
 	}
 }

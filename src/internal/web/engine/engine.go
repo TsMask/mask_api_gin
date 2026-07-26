@@ -1,13 +1,13 @@
 package engine
 
 import (
-	"mask_api_gin/src/internal/config"
-	"mask_api_gin/src/internal/web/middleware"
-	"mask_api_gin/src/internal/web/middleware/security"
-
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+
+	"mask_api_gin/src/internal/config"
+	"mask_api_gin/src/internal/web/middleware"
+	"mask_api_gin/src/internal/web/middleware/security"
 )
 
 // NewApp 初始应用引擎
@@ -28,31 +28,25 @@ func NewApp() *gin.Engine {
 	return app
 }
 
-// initAppEngine 初始应用引擎
+// initAppEngine 初始应用引擎。
+// 仅在非生产环境注册请求日志；panic 恢复统一由 middleware.Recovery 承担。
 func initAppEngine() *gin.Engine {
-	var app *gin.Engine
-
-	// 禁止控制台日志输出的颜色
 	gin.DisableConsoleColor()
 
-	// 根据运行环境注册引擎
+	app := gin.New()
 	if config.Env() == "prod" {
 		gin.SetMode(gin.ReleaseMode)
-		app = gin.New()
-		app.Use(gin.Recovery())
 	} else {
-		app = gin.Default()
+		app.Use(gin.Logger())
 	}
-
 	return app
 }
 
 // initMiddleware 初始全局中间件
 func initMiddleware(app *gin.Engine) {
-	// 全局中间件
-	app.Use(middleware.ErrorCatch())
+	app.Use(middleware.Recovery())
 	if config.Env() == "local" {
-		app.Use(middleware.Report())
+		app.Use(middleware.AccessLog())
 	}
 	app.Use(middleware.Cors(), security.Security())
 }

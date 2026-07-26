@@ -16,11 +16,7 @@ func Setup(router *gin.Engine) {
 	{
 		captcha := controller.NewCaptcha
 		router.GET("/captcha-image",
-			middleware.RateLimit(middleware.LimitOption{
-				Time:  300,
-				Count: 60,
-				Type:  middleware.LIMIT_IP,
-			}),
+			middleware.RateLimit(300, 60, middleware.RateLimitIP),
 			captcha.Image,
 		)
 	}
@@ -29,35 +25,23 @@ func Setup(router *gin.Engine) {
 	{
 		account := controller.NewAccount
 		router.POST("/auth/login",
-			middleware.RateLimit(middleware.LimitOption{
-				Time:  180,
-				Count: 15,
-				Type:  middleware.LIMIT_IP,
-			}),
+			middleware.RateLimit(180, 15, middleware.RateLimitIP),
 			account.Login,
 		)
 		router.POST("/auth/logout",
-			middleware.RateLimit(middleware.LimitOption{
-				Time:  120,
-				Count: 15,
-				Type:  middleware.LIMIT_IP,
-			}),
+			middleware.RateLimit(120, 15, middleware.RateLimitIP),
 			account.Logout,
 		)
 		router.POST("/auth/refresh-token",
-			middleware.RateLimit(middleware.LimitOption{
-				Time:  60,
-				Count: 5,
-				Type:  middleware.LIMIT_IP,
-			}),
+			middleware.RateLimit(60, 5, middleware.RateLimitIP),
 			account.RefreshToken,
 		)
 		router.GET("/me",
-			middleware.AuthorizeUser(nil),
+			middleware.AuthorizeLogin(),
 			account.Me,
 		)
 		router.GET("/router",
-			middleware.AuthorizeUser(nil),
+			middleware.AuthorizeLogin(),
 			account.Router,
 		)
 	}
@@ -66,11 +50,7 @@ func Setup(router *gin.Engine) {
 	{
 		register := controller.NewRegister
 		router.POST("/auth/register",
-			middleware.RateLimit(middleware.LimitOption{
-				Time:  300,
-				Count: 10,
-				Type:  middleware.LIMIT_IP,
-			}),
+			middleware.RateLimit(300, 10, middleware.RateLimitIP),
 			register.Register,
 		)
 	}

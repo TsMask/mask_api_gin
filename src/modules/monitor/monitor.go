@@ -15,7 +15,7 @@ func Setup(router *gin.Engine) {
 	// 服务器信息
 	system := controller.NewSystem
 	router.GET("/monitor/system",
-		middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:system:info"}}),
+		middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"monitor:system:info"}}),
 		system.Info,
 	)
 
@@ -24,12 +24,12 @@ func Setup(router *gin.Engine) {
 	sysUserOnline := controller.NewSysUserOnline
 	{
 		sysUserOnlineGroup.GET("/list",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:online:list"}}),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"monitor:online:list"}}),
 			sysUserOnline.List,
 		)
 		sysUserOnlineGroup.DELETE("/logout/:token_id",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:online:logout"}}),
-			middleware.OperateLog(middleware.OptionNew("在线用户监控", middleware.OPERATE_TYPE_FORCE)),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"monitor:online:logout"}}),
+			middleware.OperateLog("在线用户监控", middleware.OperateTypeForce),
 			sysUserOnline.Logout,
 		)
 	}
@@ -39,31 +39,31 @@ func Setup(router *gin.Engine) {
 	sysCache := controller.NewSysCache
 	{
 		sysCacheGroup.GET("",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:cache:info"}}),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"monitor:cache:info"}}),
 			sysCache.Info,
 		)
 		sysCacheGroup.GET("/names",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:cache:list"}}),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"monitor:cache:list"}}),
 			sysCache.Names,
 		)
 		sysCacheGroup.GET("/keys",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:cache:list"}}),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"monitor:cache:list"}}),
 			sysCache.Keys,
 		)
 		sysCacheGroup.GET("/value",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:cache:query"}}),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"monitor:cache:query"}}),
 			sysCache.Value,
 		)
 		sysCacheGroup.DELETE("/names",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"monitor:cache:remove"}}),
 			sysCache.CleanNames,
 		)
 		sysCacheGroup.DELETE("/keys",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"monitor:cache:remove"}}),
 			sysCache.CleanKeys,
 		)
 		sysCacheGroup.DELETE("/value",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"monitor:cache:remove"}}),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"monitor:cache:remove"}}),
 			sysCache.CleanValue,
 		)
 	}

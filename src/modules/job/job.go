@@ -28,48 +28,48 @@ func Setup(router *gin.Engine) {
 	sysJob := controller.NewSysJob
 	{
 		sysJobGroup.GET("/list",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:list"}}),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"job:list"}}),
 			sysJob.List,
 		)
 		sysJobGroup.GET("/:id",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:query"}}),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"job:query"}}),
 			sysJob.Info,
 		)
 		sysJobGroup.POST("",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:add"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_INSERT)),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"job:add"}}),
+			middleware.OperateLog("调度任务信息", middleware.OperateTypeInsert),
 			sysJob.Add,
 		)
 		sysJobGroup.PUT("",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:edit"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_UPDATE)),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"job:edit"}}),
+			middleware.OperateLog("调度任务信息", middleware.OperateTypeUpdate),
 			sysJob.Edit,
 		)
 		sysJobGroup.DELETE("/:id",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:remove"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_DELETE)),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"job:remove"}}),
+			middleware.OperateLog("调度任务信息", middleware.OperateTypeDelete),
 			sysJob.Remove,
 		)
 		sysJobGroup.PUT("/status",
 			middleware.RepeatSubmit(5),
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:status"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_UPDATE)),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"job:status"}}),
+			middleware.OperateLog("调度任务信息", middleware.OperateTypeUpdate),
 			sysJob.Status,
 		)
 		sysJobGroup.PUT("/run/:id",
 			middleware.RepeatSubmit(10),
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:status"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_UPDATE)),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"job:status"}}),
+			middleware.OperateLog("调度任务信息", middleware.OperateTypeUpdate),
 			sysJob.Run,
 		)
 		sysJobGroup.PUT("/reset",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:status"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_OTHER)),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"job:status"}}),
+			middleware.OperateLog("调度任务信息", middleware.OperateTypeOther),
 			sysJob.Reset,
 		)
 		sysJobGroup.GET("/export",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:export"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务信息", middleware.OPERATE_TYPE_EXPORT)),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"job:export"}}),
+			middleware.OperateLog("调度任务信息", middleware.OperateTypeExport),
 			sysJob.Export,
 		)
 	}
@@ -79,27 +79,27 @@ func Setup(router *gin.Engine) {
 	sysJobLog := controller.NewSysJobLog
 	{
 		sysJobLogGroup.GET("/list",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:list"}}),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"job:list"}}),
 			sysJobLog.List,
 		)
 		sysJobLogGroup.GET("/:id",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:query"}}),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"job:query"}}),
 			sysJobLog.Info,
 		)
 		sysJobLogGroup.DELETE("/:id",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:remove"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务日志信息", middleware.OPERATE_TYPE_DELETE)),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"job:remove"}}),
+			middleware.OperateLog("调度任务日志信息", middleware.OperateTypeDelete),
 			sysJobLog.Remove,
 		)
 		sysJobLogGroup.DELETE("/clean",
 			middleware.RepeatSubmit(5),
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:remove"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务日志信息", middleware.OPERATE_TYPE_CLEAN)),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"job:remove"}}),
+			middleware.OperateLog("调度任务日志信息", middleware.OperateTypeClean),
 			sysJobLog.Clean,
 		)
 		sysJobLogGroup.GET("/export",
-			middleware.AuthorizeUser(map[string][]string{"hasPerms": {"job:export"}}),
-			middleware.OperateLog(middleware.OptionNew("调度任务日志信息", middleware.OPERATE_TYPE_EXPORT)),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"job:export"}}),
+			middleware.OperateLog("调度任务日志信息", middleware.OperateTypeExport),
 			sysJobLog.Export,
 		)
 	}

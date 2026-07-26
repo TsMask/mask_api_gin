@@ -2,6 +2,8 @@ package src
 
 import (
 	"fmt"
+	"net"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -23,15 +25,18 @@ func RunServer() error {
 	modulesSetup(app)
 
 	// 读取服务配置
-	app.ForwardedByClientIP = config.Get("server.proxy").(bool)
-	addr := fmt.Sprintf("%s:%d", config.Get("server.host"), config.Get("server.port"))
+	app.ForwardedByClientIP = config.GetBoolOr("server.proxy", false)
+	host := config.GetStringOr("server.host", "")
+	port := config.GetIntOr("server.port", 0)
+	// net.JoinHostPort 自动给 IPv6 地址加方括号，避免 host:port 拼接歧义
+	addr := net.JoinHostPort(host, strconv.Itoa(port))
 
 	// 启动服务
-	serverCert := fmt.Sprint(config.Get("server.cert"))
-	serverkey := fmt.Sprint(config.Get("server.key"))
-	if serverCert != "" && serverkey != "" && serverCert != "<nil>" && serverkey != "<nil>" {
+	serverCert := config.GetStringOr("server.cert", "")
+	serverKey := config.GetStringOr("server.key", "")
+	if serverCert != "" && serverKey != "" {
 		fmt.Printf("\nListening and serving HTTPS on %s \n\n", addr)
-		return app.RunTLS(addr, serverCert, serverkey)
+		return app.RunTLS(addr, serverCert, serverKey)
 	}
 	fmt.Printf("\nListening and serving HTTP on %s \n\n", addr)
 	return app.Run(addr)

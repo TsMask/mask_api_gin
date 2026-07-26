@@ -1,20 +1,50 @@
 package middleware
 
 import (
-	"mask_api_gin/src/internal/config"
-
-	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
+	"mask_api_gin/src/internal/config"
 )
 
-// Cors 跨域
+// corsConfig 在注册期一次性解析的 CORS 配置，避免每个请求重复读取。
+type corsConfig struct {
+	Origin        string // 配置的允许来源；为空时回显请求 Origin
+	Credentials   bool
+	MaxAge        int
+	AllowMethods  []string
+	AllowHeaders  []string
+	ExposeHeaders []string
+}
+
+func loadCorsConfig() corsConfig {
+	return corsConfig{
+		Origin:        config.GetStringOr("cors.origin", ""),
+		Credentials:   config.GetBoolOr("cors.credentials", false),
+		MaxAge:        config.GetIntOr("cors.maxAge", 0),
+		AllowMethods:  config.GetStringSliceOr("cors.allowMethods", nil),
+		AllowHeaders:  config.GetStringSliceOr("cors.allowHeaders", nil),
+		ExposeHeaders: config.GetStringSliceOr("cors.exposeHeaders", nil),
+	}
+}
+
+// resolveOrigin 计算写入 Access-Control-Allow-Origin 的值。
+// 配置了 origin 时按配置返回（含 "*"）；否则回显请求来源。
+func (cfg corsConfig) resolveOrigin(requestOrigin string) string {
+	if cfg.Origin != "" {
+		return cfg.Origin
+	}
+	return requestOrigin
+}
+
+// Cors 跨域中间件。配置在注册时读取一次。
 func Cors() gin.HandlerFunc {
+	cfg := loadCorsConfig()
+
 	return func(c *gin.Context) {
-		// 设置Vary头部
 		c.Header("Vary", "Origin")
-		c.Header("Keep-Alive", "timeout=5")
 
 		requestOrigin := c.GetHeader("Origin")
 		if requestOrigin == "" {
@@ -22,60 +52,39 @@ func Cors() gin.HandlerFunc {
 			return
 		}
 
-		origin := requestOrigin
-		if v := config.Get("cors.origin"); v != nil {
-			origin = v.(string)
-		}
-		c.Header("Access-Control-Allow-Origin", origin)
-
-		if v := config.Get("cors.credentials"); v != nil && v.(bool) {
+		c.Header("Access-Control-Allow-Origin", cfg.resolveOrigin(requestOrigin))
+		if cfg.Credentials {
 			c.Header("Access-Control-Allow-Credentials", "true")
 		}
 
-		// OPTIONS
-		if method := c.Request.Method; method == "OPTIONS" {
-			requestMethod := c.GetHeader("Access-Control-Request-Method")
-			if requestMethod == "" {
+		// 预检请求
+		if c.Request.Method == "OPTIONS" {
+			if c.GetHeader("Access-Control-Request-Method") == "" {
 				c.Next()
 				return
 			}
 
-			// 响应最大时间值
-			if v := config.Get("cors.maxAge"); v != nil && v.(int) > 10000 {
-				c.Header("Access-Control-Max-Age", fmt.Sprint(v))
+			if cfg.MaxAge > 10000 {
+				c.Header("Access-Control-Max-Age", strconv.Itoa(cfg.MaxAge))
 			}
 
-			// 允许方法
-			if v := config.Get("cors.allowMethods"); v != nil {
-				var allowMethods = make([]string, 0)
-				for _, s := range v.([]any) {
-					allowMethods = append(allowMethods, s.(string))
-				}
-				c.Header("Access-Control-Allow-Methods", strings.Join(allowMethods, ","))
-			} else {
-				c.Header("Access-Control-Allow-Methods", "GET,HEAD,PUT,POST,DELETE,PATCH")
+			methods := cfg.AllowMethods
+			if len(methods) == 0 {
+				methods = []string{"GET", "HEAD", "PUT", "POST", "DELETE", "PATCH"}
 			}
+			c.Header("Access-Control-Allow-Methods", strings.Join(methods, ","))
 
-			// 允许请求头
-			if v := config.Get("cors.allowHeaders"); v != nil {
-				var allowHeaders = make([]string, 0)
-				for _, s := range v.([]any) {
-					allowHeaders = append(allowHeaders, s.(string))
-				}
-				c.Header("Access-Control-Allow-Headers", strings.Join(allowHeaders, ","))
+			if len(cfg.AllowHeaders) > 0 {
+				c.Header("Access-Control-Allow-Headers", strings.Join(cfg.AllowHeaders, ","))
 			}
 
 			c.AbortWithStatus(204)
 			return
 		}
 
-		// 暴露请求头
-		if v := config.Get("cors.exposeHeaders"); v != nil {
-			var exposeHeaders = make([]string, 0)
-			for _, s := range v.([]any) {
-				exposeHeaders = append(exposeHeaders, s.(string))
-			}
-			c.Header("Access-Control-Expose-Headers", strings.Join(exposeHeaders, ","))
+		// 暴露给前端可读的响应头
+		if len(cfg.ExposeHeaders) > 0 {
+			c.Header("Access-Control-Expose-Headers", strings.Join(cfg.ExposeHeaders, ","))
 		}
 
 		c.Next()

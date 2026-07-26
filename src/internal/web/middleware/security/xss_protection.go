@@ -1,24 +1,10 @@
 package security
 
-import (
-	"mask_api_gin/src/internal/config"
+import "github.com/gin-gonic/gin"
 
-	"github.com/gin-gonic/gin"
-)
-
-// xssProtection 用于启用浏览器的XSS过滤功能，以防止 XSS 跨站脚本攻击。
-func xssProtection(c *gin.Context) {
-	enable := false
-	if v := config.Get("security.xssProtection.enable"); v != nil {
-		enable = v.(bool)
-	}
-
-	value := "1; mode=block"
-	if v := config.Get("security.xssProtection.value"); v != nil {
-		value = v.(string)
-	}
-
-	if enable {
-		c.Header("x-xss-protection", value)
+// applyXSS 在启用时下发 X-XSS-Protection 头，开启浏览器内置 XSS 过滤。
+func applyXSS(c *gin.Context, cfg HeaderToggle) {
+	if cfg.Enable {
+		c.Header("x-xss-protection", cfg.Value)
 	}
 }

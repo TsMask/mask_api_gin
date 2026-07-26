@@ -1,20 +1,10 @@
 package security
 
-import (
-	"mask_api_gin/src/internal/config"
+import "github.com/gin-gonic/gin"
 
-	"github.com/gin-gonic/gin"
-)
-
-// noopen 用于指定 IE 8 以上版本的用户不打开文件而直接保存文件。
-// 在下载对话框中不显式“打开”选项。
-func noopen(c *gin.Context) {
-	enable := false
-	if v := config.Get("security.noopen.enable"); v != nil {
-		enable = v.(bool)
-	}
-
-	if enable {
+// applyNoOpen 在启用时下发 X-Download-Options: noopen，阻止 IE 直接打开下载文件。
+func applyNoOpen(c *gin.Context, cfg Toggle) {
+	if cfg.Enable {
 		c.Header("x-download-options", "noopen")
 	}
 }

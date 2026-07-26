@@ -1,11 +1,10 @@
 # 应用服务配置
 server:
-  # 服务地址, 默认绑定所有地址
-  host: "0.0.0.0"
-  # 服务端口
-  port: 6275
-  # 是否开启代理
-  proxy: false
+  host: "0.0.0.0" # 服务地址, 默认绑定所有地址
+  port: 6275 # 服务端口
+  key: "" # 服务端私钥
+  cert: "" # 服务端证书
+  proxy: false # 是否开启代理
 
 # 日志
 logger:
@@ -96,7 +95,7 @@ cors:
     - "Range"
   # 设置 Access-Control-Expose-Headers 的值
   exposeHeaders:
-    - "X-RepeatSubmit-Rest"
+    - "X-RepeatSubmit-Reset"
 
 # security 安全
 security:
