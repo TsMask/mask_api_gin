@@ -54,20 +54,16 @@ func initMiddleware(app *gin.Engine) {
 // initStaticFS 初始静态文件路由
 func initStaticFS(app *gin.Engine) {
 	// 静态目录-静态资源
-	if v := config.Get("staticFile.default"); v != nil {
-		fsMap := v.(map[string]any)
-		prefix, dir := fsMap["prefix"], fsMap["dir"]
-		if prefix != nil && dir != nil {
-			app.StaticFS(prefix.(string), gin.Dir(dir.(string), true))
-		}
+	prefix := config.GetStringOr("staticFile.default.prefix", "")
+	dir := config.GetStringOr("staticFile.default.dir", "")
+	if prefix != "" && dir != "" {
+		app.StaticFS(prefix, gin.Dir(dir, true))
 	}
 
 	// 静态目录-上传资源
-	if v := config.Get("staticFile.upload"); v != nil {
-		fsMap := v.(map[string]any)
-		prefix, dir := fsMap["prefix"], fsMap["dir"]
-		if prefix != nil && dir != nil {
-			app.StaticFS(prefix.(string), gin.Dir(dir.(string), true))
-		}
+	prefix = config.GetStringOr("staticFile.upload.prefix", "")
+	dir = config.GetStringOr("staticFile.upload.dir", "")
+	if prefix != "" && dir != "" {
+		app.StaticFS(prefix, gin.Dir(dir, true))
 	}
 }

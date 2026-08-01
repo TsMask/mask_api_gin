@@ -8,11 +8,11 @@ import (
 	"github.com/mojocn/base64Captcha"
 
 	"mask_api_gin/src/internal/config"
-	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/infra/cache"
+	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/shared/logger"
-	"mask_api_gin/src/internal/web/resp"
 	"mask_api_gin/src/internal/shared/parse"
+	"mask_api_gin/src/internal/web/resp"
 	systemService "mask_api_gin/src/modules/system/service"
 )
 
@@ -55,20 +55,19 @@ func (s CaptchaController) Image(c *gin.Context) {
 	// 从数据库配置获取验证码类型 math 数值计算 char 字符验证
 	captchaType := s.sysConfigService.FindValueByKey("sys.account.captchaType")
 	if captchaType == "math" {
-		math := config.Get("mathCaptcha").(map[string]any)
 		driverCaptcha := &base64Captcha.DriverMath{
 			//Height png height in pixel.
-			Height: math["height"].(int),
+			Height: config.GetIntOr("mathCaptcha.height", 0),
 			// Width Captcha png width in pixel.
-			Width: math["width"].(int),
+			Width: config.GetIntOr("mathCaptcha.width", 0),
 			//NoiseCount text noise count.
-			NoiseCount: math["noise"].(int),
+			NoiseCount: config.GetIntOr("mathCaptcha.noise", 0),
 			//ShowLineOptions := OptionShowHollowLine | OptionShowSlimeLine | OptionShowSineLine .
 			ShowLineOptions: base64Captcha.OptionShowHollowLine,
 		}
-		if math["color"].(bool) {
+		if config.GetBoolOr("mathCaptcha.color", false) {
 			//BgColor captcha image background color (optional)
-			driverCaptcha.BgColor = parse.Color(math["background"].(string))
+			driverCaptcha.BgColor = parse.Color(config.GetStringOr("mathCaptcha.background", ""))
 		}
 		// 验证码生成
 		id, question, answer := driverCaptcha.GenerateIdQuestionAnswer()
@@ -84,24 +83,23 @@ func (s CaptchaController) Image(c *gin.Context) {
 		}
 	}
 	if captchaType == "char" {
-		char := config.Get("charCaptcha").(map[string]any)
 		driverCaptcha := &base64Captcha.DriverString{
 			//Height png height in pixel.
-			Height: char["height"].(int),
+			Height: config.GetIntOr("charCaptcha.height", 0),
 			// Width Captcha png width in pixel.
-			Width: char["width"].(int),
+			Width: config.GetIntOr("charCaptcha.width", 0),
 			//NoiseCount text noise count.
-			NoiseCount: char["noise"].(int),
+			NoiseCount: config.GetIntOr("charCaptcha.noise", 0),
 			//Length random string length.
-			Length: char["size"].(int),
+			Length: config.GetIntOr("charCaptcha.size", 0),
 			//Source is a unicode which is the rand string from.
-			Source: char["chars"].(string),
+			Source: config.GetStringOr("charCaptcha.chars", ""),
 			//ShowLineOptions := OptionShowHollowLine | OptionShowSlimeLine | OptionShowSineLine .
 			ShowLineOptions: base64Captcha.OptionShowHollowLine,
 		}
-		if char["color"].(bool) {
+		if config.GetBoolOr("charCaptcha.color", false) {
 			//BgColor captcha image background color (optional)
-			driverCaptcha.BgColor = parse.Color(char["background"].(string))
+			driverCaptcha.BgColor = parse.Color(config.GetStringOr("charCaptcha.background", ""))
 		}
 		// 验证码生成
 		id, question, answer := driverCaptcha.GenerateIdQuestionAnswer()

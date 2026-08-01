@@ -1,4 +1,4 @@
-﻿package cache
+package cache
 
 import (
 	"context"
@@ -32,7 +32,7 @@ func DefaultCtx() (context.Context, context.CancelFunc) {
 func Connect() {
 	ctx := context.Background()
 	// 读取数据源配置
-	datasource := config.Get("redis.dataSource").(map[string]any)
+	datasource := config.GetStringMapOr("redis.dataSource", nil)
 	for k, v := range datasource {
 		client := v.(map[string]any)
 		// 创建连接
@@ -69,7 +69,7 @@ func Close() {
 func RDB(source string) *redis.Client {
 	// 不指定时获取默认实例
 	if source == "" {
-		source = config.Get("redis.defaultDataSourceName").(string)
+		source = config.GetStringOr("redis.defaultDataSourceName", "")
 	}
 	rdbMapMu.RLock()
 	defer rdbMapMu.RUnlock()

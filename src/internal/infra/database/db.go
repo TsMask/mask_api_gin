@@ -35,7 +35,7 @@ func loadDialect() map[string]dialectInfo {
 	dialects := make(map[string]dialectInfo)
 
 	// 读取数据源配置
-	datasource := config.Get("gorm.datasource").(map[string]any)
+	datasource := config.GetStringMapOr("gorm.datasource", nil)
 	for key, value := range datasource {
 		item := value.(map[string]any)
 		// 数据库类型对应的数据库连接
@@ -134,7 +134,7 @@ func Close() {
 func DB(source string) *gorm.DB {
 	// 不指定时获取默认实例
 	if source == "" {
-		source = config.Get("gorm.defaultDataSourceName").(string)
+		source = config.GetStringOr("gorm.defaultDataSourceName", "")
 	}
 	dbMapMu.RLock()
 	defer dbMapMu.RUnlock()

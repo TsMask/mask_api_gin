@@ -36,7 +36,7 @@ func UserTokenCreate(userId int64, deviceFingerprint, tokenType string) (string,
 	}
 
 	// 令牌算法 HS256 HS384 HS512，默认 HS256
-	algorithm := config.Get("jwt.algorithm").(string)
+	algorithm := config.GetStringOr("jwt.algorithm", "HS256")
 	method := jwt.SigningMethodHS256
 	switch algorithm {
 	case "HS512":
@@ -46,7 +46,7 @@ func UserTokenCreate(userId int64, deviceFingerprint, tokenType string) (string,
 	}
 
 	// 生成令牌设置密钥
-	secret := fmt.Sprint(config.Get("jwt.secret"))
+	secret := config.GetStringOr("jwt.secret", "")
 	// 设置令牌过期时间
 	now := time.Now()
 	exp := now
@@ -85,7 +85,7 @@ func UserTokenVerify(tokenStr string, tokenType string) (jwt.MapClaims, error) {
 	jwtToken, err := jwt.Parse(tokenStr, func(jToken *jwt.Token) (any, error) {
 		// 判断加密算法是预期的加密算法
 		if _, ok := jToken.Method.(*jwt.SigningMethodHMAC); ok {
-			secret := config.Get("jwt.secret").(string)
+			secret := config.GetStringOr("jwt.secret", "")
 			if tokenType == "access" {
 				secret = "User_Access:" + secret
 			}

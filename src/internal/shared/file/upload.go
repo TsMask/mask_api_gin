@@ -11,30 +11,22 @@ import (
 
 // UploadResourceDir 读取上传目录配置 prefix, dir
 func UploadResourceDir() (string, string) {
-	upload := config.Get("staticfile.upload").(map[string]any)
-	dir, _ := filepath.Abs(upload["dir"].(string))
-	return upload["prefix"].(string), dir
+	prefix := config.GetStringOr("staticFile.upload.prefix", "")
+	dir, _ := filepath.Abs(config.GetStringOr("staticFile.upload.dir", ""))
+	return prefix, dir
 }
 
 // UploadWhiteList 扩展名白名单
 func UploadWhiteList() []string {
-	arr, _ := config.Get("upload.whitelist").([]any)
-	list := make([]string, 0, len(arr))
-	for _, v := range arr {
-		if s, ok := v.(string); ok {
-			list = append(list, s)
-		}
-	}
-	return list
+	return config.GetStringSliceOr("upload.whitelist", []string{})
 }
 
 // UploadFileSize 最大上传文件大小
 func UploadFileSize() int {
-	size, ok := config.Get("upload.filesize").(int)
-	if !ok || size < 1 {
-		size = 1
+	if size := config.GetIntOr("upload.filesize", 1); size >= 1 {
+		return size
 	}
-	return size
+	return 1
 }
 
 // UploadFileAbsPath  上传资源本地绝对资源路径

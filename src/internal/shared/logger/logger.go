@@ -10,11 +10,11 @@ var logWriter *Logger
 
 // InitLogger 初始程序日志
 func InitLogger() {
-	fileDir := config.Get("logger.fileDir").(string)
-	fileName := config.Get("logger.fileName").(string)
-	level := config.Get("logger.level").(int)
-	maxDay := config.Get("logger.maxDay").(int)
-	maxSize := config.Get("logger.maxSize").(int)
+	fileDir := config.GetStringOr("logger.fileDir", "")
+	fileName := config.GetStringOr("logger.fileName", "")
+	level := config.GetIntOr("logger.level", 0)
+	maxDay := config.GetIntOr("logger.maxDay", 0)
+	maxSize := config.GetIntOr("logger.maxSize", 0)
 
 	newLog, err := NewLogger(config.Env(), fileDir, fileName, level, maxDay, maxSize)
 	if err != nil {
