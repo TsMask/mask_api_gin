@@ -35,7 +35,7 @@ func loadDialect() map[string]dialectInfo {
 	dialects := make(map[string]dialectInfo)
 
 	// 读取数据源配置
-	datasource := config.GetStringMapOr("gorm.datasource", nil)
+	datasource := config.GetStringMapOr("database.dataSource", nil)
 	for key, value := range datasource {
 		item := value.(map[string]any)
 		// 数据库类型对应的数据库连接
@@ -60,34 +60,33 @@ func loadDialect() map[string]dialectInfo {
 	return dialects
 }
 
-// 载入连接日志配置
-func loadLogger() gormLog.Interface {
-	newLogger := gormLog.New(
-		log.New(os.Stdout, "[GORM] ", log.LstdFlags), // 将日志输出到控制台
-		gormLog.Config{
-			SlowThreshold:        time.Second,  // Slow SQL 阈值
-			LogLevel:             gormLog.Info, // 日志级别 Silent不输出任何日志
-			ParameterizedQueries: false,        // 参数化查询SQL 用实际值带入?的执行语句
-			Colorful:             false,        // 彩色日志输出
-		},
-	)
-	return newLogger
-}
-
 // Connect 连接数据库实例
 func Connect() {
 	// 遍历进行连接数据库实例
 	for key, info := range loadDialect() {
 		opts := &gorm.Config{}
+
 		// 是否需要日志输出
 		if info.logging {
-			opts.Logger = loadLogger()
+			opts.Logger = gormLog.New(
+				log.New(os.Stdout, "[GORM] ", log.LstdFlags), // 将日志输出到控制台
+				gormLog.Config{
+					SlowThreshold:        time.Second,  // Slow SQL 阈值
+					LogLevel:             gormLog.Info, // 日志级别 Silent不输出任何日志
+					ParameterizedQueries: false,        // 参数化查询SQL 用实际值带入?的执行语句
+					Colorful:             false,        // 彩色日志输出
+				},
+			)
+		} else {
+			opts.Logger = gormLog.Discard
 		}
+
 		// 创建连接
 		db, err := gorm.Open(info.dialectic, opts)
 		if err != nil {
 			logger.Fatalf("failed error db connect: %s", err)
 		}
+
 		// 获取底层 SQL 数据库连接
 		sqlDB, err := db.DB()
 		if err != nil {
@@ -98,6 +97,7 @@ func Connect() {
 		if err != nil {
 			logger.Fatalf("failed error ping database: %v", err)
 		}
+
 		// SetMaxIdleConns 用于设置连接池中空闲连接的最大数量。
 		sqlDB.SetMaxIdleConns(10)
 		// SetMaxOpenConns 设置打开数据库连接的最大数量。
@@ -106,6 +106,7 @@ func Connect() {
 		sqlDB.SetConnMaxLifetime(time.Hour)
 		// SetConnMaxIdleTime 设置空闲连接最大存活时间
 		sqlDB.SetConnMaxIdleTime(15 * time.Minute)
+
 		logger.Infof("database %s connection is successful.", key)
 		dbMapMu.Lock()
 		dbMap[key] = db
@@ -134,7 +135,7 @@ func Close() {
 func DB(source string) *gorm.DB {
 	// 不指定时获取默认实例
 	if source == "" {
-		source = config.GetStringOr("gorm.defaultDataSourceName", "")
+		source = config.GetStringOr("database.defaultDataSourceName", "")
 	}
 	dbMapMu.RLock()
 	defer dbMapMu.RUnlock()

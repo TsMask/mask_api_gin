@@ -10,7 +10,7 @@ server:
 logger:
   fileDir: "../mask_file/logs"
   fileName: "mask_api_gin.log"
-  level: 2 # 日志记录的等级 0:silent<1:info<2:warn<3:error
+  level: "warn" # 日志记录的等级 silent<info<warn<error
   maxDay: 30 # 日志会保留 30 天
   maxSize: 10 # 调整按 10MB 大小的切割
 
@@ -134,7 +134,7 @@ jwt:
   refreshIn: 10080
 
 # GORM 数据源
-gorm:
+database:
   dataSource:
     # 默认数据库实例
     default:
@@ -149,7 +149,7 @@ gorm:
   defaultDataSourceName: "default"
 
 # Redis 缓存数据
-redis:
+cache:
   dataSource:
     default:
       port: 6379 # Redis port

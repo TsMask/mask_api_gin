@@ -129,7 +129,7 @@ func (q *Queue) runOnce(id string) {
 
 	// 写回结果状态，并清理已完成的一次性任务
 	q.mu.Lock()
-	if job, ok := q.jobs[id]; ok {
+	if cur, ok := q.jobs[id]; ok && cur == job {
 		if err != nil {
 			job.status = Failed
 		} else {

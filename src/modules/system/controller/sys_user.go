@@ -457,7 +457,7 @@ func (s SysUserController) Export(c *gin.Context) {
 func (s SysUserController) Template(c *gin.Context) {
 	// 从 embed.FS 中读取内嵌文件
 	assetsDir := config.GetAssetsDirFS()
-	fileData, err := assetsDir.ReadFile("src/assets/template/csv/user_import_template.csv")
+	fileData, err := assetsDir.ReadFile("src/assets/user_import_template.csv")
 	if err != nil {
 		c.String(400, "failed to read file")
 		return

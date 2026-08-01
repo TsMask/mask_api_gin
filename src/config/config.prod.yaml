@@ -12,7 +12,7 @@ security:
       - "<Referer地址>"
 
 # GORM 数据源
-gorm:
+database:
   dataSource:
     default:
       type: "mysql"
@@ -23,7 +23,7 @@ gorm:
       database: "<数据库>"
 
 # Redis 缓存数据
-redis:
+cache:
   dataSource:
     default:
       port: 6379 # Redis port

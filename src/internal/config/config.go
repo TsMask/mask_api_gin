@@ -13,14 +13,10 @@ import (
 )
 
 var (
-	// 程序名
-	Name string = "-"
-	// 程序版本
-	Version string = "-"
-	// 编译时间
-	BuildTime string = "-"
-	// Go版本
-	GoVer string = "-"
+	Name      string = "-" // 程序名
+	Version   string = "-" // 程序版本
+	BuildTime string = "-" // 编译时间
+	GoVer     string = "-" // Go版本
 )
 
 // conf 配置上下文
@@ -113,7 +109,7 @@ func RunTime() time.Time {
 
 // Get 获取配置信息
 //
-// Get("framework.name")
+// Get("server.host")
 func Get(key string) any {
 	return conf.Get(key)
 }
@@ -149,7 +145,10 @@ func IsSystemUser(userId int64) bool {
 		return false
 	}
 	// 从配置中获取系统管理员ID列表
-	arr := Get("systemUser").([]any)
+	arr, ok := Get("systemUser").([]any)
+	if !ok {
+		return false
+	}
 	for _, v := range arr {
 		if fmt.Sprint(v) == fmt.Sprint(userId) {
 			return true

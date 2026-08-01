@@ -33,8 +33,8 @@ func CSVWrite(filePath string, data [][]string, appendMode bool) error {
 		return err
 	}
 	defer func() {
+		f.Close()
 		if !appendMode {
-			f.Close()
 			os.Remove(filePath + ".tmp")
 		}
 	}()

@@ -4,7 +4,7 @@ server:
 
 # 日志
 logger:
-  level: 0 # 日志记录的等级 0:silent<1:info<2:warn<3:error
+  level: "info" # 日志记录的等级 silent<info<warn<error
 
 # security 安全
 security:
@@ -16,22 +16,22 @@ security:
       - "192.168.56.100"
 
 # GORM 数据源
-gorm:
+database:
   dataSource:
     default:
       type: "mysql"
-      host: "192.168.127.171"
+      host: "<mysql地址>"
       port: 3306
-      username: "root"
-      password: "root@1234"
-      database: "mask_api"
+      username: "<用户名>"
+      password: "<密码>"
+      database: "<数据库>"
       logging: true
 
 # Redis 缓存数据
-redis:
+cache:
   dataSource:
     default:
       port: 6379 # Redis port
-      host: "192.168.127.171"
-      password: "root@1234"
+      host: "<redis地址>"
+      password: "<密码>"
       db: 0 # Redis db_num
