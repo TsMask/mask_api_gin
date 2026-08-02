@@ -77,7 +77,7 @@ func (s Account) ByUsername(username, password string) (token.UserInfo, error) {
 	}
 
 	// 检验用户密码
-	compareBool := crypto.BcryptCompare(password, sysUser.UserPassword)
+	compareBool := crypto.Argon2idCompare(password, sysUser.UserPassword)
 	if compareBool {
 		s.CleanLoginRecordCache(sysUser.UserName) // 清除错误记录次数
 	} else {
@@ -160,12 +160,12 @@ func (s Account) CleanLoginRecordCache(userName string) bool {
 // passwordRetryCount 密码重试次数
 func (s Account) passwordRetryCount(userName string) (string, int64, time.Duration, error) {
 	// 验证登录次数和错误锁定时间
-	passwordRetryMaxCount := s.sysConfigService.FindValueByKey("sys.account.passwordRetryMaxCount")
+	passwordRetryMaxCount := s.sysConfigService.FindValueByKey("sys.user.maxRetryCount")
 	retryMaxCount := parse.Number(passwordRetryMaxCount)
 	if retryMaxCount <= 0 {
 		retryMaxCount = 3
 	}
-	passwordRetryLockTime := s.sysConfigService.FindValueByKey("sys.account.passwordRetryLockTime")
+	passwordRetryLockTime := s.sysConfigService.FindValueByKey("sys.user.lockTime")
 	retryLockTime := parse.Number(passwordRetryLockTime)
 	if retryLockTime <= 0 {
 		retryLockTime = 1

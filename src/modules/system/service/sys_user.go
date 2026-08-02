@@ -8,15 +8,15 @@ import (
 
 	"gorm.io/gorm"
 
-	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/infra/database"
-	"mask_api_gin/src/internal/shared/logger"
-	"mask_api_gin/src/internal/web/token"
+	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/shared/crypto"
 	"mask_api_gin/src/internal/shared/date"
 	"mask_api_gin/src/internal/shared/file"
+	"mask_api_gin/src/internal/shared/logger"
 	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/internal/shared/regular"
+	"mask_api_gin/src/internal/web/token"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )
@@ -48,7 +48,7 @@ type SysUser struct {
 // hashUserPassword hashes the password when non-empty (encryption is service-layer business logic)
 func (s SysUser) hashUserPassword(sysUser *model.SysUser) {
 	if sysUser.UserPassword != "" {
-		sysUser.UserPassword = crypto.BcryptHash(sysUser.UserPassword)
+		sysUser.UserPassword = crypto.Argon2idHash(sysUser.UserPassword)
 	}
 }
 

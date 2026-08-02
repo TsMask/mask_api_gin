@@ -172,12 +172,12 @@ func (s SysProfileController) UpdatePassword(c *gin.Context) {
 	}
 
 	// 检查匹配用户密码
-	oldCompare := crypto.BcryptCompare(body.OldPassword, userInfo.UserPassword)
+	oldCompare := crypto.Argon2idCompare(body.OldPassword, userInfo.UserPassword)
 	if !oldCompare {
 		c.JSON(200, resp.ErrMsg("修改密码失败，旧密码错误"))
 		return
 	}
-	newCompare := crypto.BcryptCompare(body.NewPassword, userInfo.UserPassword)
+	newCompare := crypto.Argon2idCompare(body.NewPassword, userInfo.UserPassword)
 	if newCompare {
 		c.JSON(200, resp.ErrMsg("新密码不能与旧密码相同"))
 		return

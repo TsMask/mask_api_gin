@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 
-	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/infra/cache"
+	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/shared/parse"
 	systemModel "mask_api_gin/src/modules/system/model"
 	systemService "mask_api_gin/src/modules/system/service"
@@ -47,7 +47,7 @@ func (s Register) ValidateCaptcha(code, uuid string) error {
 // ByUserName 账号注册
 func (s Register) ByUserName(username, password string) (int64, error) {
 	// 是否开启用户注册功能 true开启，false关闭
-	registerUserStr := s.sysConfigService.FindValueByKey("sys.account.registerUser")
+	registerUserStr := s.sysConfigService.FindValueByKey("sys.user.register")
 	captchaEnabled := parse.Boolean(registerUserStr)
 	if !captchaEnabled {
 		return 0, fmt.Errorf("很抱歉，系统已关闭外部用户注册通道")

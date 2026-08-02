@@ -1,6 +1,6 @@
 package model
 
-// SysUser 用户信息表（用户 N:1 部门 dept_id；密码 bcrypt 存储）
+// SysUser 用户信息表（用户 N:1 部门 dept_id；密码 argon2id 存储）
 type SysUser struct {
 	ID            int64  `json:"id" gorm:"column:id;primaryKey;autoIncrement"`  // 用户ID
 	CreateBy      string `json:"create_by" gorm:"column:create_by"`             // 创建者
