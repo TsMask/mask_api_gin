@@ -29,7 +29,7 @@ go env -w GOOS=windows
 ## Docker 部署
 
 - `Dockerfile` 构建Docker镜像脚本文件约817MB
-- `Dockerfile-分阶段` 构建Docker最小镜像脚本文件约41.2MB
+- `Dockerfile-分阶段.dockerfile` 构建Docker最小镜像脚本文件约41.2MB
 
 ```shell
 # 构建

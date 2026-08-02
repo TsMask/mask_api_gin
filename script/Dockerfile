@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine
+FROM golang:1.26-alpine
 
 ## 编译参数 项目名和版本号
 ARG NAME

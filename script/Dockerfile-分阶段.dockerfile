@@ -1,5 +1,5 @@
 ## 第一阶段 ====> 打包编译输出可执行文件
-FROM golang:1.22-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 ## 编译参数 项目名和版本号
 ARG NAME
