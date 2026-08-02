@@ -1,64 +1,96 @@
 package logger
 
 import (
-	"mask_api_gin/src/internal/config"
-
+	"io"
 	"log"
+	"os"
+	"strings"
+	"time"
+
+	"mask_api_gin/src/internal/config"
 )
 
-var logWriter *Logger
+var logger *Logger // 日志实例
 
 // InitLogger 初始程序日志
 func InitLogger() {
-	fileDir := config.GetStringOr("logger.fileDir", "")
-	fileName := config.GetStringOr("logger.fileName", "")
-	level := config.GetIntOr("logger.level", 0)
-	maxDay := config.GetIntOr("logger.maxDay", 0)
-	maxSize := config.GetIntOr("logger.maxSize", 0)
+	// 重复初始化时先关闭旧实例，避免句柄与分割 goroutine 泄漏
+	if logger != nil {
+		logger.Close()
+	}
+	fileDir := config.GetStringOr("logger.fileDir", "/tmp")
+	fileName := config.GetStringOr("logger.fileName", "app.log")
+	level := config.GetStringOr("logger.level", "warn")
+	maxDay := config.GetIntOr("logger.maxDay", 7)
+	maxSize := config.GetIntOr("logger.maxSize", 10)
+	env := config.Env()
 
-	newLog, err := NewLogger(config.Env(), fileDir, fileName, level, maxDay, maxSize)
+	fileHandle, bufWriter, err := createFile(fileDir, fileName)
 	if err != nil {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
+	writer := io.Writer(bufWriter)
+	if env == "local" {
+		writer = io.MultiWriter(bufWriter, os.Stderr)
+	}
 
-	logWriter = newLog
+	logNew := log.New(writer, "", log.LstdFlags|log.Lshortfile)
+	logger = &Logger{
+		Env:        env,
+		FilePath:   fileDir,
+		FileName:   fileName,
+		Level:      strings.ToUpper(level),
+		MaxDay:     maxDay,
+		MaxSize:    int64(maxSize * 1024 * 1024),
+		fileHandle: fileHandle,
+		logNew:     logNew,
+		bufWriter:  bufWriter,
+		LogDate:    time.Now().Format(time.DateOnly),
+	}
+
+	go logger.checkFile()
 }
 
 // Close 关闭程序日志写入
 func Close() {
-	if logWriter != nil {
-		logWriter.Close()
+	if logger != nil {
+		logger.Close()
 	}
 }
 
 // Infof 信息级日志
 func Infof(format string, v ...any) {
-	if logWriter == nil {
+	if logger == nil {
 		log.Printf("[INFO] "+format, v...)
 		return
 	}
-	logWriter.Infof(format, v...)
+	logger.Infof(format, v...)
 }
 
 // Warnf 告警级日志
 func Warnf(format string, v ...any) {
-	if logWriter == nil {
+	if logger == nil {
 		log.Printf("[WARN] "+format, v...)
 		return
 	}
-	logWriter.Warnf(format, v...)
+	logger.Warnf(format, v...)
 }
 
 // Errorf 错误级日志
 func Errorf(format string, v ...any) {
-	if logWriter == nil {
+	if logger == nil {
 		log.Printf("[ERROR] "+format, v...)
 		return
 	}
-	logWriter.Errorf(format, v...)
+	logger.Errorf(format, v...)
 }
 
-// Fatalf 抛出错误并退出程序
+// Fatalf 记录致命错误并落盘后退出程序。
 func Fatalf(format string, v ...any) {
-	log.Fatalf(format, v...)
+	if logger == nil {
+		log.Fatalf(format, v...)
+		return
+	}
+	logger.Fatal(format, v...)
+	os.Exit(1)
 }

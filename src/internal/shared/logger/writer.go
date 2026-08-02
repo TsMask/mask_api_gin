@@ -13,100 +13,81 @@ import (
 	"time"
 )
 
-// Logger 日志器对象
-type Logger struct {
-	env         string         // 运行环境
-	filePath    string         // 文件路径
-	fileName    string         // 文件名
-	level       int            // 日志等级标识
-	maxDay      int            // 保留最长天数
-	maxSize     int64          // 文件最大空间
-	fileHandle  *os.File       // 文件实例
-	bufWriter   *bufio.Writer  // 缓冲写入器
-	logger      *log.Logger    // 日志实例
-	logLevelMap map[int]string // 日志等级标识名
-	logDay      int            // 日志当前日
-	mu          sync.Mutex     // 保护写入与分割互斥，避免并发占用句柄
-	closed      atomic.Bool    // 是否已关闭，阻止关闭后再分割/写入
+// parseLevelMap 日志等级映射表，数值越大优先级越高：silent < info < warn < error
+var parseLevelMap = map[string]int{
+	"SILENT": 0,
+	"INFO":   1,
+	"WARN":   2,
+	"ERROR":  3,
 }
 
-const (
-	LogLevelSilent = iota
-	LogLevelInfo
-	LogLevelWarn
-	LogLevelError
-)
+// Logger 日志器对象
+type Logger struct {
+	Env        string        `json:"env"`      // 运行环境
+	Level      string        `json:"level"`    // 日志等级阈值
+	MaxDay     int           `json:"maxDay"`   // 保留最长天数
+	MaxSize    int64         `json:"maxSize"`  // 单文件最大字节数
+	FilePath   string        `json:"filePath"` // 文件路径
+	FileName   string        `json:"fileName"` // 文件名
+	fileHandle *os.File      `json:"-"`        // 文件句柄
+	LogDate    string        `json:"logDate"`  // 当前日志所属日期
+	logNew     *log.Logger   `json:"-"`        // 日志实例
+	bufWriter  *bufio.Writer `json:"-"`        // 缓存写入器
+	mu         sync.Mutex    `json:"-"`        // 保护写入与分割互斥，避免并发占用句柄
+	closed     atomic.Bool   `json:"-"`        // 是否已关闭，阻止关闭后再分割/写入
+}
 
-// NewLogger 实例日志器对象
-func NewLogger(env, fileDir, fileName string, level, maxDay, maxSize int) (*Logger, error) {
+// createFile 创建日志文件与缓存写入器
+func createFile(fileDir string, fileName string) (*os.File, *bufio.Writer, error) {
 	logFilePath := filepath.Join(fileDir, fileName)
 	if err := os.MkdirAll(filepath.Dir(logFilePath), 0755); err != nil {
-		return nil, fmt.Errorf("failed to mkdir logger dir: %v", err)
+		return nil, nil, fmt.Errorf("failed to mkdir logger dir: %v", err)
 	}
 	fileHandle, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open log file: %v", err)
+		return nil, nil, fmt.Errorf("failed to open log file: %v", err)
 	}
 
-	bufWriter := bufio.NewWriterSize(fileHandle, 64*1024)
-
-	writer := io.Writer(bufWriter)
-	if env == "local" {
-		writer = io.MultiWriter(bufWriter, os.Stderr)
-	}
-
-	logger := log.New(writer, "", log.LstdFlags|log.Lshortfile)
-
-	logLevelMap := map[int]string{
-		LogLevelSilent: "SILENT",
-		LogLevelInfo:   "INFO",
-		LogLevelWarn:   "WARN",
-		LogLevelError:  "ERROR",
-	}
-
-	stdLogger := &Logger{
-		env:         env,
-		filePath:    fileDir,
-		fileName:    fileName,
-		level:       level,
-		maxDay:      maxDay,
-		maxSize:     int64(maxSize * 1024 * 1024),
-		fileHandle:  fileHandle,
-		bufWriter:   bufWriter,
-		logger:      logger,
-		logLevelMap: logLevelMap,
-		logDay:      time.Now().Day(),
-	}
-
-	go stdLogger.checkFile()
-
-	return stdLogger, nil
+	bufWriter := bufio.NewWriterSize(fileHandle, 4*1024)
+	return fileHandle, bufWriter, nil
 }
 
-// checkFile 检查文件分割，自定时调用
+// checkFile 定时检查并执行文件分割，自行调度下一次检查。
 func (l *Logger) checkFile() {
 	if l.closed.Load() {
 		return
 	}
 
-	// 加锁读取文件信息，避免与 rotateFile/Close 并发访问句柄
+	// 整段在锁内：读取文件信息 + 判断 + 分割，避免与写入/关闭并发；
+	// LogDate 在锁内更新，保证状态一致。
+	var removeBefore time.Time
+	needRemove := false
+
 	l.mu.Lock()
 	fileInfo, err := l.fileHandle.Stat()
-	l.mu.Unlock()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "logger: failed to get log file info: %v\n", err)
 	} else {
 		currTime := time.Now()
-		if l.logDay != currTime.Day() {
-			l.logDay = currTime.Day()
-			l.rotateFile(currTime.AddDate(0, 0, -1).Format("2006-01-02"))
-			// 移除超过保存最长天数的文件
-			l.removeOldFile(currTime.AddDate(0, 0, -l.maxDay))
-		} else if fileInfo.Size() >= l.maxSize {
-			l.rotateFile(currTime.Format("2006-01-02_150405"))
-		} else if time.Since(fileInfo.ModTime()).Hours() > 24 {
-			l.rotateFile(fileInfo.ModTime().Format("2006-01-02"))
+		// 任何轮转后都按 MaxDay 清理过期归档，阈值统一为 now - MaxDay
+		removeBefore = currTime.AddDate(0, 0, -l.MaxDay)
+		switch {
+		case l.LogDate != currTime.Format(time.DateOnly):
+			// 跨天：把当前文件归档为"昨天"对应日期
+			l.LogDate = currTime.Format(time.DateOnly)
+			l.rotateLocked(currTime.AddDate(0, 0, -1).Format(time.DateOnly))
+			needRemove = true
+		case fileInfo.Size() >= l.MaxSize:
+			// 超过单文件大小上限，按时间戳归档
+			l.rotateLocked(currTime.Format("2006-01-02_150405"))
+			needRemove = true
 		}
+	}
+	l.mu.Unlock()
+
+	// 过期清理只依赖初始化后不可变的字段，锁外执行，避免长时间持锁阻塞写入
+	if needRemove {
+		l.removeOldFile(removeBefore)
 	}
 
 	// 无论是否触发分割都继续定时，避免一次 Stat 失败就永久停止分割
@@ -115,17 +96,14 @@ func (l *Logger) checkFile() {
 	}
 }
 
-// rotateFile 检查文件大小进行分割
-func (l *Logger) rotateFile(timeFormat string) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
+// rotateLocked 把当前日志文件归档并重新打开基础文件。调用方必须持有 l.mu。
+func (l *Logger) rotateLocked(timeFormat string) {
 	if l.closed.Load() {
 		return
 	}
 
-	// 必须先刷新缓冲区：否则缓冲数据丢失，且缓冲器仍引用已关闭的句柄，
-	// Windows 上会导致句柄占用、文件无法重命名分割
+	// 必须先刷新缓冲区：否则缓冲数据丢失，且 Windows 上缓冲器仍引用已关闭的句柄，
+	// 导致句柄占用、文件无法重命名分割
 	if l.bufWriter != nil {
 		_ = l.bufWriter.Flush()
 	}
@@ -135,52 +113,52 @@ func (l *Logger) rotateFile(timeFormat string) {
 		fmt.Fprintf(os.Stderr, "logger: failed to close log file: %v\n", err)
 	}
 
-	newFileName := fmt.Sprintf("%s.%s", l.fileName, timeFormat)
-	newFilePath := filepath.Join(l.filePath, newFileName)
-	oldFilePath := filepath.Join(l.filePath, l.fileName)
+	archivePath := filepath.Join(l.FilePath, fmt.Sprintf("%s.%s", l.FileName, timeFormat))
+	basePath := filepath.Join(l.FilePath, l.FileName)
 
-	// 重命名
-	if err := os.Rename(oldFilePath, newFilePath); err != nil {
+	// 归档重命名
+	if err := os.Rename(basePath, archivePath); err != nil {
 		fmt.Fprintf(os.Stderr, "logger: failed to rename log file: %v\n", err)
 	}
 
-	// 新文件句柄
-	fileHandle, err := os.OpenFile(oldFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	// 重新打开基础文件（必须是基础文件名，而非归档文件名，否则后续写入全部进入归档文件）
+	fileHandle, bufWriter, err := createFile(l.FilePath, l.FileName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "logger: failed to open log file: %v\n", err)
 		return
 	}
-
-	l.fileHandle = fileHandle
-
-	// 重新创建缓冲写入器
-	l.bufWriter = bufio.NewWriterSize(fileHandle, 64*1024)
-
-	// 重新设置 logger 的 writer
-	writer := io.Writer(l.bufWriter)
-	if l.env == "local" {
-		writer = io.MultiWriter(l.bufWriter, os.Stderr)
+	writer := io.Writer(bufWriter)
+	if l.Env == "local" {
+		writer = io.MultiWriter(bufWriter, os.Stderr)
 	}
-	l.logger.SetOutput(writer)
+
+	// 重新绑定句柄、缓冲器与日志输出器
+	l.fileHandle = fileHandle
+	l.bufWriter = bufWriter
+	l.logNew.SetOutput(writer)
 }
 
-// RemoveOldFile 删除旧文件
+// removeOldFile 删除早于 oldFileDate 的归档文件。
+// 仅依赖初始化后不可变的字段，无需持有 l.mu。
 func (l *Logger) removeOldFile(oldFileDate time.Time) {
-	// 遍历目标文件夹中的文件
-	files, err := os.ReadDir(l.filePath)
-	if err != nil {
-		l.Errorf("logger RemoveOldFile ReadDir err: %v", err.Error())
+	if l.MaxDay < 1 {
 		return
 	}
 
-	prefix := l.fileName + "."
+	files, err := os.ReadDir(l.FilePath)
+	if err != nil {
+		l.Errorf("logger removeOldFile ReadDir err: %v", err.Error())
+		return
+	}
+
+	prefix := l.FileName + "."
 	for _, file := range files {
-		// 分割文件名格式：fileName.date 或 fileName.date_time，截取 fileName. 之后的后缀
+		// 归档文件名格式：fileName.date 或 fileName.date_time，截取 fileName. 之后的后缀
 		suffix := strings.TrimPrefix(file.Name(), prefix)
 		if suffix == file.Name() {
 			continue
 		}
-		// 日期部分固定 10 位（2006-01-02），后缀不足则不是分割文件，跳过避免越界
+		// 日期部分固定 10 位（2006-01-02），后缀不足则不是归档文件，跳过避免越界
 		if len(suffix) < 10 {
 			continue
 		}
@@ -189,42 +167,67 @@ func (l *Logger) removeOldFile(oldFileDate time.Time) {
 			continue
 		}
 
-		// 判断文件日期是否在给定日期之前
+		// 文件日期早于给定阈值则删除
 		if fileDate.Before(oldFileDate) {
-			if err := os.Remove(filepath.Join(l.filePath, file.Name())); err != nil {
-				l.Errorf("logger RemoveOldFile Remove err: %v", err.Error())
-				continue
+			if err := os.Remove(filepath.Join(l.FilePath, file.Name())); err != nil {
+				l.Errorf("logger removeOldFile Remove err: %v", err.Error())
 			}
 		}
 	}
 }
 
-// writeLog 写入chan
-func (l *Logger) writeLog(level int, format string, args ...interface{}) {
-	// 日志等级小于指定等级不输出文件
-	if level < l.level {
+// writeLog 写入日志
+func (l *Logger) writeLog(level, format string, args ...any) {
+	// 等级过滤：低于阈值不输出
+	levelVal, okLevel := parseLevelMap[level]
+	if !okLevel {
 		return
 	}
+	threshold, okThreshold := parseLevelMap[l.Level]
+	if !okThreshold || levelVal < threshold {
+		return
+	}
+
+	logMsg := fmt.Sprintf("[%s] %s\n", level, fmt.Sprintf(format, args...))
+
+	// 关闭检查置于锁内，避免 Close 在检查与写入之间关闭句柄导致写入已关闭的 fd
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	if l.closed.Load() {
 		return
 	}
-
-	logMsg := fmt.Sprintf("[%s] %s\n", l.logLevelMap[level], fmt.Sprintf(format, args...))
-	l.mu.Lock()
-	_ = l.logger.Output(4, logMsg)
-	l.mu.Unlock()
+	_ = l.logNew.Output(4, logMsg)
 }
 
 func (l *Logger) Infof(format string, args ...interface{}) {
-	l.writeLog(LogLevelInfo, format, args...)
+	l.writeLog("INFO", format, args...)
 }
 
 func (l *Logger) Warnf(format string, args ...interface{}) {
-	l.writeLog(LogLevelWarn, format, args...)
+	l.writeLog("WARN", format, args...)
 }
 
 func (l *Logger) Errorf(format string, args ...interface{}) {
-	l.writeLog(LogLevelError, format, args...)
+	l.writeLog("ERROR", format, args...)
+}
+
+// Fatal 记录致命错误并立即落盘（不受 level 阈值限制），随后由调用方退出进程。
+// 始终同时写入文件与 stderr：进程即将退出，stderr 保证 systemd/journald、容器
+// 编排等通过 stderr 采集致命错误，不依赖日志文件是否可读。
+// 用独立输出器实现，避免与常规日志的 env 路由耦合，且 local 下不与 logNew 重复。
+func (l *Logger) Fatal(format string, args ...interface{}) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.closed.Load() {
+		return
+	}
+	logMsg := fmt.Sprintf("[FATAL] %s\n", fmt.Sprintf(format, args...))
+	out := io.MultiWriter(l.bufWriter, os.Stderr)
+	fatalLogger := log.New(out, "", log.LstdFlags|log.Lshortfile)
+	_ = fatalLogger.Output(3, logMsg)
+	if l.bufWriter != nil {
+		_ = l.bufWriter.Flush()
+	}
 }
 
 // Close 日志关闭
