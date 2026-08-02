@@ -1,15 +1,17 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"time"
 
-	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/infra/cache"
-	"mask_api_gin/src/internal/shared/logger"
+	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/shared/date"
 	"mask_api_gin/src/internal/shared/file"
+	"mask_api_gin/src/internal/shared/logger"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
 )
@@ -115,6 +117,22 @@ func (s SysConfig) CheckUniqueByKey(configKey string, id int64) bool {
 		return true
 	}
 	return uniqueId == 0
+}
+
+// CheckValidateValueType 校验参数键值类型：未指定类型时放行
+// 指定时须在白名单内；json 类型要求键值为合法 JSON。
+func (s SysConfig) CheckValidateValueType(valueType, value string) error {
+	if valueType == "" {
+		return nil
+	}
+	// 参数键值类型白名单：string 字符串、number 数值、boolean 布尔、json JSON 对象
+	if !slices.Contains([]string{"string", "number", "boolean", "json"}, valueType) {
+		return fmt.Errorf("参数键值类型不支持「%s」，仅支持 string/number/boolean/json", valueType)
+	}
+	if valueType == "json" && !json.Valid([]byte(value)) {
+		return fmt.Errorf("参数键值类型为 json 时，键值必须为合法 JSON")
+	}
+	return nil
 }
 
 // FindValueByKey 通过参数键名查询参数值

@@ -67,10 +67,16 @@ func (s SysConfigController) Add(c *gin.Context) {
 		return
 	}
 
+	// 校验参数键值类型（支持 string/number/boolean/json）
+	if err := s.sysConfigService.CheckValidateValueType(body.ConfigValueType, body.ConfigValue); err != nil {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, err.Error()))
+		return
+	}
+
 	// 检查属性值唯一
 	uniqueConfigKey := s.sysConfigService.CheckUniqueByKey(body.ConfigKey, 0)
 	if !uniqueConfigKey {
-		msg := fmt.Sprintf("参数配置新增【%s】失败，参数键名已存在", body.ConfigKey)
+		msg := fmt.Sprintf("参数配置新增「%s」失败，参数键名已存在", body.ConfigKey)
 		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
@@ -102,14 +108,20 @@ func (s SysConfigController) Edit(c *gin.Context) {
 	// 检查是否存在
 	configInfo := s.sysConfigService.FindById(body.ID)
 	if configInfo.ID != body.ID {
-		c.JSON(200, resp.ErrMsg("没有权限访问参数配置数据！"))
+		c.JSON(200, resp.ErrMsg("没有权限访问参数配置数据"))
+		return
+	}
+
+	// 校验参数键值类型（支持 string/number/boolean/json）
+	if err := s.sysConfigService.CheckValidateValueType(body.ConfigValueType, body.ConfigValue); err != nil {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, err.Error()))
 		return
 	}
 
 	// 检查属性值唯一
 	uniqueConfigKey := s.sysConfigService.CheckUniqueByKey(body.ConfigKey, body.ID)
 	if !uniqueConfigKey {
-		msg := fmt.Sprintf("参数配置修改【%s】失败，参数键名已存在", body.ConfigKey)
+		msg := fmt.Sprintf("参数配置修改「%s」失败，参数键名已存在", body.ConfigKey)
 		c.JSON(200, resp.ErrMsg(msg))
 		return
 	}
@@ -154,7 +166,7 @@ func (s SysConfigController) Remove(c *gin.Context) {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
-	msg := fmt.Sprintf("删除成功：%d", rows)
+	msg := fmt.Sprintf("删除成功！%d", rows)
 	c.JSON(200, resp.OkMsg(msg))
 }
 

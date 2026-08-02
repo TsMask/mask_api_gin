@@ -11,8 +11,8 @@ type SysConfig struct {
 	ConfigName      string `json:"config_name" gorm:"column:config_name" binding:"required"`   // 参数名称
 	ConfigKey       string `json:"config_key" gorm:"column:config_key" binding:"required"`     // 参数键名
 	ConfigValue     string `json:"config_value" gorm:"column:config_value" binding:"required"` // 参数键值
-	ConfigValueType string `json:"config_value_type" gorm:"column:config_value_type"`          // 参数键值类型
-	ConfigGroup     string `json:"config_group" gorm:"column:config_group"`                    // 参数组
+	ConfigValueType string `json:"config_value_type" gorm:"column:config_value_type"`          // 参数键值类型（string 字符串 / number 数值 / boolean 布尔 / json JSON 对象）
+	ConfigGroup     string `json:"config_group" gorm:"column:config_group"`                    // 参数分组
 	ConfigSort      int64  `json:"config_sort" gorm:"column:config_sort"`                      // 排序
 	ConfigStatus    string `json:"config_status" gorm:"column:config_status"`                  // 状态（0停用 1正常）
 }
