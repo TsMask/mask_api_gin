@@ -2,14 +2,12 @@
 
 [![star](https://gitee.com/TsMask/mask_api_gin/badge/star.svg?theme=dark)](https://gitee.com/TsMask/mask_api_gin/stargazers)
 ![Build Gin](https://img.shields.io/badge/Build-Gin-green.svg)
-![Release V0.6.7](https://img.shields.io/badge/Release-V0.6.7-orange.svg)
+![Release V0.7.0](https://img.shields.io/badge/Release-V0.7.0-orange.svg)
 ![License MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
 ## 介绍
 
-`Node-Midwayjs` 项目代码迁移，相同配置，性能翻倍。
-
-基于 `Golang` 的 `Gin` Web框架进行开发，如需进一步了解框架，参见 [Gin Web Framework](https://gin-gonic.com/zh-cn/docs/quickstart/) 官方文档。
+基于 `Golang` 的 `Gin` Web框架进行开发，如需进一步了解框架，参见 [Gin Web Framework](https://gin-gonic.com/zh-cn/docs/quickstart/) 官方文档。相比 `Node-Midwayjs` 项目，相同配置，性能翻倍。
 
 ## 项目文档
 
@@ -51,7 +49,7 @@ mask_api_gin
 ├── src                         目录-源代码
 ├   ├── assets                  目录-程序内部静态资源文件
 ├   ├── config                  目录-程序相关运行参数配置
-├   ├── framework               目录-程序核心通用代码
+├   ├── internal                目录-程序核心通用代码
 ├   ├── modules                 目录-业务模块
 ├   ├   ├── system              目录-系统内部接口模块
 ├   ├   ├   ├── controller      目录-接口路由控制层
@@ -76,11 +74,11 @@ mask_api_gin
 
 ### 开发环境
 
-| 技术 | 说明 | 版本 |
-| ---- | ---- | ---- |
-| Go | go项目的运行环境 | 1.24+ |
-| Redis | 缓存存储程序 | 6+ |
-| Mysql | 数据存储程序 | 8+ |
+| 技术  | 说明             | 版本  |
+| ----- | ---------------- | ----- |
+| Go    | go项目的运行环境 | 1.24+ |
+| Redis | 缓存存储程序     | 6+    |
+| Mysql | 数据存储程序     | 8+    |
 
 程序可用脚本 `script` 目录内含初始化数据库SQL脚本文件
 
@@ -105,7 +103,7 @@ go run main.go --env local    # 本地模式启动项目
 go env -w GOOS=linux
 go env -w GOOS=windows
 # 构建项目二进制文件
-go build -o app -ldflags="-s -w -X 'mask_api_gin/src/framework/config.Name=mask-api' -X 'mask_api_gin/src/framework/config.Version=0.0.1' -X 'mask_api_gin/src/framework/config.BuildTime=$(date)' -X 'mask_api_gin/src/framework/config.GoVer=$(go version)'"
+go build -o app -ldflags="-s -w -X 'mask_api_gin/src/internal/config.Name=mask-api' -X 'mask_api_gin/src/internal/config.Version=0.0.1' -X 'mask_api_gin/src/internal/config.BuildTime=$(date)' -X 'mask_api_gin/src/internal/config.GoVer=$(go version)'"
 # 二进制文件启动时指定生产模式
 chmod +x ./app && ./app --env prod
 ```
