@@ -17,7 +17,7 @@ import (
 	"mask_api_gin/src/modules/system"
 )
 
-// RunServer 运行服务程序
+// RunServer 运行服务程序（阻塞，直到监听出错才返回）。
 func RunServer() error {
 	app := engine.NewApp()
 
@@ -44,12 +44,11 @@ func RunServer() error {
 
 // 模块路由注册
 func modulesSetup(app *gin.Engine) {
-	// 注入操作日志与任务执行日志持久化钩子（须在路由注册/任务初始化之前）
+	// 注入操作日志与任务执行日志持久化钩子（须在路由注册、任务初始化之前）
 	system.RegisterOnOperateLog()
 	job.RegisterOnJobLog()
 
-	demo.Setup(app) // 演示模块（可移除）
-
+	demo.Setup(app)    // 演示模块（可移除）
 	auth.Setup(app)    // 认证模块
 	common.Setup(app)  // 通用模块
 	system.Setup(app)  // 系统模块
