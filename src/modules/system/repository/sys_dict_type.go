@@ -38,7 +38,7 @@ func (r SysDictType) SelectByPage(query map[string]string) ([]model.SysDictType,
 	if v, ok := query["dict_status"]; ok && v != "" {
 		tx = tx.Where("dict_status = ?", v)
 	}
-	if v, ok := query["begin_time"]; ok && v != "" {
+	if v, ok := query["create_time_begin"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s000", v)
 			tx = tx.Where("create_time >= ?", v)
@@ -46,7 +46,7 @@ func (r SysDictType) SelectByPage(query map[string]string) ([]model.SysDictType,
 			tx = tx.Where("create_time >= ?", v)
 		}
 	}
-	if v, ok := query["end_time"]; ok && v != "" {
+	if v, ok := query["create_time_end"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s999", v)
 			tx = tx.Where("create_time <= ?", v)

@@ -48,7 +48,7 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 	if v, ok := query["user_status"]; ok && v != "" {
 		tx = tx.Where("user_status = ?", v)
 	}
-	if v, ok := query["begin_time"]; ok && v != "" {
+	if v, ok := query["login_time_begin"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s000", v)
 			tx = tx.Where("user_login_time >= ?", v)
@@ -56,7 +56,7 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 			tx = tx.Where("user_login_time >= ?", v)
 		}
 	}
-	if v, ok := query["end_time"]; ok && v != "" {
+	if v, ok := query["login_time_end"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s999", v)
 			tx = tx.Where("user_login_time <= ?", v)

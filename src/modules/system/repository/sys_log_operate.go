@@ -43,7 +43,7 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 	if v, ok := query["operate_status"]; ok && v != "" {
 		tx = tx.Where("operate_status = ?", v)
 	}
-	if v, ok := query["begin_time"]; ok && v != "" {
+	if v, ok := query["create_time_begin"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s000", v)
 			tx = tx.Where("create_time >= ?", v)
@@ -51,7 +51,7 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 			tx = tx.Where("create_time >= ?", v)
 		}
 	}
-	if v, ok := query["end_time"]; ok && v != "" {
+	if v, ok := query["create_time_end"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s999", v)
 			tx = tx.Where("create_time <= ?", v)

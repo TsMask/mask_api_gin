@@ -5,9 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/internal/web/reqctx"
 	"mask_api_gin/src/internal/web/resp"
-	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/modules/demo/model"
 	"mask_api_gin/src/modules/demo/service"
 )
@@ -39,7 +39,7 @@ func (s DemoORMController) List(c *gin.Context) {
 func (s DemoORMController) All(c *gin.Context) {
 	var query struct {
 		Title     string `form:"title" binding:"omitempty"`
-		OrmStatus string `form:"ormStatus" binding:"omitempty,oneof=0 1"`
+		OrmStatus string `form:"orm_status" binding:"omitempty,oneof=0 1"`
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))

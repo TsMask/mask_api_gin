@@ -39,7 +39,7 @@ func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int
 	if v, ok := query["job_invoke_target"]; ok && v != "" {
 		tx = tx.Where("job_invoke_target like ?", v+"%")
 	}
-	if v, ok := query["begin_time"]; ok && v != "" {
+	if v, ok := query["create_time_begin"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s000", v)
 			tx = tx.Where("create_time >= ?", v)
@@ -47,7 +47,7 @@ func (r SysJobLog) SelectByPage(query map[string]string) ([]model.SysJobLog, int
 			tx = tx.Where("create_time >= ?", v)
 		}
 	}
-	if v, ok := query["end_time"]; ok && v != "" {
+	if v, ok := query["create_time_end"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s999", v)
 			tx = tx.Where("create_time <= ?", v)

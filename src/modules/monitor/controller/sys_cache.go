@@ -52,7 +52,7 @@ func (s SysCacheController) Names(c *gin.Context) {
 // GET /keys?cacheName=xxx
 func (s SysCacheController) Keys(c *gin.Context) {
 	var query struct {
-		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称
+		CacheName string `form:"cache_name" binding:"required"` // 键名列表中得到的缓存名称
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
@@ -74,8 +74,8 @@ func (s SysCacheController) Keys(c *gin.Context) {
 // GET /value?cacheName=xxx&cacheKey=xxx
 func (s SysCacheController) Value(c *gin.Context) {
 	var query struct {
-		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称
-		CacheKey  string `form:"cacheKey" binding:"required"`  // 键名列表中得到的缓存键名
+		CacheName string `form:"cache_name" binding:"required"` // 键名列表中得到的缓存名称
+		CacheKey  string `form:"cache_key" binding:"required"`  // 键名列表中得到的缓存键名
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
@@ -132,7 +132,7 @@ func (s SysCacheController) CleanNames(c *gin.Context) {
 // DELETE /keys?cacheName=xxx
 func (s SysCacheController) CleanKeys(c *gin.Context) {
 	var query struct {
-		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称
+		CacheName string `form:"cache_name" binding:"required"` // 键名列表中得到的缓存名称
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
@@ -162,8 +162,8 @@ func (s SysCacheController) CleanKeys(c *gin.Context) {
 // DELETE /value?cacheName=xxx&cacheKey=xxx
 func (s SysCacheController) CleanValue(c *gin.Context) {
 	var query struct {
-		CacheName string `form:"cacheName" binding:"required"` // 键名列表中得到的缓存名称
-		CacheKey  string `form:"cacheKey" binding:"required"`  // 键名列表中得到的缓存键名
+		CacheName string `form:"cache_name" binding:"required"` // 键名列表中得到的缓存名称
+		CacheKey  string `form:"cache_key" binding:"required"`  // 键名列表中得到的缓存键名
 	}
 	if err := c.ShouldBindQuery(&query); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
