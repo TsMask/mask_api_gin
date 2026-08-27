@@ -24,7 +24,7 @@ var NewCaptcha = &CaptchaController{
 
 // CaptchaController 验证码操作 控制层处理
 //
-// PATH /
+// PATH /api/v1/auth
 type CaptchaController struct {
 	sysConfigService *systemService.SysConfig // 参数配置服务
 }

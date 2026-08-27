@@ -19,13 +19,13 @@ func Setup(router *gin.Engine) {
 	)
 
 	// 通用请求
-	commonGroup := router.Group("/common")
+	commonGroup := router.Group("/api/v1/common")
 	{
 		commonGroup.POST("/hash", middleware.AuthorizeLogin(), controller.NewCommon.Hash)
 	}
 
 	// 文件操作
-	fileGroup := router.Group("/file")
+	fileGroup := router.Group("/api/v1/file")
 	file := controller.NewFile
 	{
 		fileGroup.POST("/upload", middleware.AuthorizeLogin(), file.Upload)

@@ -12,7 +12,7 @@ func Setup(router *gin.Engine) {
 	logger.Infof("开始加载 ====> demo 模块路由")
 
 	// 演示-GORM基本使用
-	ormGroup := router.Group("/demo/orm")
+	ormGroup := router.Group("/api/v1/demo/orm")
 	demoORM := controller.NewDemoORM
 	{
 		ormGroup.GET("/list", demoORM.List)

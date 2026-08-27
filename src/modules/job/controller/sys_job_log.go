@@ -20,7 +20,7 @@ var NewSysJobLog = &SysJobLogController{
 
 // SysJobLogController 调度任务日志信息 控制层处理
 //
-// PATH /job/log
+// PATH /api/v1/monitor/job/log
 type SysJobLogController struct {
 	sysJobService    *service.SysJob    // 调度任务服务
 	sysJobLogService *service.SysJobLog // 调度任务日志服务

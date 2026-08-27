@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/shared/regular"
 	"mask_api_gin/src/internal/web/reqctx"
 	"mask_api_gin/src/internal/web/resp"
-	"mask_api_gin/src/internal/shared/regular"
 	"mask_api_gin/src/modules/auth/model"
 	"mask_api_gin/src/modules/auth/service"
 	systemService "mask_api_gin/src/modules/system/service"
@@ -22,7 +22,7 @@ var NewRegister = &RegisterController{
 
 // RegisterController 账号注册操作 控制层处理
 //
-// PATH /
+// PATH /api/v1/auth
 type RegisterController struct {
 	registerService    *service.Register          // 账号注册操作服务
 	sysLogLoginService *systemService.SysLogLogin // 系统登录访问服务
@@ -30,7 +30,7 @@ type RegisterController struct {
 
 // Register 账号注册
 //
-// POST /auth/register
+// POST /register
 func (s RegisterController) Register(c *gin.Context) {
 	var body model.RegisterBody
 	if err := c.ShouldBindJSON(&body); err != nil {

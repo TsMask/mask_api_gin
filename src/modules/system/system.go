@@ -18,7 +18,7 @@ func Setup(router *gin.Engine) {
 	initLoad()
 
 	// 参数配置信息
-	sysConfigGroup := router.Group("/system/config")
+	sysConfigGroup := router.Group("/api/v1/system/config")
 	sysConfig := controller.NewSysConfig
 	{
 		sysConfigGroup.GET("/list",
@@ -62,7 +62,7 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 部门信息
-	sysDeptGroup := router.Group("/system/dept")
+	sysDeptGroup := router.Group("/api/v1/system/dept")
 	sysDept := controller.NewSysDept
 	{
 		sysDeptGroup.GET("/list",
@@ -103,7 +103,7 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 字典数据信息
-	sysDictDataGroup := router.Group("/system/dict/data")
+	sysDictDataGroup := router.Group("/api/v1/system/dict/data")
 	sysDictData := controller.NewSysDictData
 	{
 		sysDictDataGroup.GET("/list",
@@ -141,7 +141,7 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 字典类型信息
-	sysDictTypeGroup := router.Group("/system/dict/type")
+	sysDictTypeGroup := router.Group("/api/v1/system/dict/type")
 	sysDictType := controller.NewSysDictType
 	{
 		sysDictTypeGroup.GET("/list",
@@ -184,7 +184,7 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 系统登录日志信息
-	sysLogLoginGroup := router.Group("/system/log/login")
+	sysLogLoginGroup := router.Group("/api/v1/system/log/login")
 	sysLogLogin := controller.NewSysLogLogin
 	{
 		sysLogLoginGroup.GET("/list",
@@ -204,7 +204,7 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 操作日志记录信息
-	sysLogOperateGroup := router.Group("/system/log/operate")
+	sysLogOperateGroup := router.Group("/api/v1/system/log/operate")
 	sysLogOperate := controller.NewSysLogOperate
 	{
 		sysLogOperateGroup.GET("/list",
@@ -224,7 +224,7 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 菜单信息
-	sysMenuGroup := router.Group("/system/menu")
+	sysMenuGroup := router.Group("/api/v1/system/menu")
 	sysMenu := controller.NewSysMenu
 	{
 		sysMenuGroup.GET("/list",
@@ -261,7 +261,7 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 通知公告信息
-	sysNoticeGroup := router.Group("/system/notice")
+	sysNoticeGroup := router.Group("/api/v1/system/notice")
 	sysNotice := controller.NewSysNotice
 	{
 		sysNoticeGroup.GET("/list",
@@ -290,7 +290,7 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 岗位信息
-	sysPostGroup := router.Group("/system/post")
+	sysPostGroup := router.Group("/api/v1/system/post")
 	sysPost := controller.NewSysPost
 	{
 		sysPostGroup.GET("/list",
@@ -324,7 +324,7 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 个人信息
-	sysProfileGroup := router.Group("/system/user/profile")
+	sysProfileGroup := router.Group("/api/v1/system/user/profile")
 	sysProfile := controller.NewSysProfile
 	{
 		sysProfileGroup.GET("",
@@ -344,7 +344,7 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 角色信息
-	sysRoleGroup := router.Group("/system/role")
+	sysRoleGroup := router.Group("/api/v1/system/role")
 	sysRole := controller.NewSysRole
 	{
 		sysRoleGroup.GET("/list",
@@ -399,7 +399,7 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 用户信息
-	sysUserGroup := router.Group("/system/user")
+	sysUserGroup := router.Group("/api/v1/system/user")
 	sysUser := controller.NewSysUser
 	{
 		sysUserGroup.GET("/list",

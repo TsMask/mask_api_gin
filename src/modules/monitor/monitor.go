@@ -14,13 +14,13 @@ func Setup(router *gin.Engine) {
 
 	// 服务器信息
 	system := controller.NewSystem
-	router.GET("/monitor/system",
+	router.GET("/api/v1/monitor/system",
 		middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"monitor:system:info"}}),
 		system.Info,
 	)
 
 	// 在线用户监控
-	sysUserOnlineGroup := router.Group("/monitor/user-online")
+	sysUserOnlineGroup := router.Group("/api/v1/monitor/user-online")
 	sysUserOnline := controller.NewSysUserOnline
 	{
 		sysUserOnlineGroup.GET("/list",
@@ -35,7 +35,7 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 缓存信息
-	sysCacheGroup := router.Group("/monitor/cache")
+	sysCacheGroup := router.Group("/api/v1/monitor/cache")
 	sysCache := controller.NewSysCache
 	{
 		sysCacheGroup.GET("",

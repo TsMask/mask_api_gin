@@ -15,7 +15,7 @@ func Setup(router *gin.Engine) {
 	// 验证码操作
 	{
 		captcha := controller.NewCaptcha
-		router.GET("/captcha-image",
+		router.GET("/api/v1/auth/captcha-image",
 			middleware.RateLimit(300, 60, middleware.RateLimitIP),
 			captcha.Image,
 		)
@@ -24,23 +24,23 @@ func Setup(router *gin.Engine) {
 	// 账号身份操作
 	{
 		account := controller.NewAccount
-		router.POST("/auth/login",
+		router.POST("/api/v1/auth/login",
 			middleware.RateLimit(180, 15, middleware.RateLimitIP),
 			account.Login,
 		)
-		router.POST("/auth/logout",
+		router.POST("/api/v1/auth/logout",
 			middleware.RateLimit(120, 15, middleware.RateLimitIP),
 			account.Logout,
 		)
-		router.POST("/auth/refresh-token",
+		router.POST("/api/v1/auth/refresh-token",
 			middleware.RateLimit(60, 5, middleware.RateLimitIP),
 			account.RefreshToken,
 		)
-		router.GET("/me",
+		router.GET("/api/v1/auth/me",
 			middleware.AuthorizeLogin(),
 			account.Me,
 		)
-		router.GET("/router",
+		router.GET("/api/v1/auth/router",
 			middleware.AuthorizeLogin(),
 			account.Router,
 		)
@@ -49,7 +49,7 @@ func Setup(router *gin.Engine) {
 	// 账号注册操作
 	{
 		register := controller.NewRegister
-		router.POST("/auth/register",
+		router.POST("/api/v1/auth/register",
 			middleware.RateLimit(300, 10, middleware.RateLimitIP),
 			register.Register,
 		)

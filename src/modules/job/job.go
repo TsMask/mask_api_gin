@@ -24,7 +24,7 @@ func Setup(router *gin.Engine) {
 	initLoad()
 
 	// 调度任务信息
-	sysJobGroup := router.Group("/job")
+	sysJobGroup := router.Group("/api/v1/job")
 	sysJob := controller.NewSysJob
 	{
 		sysJobGroup.GET("/list",
@@ -75,7 +75,7 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 调度任务日志信息
-	sysJobLogGroup := router.Group("/job/log")
+	sysJobLogGroup := router.Group("/api/v1/job/log")
 	sysJobLog := controller.NewSysJobLog
 	{
 		sysJobLogGroup.GET("/list",

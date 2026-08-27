@@ -25,7 +25,7 @@ var NewAccount = &AccountController{
 
 // AccountController 账号身份操作 控制层处理
 //
-// PATH /
+// PATH /api/v1/auth
 type AccountController struct {
 	accountService     *service.Account           // 账号身份操作服务
 	sysLogLoginService *systemService.SysLogLogin // 系统登录访问
@@ -33,7 +33,7 @@ type AccountController struct {
 
 // Login 系统登录
 //
-// POST /auth/login
+// POST /login
 func (s AccountController) Login(c *gin.Context) {
 	var body model.LoginBody
 	if err := c.ShouldBindJSON(&body); err != nil {
@@ -103,7 +103,7 @@ func (s AccountController) Login(c *gin.Context) {
 
 // Logout 系统登出
 //
-// POST /auth/logout
+// POST /logout
 func (s AccountController) Logout(c *gin.Context) {
 	tokenStr := reqctx.Authorization(c)
 	if tokenStr != "" {
@@ -125,7 +125,7 @@ func (s AccountController) Logout(c *gin.Context) {
 
 // RefreshToken 刷新Token
 //
-// POST /auth/refresh-token
+// POST /refresh-token
 func (s AccountController) RefreshToken(c *gin.Context) {
 	var body struct {
 		RefreshToken string `json:"refresh_token" binding:"required"` // 刷新令牌
