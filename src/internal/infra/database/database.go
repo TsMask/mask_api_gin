@@ -218,8 +218,11 @@ func PageNumSize(pageNum, pageSize any) (int, int) {
 
 	// 显示记录数
 	size := parse.Number(pageSize)
-	if size < 0 {
+	if size <= 0 {
 		size = 10
+	}
+	if size > 200 {
+		size = 200
 	}
 	return int(num - 1), int(size)
 }

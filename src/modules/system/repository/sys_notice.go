@@ -63,7 +63,10 @@ func (r SysNotice) SelectByPage(query map[string]string) ([]model.SysNotice, int
 	rows := []model.SysNotice{}
 
 	// 查询数量为0直接返回
-	if err := tx.Count(&total).Error; err != nil || total <= 0 {
+	if err := tx.Count(&total).Error; err != nil {
+		return rows, total, err
+	}
+	if total <= 0 {
 		return rows, total, nil
 	}
 

@@ -1,4 +1,4 @@
-﻿package database
+package database
 
 import (
 	"strings"
@@ -16,7 +16,7 @@ type SortOrder struct {
 // SortParse 解析统一排序字符串
 // 格式: sort=field1,field2:asc,field3:desc
 // 不加方向默认 DESC，方向不区分大小写
-// fieldMapping 用于将前端字段名映射为数据库列名，未匹配的字段名原样传递
+// fieldMapping 用于将前端字段名映射为数据库列名，未匹配的字段直接忽略
 func SortParse(sortStr string, fieldMapping map[string]string) []SortOrder {
 	if sortStr == "" {
 		return nil
@@ -34,17 +34,16 @@ func SortParse(sortStr string, fieldMapping map[string]string) []SortOrder {
 		if field == "" {
 			continue
 		}
-		// 字段映射
-		col := field
-		if mapped, ok := fieldMapping[field]; ok {
-			col = mapped
+		mapped, ok := fieldMapping[field]
+		if !ok {
+			continue
 		}
 		// 默认 DESC
 		asc := false
 		if dir := strings.ToLower(strings.TrimSpace(direction)); dir == "asc" {
 			asc = true
 		}
-		orders = append(orders, SortOrder{Field: col, Asc: asc})
+		orders = append(orders, SortOrder{Field: mapped, Asc: asc})
 	}
 	return orders
 }

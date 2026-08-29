@@ -32,8 +32,11 @@ func (r DemoORM) SelectByPage(query map[string]string) ([]model.DemoORM, int64, 
 	}
 
 	var total int64 = 0
-	if err := tx.Count(&total).Error; err != nil || total <= 0 {
-		return []model.DemoORM{}, total, err
+	if err := tx.Count(&total).Error; err != nil {
+		return nil, total, err
+	}
+	if total <= 0 {
+		return nil, total, nil
 	}
 
 	rows := []model.DemoORM{}

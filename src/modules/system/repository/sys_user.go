@@ -78,7 +78,10 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 	rows := []model.SysUser{}
 
 	// 查询数量为0直接返回
-	if err := tx.Count(&total).Error; err != nil || total <= 0 {
+	if err := tx.Count(&total).Error; err != nil {
+		return rows, total, err
+	}
+	if total <= 0 {
 		return rows, total, nil
 	}
 
@@ -269,7 +272,10 @@ func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL str
 	rows := []model.SysUser{}
 
 	// 查询数量为0直接返回
-	if err := tx.Count(&total).Error; err != nil || total <= 0 {
+	if err := tx.Count(&total).Error; err != nil {
+		return rows, total, err
+	}
+	if total <= 0 {
 		return rows, total, nil
 	}
 

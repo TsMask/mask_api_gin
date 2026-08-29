@@ -44,7 +44,10 @@ func (r SysDictData) SelectByPage(query map[string]string) ([]model.SysDictData,
 	rows := []model.SysDictData{}
 
 	// 查询数量为0直接返回
-	if err := tx.Count(&total).Error; err != nil || total <= 0 {
+	if err := tx.Count(&total).Error; err != nil {
+		return rows, total, err
+	}
+	if total <= 0 {
 		return rows, total, nil
 	}
 
