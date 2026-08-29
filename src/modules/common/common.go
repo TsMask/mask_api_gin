@@ -18,6 +18,10 @@ func Setup(router *gin.Engine) {
 		controller.NewIndex.Handler,
 	)
 
+	// 健康检查：存活无状态，就绪检查依赖可用性。
+	router.GET("/healthz", controller.NewHealth.Live)
+	router.GET("/readyz", controller.NewHealth.Ready)
+
 	// 通用请求
 	commonGroup := router.Group("/api/v1/common")
 	{

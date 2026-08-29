@@ -98,6 +98,9 @@ func (c FileConfig) ChunkList(id string) ([]string, error) {
 // ChunkMerge 合并分片为完整文件，按分片序号升序拼接。
 // 合并成功后自动删除分片目录，返回合并后的文件存储路径。
 func (c FileConfig) ChunkMerge(id string, fileName string) (string, error) {
+	if err := checkNameAndExt(c, fileName); err != nil {
+		return "", err
+	}
 	chunkDir := filepath.Join(c.Dir, id)
 	dst := genPath(c.Dir, fileName)
 	return dst, mergeFiles(chunkDir, dst)
@@ -147,6 +150,32 @@ func ReadStream(filePath string, start, end int64) (FileRange, error) {
 	}
 
 	return FileRange{Data: buf[:n], Start: start, End: end, Total: total}, nil
+}
+
+// ParseByteRange 解析仅支持 bytes=start-end 的单区间请求。
+func ParseByteRange(header string) (int64, int64, error) {
+	value := header
+	if !strings.HasPrefix(value, "bytes=") {
+		return 0, 0, fmt.Errorf("invalid range unit")
+	}
+	value = strings.TrimPrefix(value, "bytes=")
+	startStr, endStr, ok := strings.Cut(value, "-")
+	if !ok {
+		return 0, 0, fmt.Errorf("invalid range format")
+	}
+	start, err := strconv.ParseInt(startStr, 10, 64)
+	if err != nil || start < 0 {
+		return 0, 0, fmt.Errorf("invalid range start")
+	}
+	var end int64
+	if endStr != "" {
+		var parseErr error
+		end, parseErr = strconv.ParseInt(endStr, 10, 64)
+		if parseErr != nil || end < start {
+			return 0, 0, fmt.Errorf("invalid range end")
+		}
+	}
+	return start, end, nil
 }
 
 // ==================== 内部辅助 ====================

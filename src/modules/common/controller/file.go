@@ -56,10 +56,11 @@ func (s FileController) Download(c *gin.Context) {
 
 	var result file.FileRange
 	if headerRange != "" {
-		partsStr := strings.Replace(headerRange, "bytes=", "", 1)
-		parts := strings.Split(partsStr, "-")
-		start, _ := strconv.ParseInt(parts[0], 10, 64)
-		end, _ := strconv.ParseInt(parts[1], 10, 64)
+		start, end, rangeErr := file.ParseByteRange(headerRange)
+		if rangeErr != nil {
+			c.JSON(416, resp.CodeMsg(resp.CODE_PARAM_CHEACK, rangeErr.Error()))
+			return
+		}
 		result, err = file.ReadStream(absPath, start, end)
 	} else {
 		result, err = file.ReadStream(absPath, 0, 0)
