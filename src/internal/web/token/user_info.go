@@ -4,6 +4,7 @@ import "encoding/json"
 
 // UserInfo 系统用户令牌信息对象
 type UserInfo struct {
+	SessionId     string          `json:"session_id"`     // 会话唯一标识
 	DeviceId      string          `json:"device_id"`      // 用户设备标识
 	UserId        int64           `json:"user_id"`        // 用户ID
 	DeptId        int64           `json:"dept_id"`        // 部门ID

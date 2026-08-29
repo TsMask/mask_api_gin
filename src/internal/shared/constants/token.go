@@ -14,5 +14,8 @@ const JWT_DEVICE_ID = "device_id"
 // JWT_USER_ID 令牌-JWT标识用户主键字段
 const JWT_USER_ID = "user_id"
 
+// JWT_SESSION_ID 令牌-会话唯一标识字段
+const JWT_SESSION_ID = "session_id"
+
 // JWT_CLIENT_ID 令牌-JWT标识客户端ID字段
 const JWT_CLIENT_ID = "client_id"

@@ -2,8 +2,10 @@ package constants
 
 // 缓存的key常量
 const (
-	// CACHE_TOKEN_DEVICE 登录用户令牌标识
-	CACHE_TOKEN_DEVICE = "token_devices"
+	// CACHE_TOKEN_SESSION 登录用户会话标识
+	CACHE_TOKEN_SESSION = "token_sessions"
+	// CACHE_TOKEN_USERS 用户维度会话索引
+	CACHE_TOKEN_USERS = "token_users"
 	// CACHE_CAPTCHA_CODE 验证码
 	CACHE_CAPTCHA_CODE = "captcha_codes"
 	// CACHE_SYS_CONFIG 参数管理

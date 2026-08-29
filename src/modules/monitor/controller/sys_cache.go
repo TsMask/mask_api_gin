@@ -36,7 +36,8 @@ func (s SysCacheController) Info(c *gin.Context) {
 // GET /names
 func (s SysCacheController) Names(c *gin.Context) {
 	caches := []model.SysCache{
-		model.NewNames("用户令牌", constants.CACHE_TOKEN_DEVICE),
+		model.NewNames("用户令牌", constants.CACHE_TOKEN_SESSION),
+		model.NewNames("用户会话索引", constants.CACHE_TOKEN_USERS),
 		model.NewNames("配置信息", constants.CACHE_SYS_CONFIG),
 		model.NewNames("数据字典", constants.CACHE_SYS_DICT),
 		model.NewNames("用户验证码", constants.CACHE_CAPTCHA_CODE),
@@ -88,8 +89,8 @@ func (s SysCacheController) Value(c *gin.Context) {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
-	// token_devices 缓存值脱敏：隐藏权限列表和密码等敏感字段
-	if query.CacheName == constants.CACHE_TOKEN_DEVICE && cacheValue != "" {
+	// token_sessions 缓存值脱敏：隐藏权限列表和密码等敏感字段
+	if query.CacheName == constants.CACHE_TOKEN_SESSION && cacheValue != "" {
 		var info map[string]any
 		if json.Unmarshal([]byte(cacheValue), &info) == nil {
 			delete(info, "permissions")
@@ -139,7 +140,8 @@ func (s SysCacheController) CleanKeys(c *gin.Context) {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
-	if constants.CACHE_TOKEN_DEVICE == query.CacheName {
+	// 禁止从缓存管理界面直接删除
+	if query.CacheName == constants.CACHE_TOKEN_SESSION || query.CacheName == constants.CACHE_TOKEN_USERS {
 		c.JSON(200, resp.ErrMsg("不能删除令牌信息缓存"))
 		return
 	}
@@ -168,6 +170,11 @@ func (s SysCacheController) CleanValue(c *gin.Context) {
 	if err := c.ShouldBindQuery(&query); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
+		return
+	}
+	// 禁止从缓存管理界面直接删除
+	if query.CacheName == constants.CACHE_TOKEN_SESSION || query.CacheName == constants.CACHE_TOKEN_USERS {
+		c.JSON(200, resp.ErrMsg("不能删除令牌信息缓存"))
 		return
 	}
 

@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -68,20 +67,16 @@ func (s AccountController) Login(c *gin.Context) {
 		return
 	}
 	deviceFingerprint := reqctx.DeviceFingerprint(c, info.UserId)
-
-	// 生成访问令牌
-	accessToken, expiresIn := token.UserTokenCreate(info.UserId, deviceFingerprint, "access")
-	if accessToken == "" || expiresIn == 0 {
+	// 生成新的会话令牌
+	pair, sessionId, err := token.CreateTokenPair(info.UserId, deviceFingerprint)
+	if err != nil {
 		c.JSON(200, resp.ErrMsg("token generation failed"))
 		return
 	}
-	// 生成刷新令牌
-	refreshToken, refreshExpiresIn := token.UserTokenCreate(info.UserId, deviceFingerprint, "refresh")
+	info.DeviceId = deviceFingerprint
+	info.SessionId = sessionId
 	// 记录令牌，创建系统访问记录
-	if err := token.UserInfoCreate(
-		&info, deviceFingerprint,
-		[4]string{ipaddr, location, os, browser},
-	); err != nil {
+	if err := token.UserInfoCreate(&info, [4]string{ipaddr, location, os, browser}); err != nil {
 		c.JSON(200, resp.ErrMsg("token cache create failed"))
 		return
 	}
@@ -93,10 +88,10 @@ func (s AccountController) Login(c *gin.Context) {
 
 	c.JSON(200, resp.OkData(map[string]any{
 		"token_type":         constants.HEADER_PREFIX,
-		"access_token":       accessToken,
-		"expires_in":         expiresIn,
-		"refresh_token":      refreshToken,
-		"refresh_expires_in": refreshExpiresIn,
+		"access_token":       pair.AccessToken,
+		"expires_in":         pair.AccessExpiresIn,
+		"refresh_token":      pair.RefreshToken,
+		"refresh_expires_in": pair.RefreshExpiresIn,
 		"user_id":            info.UserId,
 	}))
 }
@@ -158,31 +153,26 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 		c.JSON(401, resp.CodeMsg(resp.CODE_AUTH_DEVICE, resp.MSG_AUTH_DEVICE))
 		return
 	}
+	// 刷新令牌必须指向仍然存在的会话；登出或强制下线后立即失效。
+	if !token.SessionValid(claims) {
+		c.JSON(401, resp.CodeMsg(resp.CODE_AUTH_INVALID, "invalid login session"))
+		return
+	}
 
-	// 生成访问令牌
-	accessToken, expiresIn := token.UserTokenCreate(userId, deviceFingerprint, "access")
-	if accessToken == "" || expiresIn == 0 {
+	// 每次刷新都轮换 session_id，旧访问/刷新令牌同时失效。
+	pair, sessionId, err := token.CreateTokenPair(userId, deviceFingerprint)
+	if err != nil {
 		c.JSON(200, resp.ErrMsg("token generation failed"))
 		return
 	}
-	// 生成刷新令牌
-	now := time.Now()
-	exp, _ := claims.GetExpirationTime()
-	iat, _ := claims.GetIssuedAt()
-	refreshExpiresIn := int64(exp.Sub(now).Seconds())
-	refreshToken := body.RefreshToken
-
-	// 如果当前时间大于过期时间的一半，则生成新令牌
-	halfExp := exp.Add(-(exp.Sub(iat.Time)) / 2)
-	if now.After(halfExp) {
-		refreshToken, refreshExpiresIn = token.UserTokenCreate(userId, deviceFingerprint, "refresh")
-	}
+	info.DeviceId = deviceFingerprint
+	info.SessionId = sessionId
 
 	// 当前请求信息
 	ipaddr, location := reqctx.IPAddrLocation(c)
 	os, browser := reqctx.UaOsBrowser(c)
 	// 记录令牌，创建系统访问记录
-	if err := token.UserInfoCreate(&info, deviceFingerprint, [4]string{ipaddr, location, os, browser}); err != nil {
+	if err := token.UserInfoCreate(&info, [4]string{ipaddr, location, os, browser}); err != nil {
 		c.JSON(200, resp.ErrMsg("token cache create failed"))
 		return
 	}
@@ -191,14 +181,16 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 		info.UserName, constants.STATUS_YES, "刷新访问令牌成功",
 		[4]string{ipaddr, location, os, browser},
 	)
+	// 移除旧会话令牌
+	token.RemoveBySessionIds([]string{fmt.Sprint(claims[constants.JWT_SESSION_ID])})
 
 	// 返回访问令牌和刷新令牌
 	c.JSON(200, resp.OkData(map[string]any{
 		"token_type":         constants.HEADER_PREFIX,
-		"access_token":       accessToken,
-		"expires_in":         expiresIn,
-		"refresh_token":      refreshToken,
-		"refresh_expires_in": refreshExpiresIn,
+		"access_token":       pair.AccessToken,
+		"expires_in":         pair.AccessExpiresIn,
+		"refresh_token":      pair.RefreshToken,
+		"refresh_expires_in": pair.RefreshExpiresIn,
 		"user_id":            userId,
 	}))
 }

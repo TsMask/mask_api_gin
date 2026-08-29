@@ -31,7 +31,7 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 	query := reqctx.QueryMap(c)
 
 	// 取全部会话 key，排序保证顺序确定性
-	keys, _ := cache.GetKeys("", constants.CACHE_TOKEN_DEVICE+":*")
+	keys, _ := cache.GetKeys("", constants.CACHE_TOKEN_SESSION+":*")
 	sort.Strings(keys)
 
 	if len(keys) == 0 {
@@ -51,7 +51,7 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 		if err := json.Unmarshal([]byte(str), &info); err != nil {
 			continue
 		}
-		if info.DeviceId == "" {
+		if info.SessionId == "" {
 			continue
 		}
 		list = append(list, userOnlineRow(info))
@@ -59,6 +59,7 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 
 	// 过滤（基于全部数据）
 	list = filterContains(list, "device_id", query["device_id"])
+	list = filterContains(list, "session_id", query["session_id"])
 	list = filterContains(list, "user_name", query["user_name"])
 	list = filterContains(list, "login_ip", query["login_ip"])
 	list = filterContains(list, "login_location", query["login_location"])
@@ -104,22 +105,16 @@ func (s SysUserOnlineController) List(c *gin.Context) {
 
 // Logout 在线用户强制退出
 //
-// DELETE /logout/:device_id
+// DELETE /logout/:session_id
 func (s SysUserOnlineController) Logout(c *gin.Context) {
-	deviceIdStr := c.Param("device_id")
-	if deviceIdStr == "" || strings.Contains(deviceIdStr, "*") {
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: deviceId is empty"))
+	sessionIdStr := c.Param("session_id")
+	if sessionIdStr == "" || strings.Contains(sessionIdStr, "*") {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: sessionId is empty"))
 		return
 	}
 
-	uniqueIDs := parse.RemoveDuplicatesToArray(deviceIdStr, ",")
-	for _, v := range uniqueIDs {
-		key := constants.CACHE_TOKEN_DEVICE + ":" + v
-		if err := cache.Del("", key); err != nil {
-			c.JSON(200, resp.ErrMsg(err.Error()))
-			return
-		}
-	}
+	uniqueIDs := parse.RemoveDuplicatesToArray(sessionIdStr, ",")
+	token.RemoveBySessionIds(uniqueIDs)
 
 	c.JSON(200, resp.Ok(nil))
 }
@@ -127,6 +122,7 @@ func (s SysUserOnlineController) Logout(c *gin.Context) {
 // userOnlineRow 将令牌信息转为列表行
 func userOnlineRow(info token.UserInfo) map[string]any {
 	return map[string]any{
+		"session_id":     info.SessionId,
 		"device_id":      info.DeviceId,
 		"user_id":        info.UserId,
 		"user_name":      info.UserName,
@@ -167,6 +163,8 @@ func compareUserOnline(a, b map[string]any, sortStr string) bool {
 
 		var cmp int
 		switch field {
+		case "session_id":
+			cmp = strings.Compare(fmt.Sprintf("%v", a["session_id"]), fmt.Sprintf("%v", b["session_id"]))
 		case "device_id":
 			cmp = strings.Compare(fmt.Sprintf("%v", a["device_id"]), fmt.Sprintf("%v", b["device_id"]))
 		case "user_name":

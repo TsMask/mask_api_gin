@@ -27,7 +27,7 @@ func Setup(router *gin.Engine) {
 			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"monitor:online:list"}}),
 			sysUserOnline.List,
 		)
-		sysUserOnlineGroup.DELETE("/logout/:device_id",
+		sysUserOnlineGroup.DELETE("/logout/:session_id",
 			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"monitor:online:logout"}}),
 			middleware.OperateLog("在线用户监控", middleware.OperateTypeForce),
 			sysUserOnline.Logout,

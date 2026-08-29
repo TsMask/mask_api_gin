@@ -1,9 +1,11 @@
 package token
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -15,227 +17,258 @@ import (
 	"mask_api_gin/src/internal/shared/parse"
 )
 
-// validateDeviceId 校验设备标识格式，防止注入特殊字符
-func validateDeviceId(deviceId string) bool {
-	if len(deviceId) == 0 || len(deviceId) > 128 {
-		return false
-	}
-	if strings.ContainsAny(deviceId, "*? \t\n\r") {
-		return false
-	}
-	return true
+// TokenPair 新登录会话生成的一组令牌。
+type TokenPair struct {
+	AccessToken      string
+	RefreshToken     string
+	AccessExpiresIn  int64
+	RefreshExpiresIn int64
 }
 
-// UserTokenCreate 生成令牌
-// userId 用户ID
-// deviceFingerprint 设备指纹 SHA256
-// tokenType 令牌类型 access:访问令牌 refresh:刷新令牌
-func UserTokenCreate(userId int64, deviceFingerprint, tokenType string) (string, int64) {
-	if !validateDeviceId(deviceFingerprint) {
-		return "", 0
+// newSessionId 生成新的会话ID
+func newSessionId() (string, error) {
+	buf := make([]byte, 16)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
 	}
+	return hex.EncodeToString(buf), nil
+}
 
-	// 令牌算法 HS256 HS384 HS512，默认 HS256
-	algorithm := config.GetStringOr("jwt.algorithm", "HS256")
-	method := jwt.SigningMethodHS256
-	switch algorithm {
-	case "HS512":
-		method = jwt.SigningMethodHS512
+// signingMethod 签名方法
+func signingMethod() jwt.SigningMethod {
+	switch config.GetStringOr("jwt.algorithm", "HS256") {
 	case "HS384":
-		method = jwt.SigningMethodHS384
+		return jwt.SigningMethodHS384
+	case "HS512":
+		return jwt.SigningMethodHS512
+	default:
+		return jwt.SigningMethodHS256
 	}
+}
 
-	// 生成令牌设置密钥
+// tokenSecret 令牌密钥
+func tokenSecret(tokenType string) string {
 	secret := config.GetStringOr("jwt.secret", "")
-	// 设置令牌过期时间
-	now := time.Now()
-	exp := now
-	if tokenType == "access" {
-		expiresIn := time.Duration(parse.Number(config.Get("jwt.expiresIn")))
-		exp = now.Add(expiresIn * time.Minute)
-		secret = "User_Access:" + secret
-	}
 	if tokenType == "refresh" {
-		refreshIn := time.Duration(parse.Number(config.Get("jwt.refreshIn")))
-		exp = now.Add(refreshIn * time.Minute)
-		secret = "User_Refresh:" + secret
+		return "User_Refresh:" + secret
+	}
+	return "User_Access:" + secret
+}
+
+// tokenTTL 令牌过期时间
+func tokenTTL(tokenType string) time.Duration {
+	minutes := config.GetIntOr("jwt.expiresIn", 0)
+	if tokenType == "refresh" {
+		minutes = config.GetIntOr("jwt.refreshIn", 0)
+	}
+	return time.Duration(minutes) * time.Minute
+}
+
+// CreateTokenPair 为同一会话生成访问与刷新令牌。
+func CreateTokenPair(userId int64, deviceFingerprint string) (TokenPair, string, error) {
+	sessionId, err := newSessionId()
+	if err != nil {
+		return TokenPair{}, "", fmt.Errorf("generate session id: %w", err)
 	}
 
-	// 生成令牌负载绑定设备标识
-	jwtToken := jwt.NewWithClaims(method, jwt.MapClaims{
-		constants.JWT_DEVICE_ID: deviceFingerprint,
-		constants.JWT_USER_ID:   userId,
-		"exp":                   exp.Unix(),                        // 过期时间
-		"iat":                   now.Unix(),                        // 签发时间
-		"nbf":                   now.Add(-10 * time.Second).Unix(), // 生效时间
-	})
+	accessToken, accessExp := UserTokenCreate(userId, deviceFingerprint, "access", sessionId)
+	refreshToken, refreshExp := UserTokenCreate(userId, deviceFingerprint, "refresh", sessionId)
+	if accessToken == "" || refreshToken == "" || accessExp <= 0 || refreshExp <= 0 {
+		return TokenPair{}, "", errors.New("token generation failed")
+	}
+	return TokenPair{
+		AccessToken:      accessToken,
+		RefreshToken:     refreshToken,
+		AccessExpiresIn:  accessExp,
+		RefreshExpiresIn: refreshExp,
+	}, sessionId, nil
+}
 
-	tokenStr, err := jwtToken.SignedString([]byte(secret))
-	if err != nil {
-		logger.Infof("jwt sign err : %v", err)
+// UserTokenCreate 生成指定会话的令牌。
+func UserTokenCreate(userId int64, deviceFingerprint, tokenType, sessionId string) (string, int64) {
+	if userId <= 0 || len(sessionId) != 32 {
 		return "", 0
 	}
-	expSeconds := int64(exp.Sub(now).Seconds())
-	return tokenStr, expSeconds
+	now := time.Now()
+	exp := now.Add(tokenTTL(tokenType))
+	token := jwt.NewWithClaims(signingMethod(), jwt.MapClaims{
+		constants.JWT_DEVICE_ID:  deviceFingerprint,
+		constants.JWT_SESSION_ID: sessionId,
+		constants.JWT_USER_ID:    userId,
+		"exp":                    exp.Unix(),
+		"iat":                    now.Unix(),
+		"nbf":                    now.Add(-10 * time.Second).Unix(),
+	})
+
+	tokenStr, err := token.SignedString([]byte(tokenSecret(tokenType)))
+	if err != nil {
+		logger.Errorf("jwt sign err: %v", err)
+		return "", 0
+	}
+	return tokenStr, int64(exp.Sub(now).Seconds())
 }
 
-// UserTokenVerify 校验令牌是否有效
-// tokenType 令牌类型 access:访问令牌 refresh:刷新令牌
-func UserTokenVerify(tokenStr string, tokenType string) (jwt.MapClaims, error) {
+// UserTokenVerify 校验令牌签名、算法与基础声明。
+func UserTokenVerify(tokenStr, tokenType string) (jwt.MapClaims, error) {
+	expected := signingMethod()
 	jwtToken, err := jwt.Parse(tokenStr, func(jToken *jwt.Token) (any, error) {
-		// 判断加密算法是预期的加密算法
-		if _, ok := jToken.Method.(*jwt.SigningMethodHMAC); ok {
-			secret := config.GetStringOr("jwt.secret", "")
-			if tokenType == "access" {
-				secret = "User_Access:" + secret
-			}
-			if tokenType == "refresh" {
-				secret = "User_Refresh:" + secret
-			}
-			return []byte(secret), nil
+		if jToken.Method != expected {
+			return nil, jwt.ErrSignatureInvalid
 		}
-		return nil, jwt.ErrSignatureInvalid
+		return []byte(tokenSecret(tokenType)), nil
 	})
 	if err != nil {
-		logger.Errorf("Token Verify Err: %v", err)
-		return nil, fmt.Errorf("token invalid")
+		return nil, errors.New("token invalid")
 	}
-	// 如果解析负载成功并通过签名校验
 	claims, ok := jwtToken.Claims.(jwt.MapClaims)
-	if ok && jwtToken.Valid {
-		return claims, nil
+	if !ok || !jwtToken.Valid {
+		return nil, errors.New("token valid error")
 	}
-	return nil, fmt.Errorf("token valid error")
+	if parse.Number(fmt.Sprint(claims[constants.JWT_USER_ID])) <= 0 ||
+		len(fmt.Sprint(claims[constants.JWT_SESSION_ID])) != 32 {
+		return nil, errors.New("token claims invalid")
+	}
+	return claims, nil
 }
 
-// UserInfoRemove 清除访问用户信息缓存
+// sessionKey 会话ID缓存键
+func sessionKey(sessionId string) string {
+	return constants.CACHE_TOKEN_SESSION + ":" + sessionId
+}
+
+// userIndexKey 用户会话索引缓存键
+func userIndexKey(userId int64) string {
+	return fmt.Sprintf("%s:%d", constants.CACHE_TOKEN_USERS, userId)
+}
+
+// UserInfoRemove 删除当前访问会话及其用户索引。
 func UserInfoRemove(tokenStr string) (string, error) {
 	claims, err := UserTokenVerify(tokenStr, "access")
 	if err != nil {
-		logger.Errorf("token verify err %v", err)
 		return "", err
 	}
 	info := UserInfoGet(claims)
-	if info.UserName != "" {
-		// 清除缓存KEY
-		deviceId := fmt.Sprint(claims[constants.JWT_DEVICE_ID])
-		tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + deviceId
-		return info.UserName, cache.Del("", tokenKey)
+	if info.UserId <= 0 {
+		return "", errors.New("session not found")
 	}
-	return "", fmt.Errorf("token invalid")
+	sessionId := fmt.Sprint(claims[constants.JWT_SESSION_ID])
+	if err := cache.Del("", sessionKey(sessionId)); err != nil {
+		return info.UserName, err
+	}
+	_ = cache.SRem("", userIndexKey(info.UserId), sessionId)
+	return info.UserName, nil
 }
 
-// UserInfoCreate 生成访问用户信息缓存
-func UserInfoCreate(info *UserInfo, deviceFingerprint string, ilobArr [4]string) error {
-	if !validateDeviceId(deviceFingerprint) {
-		return fmt.Errorf("invalid device fingerprint")
+// UserInfoCreate 生成访问会话缓存，并维护用户会话索引。
+func UserInfoCreate(info *UserInfo, ilobArr [4]string) error {
+	if info == nil || info.UserId <= 0 ||
+		len(info.SessionId) != 32 {
+		return errors.New("invalid session")
 	}
-	info.DeviceId = deviceFingerprint
-
-	// 设置请求用户登录客户端
 	info.LoginIp = ilobArr[0]
 	info.LoginLocation = ilobArr[1]
 	info.LoginOS = ilobArr[2]
 	info.LoginBrowser = ilobArr[3]
 
-	expiresIn := time.Duration(parse.Number(config.Get("jwt.expiresIn")))
+	accessTTL := tokenTTL("access")
+	refreshTTL := tokenTTL("refresh")
 	now := time.Now()
-	exp := now.Add(expiresIn * time.Minute)
 	info.LoginTime = now.UnixMilli()
-	info.ExpireTime = exp.UnixMilli()
-	// 设置新登录IP和登录时间
-	// 登录信息标识缓存
-	tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + info.DeviceId
+	info.ExpireTime = now.Add(accessTTL).UnixMilli()
+
 	jsonBytes, err := json.Marshal(info)
 	if err != nil {
-		return fmt.Errorf("UserInfoCreate marshal err: %w", err)
+		return fmt.Errorf("marshal user info: %w", err)
 	}
-	if err := cache.Set("",
-		tokenKey,
-		string(jsonBytes),
-		expiresIn*time.Minute,
-	); err != nil {
-		return fmt.Errorf("UserInfoCreate redis set err: %w", err)
+	// 会话以 SessionId 为主键，存活到 refresh token 过期；access token 自身 exp 负责短有效期。
+	if err := cache.Set("", sessionKey(info.SessionId), string(jsonBytes), refreshTTL); err != nil {
+		return fmt.Errorf("set session cache: %w", err)
+	}
+	if err := cache.SAdd("", userIndexKey(info.UserId), refreshTTL, info.SessionId); err != nil {
+		_ = cache.Del("", sessionKey(info.SessionId))
+		return fmt.Errorf("set session index: %w", err)
 	}
 	return nil
 }
 
-// UserInfoUpdate 更新访问用户信息缓存
+// UserInfoUpdate 更新访问会话并保留原 TTL。
 func UserInfoUpdate(info UserInfo) {
-	tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + info.DeviceId
+	if info.SessionId == "" {
+		return
+	}
 	jsonBytes, err := json.Marshal(info)
 	if err != nil {
 		return
 	}
-	// 保留原 TTL 原子更新值，避免 TTL 竞争
-	ttl, err := cache.SetWithExistingTTL("", tokenKey, string(jsonBytes))
+	ttl, err := cache.SetWithExistingTTL("", sessionKey(info.SessionId), string(jsonBytes))
 	if err != nil || ttl < 0 {
-		logger.Errorf("UserInfoUpdate SetWithExistingTTL err: %v ttl: %d", err, ttl)
+		logger.Errorf("UserInfoUpdate err: %v ttl: %d", err, ttl)
 	}
 }
 
-// UserInfoGet 缓存的访问用户消息
+// UserInfoGet 读取会话，并校验令牌中的用户与会话 ID。
 func UserInfoGet(claims jwt.MapClaims) UserInfo {
 	info := UserInfo{}
+	sessionId := fmt.Sprint(claims[constants.JWT_SESSION_ID])
 	deviceId := fmt.Sprint(claims[constants.JWT_DEVICE_ID])
-	if !validateDeviceId(deviceId) {
+	if len(sessionId) != 32 {
 		return info
 	}
-	tokenKey := constants.CACHE_TOKEN_DEVICE + ":" + deviceId
-	infoStr, err := cache.Get("", tokenKey)
+	infoStr, err := cache.Get("", sessionKey(sessionId))
 	if err != nil || infoStr == "" {
 		return info
 	}
 	if err := json.Unmarshal([]byte(infoStr), &info); err != nil {
-		logger.Errorf("info json err : %v", err)
-		return info
+		logger.Errorf("user info json err: %v", err)
+		return UserInfo{}
+	}
+	if info.SessionId != sessionId ||
+		info.DeviceId != deviceId ||
+		info.UserId != parse.Number(fmt.Sprint(claims[constants.JWT_USER_ID])) {
+		return UserInfo{}
 	}
 	return info
 }
 
-// RemoveByUserIds 根据 userId 列表清理对应的 Token 缓存
+// SessionValid 判断刷新令牌对应的会话仍然有效。
+func SessionValid(claims jwt.MapClaims) bool {
+	return UserInfoGet(claims).UserId > 0
+}
+
+// RemoveByUserIds 按用户索引批量清理会话。
 func RemoveByUserIds(userIds []int64) {
-	if len(userIds) == 0 {
-		return
-	}
-	userIdSet := make(map[int64]struct{}, len(userIds))
-	for _, id := range userIds {
-		userIdSet[id] = struct{}{}
-	}
-	keys, err := cache.GetKeys("", constants.CACHE_TOKEN_DEVICE+":*")
-	if err != nil || len(keys) == 0 {
-		return
-	}
-	// 批量 MGET 替代逐个 GET，减少网络往返
-	var delKeys []string
-	for i := 0; i < len(keys); i += 50 {
-		end := i + 50
-		if end > len(keys) {
-			end = len(keys)
-		}
-		batch := keys[i:end]
-		values, err := cache.GetBatch("", batch)
-		if err != nil {
+	for _, userId := range userIds {
+		indexKey := userIndexKey(userId)
+		sessions, err := cache.SMembers("", indexKey)
+		if err != nil || len(sessions) == 0 {
+			_ = cache.Del("", indexKey)
 			continue
 		}
-		for j, v := range values {
-			if v == nil {
-				continue
-			}
-			str := fmt.Sprint(v)
-			if str == "" {
-				continue
-			}
-			var info UserInfo
-			if json.Unmarshal([]byte(str), &info) != nil {
-				continue
-			}
-			if _, ok := userIdSet[info.UserId]; ok {
-				delKeys = append(delKeys, batch[j])
-			}
+		keys := make([]string, 0, len(sessions))
+		for _, sessionId := range sessions {
+			keys = append(keys, sessionKey(sessionId))
 		}
+		_ = cache.DelKeys("", keys)
+		_ = cache.Del("", indexKey)
 	}
-	if len(delKeys) > 0 {
-		_ = cache.DelKeys("", delKeys)
+}
+
+// RemoveBySessionIds 按会话ID清理会话，同步移除用户索引。
+func RemoveBySessionIds(sessionIds []string) {
+	for _, sessionId := range sessionIds {
+		if len(sessionId) != 32 {
+			continue
+		}
+		raw, err := cache.Get("", sessionKey(sessionId))
+		if err != nil || raw == "" {
+			continue
+		}
+		var info UserInfo
+		if json.Unmarshal([]byte(raw), &info) != nil || info.UserId <= 0 {
+			continue
+		}
+		if cache.Del("", sessionKey(sessionId)) == nil {
+			_ = cache.SRem("", userIndexKey(info.UserId), sessionId)
+		}
 	}
 }
