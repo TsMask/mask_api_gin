@@ -15,6 +15,13 @@ security:
       - "127.0.0.1:6265"
       - "192.168.56.100"
 
+# 允许跨域请求的域名地址
+cors:
+  allowedOrigins:
+    - "http://localhost:6265"
+    - "http://127.0.0.1:6265"
+    - "http://192.168.56.100:6265"
+
 # GORM 数据源
 database:
   dataSource:

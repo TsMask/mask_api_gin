@@ -9,7 +9,15 @@ security:
     # 允许调用的域名地址的，例如：http://<Referer地址>/mask-api
     refererWhiteList:
       - "127.0.0.1:6275"
+      - "localhost:6275"
       - "<Referer地址>"
+
+# 允许跨域请求的域名地址
+cors:
+  allowedOrigins:
+    - "http://localhost:6265"
+    - "http://127.0.0.1:6265"
+    - "<域名地址>"
 
 # GORM 数据源
 database:

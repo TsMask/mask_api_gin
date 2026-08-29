@@ -65,10 +65,10 @@ upload:
 
 # cors 跨域
 cors:
-  # 设置 Access-Control-Allow-Origin 的值，【默认值】会获取请求头上的 origin
-  # 例如：http://mask-api.org
-  # 如果请求设置了 credentials，则 origin 不能设置为 *
-  origin: "*"
+  # 只允许显式来源；开启 credentials 时禁止 *
+  allowedOrigins:
+    - "http://localhost:6265"
+    - "http://127.0.0.1:6265"
   # 设置 Access-Control-Allow-Credentials，【默认值】false
   credentials: true
   # 设置 Access-Control-Max-Age

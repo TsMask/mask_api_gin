@@ -71,7 +71,8 @@ func initViper(configDir *embed.FS) {
 		return
 	}
 
-	// 当期服务环境运行配置 => local
+	// 配置合并优先级：default -> config.<env>.yaml -> --config 外部文件。
+	// env 只决定第二个配置文件；外部文件在 env 文件之后加载，用于覆盖最终配置项。
 	env := conf.GetString("env")
 	log.Printf("current service environment operation configuration => %s \n", env)
 
@@ -87,7 +88,7 @@ func initViper(configDir *embed.FS) {
 		return
 	}
 
-	// 外部文件配置
+	// 外部文件配置，覆盖 default 与内置 env 配置
 	if externalConfig := conf.GetString("config"); externalConfig != "" {
 		readExternalConfig(externalConfig)
 	}
