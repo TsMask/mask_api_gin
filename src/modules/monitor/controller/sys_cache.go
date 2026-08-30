@@ -84,7 +84,7 @@ func (s SysCacheController) Value(c *gin.Context) {
 		return
 	}
 
-	cacheValue, err := cache.Get("", query.CacheName+":"+query.CacheKey)
+	cacheValue, err := cache.GetValue("", query.CacheName+":"+query.CacheKey)
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return

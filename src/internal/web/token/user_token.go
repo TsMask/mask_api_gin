@@ -155,7 +155,7 @@ func UserInfoRemove(tokenStr string) (string, error) {
 	if err := cache.Del("", sessionKey(sessionId)); err != nil {
 		return info.UserName, err
 	}
-	_ = cache.SRem("", userIndexKey(info.UserId), sessionId)
+	_ = cache.ZRem("", userIndexKey(info.UserId), sessionId)
 	return info.UserName, nil
 }
 
@@ -184,7 +184,7 @@ func UserInfoCreate(info *UserInfo, ilobArr [4]string) error {
 	if err := cache.Set("", sessionKey(info.SessionId), string(jsonBytes), refreshTTL); err != nil {
 		return fmt.Errorf("set session cache: %w", err)
 	}
-	if err := cache.SAdd("", userIndexKey(info.UserId), refreshTTL, info.SessionId); err != nil {
+	if err := cache.ZAddAfterRemoveByScore("", userIndexKey(info.UserId), now, refreshTTL, info.SessionId); err != nil {
 		_ = cache.Del("", sessionKey(info.SessionId))
 		return fmt.Errorf("set session index: %w", err)
 	}
@@ -239,7 +239,7 @@ func SessionValid(claims jwt.MapClaims) bool {
 func RemoveByUserIds(userIds []int64) {
 	for _, userId := range userIds {
 		indexKey := userIndexKey(userId)
-		sessions, err := cache.SMembers("", indexKey)
+		sessions, err := cache.ZRangeByScore("", indexKey, "-inf", "+inf")
 		if err != nil || len(sessions) == 0 {
 			_ = cache.Del("", indexKey)
 			continue
@@ -268,7 +268,7 @@ func RemoveBySessionIds(sessionIds []string) {
 			continue
 		}
 		if cache.Del("", sessionKey(sessionId)) == nil {
-			_ = cache.SRem("", userIndexKey(info.UserId), sessionId)
+			_ = cache.ZRem("", userIndexKey(info.UserId), sessionId)
 		}
 	}
 }

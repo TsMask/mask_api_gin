@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -91,18 +92,6 @@ func CommandStats(source string) []map[string]string {
 	return statsObjArr
 }
 
-// Has 判断是否存在
-func Has(source string, keys ...string) (int64, error) {
-	rdb := RDB(source)
-	if rdb == nil {
-		return 0, fmt.Errorf("redis not client")
-	}
-
-	ctx, cancel := DefaultCtx()
-	defer cancel()
-	return rdb.Exists(ctx, keys...).Result()
-}
-
 // GetExpire 获取键的剩余有效时间（秒）
 func GetExpire(source string, key string) (int64, error) {
 	rdb := RDB(source)
@@ -187,15 +176,50 @@ func Get(source, key string) (string, error) {
 	return v, nil
 }
 
-// SMembers 获取集合全部成员。
-func SMembers(source, key string) ([]string, error) {
+// GetValue 按键的数据类型读取缓存值，并序列化为 JSON 字符串。
+func GetValue(source, key string) (string, error) {
 	rdb := RDB(source)
 	if rdb == nil {
-		return nil, fmt.Errorf("redis not client")
+		return "", fmt.Errorf("redis not client")
 	}
+
 	ctx, cancel := DefaultCtx()
 	defer cancel()
-	return rdb.SMembers(ctx, key).Result()
+
+	keyType, err := rdb.Type(ctx, key).Result()
+	if err != nil {
+		return "", err
+	}
+
+	var value any
+	switch keyType {
+	case "string":
+		value, err = rdb.Get(ctx, key).Result()
+	case "set":
+		value, err = rdb.SMembers(ctx, key).Result()
+	case "list":
+		value, err = rdb.LRange(ctx, key, 0, -1).Result()
+	case "hash":
+		value, err = rdb.HGetAll(ctx, key).Result()
+	case "zset":
+		value, err = rdb.ZRangeWithScores(ctx, key, 0, -1).Result()
+	case "none":
+		return "", fmt.Errorf("no keys")
+	default:
+		return "", fmt.Errorf("unsupported cache value type: %s", keyType)
+	}
+	if err != nil {
+		return "", err
+	}
+	if text, ok := value.(string); ok {
+		return text, nil
+	}
+
+	valueBytes, err := json.Marshal(value)
+	if err != nil {
+		return "", err
+	}
+	return string(valueBytes), nil
 }
 
 // GetAndDel 原子获取并删除 key 的值（MULTI/EXEC 事务）

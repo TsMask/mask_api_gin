@@ -12,22 +12,6 @@ import (
 	"mask_api_gin/src/internal/shared/logger"
 )
 
-// SetExpire 设置过期时间
-func SetExpire(source, key string, expiration time.Duration) error {
-	rdb := RDB(source)
-	if rdb == nil {
-		return fmt.Errorf("redis not client")
-	}
-
-	ctx, cancel := DefaultCtx()
-	defer cancel()
-	if err := rdb.Expire(ctx, key, expiration).Err(); err != nil {
-		logger.Errorf("redis Expire err %v", err)
-		return err
-	}
-	return nil
-}
-
 // Set 设置缓存数据
 func Set(source, key string, value any, expiration time.Duration) error {
 	rdb := RDB(source)
@@ -78,38 +62,6 @@ func DelKeys(source string, keys []string) error {
 		return err
 	}
 	return nil
-}
-
-// SAdd 向集合添加成员，并刷新集合过期时间。
-func SAdd(source, key string, expiration time.Duration, members ...string) error {
-	if len(members) == 0 {
-		return fmt.Errorf("no members")
-	}
-	rdb := RDB(source)
-	if rdb == nil {
-		return fmt.Errorf("redis not client")
-	}
-	ctx, cancel := DefaultCtx()
-	defer cancel()
-	tx := rdb.TxPipeline()
-	tx.SAdd(ctx, key, members)
-	tx.Expire(ctx, key, expiration)
-	_, err := tx.Exec(ctx)
-	return err
-}
-
-// SRem 从集合移除成员。
-func SRem(source, key string, members ...string) error {
-	if len(members) == 0 {
-		return nil
-	}
-	rdb := RDB(source)
-	if rdb == nil {
-		return fmt.Errorf("redis not client")
-	}
-	ctx, cancel := DefaultCtx()
-	defer cancel()
-	return rdb.SRem(ctx, key, members).Err()
 }
 
 // RateLimit 限流计数；窗口创建时设置过期时间，后续请求不续期。
