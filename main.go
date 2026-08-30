@@ -19,25 +19,21 @@ var configDir embed.FS
 func main() {
 	src.ConfigurationInit(&assetsDir, &configDir)
 
-	// 信号监听在 main：首个 SIGINT/SIGTERM 取消 ctx 触发停机；
-	// 停机期间再次收到信号，NotifyContext 已恢复默认处置，进程立即终止（强制退出）
+	// 首个 SIGINT/SIGTERM 触发优雅停机；停机期间再次收到信号按默认行为强制退出。
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-
-	// app.Run 阻塞监听，放入后台；启动失败通过 serveErr 投递
-	serveErr := make(chan error, 1)
 	go func() {
-		serveErr <- src.RunServer()
+		<-ctx.Done()
+		stop()
 	}()
 
-	select {
-	case err := <-serveErr:
+	if err := src.RunServer(ctx); err != nil {
 		// 启动即失败（如端口占用）：先落盘再退出
 		src.ConfigurationClose()
 		log.Fatalf("run server error: %v", err)
-	case <-ctx.Done():
-		// 停机信号：关闭 cron/cache/db 与日志落盘后退出（不排空在途 HTTP 请求）
-		src.ConfigurationClose()
 	}
+
+	// HTTP 请求与调度任务排空后，再释放底层连接。
+	src.ConfigurationClose()
 	log.Println("server stopped")
 }

@@ -107,13 +107,13 @@ func Setup(router *gin.Engine) {
 
 // initLoad 初始加载
 func initLoad() {
-	// 启动时，初始化调度任务
-	service.NewSysJob.Reset()
-
-	// 初始化定时任务处理
+	// 先注册处理器，QueueNames 才能用于恢复数据库中的任务。
 	cron.CreateQueue("test_job", examples.NewBasicProcessor)
 	cron.CreateQueue("test_progress", examples.NewProgressProcessor)
 	cron.CreateQueue("test_error", examples.NewErrorProcessor)
+
+	// 启动时，初始化调度任务
+	service.NewSysJob.Reset()
 }
 
 // RegisterOnJobLog 注入任务执行日志持久化钩子。

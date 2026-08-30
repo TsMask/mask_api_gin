@@ -28,8 +28,7 @@ func NewApp() *gin.Engine {
 	return app
 }
 
-// initAppEngine 初始应用引擎。
-// 仅在非生产环境注册请求日志；panic 恢复统一由 middleware.Recovery 承担。
+// initAppEngine 初始应用引擎，生产环境关闭 Gin 调试输出
 func initAppEngine() *gin.Engine {
 	gin.DisableConsoleColor()
 

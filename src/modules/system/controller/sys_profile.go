@@ -67,11 +67,11 @@ func (s SysProfileController) Info(c *gin.Context) {
 // PUT /
 func (s SysProfileController) UpdateProfile(c *gin.Context) {
 	var body struct {
-		NickName string `json:"nick_name" binding:"required"`          // 昵称
-		Gender   string `json:"gender" binding:"required,oneof=0 1 2"` // 性别
-		Phone    string `json:"phone"`                                 // 手机号
-		Email    string `json:"email"`                                 // 邮箱
-		Avatar   string `json:"avatar"`                                // 头像地址
+		UserNick   string `json:"user_nick" binding:"required"`               // 昵称
+		UserGender string `json:"user_gender" binding:"required,oneof=0 1 2"` // 性别
+		UserPhone  string `json:"user_phone"`                                 // 手机号
+		UserEmail  string `json:"user_email"`                                 // 邮箱
+		UserAvatar string `json:"user_avatar"`                                // 头像地址
 	}
 	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
 		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
@@ -88,9 +88,9 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 	userId := info.UserId
 
 	// 检查手机号码格式并判断是否唯一
-	if body.Phone != "" {
-		if regular.ValidMobile(body.Phone) {
-			uniquePhone := s.sysUserService.CheckUniqueByPhone(body.Phone, userId)
+	if body.UserPhone != "" {
+		if regular.ValidMobile(body.UserPhone) {
+			uniquePhone := s.sysUserService.CheckUniqueByPhone(body.UserPhone, userId)
 			if !uniquePhone {
 				c.JSON(200, resp.ErrMsg("抱歉，手机号码已存在"))
 				return
@@ -102,9 +102,9 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 	}
 
 	// 检查邮箱格式并判断是否唯一
-	if body.Email != "" {
-		if regular.ValidEmail(body.Email) {
-			uniqueEmail := s.sysUserService.CheckUniqueByEmail(body.Email, userId)
+	if body.UserEmail != "" {
+		if regular.ValidEmail(body.UserEmail) {
+			uniqueEmail := s.sysUserService.CheckUniqueByEmail(body.UserEmail, userId)
 			if !uniqueEmail {
 				c.JSON(200, resp.ErrMsg("抱歉，邮箱已存在"))
 				return
@@ -123,11 +123,11 @@ func (s SysProfileController) UpdateProfile(c *gin.Context) {
 	}
 
 	// 用户基本资料
-	userInfo.UserNick = body.NickName
-	userInfo.UserPhone = body.Phone
-	userInfo.UserEmail = body.Email
-	userInfo.UserGender = body.Gender
-	userInfo.UserAvatar = body.Avatar
+	userInfo.UserNick = body.UserNick
+	userInfo.UserPhone = body.UserPhone
+	userInfo.UserEmail = body.UserEmail
+	userInfo.UserGender = body.UserGender
+	userInfo.UserAvatar = body.UserAvatar
 	userInfo.UserPassword = "" // 密码不更新
 	userInfo.UpdateBy = userInfo.UserName
 	rows := s.sysUserService.Update(userInfo)
