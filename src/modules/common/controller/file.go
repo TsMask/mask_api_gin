@@ -146,6 +146,7 @@ func (s FileController) Upload(c *gin.Context) {
 func (s FileController) ChunkCheck(c *gin.Context) {
 	var body struct {
 		Identifier string `json:"identifier" binding:"required"` // 唯一标识
+		FileName   string `json:"file_name" binding:"required"`  // 文件名
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, fmt.Sprintf("bind err: %s", resp.FormatBindError(err))))
@@ -156,9 +157,13 @@ func (s FileController) ChunkCheck(c *gin.Context) {
 	datePath := date.ParseDatePath()
 	chunkDir := filepath.Join(dir, constants.UPLOAD_CHUNK, datePath)
 	// 读取标识目录
-	chunks, err := file.FileConfig{Dir: chunkDir}.ChunkList(body.Identifier)
+	chunks, err := file.FileConfig{
+		Dir:       chunkDir,
+		WhiteExts: file.UploadWhiteList(),
+	}.ChunkCheck(body.Identifier, body.FileName)
 	if err != nil {
-		chunks = []string{}
+		c.JSON(200, resp.ErrMsg(err.Error()))
+		return
 	}
 	c.JSON(200, resp.OkData(chunks))
 }

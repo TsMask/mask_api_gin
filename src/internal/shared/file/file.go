@@ -90,8 +90,11 @@ func (u FileUpload) ChunkSave(cfg FileConfig) error {
 	return writeBytes(dst, data)
 }
 
-// ChunkList 查询已上传的分片文件名列表（按文件名排序）。
-func (c FileConfig) ChunkList(id string) ([]string, error) {
+// ChunkCheck 先校验目标文件扩展名，再查询已上传的分片列表。
+func (c FileConfig) ChunkCheck(id, fileName string) ([]string, error) {
+	if err := checkNameAndExt(c, fileName); err != nil {
+		return nil, err
+	}
 	return listRegularFiles(filepath.Join(c.Dir, id))
 }
 
