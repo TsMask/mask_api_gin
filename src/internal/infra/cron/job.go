@@ -1,6 +1,8 @@
 package cron
 
-import "github.com/robfig/cron/v3"
+import (
+	"github.com/robfig/cron/v3"
+)
 
 // 任务执行状态
 const (
@@ -33,17 +35,21 @@ type queueJob struct {
 	cronExpr   string       // cron 表达式，空字符串表示一次性任务
 	concurrent bool         // 是否允许并发执行
 	cid        cron.EntryID // robfig/cron 排程 ID（一次性任务为 0）
+	engine     *engineState // 创建排程的引擎实例，用于重启后避免 EntryID 串扰
 	status     int          // 任务执行状态
 	timestamp  int64        // 本次执行开始时间（毫秒）
 }
 
 // jobRunner 适配 robfig/cron 的 Job 接口，每次触发都从队列中按 ID 查找最新任务条目执行。
 type jobRunner struct {
-	queue *Queue
-	id    string
+	queue  *Queue
+	id     string
+	engine *engineState
 }
 
 // Run 实现 cron.Job
 func (r *jobRunner) Run() {
-	r.queue.runOnce(r.id)
+	if err := dispatch(r.engine, r.queue, r.id); err != nil {
+		emitEngineError(r.queue.Name, r.id, err)
+	}
 }

@@ -121,7 +121,7 @@ func initLoad() {
 // 将引擎发出的执行事件映射为调度任务日志并落库；引擎本身不依赖任何业务模型。
 // 需在调度任务初始化（Reset）之前调用。
 func RegisterOnJobLog() {
-	cron.OnJobLog = func(record cron.JobLogRecord) {
+	cron.SetOnJobLog(func(record cron.JobLogRecord) {
 		// 还原业务负载
 		sysJob, ok := record.Data.(model.SysJob)
 		if !ok {
@@ -163,5 +163,8 @@ func RegisterOnJobLog() {
 			LogCostTime:     duration.Milliseconds(),
 			CreateTime:      time.Now().UnixMilli(),
 		})
-	}
+	})
+	cron.SetOnEngineError(func(event cron.EngineError) {
+		logger.Errorf("cron 引擎错误 queue=%s id=%s err=%v", event.Queue, event.ID, event.Err)
+	})
 }

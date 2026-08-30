@@ -58,12 +58,11 @@ func (p *probeProc) waitEntered(t *testing.T) {
 func captureSink() (func() []JobLogRecord, func()) {
 	var mu sync.Mutex
 	var records []JobLogRecord
-	prev := OnJobLog
-	OnJobLog = func(r JobLogRecord) {
+	SetOnJobLog(func(r JobLogRecord) {
 		mu.Lock()
 		records = append(records, r)
 		mu.Unlock()
-	}
+	})
 	snapshot := func() []JobLogRecord {
 		mu.Lock()
 		defer mu.Unlock()
@@ -71,7 +70,7 @@ func captureSink() (func() []JobLogRecord, func()) {
 		copy(out, records)
 		return out
 	}
-	restore := func() { OnJobLog = prev }
+	restore := func() { SetOnJobLog(nil) }
 	return snapshot, restore
 }
 
