@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"strings"
 
 	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/modules/system/model"
@@ -32,7 +33,8 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 		tx = tx.Where("title like ?", v+"%")
 	}
 	if v, ok := query["operate_type"]; ok && v != "" {
-		tx = tx.Where("operate_type = ?", v)
+		operateTypes := strings.Split(v, ",")
+		tx = tx.Where("operate_type in ?", operateTypes)
 	}
 	if v, ok := query["create_by"]; ok && v != "" {
 		tx = tx.Where("create_by like ?", v+"%")

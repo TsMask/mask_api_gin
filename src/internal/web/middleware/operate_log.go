@@ -3,6 +3,7 @@ package middleware
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"slices"
 	"strings"
 	"time"
@@ -75,7 +76,7 @@ func OperateLog(title, operateType string) gin.HandlerFunc {
 
 		// 响应状态
 		status := c.Writer.Status()
-		if status == 200 {
+		if isHTTPSuccess(status) {
 			rec.OperateStatus = constants.STATUS_YES
 		} else {
 			rec.OperateStatus = constants.STATUS_NO
@@ -84,10 +85,7 @@ func OperateLog(title, operateType string) gin.HandlerFunc {
 		// 响应摘要
 		contentType := c.Writer.Header().Get("Content-Type")
 		contentDisposition := c.Writer.Header().Get("Content-Disposition")
-		rec.OperateMsg = fmt.Sprintf(
-			`{"status":"%d","size":%d,"content-type":"%s"}`,
-			status, c.Writer.Size(), contentType+contentDisposition,
-		)
+		rec.OperateMsg = buildOperateMsg(status, c.Writer.Size(), contentType, contentDisposition)
 
 		rec.OperateCostTime = time.Since(start).Milliseconds()
 
@@ -95,6 +93,30 @@ func OperateLog(title, operateType string) gin.HandlerFunc {
 			OnOperateLog(rec)
 		}
 	}
+}
+
+// isHTTPSuccess 判断 HTTP 状态码是否属于成功区间。
+func isHTTPSuccess(status int) bool {
+	return status >= http.StatusOK && status < http.StatusMultipleChoices
+}
+
+// buildOperateMsg 生成规范的响应摘要 JSON。
+func buildOperateMsg(status, size int, contentType, contentDisposition string) string {
+	msg, err := json.Marshal(struct {
+		Status             int    `json:"status"`
+		Size               int    `json:"size"`
+		ContentType        string `json:"content_type"`
+		ContentDisposition string `json:"content_disposition,omitempty"`
+	}{
+		Status:             status,
+		Size:               size,
+		ContentType:        contentType,
+		ContentDisposition: contentDisposition,
+	})
+	if err != nil {
+		return ""
+	}
+	return string(msg)
 }
 
 // sensitiveFields 需要脱敏的字段名。
