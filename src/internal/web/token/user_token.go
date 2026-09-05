@@ -171,7 +171,6 @@ func UserInfoCreate(info *UserInfo, ilobArr [4]string) error {
 	info.LoginBrowser = ilobArr[3]
 
 	accessTTL := tokenTTL("access")
-	refreshTTL := tokenTTL("refresh")
 	now := time.Now()
 	info.LoginTime = now.UnixMilli()
 	info.ExpireTime = now.Add(accessTTL).UnixMilli()
@@ -180,11 +179,11 @@ func UserInfoCreate(info *UserInfo, ilobArr [4]string) error {
 	if err != nil {
 		return fmt.Errorf("marshal user info: %w", err)
 	}
-	// 会话以 SessionId 为主键，存活到 refresh token 过期；access token 自身 exp 负责短有效期。
-	if err := cache.Set("", sessionKey(info.SessionId), string(jsonBytes), refreshTTL); err != nil {
+	// 在线会话与访问令牌同生命周期；刷新令牌为无状态 JWT。
+	if err := cache.Set("", sessionKey(info.SessionId), string(jsonBytes), accessTTL); err != nil {
 		return fmt.Errorf("set session cache: %w", err)
 	}
-	if err := cache.ZAddAfterRemoveByScore("", userIndexKey(info.UserId), now, refreshTTL, info.SessionId); err != nil {
+	if err := cache.ZAddAfterRemoveByScore("", userIndexKey(info.UserId), now, accessTTL, info.SessionId); err != nil {
 		_ = cache.Del("", sessionKey(info.SessionId))
 		return fmt.Errorf("set session index: %w", err)
 	}
@@ -224,15 +223,11 @@ func UserInfoGet(claims jwt.MapClaims) UserInfo {
 	}
 	if info.SessionId != sessionId ||
 		info.DeviceId != deviceId ||
-		info.UserId != parse.Number(fmt.Sprint(claims[constants.JWT_USER_ID])) {
+		info.UserId != parse.Number(fmt.Sprint(claims[constants.JWT_USER_ID])) ||
+		info.ExpireTime <= time.Now().UnixMilli() {
 		return UserInfo{}
 	}
 	return info
-}
-
-// SessionValid 判断刷新令牌对应的会话仍然有效。
-func SessionValid(claims jwt.MapClaims) bool {
-	return UserInfoGet(claims).UserId > 0
 }
 
 // RemoveByUserIds 按用户索引批量清理会话。

@@ -153,12 +153,6 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 		c.JSON(401, resp.CodeMsg(resp.CODE_AUTH_DEVICE, resp.MSG_AUTH_DEVICE))
 		return
 	}
-	// 刷新令牌必须指向仍然存在的会话；登出或强制下线后立即失效。
-	if !token.SessionValid(claims) {
-		c.JSON(401, resp.CodeMsg(resp.CODE_AUTH_INVALID, "invalid login session"))
-		return
-	}
-
 	// 每次刷新都轮换 session_id，旧访问/刷新令牌同时失效。
 	pair, sessionId, err := token.CreateTokenPair(userId, deviceFingerprint)
 	if err != nil {
