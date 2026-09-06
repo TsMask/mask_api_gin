@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -98,14 +97,6 @@ func (s SysDeptController) Add(c *gin.Context) {
 			c.JSON(200, resp.ErrMsg(msg))
 			return
 		}
-		if deptParent.DeptDel == constants.STATUS_YES {
-			msg := fmt.Sprintf("上级部门【%s】已删除，不允许新增", deptParent.DeptName)
-			c.JSON(200, resp.ErrMsg(msg))
-			return
-		}
-		body.Ancestors = fmt.Sprintf("%s,%d", deptParent.Ancestors, body.ParentId)
-	} else {
-		body.Ancestors = "0"
 	}
 
 	// 检查同级下名称唯一
@@ -250,19 +241,7 @@ func (s SysDeptController) ExcludeChild(c *gin.Context) {
 	}
 	deptId := parse.Number(deptIdStr)
 	dataScopeSQL := service.DataScopeSQL(c, "sys_dept", "")
-	data := s.sysDeptService.Find(model.SysDept{}, dataScopeSQL)
-
-	// 过滤排除节点
-	filtered := make([]model.SysDept, 0)
-	for _, dept := range data {
-		if dept.ID == deptId {
-			continue
-		}
-		// 如果当前部门的ancestors不包含要排除的deptId，则添加到filtered中
-		if !strings.Contains(dept.Ancestors, deptIdStr) {
-			filtered = append(filtered, dept)
-		}
-	}
+	filtered := s.sysDeptService.FindExcludeChildren(deptId, dataScopeSQL)
 	c.JSON(200, resp.OkData(filtered))
 }
 

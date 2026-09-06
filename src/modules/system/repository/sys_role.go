@@ -60,8 +60,8 @@ func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64, 
 	if v, ok := query["dept_id"]; ok && v != "" {
 		tx = tx.Where(`id in (
 		select distinct role_id from sys_role_dept where sys_role_dept.dept_id IN (
-		SELECT id FROM sys_dept WHERE id = ? or find_in_set(? , ancestors )
-		))`, v, v)
+		SELECT descendant_id FROM sys_dept_closure WHERE ancestor_id = ?
+		))`, v)
 	}
 
 	// 查询结果

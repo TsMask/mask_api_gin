@@ -66,7 +66,7 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 	}
 	if v, ok := query["dept_id"]; ok && v != "" {
 		tx = tx.Where(`(dept_id = ? or dept_id in (
-		select t.id from sys_dept t where find_in_set(?, ancestors)
+		select descendant_id from sys_dept_closure where ancestor_id = ?
 		))`, v, v)
 	}
 	if dataScopeSQL != "" {

@@ -1,14 +1,11 @@
 package service
 
 import (
-	"fmt"
-	"strings"
 	"time"
 
-	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/infra/database"
+	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/shared/logger"
-	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/model/vo"
 	"mask_api_gin/src/modules/system/repository"
@@ -33,6 +30,15 @@ type SysDept struct {
 // Find 查询数据
 func (s SysDept) Find(sysDept model.SysDept, dataScopeSQL string) []model.SysDept {
 	rows, err := s.sysDeptRepository.Select(sysDept, dataScopeSQL)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	return rows
+}
+
+// FindExcludeChildren 查询排除指定部门及其子部门的集合
+func (s SysDept) FindExcludeChildren(deptId int64, dataScopeSQL string) []model.SysDept {
+	rows, err := s.sysDeptRepository.SelectExcludeChildren(deptId, dataScopeSQL)
 	if err != nil {
 		logger.Errorf("query err => %v", err.Error())
 	}
@@ -77,23 +83,22 @@ func (s SysDept) Update(sysDept model.SysDept) int64 {
 	if err != nil {
 		logger.Errorf("query err => %v", err.Error())
 	}
+	if sysDept.ParentId > 0 && parentDept.ID != sysDept.ParentId {
+		logger.Errorf("parent dept not found => deptId: %d parentId: %d", sysDept.ID, sysDept.ParentId)
+		return 0
+	}
 
 	var rows int64
+	moved := dept.ParentId != sysDept.ParentId
 	err = database.Transaction("", func(tx *gorm.DB) error {
-		// 上级与当前部门祖级列表更新
-		if parentDept.ID == sysDept.ParentId && dept.ID == sysDept.ID {
-			newAncestors := fmt.Sprintf("%s,%d", parentDept.Ancestors, parentDept.ID)
-			oldAncestors := dept.Ancestors
-			// 祖级列表不一致时更新
-			if newAncestors != oldAncestors {
-				if _, e := s.updateDeptChildren(tx, dept.ID, newAncestors, oldAncestors); e != nil {
-					return e
-				}
+		if moved {
+			if e := s.sysDeptRepository.MoveDeptSubtree(tx, dept.ID, sysDept.ParentId); e != nil {
+				return e
 			}
 		}
 		// 如果该部门是启用状态，则启用该部门的所有上级部门
 		if sysDept.DeptStatus == constants.STATUS_YES && parentDept.DeptStatus == constants.STATUS_NO {
-			if _, e := s.updateDeptStatusNormal(tx, sysDept.Ancestors); e != nil {
+			if _, e := s.sysDeptRepository.UpdateDeptStatusNormal(tx, dept.ID); e != nil {
 				return e
 			}
 		}
@@ -102,39 +107,13 @@ func (s SysDept) Update(sysDept model.SysDept) int64 {
 		return e
 	})
 	if err != nil {
+		logger.Errorf("update dept err => %v", err.Error())
 		return rows
 	}
+	if moved && rows == 0 {
+		rows = 1
+	}
 	return rows
-}
-
-// updateDeptStatusNormal 修改所在部门正常状态
-func (s SysDept) updateDeptStatusNormal(d *gorm.DB, ancestors string) (int64, error) {
-	if ancestors == "" || ancestors == "0" {
-		return 0, nil
-	}
-	deptIds := make([]int64, 0)
-	for _, v := range strings.Split(ancestors, ",") {
-		deptIds = append(deptIds, parse.Number(v))
-	}
-	return s.sysDeptRepository.UpdateDeptStatusNormal(d, deptIds)
-}
-
-// updateDeptChildren 修改子元素关系
-func (s SysDept) updateDeptChildren(d *gorm.DB, deptId int64, newAncestors, oldAncestors string) (int64, error) {
-	arr, err := s.sysDeptRepository.SelectChildrenDeptById(deptId)
-	if err != nil {
-		logger.Errorf("query err => %v", err.Error())
-	}
-	if len(arr) == 0 {
-		return 0, nil
-	}
-	// 替换父ID
-	for i := range arr {
-		item := &arr[i]
-		ancestors := strings.Replace(item.Ancestors, oldAncestors, newAncestors, 1)
-		item.Ancestors = ancestors
-	}
-	return s.sysDeptRepository.UpdateDeptChildren(d, arr)
 }
 
 // DeleteById 删除信息

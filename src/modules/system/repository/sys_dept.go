@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"fmt"
+
 	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/modules/system/model"
 
@@ -15,28 +17,50 @@ type SysDept struct{}
 
 // Select 查询集合
 func (r SysDept) Select(sysDept model.SysDept, dataScopeSQL string) ([]model.SysDept, error) {
-	tx := database.DB("").Model(&model.SysDept{})
-	tx = tx.Where("dept_del = '0'")
-	// 查询条件拼接
+	tx := database.DB("").Model(&model.SysDept{}).
+		Select("sys_dept.*, COALESCE(parent_rel.ancestor_id, 0) AS parent_id").
+		Joins("LEFT JOIN sys_dept_closure parent_rel ON parent_rel.descendant_id = sys_dept.id AND parent_rel.depth = 1")
+
 	if sysDept.ID > 0 {
-		tx = tx.Where("id = ?", sysDept.ID)
+		tx = tx.Where("sys_dept.id = ?", sysDept.ID)
 	}
 	if sysDept.ParentId > 0 {
-		tx = tx.Where("parent_id = ?", sysDept.ParentId)
+		tx = tx.Where("parent_rel.ancestor_id = ?", sysDept.ParentId)
 	}
 	if sysDept.DeptName != "" {
-		tx = tx.Where("dept_name like ?", sysDept.DeptName+"%")
+		tx = tx.Where("sys_dept.dept_name like ?", sysDept.DeptName+"%")
 	}
 	if sysDept.DeptStatus != "" {
-		tx = tx.Where("dept_status = ?", sysDept.DeptStatus)
+		tx = tx.Where("sys_dept.dept_status = ?", sysDept.DeptStatus)
 	}
 	if dataScopeSQL != "" {
 		tx = tx.Where(dataScopeSQL)
 	}
 
-	// 查询数据
 	rows := []model.SysDept{}
-	if err := tx.Order("parent_id, dept_sort asc").Find(&rows).Error; err != nil {
+	if err := tx.Order("sys_dept.dept_sort, sys_dept.id").Find(&rows).Error; err != nil {
+		return rows, err
+	}
+	return rows, nil
+}
+
+// SelectExcludeChildren 查询排除指定部门及其子部门的集合
+func (r SysDept) SelectExcludeChildren(deptId int64, dataScopeSQL string) ([]model.SysDept, error) {
+	tx := database.DB("").Model(&model.SysDept{}).
+		Select("sys_dept.*, COALESCE(parent_rel.ancestor_id, 0) AS parent_id").
+		Joins("LEFT JOIN sys_dept_closure parent_rel ON parent_rel.descendant_id = sys_dept.id AND parent_rel.depth = 1")
+
+	tx = tx.Where("sys_dept.id <> ?", deptId)
+	tx = tx.Where(`NOT EXISTS (
+		SELECT 1 FROM sys_dept_closure exclude_rel
+		WHERE exclude_rel.ancestor_id = ? AND exclude_rel.descendant_id = sys_dept.id
+	)`, deptId)
+	if dataScopeSQL != "" {
+		tx = tx.Where(dataScopeSQL)
+	}
+
+	rows := []model.SysDept{}
+	if err := tx.Order("sys_dept.dept_sort, sys_dept.id").Find(&rows).Error; err != nil {
 		return rows, err
 	}
 	return rows, nil
@@ -47,10 +71,12 @@ func (r SysDept) SelectById(deptId int64) (model.SysDept, error) {
 	if deptId <= 0 {
 		return model.SysDept{}, nil
 	}
-	tx := database.DB("").Model(&model.SysDept{})
-	// 构建查询条件
-	tx = tx.Where("id = ? and dept_del = '0'", deptId)
-	// 查询数据
+	tx := database.DB("").Model(&model.SysDept{}).
+		Select("sys_dept.*, COALESCE(parent_rel.ancestor_id, 0) AS parent_id").
+		Joins("LEFT JOIN sys_dept_closure parent_rel ON parent_rel.descendant_id = sys_dept.id AND parent_rel.depth = 1")
+
+	tx = tx.Where("sys_dept.id = ?", deptId)
+
 	item := model.SysDept{}
 	if err := tx.Limit(1).Find(&item).Error; err != nil {
 		return item, err
@@ -64,8 +90,12 @@ func (r SysDept) SelectMapByIds(deptIds []int64) (map[int64]model.SysDept, error
 	if len(deptIds) <= 0 {
 		return result, nil
 	}
-	tx := database.DB("").Model(&model.SysDept{})
-	tx = tx.Where("id in ? and dept_del = '0'", deptIds)
+	tx := database.DB("").Model(&model.SysDept{}).
+		Select("sys_dept.*, COALESCE(parent_rel.ancestor_id, 0) AS parent_id").
+		Joins("LEFT JOIN sys_dept_closure parent_rel ON parent_rel.descendant_id = sys_dept.id AND parent_rel.depth = 1")
+
+	tx = tx.Where("sys_dept.id IN ?", deptIds)
+
 	rows := []model.SysDept{}
 	if err := tx.Find(&rows).Error; err != nil {
 		return result, err
@@ -78,12 +108,48 @@ func (r SysDept) SelectMapByIds(deptIds []int64) (map[int64]model.SysDept, error
 
 // Insert 新增信息 返回新增数据ID
 func (r SysDept) Insert(sysDept model.SysDept) (int64, error) {
-	sysDept.DeptDel = "0"
-	// 执行插入
-	if err := database.DB("").Create(&sysDept).Error; err != nil {
+	err := database.Transaction("", func(tx *gorm.DB) error {
+		if err := tx.Create(&sysDept).Error; err != nil {
+			return err
+		}
+		return insertDeptClosure(tx, sysDept.ID, sysDept.ParentId)
+	})
+	if err != nil {
 		return 0, err
 	}
 	return sysDept.ID, nil
+}
+
+func insertDeptClosure(tx *gorm.DB, deptId, parentId int64) error {
+	if deptId <= 0 {
+		return fmt.Errorf("dept id is empty")
+	}
+
+	relations := []model.SysDeptClosure{
+		{AncestorID: deptId, DescendantID: deptId, Depth: 0},
+	}
+	if parentId > 0 {
+		parentRelations := []model.SysDeptClosure{}
+		if err := tx.Raw(`
+			SELECT ancestor_id, descendant_id, depth
+			FROM sys_dept_closure
+			WHERE descendant_id = ?
+			FOR UPDATE
+		`, parentId).Scan(&parentRelations).Error; err != nil {
+			return err
+		}
+		if len(parentRelations) == 0 {
+			return fmt.Errorf("parent dept closure not found: %d", parentId)
+		}
+		for _, relation := range parentRelations {
+			relations = append(relations, model.SysDeptClosure{
+				AncestorID:   relation.AncestorID,
+				DescendantID: deptId,
+				Depth:        relation.Depth + 1,
+			})
+		}
+	}
+	return tx.Create(&relations).Error
 }
 
 // Update 修改信息 返回受影响行数
@@ -97,7 +163,7 @@ func (r SysDept) Update(d *gorm.DB, sysDept model.SysDept) (int64, error) {
 	tx := d.Model(&model.SysDept{})
 	// 构建查询条件
 	tx = tx.Where("id = ?", sysDept.ID)
-	tx = tx.Omit("id", "create_by", "create_time", "dept_del")
+	tx = tx.Omit("id", "create_by", "create_time", "parent_id")
 	// 执行更新
 	if err := tx.Updates(sysDept).Error; err != nil {
 		return 0, err
@@ -105,7 +171,91 @@ func (r SysDept) Update(d *gorm.DB, sysDept model.SysDept) (int64, error) {
 	return tx.RowsAffected, nil
 }
 
-// DeleteById 删除信息 返回受影响行数（软删除）
+// MoveDeptSubtree 移动部门及其子树到新的父级下
+func (r SysDept) MoveDeptSubtree(d *gorm.DB, deptId, newParentId int64) error {
+	if d == nil {
+		return fmt.Errorf("database transaction is nil")
+	}
+	if deptId <= 0 {
+		return fmt.Errorf("dept id is empty")
+	}
+
+	var currentParentId int64
+	if err := d.Model(&model.SysDeptClosure{}).
+		Select("ancestor_id").
+		Where("ancestor_id <> descendant_id AND descendant_id = ? AND depth = 1", deptId).
+		Scan(&currentParentId).Error; err != nil {
+		return err
+	}
+	if currentParentId == newParentId {
+		return nil
+	}
+
+	if newParentId > 0 {
+		var descendantCount int64
+		if err := d.Model(&model.SysDeptClosure{}).
+			Where("ancestor_id = ? AND descendant_id = ? AND depth > 0", deptId, newParentId).
+			Count(&descendantCount).Error; err != nil {
+			return err
+		}
+		if descendantCount > 0 {
+			return fmt.Errorf("new parent dept is a descendant of the moving dept")
+		}
+	}
+
+	subtree := []model.SysDeptClosure{}
+	if err := d.Raw(`
+		SELECT ancestor_id, descendant_id, depth
+		FROM sys_dept_closure
+		WHERE ancestor_id = ?
+		FOR UPDATE
+	`, deptId).Scan(&subtree).Error; err != nil {
+		return err
+	}
+	if len(subtree) == 0 {
+		return fmt.Errorf("dept closure not found: %d", deptId)
+	}
+
+	subtreeIds := make([]int64, 0, len(subtree))
+	for _, relation := range subtree {
+		subtreeIds = append(subtreeIds, relation.DescendantID)
+	}
+	if err := d.Where("descendant_id IN ? AND ancestor_id NOT IN ?", subtreeIds, subtreeIds).
+		Delete(&model.SysDeptClosure{}).Error; err != nil {
+		return err
+	}
+
+	if newParentId <= 0 {
+		return nil
+	}
+
+	parentRelations := []model.SysDeptClosure{}
+	if err := d.Raw(`
+		SELECT ancestor_id, descendant_id, depth
+		FROM sys_dept_closure
+		WHERE descendant_id = ?
+		FOR UPDATE
+	`, newParentId).Scan(&parentRelations).Error; err != nil {
+		return err
+	}
+	if len(parentRelations) == 0 {
+		return fmt.Errorf("parent dept closure not found: %d", newParentId)
+	}
+
+	relations := make([]model.SysDeptClosure, 0, len(parentRelations)*len(subtree))
+	for _, parent := range parentRelations {
+		for _, descendant := range subtree {
+			relations = append(relations, model.SysDeptClosure{
+				AncestorID:   parent.AncestorID,
+				DescendantID: descendant.DescendantID,
+				Depth:        parent.Depth + descendant.Depth + 1,
+			})
+		}
+	}
+	return d.CreateInBatches(relations, 500).Error
+}
+
+// DeleteById 删除信息 返回受影响行数
 func (r SysDept) DeleteById(d *gorm.DB, deptId int64) (int64, error) {
 	if deptId <= 0 {
 		return 0, nil
@@ -113,31 +263,46 @@ func (r SysDept) DeleteById(d *gorm.DB, deptId int64) (int64, error) {
 	if d == nil {
 		d = database.DB("")
 	}
-	tx := d.Model(&model.SysDept{})
-	// 构建查询条件
-	tx = tx.Where("id = ?", deptId)
-	// 执行更新删除标记
-	if err := tx.Update("dept_del", "1").Error; err != nil {
+
+	var childCount int64
+	if err := d.Model(&model.SysDept{}).
+		Joins("JOIN sys_dept_closure c ON c.descendant_id = sys_dept.id").
+		Where("c.ancestor_id = ? AND c.depth = 1", deptId).
+		Count(&childCount).Error; err != nil {
 		return 0, err
+	}
+	if childCount > 0 {
+		return 0, fmt.Errorf("dept contains child departments: %d", childCount)
+	}
+
+	if err := d.Where("ancestor_id = ? OR descendant_id = ?", deptId, deptId).
+		Delete(&model.SysDeptClosure{}).Error; err != nil {
+		return 0, err
+	}
+	tx := d.Where("id = ?", deptId).Delete(&model.SysDept{})
+	if tx.Error != nil {
+		return 0, tx.Error
 	}
 	return tx.RowsAffected, nil
 }
 
-// CheckUnique 检查信息是否唯一 返回数据ID
+// CheckUnique 检查同级部门名称唯一
 func (r SysDept) CheckUnique(sysDept model.SysDept) (int64, error) {
-	tx := database.DB("").Model(&model.SysDept{})
-	tx = tx.Where("dept_del = '0'")
-	// 查询条件拼接
+	tx := database.DB("").Model(&model.SysDept{}).
+		Select("sys_dept.*, COALESCE(parent_rel.ancestor_id, 0) AS parent_id").
+		Joins("LEFT JOIN sys_dept_closure parent_rel ON parent_rel.descendant_id = sys_dept.id AND parent_rel.depth = 1")
+
 	if sysDept.DeptName != "" {
-		tx = tx.Where("dept_name = ?", sysDept.DeptName)
+		tx = tx.Where("sys_dept.dept_name = ?", sysDept.DeptName)
 	}
 	if sysDept.ParentId > 0 {
-		tx = tx.Where("parent_id = ?", sysDept.ParentId)
+		tx = tx.Where("parent_rel.ancestor_id = ? AND parent_rel.depth = 1", sysDept.ParentId)
+	} else {
+		tx = tx.Where("parent_rel.ancestor_id IS NULL")
 	}
 
-	// 查询数据
 	var id int64 = 0
-	if err := tx.Select("id").Limit(1).Find(&id).Error; err != nil {
+	if err := tx.Select("sys_dept.id").Limit(1).Find(&id).Error; err != nil {
 		return id, err
 	}
 	return id, nil
@@ -149,9 +314,9 @@ func (r SysDept) ExistChildrenByDeptId(deptId int64) (int64, error) {
 		return 0, nil
 	}
 	tx := database.DB("").Model(&model.SysDept{})
-	tx = tx.Where("dept_del = '0' and dept_status = '1'")
-	tx = tx.Where("parent_id = ?", deptId)
-	// 查询数据
+	tx = tx.Joins("JOIN sys_dept_closure c ON c.descendant_id = sys_dept.id")
+	tx = tx.Where("c.ancestor_id = ? AND c.depth = 1", deptId)
+
 	var count int64 = 0
 	if err := tx.Count(&count).Error; err != nil {
 		return count, err
@@ -165,8 +330,8 @@ func (r SysDept) ExistUserByDeptId(deptId int64) (int64, error) {
 		return 0, nil
 	}
 	tx := database.DB("").Model(&model.SysUser{})
-	tx = tx.Where("user_del = '0' and dept_id = ?", deptId)
-	// 查询数据
+	tx = tx.Where("user_del = '0' AND dept_id = ?", deptId)
+
 	var count int64 = 0
 	if err := tx.Count(&count).Error; err != nil {
 		return count, err
@@ -181,20 +346,18 @@ func (r SysDept) SelectDeptIdsByRoleId(roleId int64, deptCheckStrictly bool) ([]
 	}
 
 	tx := database.DB("").Model(&model.SysDept{})
-	tx = tx.Where("dept_del = '0'")
-	tx = tx.Where("id in (SELECT DISTINCT dept_id FROM sys_role_dept WHERE role_id = ?)", roleId)
-	// 父子互相关联显示，取所有子节点
+	tx = tx.Where("sys_dept.id IN (SELECT DISTINCT dept_id FROM sys_role_dept WHERE role_id = ?)", roleId)
 	if deptCheckStrictly {
-		tx = tx.Where(`id not in (
-		SELECT d.parent_id FROM sys_dept d
-		INNER JOIN sys_role_dept rd ON rd.dept_id = d.id
-		AND rd.role_id = ?
+		tx = tx.Where(`sys_dept.id NOT IN (
+			SELECT c.ancestor_id
+			FROM sys_dept_closure c
+			INNER JOIN sys_role_dept rd ON rd.dept_id = c.descendant_id AND rd.role_id = ?
+			WHERE c.depth = 1
 		)`, roleId)
 	}
 
-	// 查询数据
 	rows := []int64{}
-	if err := tx.Distinct("id").Find(&rows).Error; err != nil {
+	if err := tx.Distinct("sys_dept.id").Find(&rows).Error; err != nil {
 		return rows, err
 	}
 	return rows, nil
@@ -202,56 +365,37 @@ func (r SysDept) SelectDeptIdsByRoleId(roleId int64, deptCheckStrictly bool) ([]
 
 // SelectChildrenDeptById 根据ID查询所有子部门
 func (r SysDept) SelectChildrenDeptById(deptId int64) ([]model.SysDept, error) {
-	tx := database.DB("").Model(&model.SysDept{})
-	tx = tx.Where("dept_del = '0'")
-	tx = tx.Where("find_in_set(?, ancestors)", deptId)
-	// 查询数据
+	tx := database.DB("").Model(&model.SysDept{}).
+		Select("sys_dept.*, COALESCE(parent_rel.ancestor_id, 0) AS parent_id").
+		Joins("LEFT JOIN sys_dept_closure parent_rel ON parent_rel.descendant_id = sys_dept.id AND parent_rel.depth = 1")
+
+	tx = tx.Joins("JOIN sys_dept_closure child_rel ON child_rel.descendant_id = sys_dept.id").
+		Where("child_rel.ancestor_id = ? AND child_rel.depth > 0", deptId)
+
 	rows := []model.SysDept{}
-	if err := tx.Find(&rows).Error; err != nil {
+	if err := tx.Order("sys_dept.dept_sort, sys_dept.id").Find(&rows).Error; err != nil {
 		return rows, err
 	}
 	return rows, nil
 }
 
-// UpdateDeptStatusNormal 修改所在部门正常状态
-func (r SysDept) UpdateDeptStatusNormal(d *gorm.DB, deptIds []int64) (int64, error) {
-	if len(deptIds) <= 0 {
+// UpdateDeptStatusNormal 启用指定部门的全部祖先
+func (r SysDept) UpdateDeptStatusNormal(d *gorm.DB, deptId int64) (int64, error) {
+	if deptId <= 0 {
 		return 0, nil
 	}
 	if d == nil {
 		d = database.DB("")
 	}
-	tx := d.Model(&model.SysDept{})
-	// 构建查询条件
-	tx = tx.Where("id in ?", deptIds)
-	// 执行更新状态标记
-	if err := tx.Update("dept_status", "1").Error; err != nil {
-		return 0, err
+	result := d.Exec(`
+		UPDATE sys_dept d
+		INNER JOIN sys_dept_closure c ON c.descendant_id = d.id
+		SET d.dept_status = '1'
+		WHERE c.ancestor_id <> c.descendant_id
+		  AND c.ancestor_id = ?
+	`, deptId)
+	if result.Error != nil {
+		return 0, result.Error
 	}
-	return tx.RowsAffected, nil
-}
-
-// UpdateDeptChildren 修改子元素关系
-func (r SysDept) UpdateDeptChildren(d *gorm.DB, arr []model.SysDept) (int64, error) {
-	if len(arr) == 0 {
-		return 0, nil
-	}
-
-	// 逐条更新子部门的 ancestors，使用参数化避免 SQL 注入
-	if d == nil {
-		d = database.DB("")
-	}
-	var affected int64
-	for _, dept := range arr {
-		if dept.ID <= 0 {
-			continue
-		}
-		tx := d.Model(&model.SysDept{})
-		tx = tx.Where("id = ?", dept.ID)
-		if err := tx.Update("ancestors", dept.Ancestors).Error; err != nil {
-			return affected, err
-		}
-		affected += tx.RowsAffected
-	}
-	return affected, nil
+	return result.RowsAffected, nil
 }

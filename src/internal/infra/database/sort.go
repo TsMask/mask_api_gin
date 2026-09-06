@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 // SortOrder 排序项
@@ -51,14 +50,15 @@ func SortParse(sortStr string, fieldMapping map[string]string) []SortOrder {
 // SortOrDefault 将排序项应用到 gorm 查询，无排序项时使用默认排序
 func SortOrDefault(tx *gorm.DB, orders []SortOrder, defaultOrder string) *gorm.DB {
 	if len(orders) > 0 {
-		columns := make([]clause.OrderByColumn, 0, len(orders))
+		orderSQL := make([]string, 0, len(orders))
 		for _, o := range orders {
-			columns = append(columns, clause.OrderByColumn{
-				Column: clause.Column{Name: o.Field},
-				Desc:   !o.Asc,
-			})
+			direction := "DESC"
+			if o.Asc {
+				direction = "ASC"
+			}
+			orderSQL = append(orderSQL, o.Field+" "+direction)
 		}
-		return tx.Order(clause.OrderBy{Columns: columns})
+		return tx.Order(strings.Join(orderSQL, ", "))
 	}
 	return tx.Order(defaultOrder)
 }

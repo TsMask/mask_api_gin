@@ -62,11 +62,10 @@ func DataScopeSQL(c *gin.Context, deptAlias string, userAlias string) string {
 		if constants.ROLE_SCOPE_CUSTOM == dataScope {
 			sql := fmt.Sprintf(`%s.%s IN
 			( SELECT dept_id FROM sys_role_dept WHERE role_id = %d )
-			AND %s.%s NOT IN
-			(
-			SELECT d.parent_id FROM sys_dept d
-			INNER JOIN sys_role_dept rd ON rd.dept_id = d.id
-			AND rd.role_id = %d
+			AND %s.%s NOT IN (
+			SELECT c.ancestor_id FROM sys_dept_closure c
+			INNER JOIN sys_role_dept rd ON rd.dept_id = c.descendant_id
+			AND rd.role_id = %d WHERE c.depth = 1
 			)`, deptAlias, deptRefCol, role.ID, deptAlias, deptRefCol, role.ID)
 			conditions = append(conditions, sql)
 		}
@@ -77,7 +76,9 @@ func DataScopeSQL(c *gin.Context, deptAlias string, userAlias string) string {
 		}
 
 		if constants.ROLE_SCOPE_DEPT_CHILD == dataScope {
-			sql := fmt.Sprintf("%s.%s IN ( SELECT id FROM sys_dept WHERE id = %d OR find_in_set(%d, ancestors ) )", deptAlias, deptRefCol, userInfo.DeptId, userInfo.DeptId)
+			sql := fmt.Sprintf(`%s.%s IN (
+			SELECT descendant_id FROM sys_dept_closure WHERE ancestor_id = %d
+			)`, deptAlias, deptRefCol, userInfo.DeptId)
 			conditions = append(conditions, sql)
 		}
 

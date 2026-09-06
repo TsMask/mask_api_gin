@@ -1,6 +1,6 @@
 -- ================================================================
 -- 数据库初始化脚本（表结构 + 示例数据）
--- 项目: mask_api_gin
+-- 项目: mask_api
 -- 数据库: MySQL 5.7+ / 8.0   字符集: utf8mb4   排序: utf8mb4_unicode_ci
 --
 -- 整理说明:
@@ -21,7 +21,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- ================================================================
 
 -- ----------------------------------------------------------------
--- 1、部门表 sys_dept（树形: parent_id 自关联 + ancestors 物化祖级路径）
+-- 1、部门表 sys_dept（树形关系由 sys_dept_closure 闭包表维护）
 --    用户 N:1 部门；角色 M:N 部门（sys_role_dept 数据权限）
 -- ----------------------------------------------------------------
 drop table if exists sys_dept;
@@ -32,27 +32,41 @@ create table sys_dept (
   update_by         varchar(64)     default ''                 comment '更新者',
   update_time       bigint          default 0                  comment '更新时间',
   remark            varchar(255)    default ''                 comment '备注',
-  parent_id         bigint          default 0                  comment '父部门ID 默认0',
-  ancestors         varchar(200)    default ''                 comment '祖级列表',
   dept_name         varchar(64)     default ''                 comment '部门名称',
   dept_leader       varchar(32)     default ''                 comment '负责人',
   dept_phone        varchar(32)     default ''                 comment '联系电话',
   dept_email        varchar(128)    default ''                 comment '邮箱',
   dept_sort         bigint          default 0                  comment '显示顺序',
   dept_status       varchar(1)      default '0'                comment '部门状态（0停用 1正常）',
-  dept_del          varchar(1)      default '0'                comment '删除标记（0存在 1删除）',
-  key idx_dept_parent_id (parent_id),
-  key idx_sys_dept_ancestors (ancestors),
+  key idx_sys_dept_list (dept_sort, id),
+  key idx_sys_dept_name (dept_name),
   primary key (id)
 ) engine=innodb auto_increment=200 comment='系统_部门表' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 初始化-部门示例数据
-insert into sys_dept (id, create_by, create_time, update_by, update_time, remark, parent_id, ancestors, dept_name, dept_leader, dept_phone, dept_email, dept_sort, dept_status, dept_del) values
-(100, 'system', 1700000000000, '', 0, '根节点', 0,   '0',         'MASK科技',  'MASK', '15888888888', 'system@163.com', 0, '1', '0'),
-(101, 'system', 1700000000000, '', 0, '',      100, '0,100',     'XX总公司','MASK', '15800000001', 'system@163.com',  1, '1', '0'),
-(102, 'system', 1700000000000, '', 0, '',      100, '0,100',     'XX分公司','MASK', '15800000002', 'system@163.com',  2, '1', '0'),
-(103, 'system', 1700000000000, '', 0, '',      101, '0,100,101', '研发部门',  'MASK', '15800000003', 'system@163.com', 1, '1', '0'),
-(104, 'system', 1700000000000, '', 0, '',      101, '0,100,101', '市场部门',  'MASK', '15800000004', 'system@163.com', 2, '1', '0');
+insert into sys_dept (id, create_by, create_time, update_by, update_time, remark, dept_name, dept_leader, dept_phone, dept_email, dept_sort, dept_status) values
+(100, 'system', 1700000000000, '', 0, '根节点', 'MASK科技', 'MASK', '15888888888', 'system@163.com', 0, '1'),
+(101, 'system', 1700000000000, '', 0, '',      'XX总公司',  'MASK', '15800000001', 'system@163.com',  1, '1'),
+(102, 'system', 1700000000000, '', 0, '',      'XX分公司',  'MASK', '15800000002', 'system@163.com',  2, '1'),
+(103, 'system', 1700000000000, '', 0, '',      '研发部门',  'MASK', '15800000003', 'system@163.com', 1, '1'),
+(104, 'system', 1700000000000, '', 0, '',      '市场部门',  'MASK', '15800000004', 'system@163.com', 2, '1');
+
+-- 部门闭包表：ancestor_id 到 descendant_id 的全部祖先/后代关系，depth=0 为自身
+drop table if exists sys_dept_closure;
+create table sys_dept_closure (
+  ancestor_id   bigint not null comment '祖先部门ID',
+  descendant_id bigint not null comment '后代部门ID',
+  depth         int    not null comment '层级距离（0自身 1直接子级）',
+  primary key (ancestor_id, descendant_id),
+  key idx_sys_dept_closure_descendant (descendant_id, depth, ancestor_id)
+) engine=innodb comment='系统_部门闭包表' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+insert into sys_dept_closure (ancestor_id, descendant_id, depth) values
+(100, 100, 0),
+(101, 101, 0), (100, 101, 1),
+(102, 102, 0), (100, 102, 1),
+(103, 103, 0), (101, 103, 1), (100, 103, 2),
+(104, 104, 0), (101, 104, 1), (100, 104, 2);
 
 
 -- ----------------------------------------------------------------
@@ -70,6 +84,8 @@ create table sys_post (
   post_name     varchar(64)     not null                   comment '岗位名称',
   post_sort     int             default 0                  comment '显示顺序',
   post_status   varchar(1)      default '0'                comment '状态（0停用 1正常）',
+  key idx_sys_post_sort_status (post_sort, post_status),
+  key idx_sys_post_name (post_name),
   unique key uk_sys_post_post_code (post_code),
   primary key (id)
 ) engine=innodb auto_increment=10 comment='系统_岗位信息表' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -100,6 +116,8 @@ create table sys_role (
   role_data_scope      varchar(1)     default '5'                comment '数据范围（1：全部数据权限 2：自定数据权限 3：本部门数据权限 4：本部门及以下数据权限 5：仅本人数据权限）',
   role_menu_check_strictly  varchar(1)     default '1'                comment '菜单树选择项是否关联显示（0：不关联 1：互相）',
   role_dept_check_strictly  varchar(1)     default '1'                comment '部门树选择项是否关联显示（0：不关联 1：互相）',
+  key idx_sys_role_list (role_del, role_sort),
+  key idx_sys_role_name (role_name),
   unique key uk_sys_role_role_key (role_key),
   primary key (id)
 ) engine=innodb auto_increment=50 comment='系统_角色信息表' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -135,8 +153,8 @@ create table sys_menu (
   menu_visible      varchar(1)      default '0'                comment '是否显示（0隐藏 1显示）',
   menu_status       varchar(1)      default '0'                comment '菜单状态（0停用 1正常）',
   menu_del          varchar(1)      default '0'                comment '删除标记（0存在 1删除）',
-  key idx_sys_menu_parent_id (parent_id),
-  key idx_sys_menu_menu_type (menu_type),
+  key idx_sys_menu_tree (menu_del, parent_id, menu_sort),
+  key idx_sys_menu_status_type (menu_status, menu_type),
   key idx_sys_menu_menu_perms (menu_perms),
   primary key (id)
 ) engine=innodb auto_increment=2000 comment='系统_菜单权限表' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -225,11 +243,11 @@ insert into sys_menu (id, create_by, create_time, update_by, update_time, remark
 (460, 'system', 1700000000000, '', 0, '调度日志内嵌隐藏菜单', 2, '调度日志', 8, 'job/inline/log/:jobId', 'monitor/job/log', 'job:log', '#', '0', '1', 'M', '0', '1', '0'),
 
 (3,   'system', 1700000000000, '', 0, '系统工具目录', 0, '系统工具', 5, 'tool', '', '', '#', '0', '1', 'D', '1', '1', '0'),
-(480, 'system', 1700000000000, '', 0, '系统接口菜单',  3, '系统接口', 1, 'swagger', 'tool/swagger/index', 'monitor:swagger:list', '#', '0', '1', 'M', '1', '1', '0'),
-(500, 'system', 1700000000000, '', 0, '文件上传菜单',  3, '文件上传', 1,  'upload', 'tool/upload/index',  'monitor:upload',       '#', '0', '1', 'M', '1', '1', '0'),
-(520, 'system', 1700000000000, '', 0, '生成构建菜单',  3, '生成构建', 1,  'build', 'tool/build/index',    'monitor:build',        '#', '0', '1', 'M', '1', '1', '0'),
-(540, 'system', 1700000000000, '', 0, '外部链接跳转',  3, '接口文档', 1,  'https://mask-api-midwayjs.apifox.cn', '-', '-', '#', '0', '1', 'M', '1', '1', '0'),
-(560, 'system', 1700000000000, '', 0, '外部链接跳转',  3, '开源仓库', 1,  'https://gitee.com/TsMask',            '-', '-', '#', '1', '1', 'M', '1', '1', '0'),
+(481, 'system', 1700000000000, '', 0, '文件上传菜单',  3, '文件上传', 1,  'upload', 'tool/upload/index',  'monitor:upload',       '#', '0', '1', 'M', '1', '1', '0'),
+(483, 'system', 1700000000000, '', 0, '生成构建菜单',  3, '生成构建', 3,  'build', 'tool/build/index',    'monitor:build',        '#', '0', '1', 'M', '1', '1', '0'),
+(485, 'system', 1700000000000, '', 0, '系统接口菜单',  3, '系统接口', 5, 'swagger', 'tool/swagger/index', 'monitor:swagger:list', '#', '0', '1', 'M', '1', '1', '0'),
+(487, 'system', 1700000000000, '', 0, '链接菜单打开',  3, '接口文档', 7,  'https://mask-api-midwayjs.apifox.cn', '-', '-', '#', '0', '1', 'M', '1', '1', '0'),
+(489, 'system', 1700000000000, '', 0, '链接新窗打开',  3, '开源仓库', 9,  'https://gitee.com/TsMask',            '-', '-', '#', '1', '1', 'M', '1', '1', '0'),
 
 (4,   'system', 1700000000000, '', 0, '外部链接跳转', 0, '开源仓库', 7, 'https://gitee.com/TsMask', '', '', '#', '1', '0', 'D', '1', '1', '0');
 
@@ -257,7 +275,12 @@ create table sys_user (
   user_del          varchar(1)      default '0'                comment '删除标记（0存在 1删除）',
   dept_id           bigint          default 0                  comment '部门ID',
   unique key uk_sys_user_user_name (user_name),
-  key idx_sys_user_dept_id (dept_id),
+  key idx_sys_user_dept_del (dept_id, user_del),
+  key idx_sys_user_del_id (user_del, id),
+  key idx_sys_user_del_login_time (user_del, user_login_time),
+  key idx_sys_user_del_status (user_del, user_status),
+  key idx_sys_user_phone (user_phone),
+  key idx_sys_user_email (user_email),
   primary key (id)
 ) engine=innodb auto_increment=100 comment='系统_用户信息表' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -325,6 +348,8 @@ create table sys_role_menu (
 --   普通角色 common(id=3): 仅可见部分（用户管理只读 + 通知公告 + 日志只读导出）+ 自定数据权限
 insert into sys_role_menu (role_id, menu_id) values
 (2, 1),
+(2, 2),
+(2, 3),
 (2, 100),
 (2, 101),
 (2, 102),
@@ -334,65 +359,76 @@ insert into sys_role_menu (role_id, menu_id) values
 (2, 106),
 (2, 107),
 (2, 108),
-(2, 109),
-(2, 110),
-(2, 1001),
-(2, 1002),
-(2, 1003),
-(2, 1004),
-(2, 1005),
-(2, 1006),
-(2, 1007),
-(2, 1011),
-(2, 1012),
-(2, 1013),
-(2, 1014),
-(2, 1021),
-(2, 1022),
-(2, 1023),
-(2, 1024),
-(2, 1031),
-(2, 1032),
-(2, 1033),
-(2, 1034),
-(2, 1041),
-(2, 1042),
-(2, 1043),
-(2, 1044),
-(2, 1045),
-(2, 1051),
-(2, 1052),
-(2, 1053),
-(2, 1054),
-(2, 1055),
-(2, 1061),
-(2, 1062),
-(2, 1063),
-(2, 1064),
-(2, 1065),
-(2, 1071),
-(2, 1072),
-(2, 1073),
-(2, 1074),
-(2, 1091),
-(2, 1092),
-(2, 1101),
-(2, 1102),
-(3, 1),
-(3, 100),
-(3, 1001),
-(3, 1007),
-(3, 107),
-(3, 1071),
-(3, 1072),
-(3, 1073),
-(3, 1074),
-(3, 108),
-(3, 109),
-(3, 1092),
-(3, 110),
-(3, 1102);
-
+(2, 120),
+(2, 121),
+(2, 122),
+(2, 123),
+(2, 124),
+(2, 125),
+(2, 140),
+(2, 160),
+(2, 161),
+(2, 162),
+(2, 163),
+(2, 164),
+(2, 180),
+(2, 181),
+(2, 182),
+(2, 183),
+(2, 184),
+(2, 185),
+(2, 200),
+(2, 201),
+(2, 202),
+(2, 203),
+(2, 204),
+(2, 220),
+(2, 221),
+(2, 222),
+(2, 223),
+(2, 224),
+(2, 225),
+(2, 240),
+(2, 260),
+(2, 261),
+(2, 262),
+(2, 263),
+(2, 264),
+(2, 265),
+(2, 280),
+(2, 281),
+(2, 282),
+(2, 283),
+(2, 284),
+(2, 300),
+(2, 320),
+(2, 321),
+(2, 322),
+(2, 323),
+(2, 340),
+(2, 341),
+(2, 342),
+(2, 343),
+(2, 360),
+(2, 380),
+(2, 400),
+(2, 401),
+(2, 402),
+(2, 420),
+(2, 421),
+(2, 422),
+(2, 440),
+(2, 441),
+(2, 442),
+(2, 443),
+(2, 444),
+(2, 445),
+(2, 446),
+(2, 460),
+(2, 480),
+(2, 500),
+(2, 560),
+(3, 4);
 
 -- ----------------------------------------------------------------
 -- 9、角色-部门关联表 sys_role_dept（角色 M:N 部门，数据权限）
@@ -429,6 +465,8 @@ create table sys_dict_type (
   dict_name        varchar(64)     not null                   comment '字典名称',
   dict_type        varchar(64)     not null                   comment '字典类型',
   dict_status      varchar(1)      default '0'                comment '状态（0停用 1正常）',
+  key idx_sys_dict_type_status_time (dict_status, create_time),
+  key idx_sys_dict_type_name (dict_name),
   unique key uk_dict_type (dict_type),
   primary key (id)
 ) engine=innodb auto_increment=50 comment='系统_字典类型表' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -463,7 +501,8 @@ create table sys_dict_data (
   data_status      varchar(1)      default '0'                comment '状态（0停用 1正常）',
   tag_class        varchar(64)     default ''                 comment '样式属性（样式扩展）',
   tag_type         varchar(12)     default ''                 comment '标签类型（预设颜色）',
-  key idx_dict_data_dict_type (dict_type),
+  key idx_sys_dict_data_type_sort (dict_type, data_sort),
+  key idx_sys_dict_data_label (data_label),
   primary key (id)
 ) engine=innodb auto_increment=100 comment='系统_字典数据表' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -516,6 +555,8 @@ create table sys_config (
   config_group      varchar(64)     default ''                 comment '参数组',
   config_sort       bigint          default 0                  comment '排序',
   config_status     varchar(1)      default '0'                comment '状态（0停用 1正常）',
+  key idx_sys_config_group_sort (config_group, config_sort),
+  key idx_sys_config_name (config_name),
   unique key uk_sys_config_config_key (config_key),
   primary key (id)
 ) engine=innodb auto_increment=50 comment='系统_参数配置表' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -555,8 +596,10 @@ create table sys_job (
   job_concurrent      varchar(1)    default '0'                comment '是否并发执行（0禁止 1允许）',
   job_status          varchar(1)    default '0'                comment '任务状态（0暂停 1正常）',
   job_save_log        varchar(1)    default '0'                comment '是否记录任务日志（0不记录 1记录）',
+  key idx_sys_job_group_status_id (job_group, job_status, id),
+  key idx_sys_job_invoke_target (job_invoke_target),
   primary key (id),
-  unique key uk_name_group (job_name, job_group)
+  unique key uk_sys_job_name_group (job_name, job_group)
 ) engine=innodb auto_increment=10 comment='系统_调度任务调度表' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 初始化-调度任务示例数据（默认暂停，启用前请将 job_invoke_target 改为已注册的真实调用目标）
@@ -579,9 +622,11 @@ create table sys_job_log (
   log_msg           varchar(2048)   default ''                 comment '日志信息',
   log_status        varchar(1)      default '0'                comment '执行状态（0失败 1正常）',
   log_cost_time     bigint          default 0                  comment '消耗时间（毫秒）',
-  key idx_sys_job_create_time (create_time),
-  primary key (id),
-  key idx_name_group (job_name, job_group) USING BTREE COMMENT '名称_组名'
+  key idx_sys_job_log_job (job_name, job_group, log_status, create_time),
+  key idx_sys_job_log_status_time (log_status, create_time),
+  key idx_sys_job_log_invoke_target (job_invoke_target),
+  key idx_sys_job_log_create_time (create_time),
+  primary key (id)
 ) engine=innodb comment='系统_调度任务调度日志表' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 初始化-任务日志示例数据
@@ -609,6 +654,9 @@ create table sys_notice (
   notice_content  text            not null                   comment '公告内容',
   notice_status   varchar(1)      default '0'                comment '公告状态（0关闭 1正常）',
   notice_del      varchar(1)      default '0'                comment '删除标记（0存在 1删除）',
+  key idx_sys_notice_list (notice_del, notice_type, notice_status, create_time),
+  key idx_sys_notice_title (notice_del, notice_title),
+  key idx_sys_notice_create_by (notice_del, create_by),
   primary key (id)
 ) engine=innodb auto_increment=10 comment='系统_通知公告表' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -641,7 +689,9 @@ create table sys_log_operate (
   operate_status    varchar(1)      default '0'                comment '操作状态（0异常 1正常）',
   operate_msg       varchar(2048)   default ''                 comment '操作消息',
   key idx_sys_log_operate_create_time (create_time),
-  key idx_sys_log_operate_create_by (create_by),
+  key idx_sys_log_operate_create_by_time (create_by, create_time),
+  key idx_sys_log_operate_type_time (operate_type, create_time),
+  key idx_sys_log_operate_status_time (operate_status, create_time),
   primary key (id)
 ) engine=innodb auto_increment=1 comment='系统_系统操作日志表' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -666,6 +716,9 @@ create table sys_log_login (
   login_status     varchar(1)      default '0'                comment '登录状态（0失败 1成功）',
   login_msg        varchar(2048)   default ''                 comment '提示消息',
   key idx_sys_log_login_create_time (create_time),
+  key idx_sys_log_login_user_time (login_user_name, create_time),
+  key idx_sys_log_login_ip_time (login_ip, create_time),
+  key idx_sys_log_login_status_time (login_status, create_time),
   primary key (id)
 ) engine=innodb auto_increment=1 comment='系统_系统登录日志表' DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
