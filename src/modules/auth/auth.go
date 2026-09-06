@@ -66,4 +66,21 @@ func Setup(router *gin.Engine) {
 			register.RegisterPhone,
 		)
 	}
+
+	// 找回密码操作
+	{
+		passwordReset := controller.NewPasswordReset
+		router.POST("/api/v1/auth/password-reset/lookup",
+			middleware.RateLimit(60, 30, middleware.RateLimitIP),
+			passwordReset.Lookup,
+		)
+		router.POST("/api/v1/auth/password-reset/captcha-email",
+			middleware.RateLimit(60, 30, middleware.RateLimitIP),
+			passwordReset.CaptchaEmail,
+		)
+		router.POST("/api/v1/auth/password-reset",
+			middleware.RateLimit(60, 30, middleware.RateLimitIP),
+			passwordReset.Reset,
+		)
+	}
 }

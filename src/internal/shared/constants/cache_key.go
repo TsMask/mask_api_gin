@@ -12,6 +12,10 @@ const (
 	CACHE_SMS_CODE = "sms_codes"
 	// CACHE_SMS_CODE_COOLDOWN 短信登录验证码发送冷却
 	CACHE_SMS_CODE_COOLDOWN = "sms_codes_cooldown"
+	// CACHE_PASSWORD_RESET_CODE 找回密码验证码
+	CACHE_PASSWORD_RESET_CODE = "password_reset_codes"
+	// CACHE_PASSWORD_RESET_COOLDOWN 找回密码验证码发送冷却
+	CACHE_PASSWORD_RESET_COOLDOWN = "password_reset_cooldown"
 	// CACHE_SYS_CONFIG 参数管理
 	CACHE_SYS_CONFIG = "sys_config"
 	// CACHE_SYS_DICT 字典管理
