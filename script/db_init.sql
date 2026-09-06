@@ -570,7 +570,9 @@ insert into sys_config (id, create_by, create_time, update_by, update_time, rema
 (5, 'system', 1700000000000, '', 0, '安全认证-验证码开关', '验证码开关', 'sys.account.captchaEnabled', 'true', 'boolean', 'account',   5, '1'),
 (6, 'system', 1700000000000, '', 0, '安全认证-验证码类型', '验证码类型', 'sys.account.captchaType', 'math', 'string', 'account',   6, '1'),
 (7, 'system', 1700000000000, '', 0, '安全认证-验证码math参数', '验证码math参数', 'sys.account.captchaConfigMath', '{"height":40,"width":120,"noise":4,"background":"#fafafa"}', 'json', 'account', 7, '1'),
-(8, 'system', 1700000000000, '', 0, '安全认证-验证码char参数', '验证码char参数', 'sys.account.captchaConfigChar', '{"height":40,"width":120,"noise":4,"size":4,"chars":"023456789abcdefghjkmnprstuvwxyz","background":"#fafafa"}', 'json', 'account', 8, '1');
+(8, 'system', 1700000000000, '', 0, '安全认证-验证码char参数', '验证码char参数', 'sys.account.captchaConfigChar', '{"height":40,"width":120,"noise":4,"size":4,"chars":"023456789abcdefghjkmnprstuvwxyz","background":"#fafafa"}', 'json', 'account', 8, '1'),
+(9, 'system', 1700000000000, '', 0, '安全认证-短信验证码过期时间，单位秒', '短信验证码过期时间', 'sys.account.captchaSMSExpiresIn', '600', 'number', 'account', 9, '1'),
+(10, 'system', 1700000000000, '', 0, '安全认证-短信验证码发送间隔，单位秒', '短信验证码发送间隔', 'sys.account.captchaSMSResendInterval', '120', 'number', 'account', 10, '1');
 
 -- ================================================================
 -- 四、调度任务

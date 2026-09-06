@@ -54,6 +54,31 @@ func (s Account) ValidateCaptcha(code, uuid string) error {
 	return nil
 }
 
+// ValidateCaptchaSMS 校验并一次性消费短信登录验证码。
+func (s Account) ValidateCaptchaSMS(phone, code, uuid string) error {
+	if len(code) != 6 {
+		return fmt.Errorf("短信验证码格式错误")
+	}
+	if len(uuid) == 0 {
+		return fmt.Errorf("短信验证码已失效")
+	}
+
+	codeKey := fmt.Sprintf("%s:%s", constants.CACHE_SMS_CODE, uuid)
+	codeValue, _ := cache.Get("", codeKey)
+	if codeValue == "" {
+		return fmt.Errorf("短信验证码已失效")
+	}
+	expected := fmt.Sprintf("%s:%s", phone, code)
+	if codeValue != expected {
+		return fmt.Errorf("短信验证码错误")
+	}
+	// 验证码校验通过，删除缓存
+	_ = cache.Del("", codeKey)
+	// 验证码已被消费，同步清理发送冷却，允许用户立刻重新获取。
+	_ = cache.Del("", fmt.Sprintf("%s:%s", constants.CACHE_SMS_CODE_COOLDOWN, phone))
+	return nil
+}
+
 // ByUsername 账号密码登录创建用户信息
 func (s Account) ByUsername(username, password string) (token.UserInfo, error) {
 	info := token.UserInfo{}
@@ -83,6 +108,42 @@ func (s Account) ByUsername(username, password string) (token.UserInfo, error) {
 	} else {
 		_, _ = cache.IncrWithExpire("", retryKey, int64(lockTime.Seconds()))
 		return info, fmt.Errorf("user does not exist or password is incorrect")
+	}
+
+	// 登录用户信息
+	info.UserId = sysUser.ID
+	info.DeptId = sysUser.DeptId
+	info.UserName = sysUser.UserName
+	roleKeys := make([]string, 0, len(sysUser.Roles))
+	for _, r := range sysUser.Roles {
+		roleKeys = append(roleKeys, r.RoleKey)
+	}
+	info.RoleKeys = roleKeys
+	info.User, _ = json.Marshal(sysUser)
+	// 用户权限组标识
+	if config.IsSystemUser(sysUser.ID) {
+		info.Permissions = []string{constants.SYS_PERMISSION_SYSTEM}
+	} else {
+		perms := s.sysMenuService.FindPermsByUserId(sysUser.ID)
+		info.Permissions = parse.RemoveDuplicates(perms)
+	}
+	return info, nil
+}
+
+// ByPhone 手机号验证码登录创建用户信息。
+func (s Account) ByPhone(phone string) (token.UserInfo, error) {
+	info := token.UserInfo{}
+
+	// 查询用户登录账号
+	sysUser := s.sysUserService.FindByPhone(phone)
+	if sysUser.UserPhone != phone || sysUser.ID <= 0 {
+		return info, fmt.Errorf("user does not exist")
+	}
+	if sysUser.UserDel == constants.STATUS_YES {
+		return info, fmt.Errorf("sorry, your account has been deleted. Sorry, your account has been deleted")
+	}
+	if sysUser.UserStatus == constants.STATUS_NO {
+		return info, fmt.Errorf("sorry, your account has been disabled")
 	}
 
 	// 登录用户信息

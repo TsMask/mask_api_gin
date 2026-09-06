@@ -8,6 +8,7 @@ import (
 	"mask_api_gin/src/internal/config"
 	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/shared/parse"
+	"mask_api_gin/src/internal/shared/regular"
 	"mask_api_gin/src/internal/web/reqctx"
 	"mask_api_gin/src/internal/web/resp"
 	"mask_api_gin/src/internal/web/token"
@@ -44,14 +45,11 @@ func (s AccountController) Login(c *gin.Context) {
 	// 当前请求信息
 	ipaddr, location := reqctx.IPAddrLocation(c)
 	os, browser := reqctx.UaOsBrowser(c)
+	ilobArr := [4]string{ipaddr, location, os, browser}
 
 	// 校验验证码 根据错误信息，创建系统访问记录
 	if err := s.accountService.ValidateCaptcha(body.Code, body.UUID); err != nil {
-		msg := fmt.Sprintf("%s code %s", err.Error(), body.Code)
-		s.sysLogLoginService.Insert(
-			body.Username, constants.STATUS_NO, msg,
-			[4]string{ipaddr, location, os, browser},
-		)
+		s.sysLogLoginService.Insert(body.Username, constants.STATUS_NO, err.Error(), ilobArr)
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
@@ -59,10 +57,7 @@ func (s AccountController) Login(c *gin.Context) {
 	// 登录用户信息
 	info, err := s.accountService.ByUsername(body.Username, body.Password)
 	if err != nil {
-		s.sysLogLoginService.Insert(
-			body.Username, constants.STATUS_NO, err.Error(),
-			[4]string{ipaddr, location, os, browser},
-		)
+		s.sysLogLoginService.Insert(info.UserName, constants.STATUS_NO, err.Error(), ilobArr)
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
@@ -70,6 +65,7 @@ func (s AccountController) Login(c *gin.Context) {
 	// 生成新的会话令牌
 	pair, sessionId, err := token.CreateTokenPair(info.UserId, deviceFingerprint)
 	if err != nil {
+		s.sysLogLoginService.Insert(info.UserName, constants.STATUS_NO, "token generation failed", ilobArr)
 		c.JSON(200, resp.ErrMsg("token generation failed"))
 		return
 	}
@@ -77,15 +73,73 @@ func (s AccountController) Login(c *gin.Context) {
 	info.SessionId = sessionId
 	// 记录令牌，创建系统访问记录
 	if err := token.UserInfoCreate(&info, [4]string{ipaddr, location, os, browser}); err != nil {
+		s.sysLogLoginService.Insert(info.UserName, constants.STATUS_NO, "token cache create failed", ilobArr)
 		c.JSON(200, resp.ErrMsg("token cache create failed"))
 		return
 	}
 	s.accountService.UpdateLoginDateAndIP(info)
-	s.sysLogLoginService.Insert(
-		body.Username, constants.STATUS_YES, "登录成功",
-		[4]string{ipaddr, location, os, browser},
-	)
+	s.sysLogLoginService.Insert(info.UserName, constants.STATUS_YES, "用户名登录成功", ilobArr)
 
+	c.JSON(200, resp.OkData(map[string]any{
+		"token_type":         constants.HEADER_PREFIX,
+		"access_token":       pair.AccessToken,
+		"expires_in":         pair.AccessExpiresIn,
+		"refresh_token":      pair.RefreshToken,
+		"refresh_expires_in": pair.RefreshExpiresIn,
+		"user_id":            info.UserId,
+	}))
+}
+
+// LoginPhone 手机号验证码登录。
+//
+// POST /login-phone
+func (s AccountController) LoginPhone(c *gin.Context) {
+	var body model.LoginPhoneBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
+		return
+	}
+
+	ipaddr, location := reqctx.IPAddrLocation(c)
+	os, browser := reqctx.UaOsBrowser(c)
+	ilobArr := [4]string{ipaddr, location, os, browser}
+
+	if !regular.ValidMobile(body.Phone) {
+		c.JSON(200, resp.ErrMsg("请输入正确的手机号码"))
+		return
+	}
+
+	if err := s.accountService.ValidateCaptchaSMS(body.Phone, body.Code, body.UUID); err != nil {
+		s.sysLogLoginService.Insert(body.Phone, constants.STATUS_NO, err.Error(), ilobArr)
+		c.JSON(200, resp.ErrMsg(err.Error()))
+		return
+	}
+
+	info, err := s.accountService.ByPhone(body.Phone)
+	if err != nil {
+		s.sysLogLoginService.Insert(body.Phone, constants.STATUS_NO, err.Error(), ilobArr)
+		c.JSON(200, resp.ErrMsg(err.Error()))
+		return
+	}
+
+	deviceFingerprint := reqctx.DeviceFingerprint(c, info.UserId)
+	pair, sessionId, err := token.CreateTokenPair(info.UserId, deviceFingerprint)
+	if err != nil {
+		s.sysLogLoginService.Insert(info.UserName, constants.STATUS_NO, "token generation failed", ilobArr)
+		c.JSON(200, resp.ErrMsg("token generation failed"))
+		return
+	}
+	info.DeviceId = deviceFingerprint
+	info.SessionId = sessionId
+	if err := token.UserInfoCreate(&info, ilobArr); err != nil {
+		s.sysLogLoginService.Insert(info.UserName, constants.STATUS_NO, "token cache create failed", ilobArr)
+		c.JSON(200, resp.ErrMsg("token cache create failed"))
+		return
+	}
+
+	s.accountService.UpdateLoginDateAndIP(info)
+	s.sysLogLoginService.Insert(info.UserName, constants.STATUS_YES, "手机号登录成功", ilobArr)
 	c.JSON(200, resp.OkData(map[string]any{
 		"token_type":         constants.HEADER_PREFIX,
 		"access_token":       pair.AccessToken,

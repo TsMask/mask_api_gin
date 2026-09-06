@@ -231,6 +231,21 @@ func (r SysUser) SelectByUserName(userName string) (model.SysUser, error) {
 	return item, nil
 }
 
+// SelectByPhone 通过手机号查询登录用户信息。
+func (r SysUser) SelectByPhone(phone string) (model.SysUser, error) {
+	item := model.SysUser{}
+	if phone == "" {
+		return item, nil
+	}
+
+	tx := database.DB("").Model(&model.SysUser{})
+	tx = tx.Where("user_phone = ? and user_del = '0'", phone)
+	if err := tx.Limit(1).Find(&item).Error; err != nil {
+		return item, err
+	}
+	return item, nil
+}
+
 // SelectAuthUsersByPage 分页查询集合By分配用户角色
 func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64, error) {
 	tx := database.DB("").Model(&model.SysUser{})

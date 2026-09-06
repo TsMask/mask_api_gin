@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
@@ -11,8 +12,10 @@ import (
 	"mask_api_gin/src/internal/config"
 	"mask_api_gin/src/internal/infra/cache"
 	"mask_api_gin/src/internal/shared/constants"
+	"mask_api_gin/src/internal/shared/generate"
 	"mask_api_gin/src/internal/shared/logger"
 	"mask_api_gin/src/internal/shared/parse"
+	"mask_api_gin/src/internal/shared/regular"
 	"mask_api_gin/src/internal/web/resp"
 	systemService "mask_api_gin/src/modules/system/service"
 )
@@ -153,6 +156,70 @@ func (s CaptchaController) Image(c *gin.Context) {
 		data["text"] = text
 		c.JSON(200, resp.OkData(data))
 		return
+	}
+	c.JSON(200, resp.OkData(data))
+}
+
+// SMS 发送手机号登录验证码
+//
+// POST /captcha-sms
+func (s CaptchaController) SMS(c *gin.Context) {
+	var body struct {
+		Phone string `json:"phone" binding:"required"` // 手机号码
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
+		return
+	}
+
+	if !regular.ValidMobile(body.Phone) {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "请输入正确的手机号码"))
+		return
+	}
+	if config.Env() != "local" {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "短信服务未配置"))
+		return
+	}
+
+	// 验证码过期时间，单位秒
+	expiresInSeconds := parse.Number(s.sysConfigService.FindValueByKey("sys.account.captchaSMSExpiresIn"))
+	// 验证码发送间隔，单位秒
+	resendInterval := parse.Number(s.sysConfigService.FindValueByKey("sys.account.captchaSMSResendInterval"))
+	if expiresInSeconds <= 0 {
+		expiresInSeconds = 300
+	}
+	if resendInterval <= 0 {
+		resendInterval = 60
+	}
+
+	cooldownKey := fmt.Sprintf("%s:%s", constants.CACHE_SMS_CODE_COOLDOWN, body.Phone)
+	if cooldown, _ := cache.Get("", cooldownKey); cooldown != "" {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "验证码发送过于频繁，请稍后再试"))
+		return
+	}
+
+	code := fmt.Sprintf("%06d", generate.Number(6))
+	uuid := generate.String(32)
+	codeKey := fmt.Sprintf("%s:%s", constants.CACHE_SMS_CODE, uuid)
+	codeValue := fmt.Sprintf("%s:%s", body.Phone, code)
+	if err := cache.Set("", codeKey, codeValue, time.Duration(expiresInSeconds)*time.Second); err != nil {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "验证码生成失败"))
+		return
+	}
+	if err := cache.Set("", cooldownKey, body.Phone, time.Duration(resendInterval)*time.Second); err != nil {
+		_ = cache.Del("", codeKey)
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "验证码生成失败"))
+		return
+	}
+
+	data := map[string]any{
+		"uuid":            uuid,
+		"expires_in":      expiresInSeconds,
+		"resend_interval": resendInterval,
+	}
+	if config.Env() == "local" {
+		data["text"] = code
 	}
 	c.JSON(200, resp.OkData(data))
 }

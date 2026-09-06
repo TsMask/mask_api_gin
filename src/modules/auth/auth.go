@@ -19,6 +19,10 @@ func Setup(router *gin.Engine) {
 			middleware.RateLimit(300, 60, middleware.RateLimitIP),
 			captcha.Image,
 		)
+		router.POST("/api/v1/auth/captcha-sms",
+			middleware.RateLimit(300, 60, middleware.RateLimitIP),
+			captcha.SMS,
+		)
 	}
 
 	// 账号身份操作
@@ -27,6 +31,10 @@ func Setup(router *gin.Engine) {
 		router.POST("/api/v1/auth/login",
 			middleware.RateLimit(180, 15, middleware.RateLimitIP),
 			account.Login,
+		)
+		router.POST("/api/v1/auth/login-phone",
+			middleware.RateLimit(180, 15, middleware.RateLimitIP),
+			account.LoginPhone,
 		)
 		router.POST("/api/v1/auth/logout",
 			middleware.RateLimit(120, 15, middleware.RateLimitIP),
@@ -52,6 +60,10 @@ func Setup(router *gin.Engine) {
 		router.POST("/api/v1/auth/register",
 			middleware.RateLimit(300, 10, middleware.RateLimitIP),
 			register.Register,
+		)
+		router.POST("/api/v1/auth/register-phone",
+			middleware.RateLimit(300, 10, middleware.RateLimitIP),
+			register.RegisterPhone,
 		)
 	}
 }

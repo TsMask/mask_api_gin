@@ -345,6 +345,21 @@ func (s SysUser) FindByUserName(userName string) model.SysUser {
 	return users[0]
 }
 
+// FindByPhone 通过手机号查询用户信息，并填充部门与角色。
+func (s SysUser) FindByPhone(phone string) model.SysUser {
+	userinfo, err := s.sysUserRepository.SelectByPhone(phone)
+	if err != nil {
+		logger.Errorf("query err => %v", err.Error())
+	}
+	if userinfo.UserPhone != phone {
+		return model.SysUser{}
+	}
+
+	users := []model.SysUser{userinfo}
+	s.fillUsersDeptAndRoles(users)
+	return users[0]
+}
+
 // FindAuthUsersPage 根据条件分页查询分配用户角色列表
 func (s SysUser) FindAuthUsersPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64) {
 	rows, total, err := s.sysUserRepository.SelectAuthUsersByPage(query, dataScopeSQL)

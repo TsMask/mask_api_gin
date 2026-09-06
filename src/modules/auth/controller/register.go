@@ -39,47 +39,73 @@ func (s RegisterController) Register(c *gin.Context) {
 		return
 	}
 
-	// 当前请求信息
+	if !regular.ValidUsername(body.Username) || regular.ValidMobile(body.Username) {
+		c.JSON(200, resp.ErrMsg("用户账号格式不正确，请输入用户名格式"))
+		return
+	}
+	if !regular.ValidPassword(body.Password) {
+		c.JSON(200, resp.ErrMsg("登录密码格式不正确"))
+		return
+	}
+	if body.Password != body.ConfirmPassword {
+		c.JSON(200, resp.ErrMsg("确认密码不一致"))
+		return
+	}
+
 	ipaddr, location := reqctx.IPAddrLocation(c)
 	os, browser := reqctx.UaOsBrowser(c)
-
-	// 校验验证码
-	err := s.registerService.ValidateCaptcha(body.Code, body.UUID)
-	// 根据错误信息，创建系统访问记录
-	if err != nil {
+	ilobArr := [4]string{ipaddr, location, os, browser}
+	if err := s.registerService.ValidateCaptcha(body.Code, body.UUID); err != nil {
 		msg := fmt.Sprintf("%s code %s", err.Error(), body.Code)
-		s.sysLogLoginService.Insert(
-			body.Username, constants.STATUS_NO, msg,
-			[4]string{ipaddr, location, os, browser},
-		)
+		s.sysLogLoginService.Insert(body.Username, constants.STATUS_NO, msg, ilobArr)
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 
-	// 判断必传参数
-	if !regular.ValidUsername(body.Username) {
-		c.JSON(200, resp.ErrMsg("用户账号只能包含大写小写字母，数字，且不少于4位"))
-		return
-	}
-	if !regular.ValidPassword(body.Password) {
-		c.JSON(200, resp.ErrMsg("登录密码至少包含大小写字母、数字、特殊符号，且不少于6位"))
-		return
-	}
-	if body.Password != body.ConfirmPassword {
-		c.JSON(200, resp.ErrMsg("用户确认输入密码不一致"))
+	userId, err := s.registerService.ByUserName(body.Username, body.Password)
+	if err != nil {
+		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 
-	// 进行注册
-	userId, err := s.registerService.ByUserName(body.Username, body.Password)
-	if err == nil {
-		msg := fmt.Sprintf("%s 注册成功 %d", body.Username, userId)
-		s.sysLogLoginService.Insert(
-			body.Username, constants.STATUS_YES, msg,
-			[4]string{ipaddr, location, os, browser},
-		)
-		c.JSON(200, resp.OkMsg("注册成功"))
+	msg := fmt.Sprintf("%s 注册成功 %d", body.Username, userId)
+	s.sysLogLoginService.Insert(body.Username, constants.STATUS_YES, msg, ilobArr)
+	c.JSON(200, resp.OkMsg("注册成功"))
+}
+
+// RegisterPhone 手机号注册
+//
+// POST /register-phone
+func (s RegisterController) RegisterPhone(c *gin.Context) {
+	var body model.RegisterPhoneBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		errMsgs := fmt.Sprintf("bind err: %s", resp.FormatBindError(err))
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_PARSER, errMsgs))
 		return
 	}
-	c.JSON(200, resp.ErrMsg(err.Error()))
+
+	if !regular.ValidMobile(body.Phone) {
+		c.JSON(200, resp.ErrMsg("手机号注册时 phone 必须为有效手机号码"))
+		return
+	}
+
+	ipaddr, location := reqctx.IPAddrLocation(c)
+	os, browser := reqctx.UaOsBrowser(c)
+	ilobArr := [4]string{ipaddr, location, os, browser}
+	if err := s.registerService.ValidateSmsCaptcha(body.Phone, body.Code, body.UUID); err != nil {
+		msg := fmt.Sprintf("%s code %s", err.Error(), body.Code)
+		s.sysLogLoginService.Insert(body.Phone, constants.STATUS_NO, msg, ilobArr)
+		c.JSON(200, resp.ErrMsg(err.Error()))
+		return
+	}
+
+	userId, err := s.registerService.ByPhone(body.Phone)
+	if err != nil {
+		c.JSON(200, resp.ErrMsg(err.Error()))
+		return
+	}
+
+	msg := fmt.Sprintf("%s 手机号注册成功 %d", body.Phone, userId)
+	s.sysLogLoginService.Insert(body.Phone, constants.STATUS_YES, msg, ilobArr)
+	c.JSON(200, resp.OkMsg("注册成功"))
 }
