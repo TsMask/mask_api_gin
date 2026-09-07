@@ -37,7 +37,7 @@ type CaptchaController struct {
 // GET /captcha-image
 func (s CaptchaController) Image(c *gin.Context) {
 	// 从 sys_config 获取验证码开关：true开启，false关闭
-	captchaEnabledStr := s.sysConfigService.FindValueByKey("sys.account.captchaEnabled")
+	captchaEnabledStr := s.sysConfigService.FindValueByKey("sys.account.captcha_enabled")
 	captchaEnabled := parse.Boolean(captchaEnabledStr)
 	if !captchaEnabled {
 		c.JSON(200, resp.OkData(map[string]any{
@@ -57,9 +57,9 @@ func (s CaptchaController) Image(c *gin.Context) {
 	// 验证码有效期，单位秒
 	captchaExpiration := 2 * 60 * time.Second
 	// 从 sys_config 获取验证码类型：math 数值计算，char 字符验证
-	captchaTypeStr := s.sysConfigService.FindValueByKey("sys.account.captchaType")
+	captchaTypeStr := s.sysConfigService.FindValueByKey("sys.account.captcha_type")
 	if captchaTypeStr == "math" {
-		// captchaMathConfig 数学验证码视觉参数（sys.account.captchaConfigMath，JSON 类型）。
+		// captchaMathConfig 数学验证码视觉参数（sys.account.captcha_config_math，JSON 类型）。
 		// 缺失或解析失败时各字段为零值，由调用方兜底。
 		var mc struct {
 			Height     int    `json:"height"`
@@ -68,7 +68,7 @@ func (s CaptchaController) Image(c *gin.Context) {
 			Color      bool   `json:"color"`
 			Background string `json:"background"`
 		}
-		rawStr := s.sysConfigService.FindValueByKey("sys.account.captchaConfigMath")
+		rawStr := s.sysConfigService.FindValueByKey("sys.account.captcha_config_math")
 		if rawStr != "" {
 			if err := json.Unmarshal([]byte(rawStr), &mc); err != nil {
 				logger.Errorf("captcha math config unmarshal err: %v", err)
@@ -102,7 +102,7 @@ func (s CaptchaController) Image(c *gin.Context) {
 		}
 	}
 	if captchaTypeStr == "char" {
-		// captchaCharConfig 字符验证码视觉参数（sys.account.captchaConfigChar，JSON 类型）。
+		// captchaCharConfig 字符验证码视觉参数（sys.account.captcha_config_char，JSON 类型）。
 		var cc struct {
 			Height     int    `json:"height"`
 			Width      int    `json:"width"`
@@ -112,7 +112,7 @@ func (s CaptchaController) Image(c *gin.Context) {
 			Background string `json:"background"`
 			Chars      string `json:"chars"`
 		}
-		rawStr := s.sysConfigService.FindValueByKey("sys.account.captchaConfigChar")
+		rawStr := s.sysConfigService.FindValueByKey("sys.account.captcha_config_char")
 		if rawStr != "" {
 			if err := json.Unmarshal([]byte(rawStr), &cc); err != nil {
 				logger.Errorf("captcha char config unmarshal err: %v", err)
@@ -183,9 +183,9 @@ func (s CaptchaController) SMS(c *gin.Context) {
 	}
 
 	// 验证码过期时间，单位秒
-	expiresInSeconds := parse.Number(s.sysConfigService.FindValueByKey("sys.account.captchaSMSExpiresIn"))
+	expiresInSeconds := parse.Number(s.sysConfigService.FindValueByKey("sys.account.captcha_sms_expires_in_seconds"))
 	// 验证码发送间隔，单位秒
-	resendInterval := parse.Number(s.sysConfigService.FindValueByKey("sys.account.captchaSMSResendInterval"))
+	resendInterval := parse.Number(s.sysConfigService.FindValueByKey("sys.account.captcha_sms_resend_interval_seconds"))
 	if expiresInSeconds <= 0 {
 		expiresInSeconds = 300
 	}

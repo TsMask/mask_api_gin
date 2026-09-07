@@ -36,7 +36,7 @@ type Account struct {
 // ValidateCaptcha 校验验证码
 func (s Account) ValidateCaptcha(code, uuid string) error {
 	// 验证码检查，从数据库配置获取验证码开关 true开启，false关闭
-	captchaEnabledStr := s.sysConfigService.FindValueByKey("sys.account.captchaEnabled")
+	captchaEnabledStr := s.sysConfigService.FindValueByKey("sys.account.captcha_enabled")
 	if !parse.Boolean(captchaEnabledStr) {
 		return nil
 	}
@@ -221,12 +221,12 @@ func (s Account) CleanLoginRecordCache(userName string) bool {
 // passwordRetryCount 密码重试次数
 func (s Account) passwordRetryCount(userName string) (string, int64, time.Duration, error) {
 	// 验证登录次数和错误锁定时间
-	passwordRetryMaxCount := s.sysConfigService.FindValueByKey("sys.user.maxRetryCount")
+	passwordRetryMaxCount := s.sysConfigService.FindValueByKey("sys.user.max_retry_count")
 	retryMaxCount := parse.Number(passwordRetryMaxCount)
 	if retryMaxCount <= 0 {
 		retryMaxCount = 3
 	}
-	passwordRetryLockTime := s.sysConfigService.FindValueByKey("sys.user.lockTime")
+	passwordRetryLockTime := s.sysConfigService.FindValueByKey("sys.user.lock_time")
 	retryLockTime := parse.Number(passwordRetryLockTime)
 	if retryLockTime <= 0 {
 		retryLockTime = 1

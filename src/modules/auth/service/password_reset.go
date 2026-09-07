@@ -60,11 +60,11 @@ func (s PasswordReset) SendCaptchaEmail(username string) (map[string]any, error)
 	expiresIn := int64(300)
 	resendInterval := int64(60)
 	if target.Channel == "email" {
-		expiresIn = parse.Number(s.sysConfigService.FindValueByKey("sys.account.captchaEmailExpiresIn"))
-		resendInterval = parse.Number(s.sysConfigService.FindValueByKey("sys.account.captchaEmailResendInterval"))
+		expiresIn = parse.Number(s.sysConfigService.FindValueByKey("sys.account.captcha_email_expires_in_seconds"))
+		resendInterval = parse.Number(s.sysConfigService.FindValueByKey("sys.account.captcha_email_resend_interval_seconds"))
 	} else {
-		expiresIn = parse.Number(s.sysConfigService.FindValueByKey("sys.account.captchaSMSExpiresIn"))
-		resendInterval = parse.Number(s.sysConfigService.FindValueByKey("sys.account.captchaSMSResendInterval"))
+		expiresIn = parse.Number(s.sysConfigService.FindValueByKey("sys.account.captcha_sms_expires_in_seconds"))
+		resendInterval = parse.Number(s.sysConfigService.FindValueByKey("sys.account.captcha_sms_resend_interval_seconds"))
 	}
 	if expiresIn <= 0 {
 		expiresIn = 300

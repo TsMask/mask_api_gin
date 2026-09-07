@@ -421,7 +421,7 @@ func (s SysUser) ExportData(rows []model.SysUser, fileName string) (string, erro
 // ImportData 导入数据表格
 func (s SysUser) ImportData(rows []map[string]string, operaName string, updateSupport bool) string {
 	// 读取默认初始密码
-	initPassword := s.sysConfigService.FindValueByKey("sys.user.initPassword")
+	initPassword := s.sysConfigService.FindValueByKey("sys.user.init_password")
 	// 读取用户性别字典数据
 	dictSysUserGender := s.sysDictTypeService.FindDataByType("sys_user_gender")
 
