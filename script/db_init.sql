@@ -286,9 +286,9 @@ create table sys_user (
 
 -- 初始化-用户示例数据（明文密码均为 Abcd@1234.., bcrypt cost=10）
 insert into sys_user (id, create_by, create_time, update_by, update_time, remark, user_name, user_nick, user_email, user_phone, user_gender, user_avatar, user_password, user_login_ip, user_login_time, user_status, user_del, dept_id) values
-(1, 'admin', 1700000000000, '', 0, '超级管理员', 'system', '超级管理员', 'system@163.com', '15888888888', '1', '', '$argon2id$v=19$m=65536,t=3,p=2$1EvSi8zBVy6mfMcPtVSQlg$eEZRm1SZsdQc6jURocWg+lmY25syZDdm9QPlZ5MszLE', '127.0.0.1', 1700000000000, '1', '0', 100),
-(2, 'admin', 1700000000000, '', 0, '管理员',     'admin',  '管理员',     'admin@qq.com',  '15800000001', '1', '', '$argon2id$v=19$m=65536,t=3,p=2$1EvSi8zBVy6mfMcPtVSQlg$eEZRm1SZsdQc6jURocWg+lmY25syZDdm9QPlZ5MszLE', '127.0.0.1', 1700000000000, '1', '0', 101),
-(3, 'admin', 1700000000000, '', 0, '普通用户',   'user',   '普通用户',   'user@gmail.com',   '15666666666', '0', '', '$argon2id$v=19$m=65536,t=3,p=2$1EvSi8zBVy6mfMcPtVSQlg$eEZRm1SZsdQc6jURocWg+lmY25syZDdm9QPlZ5MszLE', '127.0.0.1', 1700000000000, '1', '0', 103);
+(1, 'system', 1700000000000, '', 0, '超级管理员', 'system', '超级管理员', 'system@163.com', '15888888888', '1', '', '$argon2id$v=19$m=65536,t=3,p=2$1EvSi8zBVy6mfMcPtVSQlg$eEZRm1SZsdQc6jURocWg+lmY25syZDdm9QPlZ5MszLE', '127.0.0.1', 1700000000000, '1', '0', 100),
+(2, 'system', 1700000000000, '', 0, '管理员',     'admin',  '管理员',     'admin@qq.com',  '15800000001', '1', '', '$argon2id$v=19$m=65536,t=3,p=2$1EvSi8zBVy6mfMcPtVSQlg$eEZRm1SZsdQc6jURocWg+lmY25syZDdm9QPlZ5MszLE', '127.0.0.1', 1700000000000, '1', '0', 101),
+(3, 'system', 1700000000000, '', 0, '普通用户',   'user',   '普通用户',   'user@gmail.com',   '15666666666', '0', '', '$argon2id$v=19$m=65536,t=3,p=2$1EvSi8zBVy6mfMcPtVSQlg$eEZRm1SZsdQc6jURocWg+lmY25syZDdm9QPlZ5MszLE', '127.0.0.1', 1700000000000, '1', '0', 103);
 
 -- ================================================================
 -- 二、关联表（多对多）
@@ -473,15 +473,16 @@ create table sys_dict_type (
 
 -- 初始化-字典类型示例数据
 insert into sys_dict_type (id, create_by, create_time, update_by, update_time, remark, dict_name, dict_type, dict_status) values
-(1, 'system', 1700000000000, '', 0, '用户性别属性', '用户性别', 'sys_user_gender',       '1'),
+(1, 'system', 1700000000000, '', 0, '用户性别属性', '用户性别', 'sys_user_gender', '1'),
 (2, 'system', 1700000000000, '', 0, '系统开关属性', '正常停用', 'sys_normal_disable', '1'),
 (3, 'system', 1700000000000, '', 0, '系统状态属性', '成功失败', 'sys_success_fail', '1'),
 (4, 'system', 1700000000000, '', 0, '系统显隐属性', '显示隐藏', 'sys_show_hide', '1'),
-(5, 'system', 1700000000000, '', 0, '通知公告类型', '通知类型', 'sys_notice_type',    '1'),
-(6, 'system', 1700000000000, '', 0, '通知公告状态', '通知状态', 'sys_notice_status',  '1'),
+(5, 'system', 1700000000000, '', 0, '通知公告类型', '通知类型', 'sys_notice_type', '1'),
+(6, 'system', 1700000000000, '', 0, '通知公告状态', '通知状态', 'sys_notice_status', '1'),
 (7, 'system', 1700000000000, '', 0, '操作日志类型', '操作日志类型', 'sys_operate_type', '1'),
-(8, 'system', 1700000000000, '', 0, '任务分组属性', '任务分组', 'sys_job_group',       '1'),
-(9, 'system', 1700000000000, '', 0, '配置分组属性', '配置分组', 'sys_config_group',       '1');
+(8, 'system', 1700000000000, '', 0, '任务分组属性', '任务分组', 'sys_job_group', '1'),
+(9, 'system', 1700000000000, '', 0, '配置分组属性', '配置分组', 'sys_config_group', '1'),
+(10, 'system', 1700000000000, '', 0, '参数键值类型属性', '参数键值类型', 'sys_config_value_type', '1');
 
 -- ----------------------------------------------------------------
 -- 11、字典数据表 sys_dict_data（按 dict_type 字符串归属到字典类型）
@@ -508,33 +509,37 @@ create table sys_dict_data (
 
 -- 初始化-字典数据示例数据
 insert into sys_dict_data (id, create_by, create_time, update_by, update_time, remark, dict_type, data_label, data_value, data_sort, data_status, tag_class, tag_type) values
-(1, 'admin', 1700000000000, '', 0, '', 'sys_user_gender',       '男',   '1', 1, '1', '', ''),
-(2, 'admin', 1700000000000, '', 0, '', 'sys_user_gender',       '女',   '2', 2, '1', '', ''),
-(3, 'admin', 1700000000000, '', 0, '', 'sys_user_gender',       '未选择', '0', 3, '1', '', ''),
-(4, 'admin', 1700000000000, '', 0, '', 'sys_normal_disable', '正常', '1', 1, '1', '', 'success'),
-(5, 'admin', 1700000000000, '', 0, '', 'sys_normal_disable', '停用', '0', 0, '1', '', 'error'),
-(6, 'admin', 1700000000000, '', 0, '', 'sys_success_fail', '成功', '1', 1, '1', '', 'success'),
-(7, 'admin', 1700000000000, '', 0, '', 'sys_success_fail', '失败', '0', 0, '1', '', 'error'),
-(8, 'admin', 1700000000000, '', 0, '', 'sys_show_hide', '显示', '1', 1, '1', '', 'success'),
-(9, 'admin', 1700000000000, '', 0, '', 'sys_show_hide', '隐藏', '0', 0, '1', '', 'error'),
-(10, 'admin', 1700000000000, '', 0, '', 'sys_notice_type',    '通知', '1', 1, '1', '', 'warning'),
-(11, 'admin', 1700000000000, '', 0, '', 'sys_notice_type',    '公告', '2', 2, '1', '', 'processing'),
-(12, 'admin', 1700000000000, '', 0, '', 'sys_notice_status',  '关闭',   '0', 1, '1', '', 'error'),
-(13, 'admin', 1700000000000, '', 0, '', 'sys_notice_status',  '正常',   '1', 2, '1', '', 'success'),
-(14, 'admin', 1700000000000, '', 0, '', 'sys_notice_status',  '审核',   '2', 3, '1', '', 'warning'),
-(15, 'admin', 1700000000000, '', 0, '', 'sys_operate_type',  '其他',   '0', 0, '1', '', 'processing'),
-(16, 'admin', 1700000000000, '', 0, '', 'sys_operate_type',  '新增',   '1', 1, '1', '', 'processing'),
-(17, 'admin', 1700000000000, '', 0, '', 'sys_operate_type',  '修改',   '2', 2, '1', '', 'processing'),
-(18, 'admin', 1700000000000, '', 0, '', 'sys_operate_type',  '删除',   '3', 3, '1', '', 'error'),
-(19, 'admin', 1700000000000, '', 0, '', 'sys_operate_type',  '授权',   '4', 4, '1', '', 'success'),
-(20, 'admin', 1700000000000, '', 0, '', 'sys_operate_type',  '导出',   '5', 5, '1', '', 'warning'),
-(21, 'admin', 1700000000000, '', 0, '', 'sys_operate_type',  '导入',   '6', 6, '1', '', 'warning'),
-(22, 'admin', 1700000000000, '', 0, '', 'sys_operate_type',  '强退',   '7', 7, '1', '', 'error'),
-(23, 'admin', 1700000000000, '', 0, '', 'sys_operate_type',  '清空',   '8', 8, '1', '', 'error'),
-(24, 'admin', 1700000000000, '', 0, '', 'sys_job_group',  '默认',   'DEFAULT', 1, '1', '', ''),
-(25, 'admin', 1700000000000, '', 0, '', 'sys_job_group',  '监控',   'MONITOR', 1, '1', '', ''),
-(26, 'admin', 1700000000000, '', 0, '', 'sys_config_group',  '用户管理',   'user', 1, '1', '', ''),
-(27, 'admin', 1700000000000, '', 0, '', 'sys_config_group',  '账号认证',   'account', 1, '1', '', '');
+(1, 'system', 1700000000000, '', 0, '', 'sys_user_gender',       '男',   '1', 1, '1', '', ''),
+(2, 'system', 1700000000000, '', 0, '', 'sys_user_gender',       '女',   '2', 2, '1', '', ''),
+(3, 'system', 1700000000000, '', 0, '', 'sys_user_gender',       '未选择', '0', 3, '1', '', ''),
+(4, 'system', 1700000000000, '', 0, '', 'sys_normal_disable', '正常', '1', 1, '1', '', 'success'),
+(5, 'system', 1700000000000, '', 0, '', 'sys_normal_disable', '停用', '0', 0, '1', '', 'error'),
+(6, 'system', 1700000000000, '', 0, '', 'sys_success_fail', '成功', '1', 1, '1', '', 'success'),
+(7, 'system', 1700000000000, '', 0, '', 'sys_success_fail', '失败', '0', 0, '1', '', 'error'),
+(8, 'system', 1700000000000, '', 0, '', 'sys_show_hide', '显示', '1', 1, '1', '', 'success'),
+(9, 'system', 1700000000000, '', 0, '', 'sys_show_hide', '隐藏', '0', 0, '1', '', 'error'),
+(10, 'system', 1700000000000, '', 0, '', 'sys_notice_type',    '通知', '1', 1, '1', '', 'warning'),
+(11, 'system', 1700000000000, '', 0, '', 'sys_notice_type',    '公告', '2', 2, '1', '', 'processing'),
+(12, 'system', 1700000000000, '', 0, '', 'sys_notice_status',  '关闭',   '0', 1, '1', '', 'error'),
+(13, 'system', 1700000000000, '', 0, '', 'sys_notice_status',  '正常',   '1', 2, '1', '', 'success'),
+(14, 'system', 1700000000000, '', 0, '', 'sys_notice_status',  '审核',   '2', 3, '1', '', 'warning'),
+(15, 'system', 1700000000000, '', 0, '', 'sys_operate_type',  '其他',   '0', 0, '1', '', 'processing'),
+(16, 'system', 1700000000000, '', 0, '', 'sys_operate_type',  '新增',   '1', 1, '1', '', 'processing'),
+(17, 'system', 1700000000000, '', 0, '', 'sys_operate_type',  '修改',   '2', 2, '1', '', 'processing'),
+(18, 'system', 1700000000000, '', 0, '', 'sys_operate_type',  '删除',   '3', 3, '1', '', 'error'),
+(19, 'system', 1700000000000, '', 0, '', 'sys_operate_type',  '授权',   '4', 4, '1', '', 'success'),
+(20, 'system', 1700000000000, '', 0, '', 'sys_operate_type',  '导出',   '5', 5, '1', '', 'warning'),
+(21, 'system', 1700000000000, '', 0, '', 'sys_operate_type',  '导入',   '6', 6, '1', '', 'warning'),
+(22, 'system', 1700000000000, '', 0, '', 'sys_operate_type',  '强退',   '7', 7, '1', '', 'error'),
+(23, 'system', 1700000000000, '', 0, '', 'sys_operate_type',  '清空',   '8', 8, '1', '', 'error'),
+(24, 'system', 1700000000000, '', 0, '', 'sys_job_group',  '默认',   'DEFAULT', 1, '1', '', ''),
+(25, 'system', 1700000000000, '', 0, '', 'sys_job_group',  '监控',   'MONITOR', 1, '1', '', ''),
+(26, 'system', 1700000000000, '', 0, '', 'sys_config_group',  '用户管理',   'user',    1, '1', '', ''),
+(27, 'system', 1700000000000, '', 0, '', 'sys_config_group',  '账号认证',   'account', 2, '1', '', ''),
+(28, 'system', 1700000000000, '', 0, '', 'sys_config_value_type',  '字符',   'string',  1, '1', '', ''),
+(29, 'system', 1700000000000, '', 0, '', 'sys_config_value_type',  '数字',   'number',  2, '1', '', ''),
+(30, 'system', 1700000000000, '', 0, '', 'sys_config_value_type',  '布尔',   'boolean', 3, '1', '', ''),
+(31, 'system', 1700000000000, '', 0, '', 'sys_config_value_type',  'JSON',   'json',    4, '1', '', '');
 
 
 -- ----------------------------------------------------------------
