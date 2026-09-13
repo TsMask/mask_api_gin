@@ -20,7 +20,7 @@ var NewSysDept = &SysDeptController{
 
 // SysDeptController 部门信息 控制层处理
 //
-// PATH /system/dept
+// PATH /system/depts
 type SysDeptController struct {
 	sysDeptService *service.SysDept // 部门服务
 }

@@ -1,4 +1,4 @@
-﻿package examples
+package examples
 
 import (
 	"mask_api_gin/src/internal/shared/logger"

@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/internal/web/reqctx"
 	"mask_api_gin/src/internal/web/resp"
-	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 )
@@ -20,7 +20,7 @@ var NewSysDictType = &SysDictTypeController{
 
 // SysDictTypeController 字典类型信息 控制层处理
 //
-// PATH /system/dict/type
+// PATH /system/dict/types
 type SysDictTypeController struct {
 	sysDictTypeService *service.SysDictType // 字典类型服务
 }

@@ -17,7 +17,7 @@ import (
 // NewRegister 实例化控制层
 var NewRegister = &RegisterController{
 	registerService:    service.NewRegister,
-	sysLogLoginService: systemService.NewSysLogLogin,
+	sysLoginLogService: systemService.NewSysLoginLog,
 }
 
 // RegisterController 账号注册操作 控制层处理
@@ -25,7 +25,7 @@ var NewRegister = &RegisterController{
 // PATH /api/v1/auth
 type RegisterController struct {
 	registerService    *service.Register          // 账号注册操作服务
-	sysLogLoginService *systemService.SysLogLogin // 系统登录访问服务
+	sysLoginLogService *systemService.SysLoginLog // 系统登录访问服务
 }
 
 // Register 账号注册
@@ -57,7 +57,7 @@ func (s RegisterController) Register(c *gin.Context) {
 	ilobArr := [4]string{ipaddr, location, os, browser}
 	if err := s.registerService.ValidateCaptcha(body.Code, body.UUID); err != nil {
 		msg := fmt.Sprintf("%s code %s", err.Error(), body.Code)
-		s.sysLogLoginService.Insert(body.Username, constants.STATUS_NO, msg, ilobArr)
+		s.sysLoginLogService.Insert(body.Username, constants.STATUS_NO, msg, ilobArr)
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
@@ -69,7 +69,7 @@ func (s RegisterController) Register(c *gin.Context) {
 	}
 
 	msg := fmt.Sprintf("%s 注册成功 %d", body.Username, userId)
-	s.sysLogLoginService.Insert(body.Username, constants.STATUS_YES, msg, ilobArr)
+	s.sysLoginLogService.Insert(body.Username, constants.STATUS_YES, msg, ilobArr)
 	c.JSON(200, resp.OkMsg("注册成功"))
 }
 
@@ -94,7 +94,7 @@ func (s RegisterController) RegisterPhone(c *gin.Context) {
 	ilobArr := [4]string{ipaddr, location, os, browser}
 	if err := s.registerService.ValidateSmsCaptcha(body.Phone, body.Code, body.UUID); err != nil {
 		msg := fmt.Sprintf("%s code %s", err.Error(), body.Code)
-		s.sysLogLoginService.Insert(body.Phone, constants.STATUS_NO, msg, ilobArr)
+		s.sysLoginLogService.Insert(body.Phone, constants.STATUS_NO, msg, ilobArr)
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
@@ -106,6 +106,6 @@ func (s RegisterController) RegisterPhone(c *gin.Context) {
 	}
 
 	msg := fmt.Sprintf("%s 手机号注册成功 %d", body.Phone, userId)
-	s.sysLogLoginService.Insert(body.Phone, constants.STATUS_YES, msg, ilobArr)
+	s.sysLoginLogService.Insert(body.Phone, constants.STATUS_YES, msg, ilobArr)
 	c.JSON(200, resp.OkMsg("注册成功"))
 }

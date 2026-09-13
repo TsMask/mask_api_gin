@@ -24,7 +24,7 @@ var NewSysProfile = &SysProfileController{
 
 // SysProfileController 个人信息 控制层处理
 //
-// PATH /system/user/profile
+// PATH /system/users/profile
 type SysProfileController struct {
 	sysUserService *service.SysUser // 用户服务
 	sysRoleService *service.SysRole // 角色服务

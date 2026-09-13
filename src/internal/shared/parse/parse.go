@@ -64,7 +64,7 @@ func Boolean(value any) bool {
 
 // ConvertToCamelCase 字符串转换驼峰形式
 //
-// 字符串 dict/inline/data/:id 结果 DictInlineDataId
+// 字符串 dict/inline/datas/:id 结果 DictInlineDatasId
 func ConvertToCamelCase(str string) string {
 	if len(str) == 0 {
 		return str

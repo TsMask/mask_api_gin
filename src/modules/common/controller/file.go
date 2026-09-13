@@ -22,7 +22,7 @@ var NewFile = &FileController{}
 
 // FileController 文件操作 控制层处理
 //
-// PATH /file
+// PATH /files
 type FileController struct{}
 
 // Download 下载文件

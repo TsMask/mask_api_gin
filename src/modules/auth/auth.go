@@ -48,9 +48,9 @@ func Setup(router *gin.Engine) {
 			middleware.AuthorizeLogin(),
 			account.Me,
 		)
-		router.GET("/api/v1/auth/router",
+		router.GET("/api/v1/auth/menus",
 			middleware.AuthorizeLogin(),
-			account.Router,
+			account.Menus,
 		)
 	}
 

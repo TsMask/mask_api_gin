@@ -21,7 +21,7 @@ var NewSysUserOnline = &SysUserOnlineController{}
 
 // SysUserOnlineController 在线用户信息 控制层处理
 //
-// PATH /monitor/user-online
+// PATH /monitor/online-users
 type SysUserOnlineController struct{}
 
 // List 在线用户列表

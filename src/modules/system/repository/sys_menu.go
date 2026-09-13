@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/infra/database"
+	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"
@@ -128,6 +128,24 @@ func (r SysMenu) CheckUnique(sysMenu model.SysMenu) (int64, error) {
 
 	// 查询数据
 	var id int64 = 0
+	if err := tx.Select("id").Limit(1).Find(&id).Error; err != nil {
+		return id, err
+	}
+	return id, nil
+}
+
+// CheckUniqueMenuPath 检查目录和菜单的完整路由地址是否全局唯一
+func (r SysMenu) CheckUniqueMenuPath(menuPath string, menuId int64) (int64, error) {
+	if menuPath == "" {
+		return 0, nil
+	}
+
+	tx := database.DB("").Model(&model.SysMenu{})
+	tx = tx.Where("menu_del = '0'")
+	tx = tx.Where("menu_type in ?", []string{constants.MENU_TYPE_DIR, constants.MENU_TYPE_MENU})
+	tx = tx.Where("menu_path = ?", menuPath)
+
+	var id int64
 	if err := tx.Select("id").Limit(1).Find(&id).Error; err != nil {
 		return id, err
 	}

@@ -8,42 +8,42 @@ import (
 	"mask_api_gin/src/modules/system/model"
 )
 
-// NewSysLogOperate 实例化数据层
-var NewSysLogOperate = &SysLogOperate{}
+// NewSysOperationLog 实例化数据层
+var NewSysOperationLog = &SysOperationLog{}
 
-// SysLogOperate 操作日志表 数据层处理
-type SysLogOperate struct{}
+// SysOperationLog 操作日志表 数据层处理
+type SysOperationLog struct{}
 
-// sysLogOperateSortMapping 操作日志排序字段映射
-var sysLogOperateSortMapping = map[string]string{
-	"id":                "id",
-	"create_by":         "create_by",
-	"create_time":       "create_time",
-	"title":             "title",
-	"operate_type":      "operate_type",
-	"operate_cost_time": "operate_cost_time",
-	"operate_status":    "operate_status",
+// sysOperationLogSortMapping 操作日志排序字段映射
+var sysOperationLogSortMapping = map[string]string{
+	"id":                  "id",
+	"create_by":           "create_by",
+	"create_time":         "create_time",
+	"title":               "title",
+	"operation_type":      "operation_type",
+	"operation_cost_time": "operation_cost_time",
+	"operation_status":    "operation_status",
 }
 
 // SelectByPage 分页查询集合
-func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysLogOperate, int64, error) {
-	tx := database.DB("").Model(&model.SysLogOperate{})
+func (r SysOperationLog) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysOperationLog, int64, error) {
+	tx := database.DB("").Model(&model.SysOperationLog{})
 	// 查询条件拼接
 	if v, ok := query["title"]; ok && v != "" {
 		tx = tx.Where("title like ?", v+"%")
 	}
-	if v, ok := query["operate_type"]; ok && v != "" {
-		operateTypes := strings.Split(v, ",")
-		tx = tx.Where("operate_type in ?", operateTypes)
+	if v, ok := query["operation_type"]; ok && v != "" {
+		operationTypes := strings.Split(v, ",")
+		tx = tx.Where("operation_type in ?", operationTypes)
 	}
 	if v, ok := query["create_by"]; ok && v != "" {
 		tx = tx.Where("create_by like ?", v+"%")
 	}
-	if v, ok := query["operate_ip"]; ok && v != "" {
-		tx = tx.Where("operate_ip like ?", v+"%")
+	if v, ok := query["operation_ip"]; ok && v != "" {
+		tx = tx.Where("operation_ip like ?", v+"%")
 	}
-	if v, ok := query["operate_status"]; ok && v != "" {
-		tx = tx.Where("operate_status = ?", v)
+	if v, ok := query["operation_status"]; ok && v != "" {
+		tx = tx.Where("operation_status = ?", v)
 	}
 	if v, ok := query["create_time_begin"]; ok && v != "" {
 		if len(v) == 10 {
@@ -68,7 +68,7 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 
 	// 查询结果
 	var total int64 = 0
-	rows := []model.SysLogOperate{}
+	rows := []model.SysOperationLog{}
 
 	// 查询数量为0直接返回
 	if err := tx.Count(&total).Error; err != nil {
@@ -83,7 +83,7 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序
-	orders := database.SortParse(query["sort"], sysLogOperateSortMapping)
+	orders := database.SortParse(query["sort"], sysOperationLogSortMapping)
 	tx = database.SortOrDefault(tx, orders, "id desc")
 
 	// 查询数据
@@ -95,17 +95,17 @@ func (r SysLogOperate) SelectByPage(query map[string]string, dataScopeSQL string
 }
 
 // Insert 新增信息
-func (r SysLogOperate) Insert(sysLogOperate model.SysLogOperate) (int64, error) {
+func (r SysOperationLog) Insert(sysOperationLog model.SysOperationLog) (int64, error) {
 	// 执行插入
-	if err := database.DB("").Create(&sysLogOperate).Error; err != nil {
+	if err := database.DB("").Create(&sysOperationLog).Error; err != nil {
 		return 0, err
 	}
-	return sysLogOperate.ID, nil
+	return sysOperationLog.ID, nil
 }
 
 // Clean 清空信息
-func (r SysLogOperate) Clean() (int64, error) {
-	tx := database.DB("").Where("1 = 1").Delete(&model.SysLogOperate{})
+func (r SysOperationLog) Clean() (int64, error) {
+	tx := database.DB("").Where("1 = 1").Delete(&model.SysOperationLog{})
 	if err := tx.Error; err != nil {
 		return 0, err
 	}

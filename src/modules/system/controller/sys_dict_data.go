@@ -21,7 +21,7 @@ var NewSysDictData = &SysDictDataController{
 
 // SysDictDataController 字典类型对应的字典数据信息 控制层处理
 //
-// PATH /system/dict/data
+// PATH /system/dict/datas
 type SysDictDataController struct {
 	sysDictDataService *service.SysDictData // 字典数据服务
 	sysDictTypeService *service.SysDictType // 字典类型服务

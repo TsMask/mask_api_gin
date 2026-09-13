@@ -7,14 +7,14 @@ import (
 	"mask_api_gin/src/modules/system/model"
 )
 
-// NewSysLogLogin 实例化数据层
-var NewSysLogLogin = &SysLogLogin{}
+// NewSysLoginLog 实例化数据层
+var NewSysLoginLog = &SysLoginLog{}
 
-// SysLogLoginRepository 系统登录访问表 数据层处理
-type SysLogLogin struct{}
+// SysLoginLogRepository 系统登录访问表 数据层处理
+type SysLoginLog struct{}
 
-// sysLogLoginSortMapping 登录日志排序字段映射
-var sysLogLoginSortMapping = map[string]string{
+// sysLoginLogSortMapping 登录日志排序字段映射
+var sysLoginLogSortMapping = map[string]string{
 	"id":              "id",
 	"create_time":     "create_time",
 	"login_ip":        "login_ip",
@@ -23,8 +23,8 @@ var sysLogLoginSortMapping = map[string]string{
 }
 
 // SelectByPage 分页查询集合
-func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysLogLogin, int64, error) {
-	tx := database.DB("").Model(&model.SysLogLogin{})
+func (r SysLoginLog) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysLoginLog, int64, error) {
+	tx := database.DB("").Model(&model.SysLoginLog{})
 	// 查询条件拼接
 	if v, ok := query["login_ip"]; ok && v != "" {
 		tx = tx.Where("login_ip like ?", v+"%")
@@ -58,7 +58,7 @@ func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) 
 
 	// 查询结果
 	var total int64 = 0
-	rows := []model.SysLogLogin{}
+	rows := []model.SysLoginLog{}
 
 	// 查询数量为0直接返回
 	if err := tx.Count(&total).Error; err != nil {
@@ -73,7 +73,7 @@ func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) 
 	tx = tx.Limit(pageSize).Offset(pageSize * pageNum)
 
 	// 排序
-	orders := database.SortParse(query["sort"], sysLogLoginSortMapping)
+	orders := database.SortParse(query["sort"], sysLoginLogSortMapping)
 	tx = database.SortOrDefault(tx, orders, "id desc")
 
 	// 查询数据
@@ -85,17 +85,17 @@ func (r SysLogLogin) SelectByPage(query map[string]string, dataScopeSQL string) 
 }
 
 // Insert 新增信息 返回新增的数据ID
-func (r SysLogLogin) Insert(sysLogLogin model.SysLogLogin) (int64, error) {
+func (r SysLoginLog) Insert(sysLoginLog model.SysLoginLog) (int64, error) {
 	// 执行插入
-	if err := database.DB("").Create(&sysLogLogin).Error; err != nil {
+	if err := database.DB("").Create(&sysLoginLog).Error; err != nil {
 		return 0, err
 	}
-	return sysLogLogin.ID, nil
+	return sysLoginLog.ID, nil
 }
 
 // Clean 清空信息
-func (r SysLogLogin) Clean() (int64, error) {
-	tx := database.DB("").Where("1 = 1").Delete(&model.SysLogLogin{})
+func (r SysLoginLog) Clean() (int64, error) {
+	tx := database.DB("").Where("1 = 1").Delete(&model.SysLoginLog{})
 	if err := tx.Error; err != nil {
 		return 0, err
 	}

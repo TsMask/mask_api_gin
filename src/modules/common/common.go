@@ -29,7 +29,7 @@ func Setup(router *gin.Engine) {
 	}
 
 	// 文件操作
-	fileGroup := router.Group("/api/v1/file")
+	fileGroup := router.Group("/api/v1/files")
 	file := controller.NewFile
 	{
 		fileGroup.POST("/upload", middleware.AuthorizeLogin(), file.Upload)

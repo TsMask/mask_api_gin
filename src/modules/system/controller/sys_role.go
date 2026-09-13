@@ -24,7 +24,7 @@ var NewSysRole = &SysRoleController{
 
 // SysRoleController 角色信息 控制层处理
 //
-// PATH /system/role
+// PATH /system/roles
 type SysRoleController struct {
 	sysRoleService *service.SysRole // 角色服务
 	sysUserService *service.SysUser // 用户服务

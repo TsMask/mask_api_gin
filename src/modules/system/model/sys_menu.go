@@ -12,7 +12,7 @@ type SysMenu struct {
 	ParentId      int64  `json:"parent_id" gorm:"column:parent_id"`                    // 父菜单ID 默认0
 	MenuName      string `json:"menu_name" gorm:"column:menu_name" binding:"required"` // 菜单名称
 	MenuSort      int64  `json:"menu_sort" gorm:"column:menu_sort"`                    // 显示顺序
-	MenuPath      string `json:"menu_path" gorm:"column:menu_path"`                    // 路由地址
+	MenuPath      string `json:"menu_path" gorm:"column:menu_path"`                    // 完整路由地址或网络地址
 	MenuComponent string `json:"menu_component" gorm:"column:menu_component"`          // 组件路径
 	MenuPerms     string `json:"menu_perms" gorm:"column:menu_perms"`                  // 权限标识
 	MenuIcon      string `json:"menu_icon" gorm:"column:menu_icon"`                    // 菜单图标（#无图标）

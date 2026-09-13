@@ -22,7 +22,7 @@ var NewSysMenu = &SysMenuController{
 
 // SysMenuController 菜单信息 控制层处理
 //
-// PATH /system/menu
+// PATH /system/menus
 type SysMenuController struct {
 	sysMenuService *service.SysMenu // 菜单服务
 }
@@ -82,7 +82,12 @@ func (s SysMenuController) Add(c *gin.Context) {
 
 	// 目录和菜单检查地址唯一
 	if constants.MENU_TYPE_DIR == body.MenuType || constants.MENU_TYPE_MENU == body.MenuType {
-		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentId, body.MenuPath, 0)
+		if !regular.ValidHttp(body.MenuPath) && (body.MenuPath == "" || body.MenuPath[0] != '/') {
+			msg := fmt.Sprintf("菜单新增【%s】失败，普通路由地址必须以 / 开头", body.MenuName)
+			c.JSON(200, resp.ErrMsg(msg))
+			return
+		}
+		uniqueMenuPath := s.sysMenuService.CheckUniqueMenuPath(body.MenuPath, 0)
 		if !uniqueMenuPath {
 			msg := fmt.Sprintf("菜单新增【%s】失败，菜单路由地址已存在", body.MenuName)
 			c.JSON(200, resp.ErrMsg(msg))
@@ -158,7 +163,12 @@ func (s SysMenuController) Edit(c *gin.Context) {
 
 	// 目录和菜单检查地址唯一
 	if constants.MENU_TYPE_DIR == body.MenuType || constants.MENU_TYPE_MENU == body.MenuType {
-		uniqueMenuPath := s.sysMenuService.CheckUniqueParentIdByMenuPath(body.ParentId, body.MenuPath, body.ID)
+		if !regular.ValidHttp(body.MenuPath) && (body.MenuPath == "" || body.MenuPath[0] != '/') {
+			msg := fmt.Sprintf("菜单修改【%s】失败，普通路由地址必须以 / 开头", body.MenuName)
+			c.JSON(200, resp.ErrMsg(msg))
+			return
+		}
+		uniqueMenuPath := s.sysMenuService.CheckUniqueMenuPath(body.MenuPath, body.ID)
 		if !uniqueMenuPath {
 			msg := fmt.Sprintf("菜单修改【%s】失败，菜单路由地址已存在", body.MenuName)
 			c.JSON(200, resp.ErrMsg(msg))

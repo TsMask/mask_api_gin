@@ -27,7 +27,7 @@ var NewSysUser = &SysUserController{
 
 // SysUserController 用户信息 控制层处理
 //
-// PATH /system/user
+// PATH /system/users
 type SysUserController struct {
 	sysUserService *service.SysUser     // 用户服务
 	sysRoleService *service.SysRole     // 角色服务

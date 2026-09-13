@@ -5,9 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/internal/web/reqctx"
 	"mask_api_gin/src/internal/web/resp"
-	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 )
@@ -19,7 +19,7 @@ var NewSysNotice = &SysNoticeController{
 
 // SysNoticeController 通知公告信息 控制层处理
 //
-// PATH /system/notice
+// PATH /system/notices
 type SysNoticeController struct {
 	sysNoticeService *service.SysNotice // 公告服务
 }

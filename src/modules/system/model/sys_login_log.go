@@ -1,7 +1,7 @@
 package model
 
-// SysLogLogin 系统登录日志表（用 login_user_name 字符串软关联 sys_user.user_name）
-type SysLogLogin struct {
+// SysLoginLog 系统登录日志表（用 login_user_name 字符串软关联 sys_user.user_name）
+type SysLoginLog struct {
 	ID            int64  `json:"id" gorm:"column:id;primaryKey;autoIncrement"`  // 登录ID
 	CreateBy      string `json:"create_by" gorm:"column:create_by"`             // 创建者
 	CreateTime    int64  `json:"create_time" gorm:"column:create_time"`         // 创建时间
@@ -15,6 +15,6 @@ type SysLogLogin struct {
 }
 
 // TableName 表名称
-func (*SysLogLogin) TableName() string {
-	return "sys_log_login"
+func (*SysLoginLog) TableName() string {
+	return "sys_login_log"
 }

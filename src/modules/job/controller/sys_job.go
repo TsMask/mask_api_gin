@@ -21,7 +21,7 @@ var NewSysJob = &SysJobController{
 
 // SysJobController 调度任务信息 控制层处理
 //
-// PATH /api/v1/monitor/job
+// PATH /api/v1/jobs
 type SysJobController struct {
 	sysJobService *service.SysJob // 调度任务服务
 }

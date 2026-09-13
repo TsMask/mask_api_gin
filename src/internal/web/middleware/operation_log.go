@@ -16,25 +16,25 @@ import (
 	"mask_api_gin/src/internal/web/resp"
 )
 
-// 业务操作类型，对应 sys_oper_log.business_type 列的取值契约。
+// 业务操作类型，对应 sys_operation_log.operation_type 列的取值契约。
 const (
-	OperateTypeOther  = "0" // 其它
-	OperateTypeInsert = "1" // 新增
-	OperateTypeUpdate = "2" // 修改
-	OperateTypeDelete = "3" // 删除
-	OperateTypeGrant  = "4" // 授权
-	OperateTypeExport = "5" // 导出
-	OperateTypeImport = "6" // 导入
-	OperateTypeForce  = "7" // 强退
-	OperateTypeClean  = "8" // 清空
+	OperationTypeOther  = "0" // 其它
+	OperationTypeInsert = "1" // 新增
+	OperationTypeUpdate = "2" // 修改
+	OperationTypeDelete = "3" // 删除
+	OperationTypeGrant  = "4" // 授权
+	OperationTypeExport = "5" // 导出
+	OperationTypeImport = "6" // 导入
+	OperationTypeForce  = "7" // 强退
+	OperationTypeClean  = "8" // 清空
 )
 
-// OperateLog 记录业务操作日志：请求参数脱敏后入库，响应记录摘要。
-// title 为操作标题，operateType 为业务类型（空值按 OperateTypeOther）。
+// OperationLog 记录业务操作日志：请求参数脱敏后入库，响应记录摘要。
+// title 为操作标题，operationType 为业务类型（空值按 OperationTypeOther）。
 // 请在 AuthorizeUser 之后注册，以便获取登录用户信息。
-func OperateLog(title, operateType string) gin.HandlerFunc {
-	if operateType == "" {
-		operateType = OperateTypeOther
+func OperationLog(title, operationType string) gin.HandlerFunc {
+	if operationType == "" {
+		operationType = OperationTypeOther
 	}
 	return func(c *gin.Context) {
 		start := time.Now()
@@ -54,22 +54,22 @@ func OperateLog(title, operateType string) gin.HandlerFunc {
 			return
 		}
 
-		rec := OperateLogRecord{
-			Title:           title,
-			OperateType:     operateType,
-			OperateFunction: funcName,
-			OperateUrl:      c.Request.RequestURI,
-			OperateMethod:   c.Request.Method,
-			OperateIp:       ipaddr,
-			OperateLocation: location,
-			CreateBy:        userName,
+		rec := OperationLogRecord{
+			Title:             title,
+			OperationType:     operationType,
+			OperationFunction: funcName,
+			OperationUrl:      c.Request.RequestURI,
+			OperationMethod:   c.Request.Method,
+			OperationIp:       ipaddr,
+			OperationLocation: location,
+			CreateBy:          userName,
 		}
 
 		// 请求参数（敏感字段脱敏后入库）
 		params := reqctx.RequestParamsMap(c)
 		maskSensitiveFields(params)
 		if b, err := json.Marshal(params); err == nil {
-			rec.OperateParam = truncateBytes(string(b), 2000)
+			rec.OperationParam = truncateBytes(string(b), 2000)
 		}
 
 		c.Next()
@@ -77,20 +77,20 @@ func OperateLog(title, operateType string) gin.HandlerFunc {
 		// 响应状态
 		status := c.Writer.Status()
 		if isHTTPSuccess(status) {
-			rec.OperateStatus = constants.STATUS_YES
+			rec.OperationStatus = constants.STATUS_YES
 		} else {
-			rec.OperateStatus = constants.STATUS_NO
+			rec.OperationStatus = constants.STATUS_NO
 		}
 
 		// 响应摘要
 		contentType := c.Writer.Header().Get("Content-Type")
 		contentDisposition := c.Writer.Header().Get("Content-Disposition")
-		rec.OperateMsg = buildOperateMsg(status, c.Writer.Size(), contentType, contentDisposition)
+		rec.OperationMsg = buildOperationMsg(status, c.Writer.Size(), contentType, contentDisposition)
 
-		rec.OperateCostTime = time.Since(start).Milliseconds()
+		rec.OperationCostTime = time.Since(start).Milliseconds()
 
-		if OnOperateLog != nil {
-			OnOperateLog(rec)
+		if OnOperationLog != nil {
+			OnOperationLog(rec)
 		}
 	}
 }
@@ -100,8 +100,8 @@ func isHTTPSuccess(status int) bool {
 	return status >= http.StatusOK && status < http.StatusMultipleChoices
 }
 
-// buildOperateMsg 生成规范的响应摘要 JSON。
-func buildOperateMsg(status, size int, contentType, contentDisposition string) string {
+// buildOperationMsg 生成规范的响应摘要 JSON。
+func buildOperationMsg(status, size int, contentType, contentDisposition string) string {
 	msg, err := json.Marshal(struct {
 		Status             int    `json:"status"`
 		Size               int    `json:"size"`
@@ -178,22 +178,22 @@ func truncateBytes(s string, max int) string {
 	return s[:max]
 }
 
-// OperateLogRecord 操作日志记录，解耦中间件与业务模型。
-// 由业务模块通过 OnOperateLog 钩子映射为具体的持久化对象。
-type OperateLogRecord struct {
-	Title           string
-	OperateType     string
-	OperateFunction string
-	OperateUrl      string
-	OperateMethod   string
-	OperateIp       string
-	OperateLocation string
-	CreateBy        string
-	OperateParam    string
-	OperateStatus   string
-	OperateMsg      string
-	OperateCostTime int64
+// OperationLogRecord 操作日志记录，解耦中间件与业务模型。
+// 由业务模块通过 OnOperationLog 钩子映射为具体的持久化对象。
+type OperationLogRecord struct {
+	Title             string
+	OperationType     string
+	OperationFunction string
+	OperationUrl      string
+	OperationMethod   string
+	OperationIp       string
+	OperationLocation string
+	CreateBy          string
+	OperationParam    string
+	OperationStatus   string
+	OperationMsg      string
+	OperationCostTime int64
 }
 
-// OnOperateLog 操作日志持久化钩子，由业务模块在启动时注入；为 nil 时丢弃记录。
-var OnOperateLog func(OperateLogRecord)
+// OnOperationLog 操作日志持久化钩子，由业务模块在启动时注入；为 nil 时丢弃记录。
+var OnOperationLog func(OperationLogRecord)

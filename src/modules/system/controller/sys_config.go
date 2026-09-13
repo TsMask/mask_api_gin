@@ -20,7 +20,7 @@ var NewSysConfig = &SysConfigController{
 
 // SysConfigController 参数配置信息 控制层处理
 //
-// PATH /system/config
+// PATH /system/configs
 type SysConfigController struct {
 	sysConfigService *service.SysConfig // 参数配置服务
 }

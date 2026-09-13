@@ -20,7 +20,7 @@ import (
 // NewAccount 实例化控制层
 var NewAccount = &AccountController{
 	accountService:     service.NewAccount,
-	sysLogLoginService: systemService.NewSysLogLogin,
+	sysLoginLogService: systemService.NewSysLoginLog,
 }
 
 // AccountController 账号身份操作 控制层处理
@@ -28,7 +28,7 @@ var NewAccount = &AccountController{
 // PATH /api/v1/auth
 type AccountController struct {
 	accountService     *service.Account           // 账号身份操作服务
-	sysLogLoginService *systemService.SysLogLogin // 系统登录访问
+	sysLoginLogService *systemService.SysLoginLog // 系统登录访问
 }
 
 // Login 系统登录
@@ -49,7 +49,7 @@ func (s AccountController) Login(c *gin.Context) {
 
 	// 校验验证码 根据错误信息，创建系统访问记录
 	if err := s.accountService.ValidateCaptcha(body.Code, body.UUID); err != nil {
-		s.sysLogLoginService.Insert(body.Username, constants.STATUS_NO, err.Error(), ilobArr)
+		s.sysLoginLogService.Insert(body.Username, constants.STATUS_NO, err.Error(), ilobArr)
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
@@ -57,7 +57,7 @@ func (s AccountController) Login(c *gin.Context) {
 	// 登录用户信息
 	info, err := s.accountService.ByUsername(body.Username, body.Password)
 	if err != nil {
-		s.sysLogLoginService.Insert(info.UserName, constants.STATUS_NO, err.Error(), ilobArr)
+		s.sysLoginLogService.Insert(info.UserName, constants.STATUS_NO, err.Error(), ilobArr)
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
@@ -65,7 +65,7 @@ func (s AccountController) Login(c *gin.Context) {
 	// 生成新的会话令牌
 	pair, sessionId, err := token.CreateTokenPair(info.UserId, deviceFingerprint)
 	if err != nil {
-		s.sysLogLoginService.Insert(info.UserName, constants.STATUS_NO, "token generation failed", ilobArr)
+		s.sysLoginLogService.Insert(info.UserName, constants.STATUS_NO, "token generation failed", ilobArr)
 		c.JSON(200, resp.ErrMsg("token generation failed"))
 		return
 	}
@@ -73,12 +73,12 @@ func (s AccountController) Login(c *gin.Context) {
 	info.SessionId = sessionId
 	// 记录令牌，创建系统访问记录
 	if err := token.UserInfoCreate(&info, [4]string{ipaddr, location, os, browser}); err != nil {
-		s.sysLogLoginService.Insert(info.UserName, constants.STATUS_NO, "token cache create failed", ilobArr)
+		s.sysLoginLogService.Insert(info.UserName, constants.STATUS_NO, "token cache create failed", ilobArr)
 		c.JSON(200, resp.ErrMsg("token cache create failed"))
 		return
 	}
 	s.accountService.UpdateLoginDateAndIP(info)
-	s.sysLogLoginService.Insert(info.UserName, constants.STATUS_YES, "用户名登录成功", ilobArr)
+	s.sysLoginLogService.Insert(info.UserName, constants.STATUS_YES, "用户名登录成功", ilobArr)
 
 	c.JSON(200, resp.OkData(map[string]any{
 		"token_type":         constants.HEADER_PREFIX,
@@ -111,14 +111,14 @@ func (s AccountController) LoginPhone(c *gin.Context) {
 	}
 
 	if err := s.accountService.ValidateCaptchaSMS(body.Phone, body.Code, body.UUID); err != nil {
-		s.sysLogLoginService.Insert(body.Phone, constants.STATUS_NO, err.Error(), ilobArr)
+		s.sysLoginLogService.Insert(body.Phone, constants.STATUS_NO, err.Error(), ilobArr)
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 
 	info, err := s.accountService.ByPhone(body.Phone)
 	if err != nil {
-		s.sysLogLoginService.Insert(body.Phone, constants.STATUS_NO, err.Error(), ilobArr)
+		s.sysLoginLogService.Insert(body.Phone, constants.STATUS_NO, err.Error(), ilobArr)
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
@@ -126,20 +126,20 @@ func (s AccountController) LoginPhone(c *gin.Context) {
 	deviceFingerprint := reqctx.DeviceFingerprint(c, info.UserId)
 	pair, sessionId, err := token.CreateTokenPair(info.UserId, deviceFingerprint)
 	if err != nil {
-		s.sysLogLoginService.Insert(info.UserName, constants.STATUS_NO, "token generation failed", ilobArr)
+		s.sysLoginLogService.Insert(info.UserName, constants.STATUS_NO, "token generation failed", ilobArr)
 		c.JSON(200, resp.ErrMsg("token generation failed"))
 		return
 	}
 	info.DeviceId = deviceFingerprint
 	info.SessionId = sessionId
 	if err := token.UserInfoCreate(&info, ilobArr); err != nil {
-		s.sysLogLoginService.Insert(info.UserName, constants.STATUS_NO, "token cache create failed", ilobArr)
+		s.sysLoginLogService.Insert(info.UserName, constants.STATUS_NO, "token cache create failed", ilobArr)
 		c.JSON(200, resp.ErrMsg("token cache create failed"))
 		return
 	}
 
 	s.accountService.UpdateLoginDateAndIP(info)
-	s.sysLogLoginService.Insert(info.UserName, constants.STATUS_YES, "手机号登录成功", ilobArr)
+	s.sysLoginLogService.Insert(info.UserName, constants.STATUS_YES, "手机号登录成功", ilobArr)
 	c.JSON(200, resp.OkData(map[string]any{
 		"token_type":         constants.HEADER_PREFIX,
 		"access_token":       pair.AccessToken,
@@ -163,7 +163,7 @@ func (s AccountController) Logout(c *gin.Context) {
 			ipaddr, location := reqctx.IPAddrLocation(c)
 			os, browser := reqctx.UaOsBrowser(c)
 			// 创建系统访问记录
-			s.sysLogLoginService.Insert(
+			s.sysLoginLogService.Insert(
 				userName, constants.STATUS_YES, "主动注销登录信息",
 				[4]string{ipaddr, location, os, browser},
 			)
@@ -225,7 +225,7 @@ func (s AccountController) RefreshToken(c *gin.Context) {
 		return
 	}
 	s.accountService.UpdateLoginDateAndIP(info)
-	s.sysLogLoginService.Insert(
+	s.sysLoginLogService.Insert(
 		info.UserName, constants.STATUS_YES, "刷新访问令牌成功",
 		[4]string{ipaddr, location, os, browser},
 	)
@@ -264,14 +264,14 @@ func (s AccountController) Me(c *gin.Context) {
 	}))
 }
 
-// Router 登录用户路由信息
+// Menus 登录用户菜单信息
 //
-// GET /router
-func (s AccountController) Router(c *gin.Context) {
+// GET /menus
+func (s AccountController) Menus(c *gin.Context) {
 	loginUserId := reqctx.LoginUserToUserID(c)
 
-	// 前端路由，系统管理员拥有所有
+	// 语义化菜单，系统管理员拥有所有
 	isSystemUser := config.IsSystemUser(loginUserId)
-	buildMenus := s.accountService.RouteMenus(loginUserId, isSystemUser)
+	buildMenus := s.accountService.AuthMenus(loginUserId, isSystemUser)
 	c.JSON(200, resp.OkData(buildMenus))
 }

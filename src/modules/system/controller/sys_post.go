@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/internal/web/reqctx"
 	"mask_api_gin/src/internal/web/resp"
-	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/service"
 )
@@ -20,7 +20,7 @@ var NewSysPost = &SysPostController{
 
 // SysPostController 岗位信息 控制层处理
 //
-// PATH /system/post
+// PATH /system/posts
 type SysPostController struct {
 	sysPostService *service.SysPost // 岗位服务
 }

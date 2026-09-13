@@ -1,15 +1,11 @@
 package service
 
 import (
-	"encoding/base64"
-	"fmt"
-	"strings"
 	"time"
 
-	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/infra/database"
+	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/shared/logger"
-	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/internal/shared/regular"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/model/vo"
@@ -71,8 +67,11 @@ func (s SysMenu) normalizeMenuFields(sysMenu *model.SysMenu) {
 		sysMenu.MenuIcon = "#"
 	case constants.MENU_TYPE_DIR:
 		sysMenu.MenuComponent = ""
-		sysMenu.MenuExternal = "0"
 		sysMenu.MenuCache = "1"
+		sysMenu.MenuPerms = ""
+	}
+	if sysMenu.MenuType == constants.MENU_TYPE_MENU && regular.ValidHttp(sysMenu.MenuPath) {
+		sysMenu.MenuComponent = ""
 		sysMenu.MenuPerms = ""
 	}
 }
@@ -158,12 +157,9 @@ func (s SysMenu) CheckUniqueParentIdByMenuName(parentId int64, menuName string, 
 	return uniqueId == 0
 }
 
-// CheckUniqueParentIdByMenuPath 检查同级下路由地址是否唯一（针对目录和菜单）
-func (s SysMenu) CheckUniqueParentIdByMenuPath(parentId int64, menuPath string, menuId int64) bool {
-	uniqueId, err := s.sysMenuRepository.CheckUnique(model.SysMenu{
-		MenuPath: menuPath,
-		ParentId: parentId,
-	})
+// CheckUniqueMenuPath 检查目录和菜单的完整路由地址是否全局唯一
+func (s SysMenu) CheckUniqueMenuPath(menuPath string, menuId int64) bool {
+	uniqueId, err := s.sysMenuRepository.CheckUniqueMenuPath(menuPath, menuId)
 	if err != nil {
 		logger.Errorf("query err => %v", err.Error())
 	}
@@ -285,189 +281,45 @@ func (s SysMenu) parseDataToTreeComponent(node model.SysMenu, nodesMap *map[int6
 	return node
 }
 
-// BuildRouteMenus 构建前端路由所需要的菜单
-func (s SysMenu) BuildRouteMenus(sysMenus []model.SysMenu, prefix string) []vo.Router {
-	routers := make([]vo.Router, 0)
+// BuildAuthMenus 构建当前登录用户可用的语义化菜单树。
+func (s SysMenu) BuildAuthMenus(sysMenus []model.SysMenu) []vo.AuthMenu {
+	authMenus := make([]vo.AuthMenu, 0, len(sysMenus))
 	for _, item := range sysMenus {
-		router := vo.Router{
-			Name:      s.getRouteName(item),
-			Path:      s.getRouterPath(item),
-			Component: s.getComponent(item),
-			Meta:      s.getRouteMeta(item),
-			Children:  []vo.Router{},
+		menu := vo.AuthMenu{
+			ID:     item.ID,
+			Kind:   s.getAuthMenuKind(item),
+			Title:  item.MenuName,
+			Path:   item.MenuPath,
+			Icon:   item.MenuIcon,
+			Hidden: item.MenuVisible == constants.STATUS_NO,
+			Cache:  item.MenuCache == constants.STATUS_YES,
 		}
-
-		// 子项菜单 目录类型 非路径链接
-		cMenus := item.Children
-		if len(cMenus) > 0 && item.MenuType == constants.MENU_TYPE_DIR && !regular.ValidHttp(item.MenuPath) {
-			// 获取重定向地址
-			redirectPrefix, redirectPath := s.getRouteRedirect(
-				cMenus,
-				router.Path,
-				prefix,
-			)
-			router.Redirect = redirectPath
-			// 子菜单进入递归
-			router.Children = s.BuildRouteMenus(cMenus, redirectPrefix)
-		} else if item.ParentId == 0 && item.MenuExternal == constants.STATUS_NO && item.MenuType == constants.MENU_TYPE_MENU {
-			// 父菜单 内部跳转 菜单类型
-			menuPath := fmt.Sprintf("/%d", item.ID)
-			childPath := menuPath + s.getRouterPath(item)
-			children := vo.Router{
-				Name:      s.getRouteName(item),
-				Path:      childPath,
-				Component: item.MenuComponent,
-				Meta:      s.getRouteMeta(item),
-			}
-			router.Meta.HideChildInMenu = true
-			router.Children = append(router.Children, children)
-			router.Name = fmt.Sprint(item.ID)
-			router.Path = menuPath
-			router.Redirect = childPath
-			router.Component = constants.MENU_COMPONENT_LAYOUT_BASIC
-		} else if item.ParentId == 0 && item.MenuExternal == constants.STATUS_NO && regular.ValidHttp(item.MenuPath) {
-			// 父菜单 内部跳转 路径链接
-			menuPath := fmt.Sprintf("/%d", item.ID)
-			childPath := menuPath + s.getRouterPath(item)
-			children := vo.Router{
-				Name:      s.getRouteName(item),
-				Path:      childPath,
-				Component: constants.MENU_COMPONENT_LAYOUT_LINK,
-				Meta:      s.getRouteMeta(item),
-			}
-			router.Meta.HideChildInMenu = true
-			router.Children = append(router.Children, children)
-			router.Name = fmt.Sprint(item.ID)
-			router.Path = menuPath
-			router.Redirect = childPath
-			router.Component = constants.MENU_COMPONENT_LAYOUT_BASIC
+		if menu.Icon == "#" {
+			menu.Icon = ""
 		}
-
-		routers = append(routers, router)
+		if menu.Kind == "external" {
+			menu.Target = "_blank"
+		}
+		if menu.Kind == "page" {
+			menu.Component = item.MenuComponent
+		}
+		if len(item.Children) > 0 {
+			menu.Children = s.BuildAuthMenus(item.Children)
+		}
+		authMenus = append(authMenus, menu)
 	}
-	return routers
+	return authMenus
 }
 
-// getRouteName 获取路由名称 路径英文首字母大写
-func (s SysMenu) getRouteName(sysMenu model.SysMenu) string {
-	routerName := parse.ConvertToCamelCase(sysMenu.MenuPath)
-	// 路径链接
+func (s SysMenu) getAuthMenuKind(sysMenu model.SysMenu) string {
 	if regular.ValidHttp(sysMenu.MenuPath) {
-		routerName = routerName[:5] + "Link"
-	}
-	// 拼上菜单ID防止name重名
-	return fmt.Sprintf("%s_%d", routerName, sysMenu.ID)
-}
-
-// getRouterPath 获取路由地址
-func (s SysMenu) getRouterPath(sysMenu model.SysMenu) string {
-	routerPath := sysMenu.MenuPath
-
-	// 显式路径
-	if routerPath == "" || strings.HasPrefix(routerPath, "/") {
-		return routerPath
-	}
-
-	// 路径链接 内部跳转
-	if regular.ValidHttp(routerPath) && sysMenu.MenuExternal == constants.STATUS_NO {
-		routerPath = regular.Replace(`/^http(s)?:\/\/+/`, routerPath, "")
-		routerPath = base64.StdEncoding.EncodeToString([]byte(routerPath))
-	}
-
-	// 父菜单 内部跳转
-	if sysMenu.ParentId == 0 && sysMenu.MenuExternal == constants.STATUS_NO {
-		routerPath = "/" + routerPath
-	}
-
-	return routerPath
-}
-
-// getComponent 获取组件信息
-func (s SysMenu) getComponent(sysMenu model.SysMenu) string {
-	// 内部跳转 路径链接
-	if sysMenu.MenuExternal == constants.STATUS_NO && regular.ValidHttp(sysMenu.MenuPath) {
-		return constants.MENU_COMPONENT_LAYOUT_LINK
-	}
-
-	// 非父菜单 目录类型
-	if sysMenu.ParentId > 0 && sysMenu.MenuType == constants.MENU_TYPE_DIR {
-		return constants.MENU_COMPONENT_LAYOUT_BLANK
-	}
-
-	// 组件路径 内部跳转 菜单类型
-	if sysMenu.MenuComponent != "" && sysMenu.MenuExternal == constants.STATUS_NO && sysMenu.MenuType == constants.MENU_TYPE_MENU {
-		// 父菜单套外层布局
-		if sysMenu.ParentId == 0 {
-			return constants.MENU_COMPONENT_LAYOUT_BASIC
+		if sysMenu.MenuExternal == constants.STATUS_YES {
+			return "external"
 		}
-		return sysMenu.MenuComponent
+		return "iframe"
 	}
-
-	return constants.MENU_COMPONENT_LAYOUT_BASIC
-}
-
-// getRouteMeta 获取路由元信息
-func (s SysMenu) getRouteMeta(sysMenu model.SysMenu) vo.RouterMeta {
-	meta := vo.RouterMeta{}
-	if sysMenu.MenuIcon == "#" {
-		meta.Icon = ""
-	} else {
-		meta.Icon = sysMenu.MenuIcon
+	if sysMenu.MenuType == constants.MENU_TYPE_DIR {
+		return "directory"
 	}
-	meta.Title = sysMenu.MenuName
-	meta.HideChildInMenu = false
-	meta.HideInMenu = sysMenu.MenuVisible == constants.STATUS_NO
-	meta.Cache = sysMenu.MenuCache == constants.STATUS_YES
-	meta.Target = ""
-
-	// 路径链接 非内部跳转
-	if regular.ValidHttp(sysMenu.MenuPath) && sysMenu.MenuExternal == constants.STATUS_YES {
-		meta.Target = "_blank"
-	}
-
-	return meta
-}
-
-// getRouteRedirect 获取路由重定向地址（针对目录）
-//
-// cMenus 子菜单数组
-// routerPath 当前菜单路径
-// prefix 菜单重定向路径前缀
-func (s SysMenu) getRouteRedirect(cMenus []model.SysMenu, routerPath string, prefix string) (string, string) {
-	redirectPath := ""
-
-	// 重定向为首个显示并启用的子菜单
-	var firstChild *model.SysMenu
-	for _, item := range cMenus {
-		if item.MenuExternal == constants.STATUS_NO && item.MenuVisible == constants.STATUS_YES {
-			firstChild = &item
-			break
-		}
-	}
-
-	// 检查内嵌隐藏菜单是否可做重定向
-	if firstChild == nil {
-		for _, item := range cMenus {
-			if item.MenuExternal == constants.STATUS_NO && item.MenuVisible == constants.STATUS_NO && strings.Contains(item.MenuPath, constants.MENU_PATH_INLINE) {
-				firstChild = &item
-				break
-			}
-		}
-	}
-
-	if firstChild != nil {
-		firstChildPath := s.getRouterPath(*firstChild)
-		if strings.HasPrefix(firstChildPath, "/") {
-			redirectPath = firstChildPath
-		} else {
-			// 拼接追加路径
-			if !strings.HasPrefix(routerPath, "/") {
-				prefix += "/"
-			}
-			prefix = prefix + routerPath
-			redirectPath = prefix + "/" + firstChildPath
-		}
-	}
-
-	return prefix, redirectPath
+	return "page"
 }

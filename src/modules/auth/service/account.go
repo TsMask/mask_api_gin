@@ -263,15 +263,15 @@ func (s Account) RoleAndMenuPerms(userId int64, isSystemUser bool) ([]string, []
 	return parse.RemoveDuplicates(roleGroup), parse.RemoveDuplicates(perms)
 }
 
-// RouteMenus 前端路由所需要的菜单
-func (s Account) RouteMenus(userId int64, isSystemUser bool) []vo.Router {
-	var buildMenus []vo.Router
+// AuthMenus 当前登录用户可用的语义化菜单树
+func (s Account) AuthMenus(userId int64, isSystemUser bool) []vo.AuthMenu {
+	var buildMenus []vo.AuthMenu
 	if isSystemUser {
 		menus := s.sysMenuService.BuildTreeMenusByUserId(0)
-		buildMenus = s.sysMenuService.BuildRouteMenus(menus, "")
+		buildMenus = s.sysMenuService.BuildAuthMenus(menus)
 	} else {
 		menus := s.sysMenuService.BuildTreeMenusByUserId(userId)
-		buildMenus = s.sysMenuService.BuildRouteMenus(menus, "")
+		buildMenus = s.sysMenuService.BuildAuthMenus(menus)
 	}
 	return buildMenus
 }

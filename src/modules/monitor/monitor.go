@@ -20,16 +20,16 @@ func Setup(router *gin.Engine) {
 	)
 
 	// 在线用户监控
-	sysUserOnlineGroup := router.Group("/api/v1/monitor/user-online")
+	sysUserOnlineGroup := router.Group("/api/v1/monitor/online-users")
 	sysUserOnline := controller.NewSysUserOnline
 	{
 		sysUserOnlineGroup.GET("/list",
-			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"monitor:online:list"}}),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"monitor:online:user:list"}}),
 			sysUserOnline.List,
 		)
 		sysUserOnlineGroup.DELETE("/logout/:session_id",
-			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"monitor:online:logout"}}),
-			middleware.OperateLog("在线用户监控", middleware.OperateTypeForce),
+			middleware.AuthorizeUser(middleware.AuthOption{HasPerms: []string{"monitor:online:user:logout"}}),
+			middleware.OperationLog("在线用户监控", middleware.OperationTypeForce),
 			sysUserOnline.Logout,
 		)
 	}
