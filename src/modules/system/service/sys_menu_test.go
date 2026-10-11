@@ -7,7 +7,7 @@ import (
 	"mask_api_gin/src/modules/system/model"
 )
 
-func TestBuildRouteMenusUsesFrontendRootLayout(t *testing.T) {
+func TestBuildAuthMenusUsesFrontendMenuContract(t *testing.T) {
 	menus := []model.SysMenu{
 		{
 			ID:           1,
@@ -33,30 +33,33 @@ func TestBuildRouteMenusUsesFrontendRootLayout(t *testing.T) {
 		},
 	}
 
-	routers := NewSysMenu.BuildRouteMenus(menus, "")
-	if len(routers) != 1 {
-		t.Fatalf("BuildRouteMenus routers length = %d, want 1", len(routers))
+	authMenus := NewSysMenu.BuildAuthMenus(menus)
+	if len(authMenus) != 1 {
+		t.Fatalf("BuildAuthMenus menus length = %d, want 1", len(authMenus))
 	}
 
-	root := routers[0]
-	if root.Component != constants.MENU_COMPONENT_LAYOUT_BLANK {
-		t.Errorf("root component = %q, want %q", root.Component, constants.MENU_COMPONENT_LAYOUT_BLANK)
+	root := authMenus[0]
+	if root.Kind != "directory" {
+		t.Errorf("root kind = %q, want directory", root.Kind)
 	}
-	if root.Redirect != "/system/user" {
-		t.Errorf("root redirect = %q, want /system/user", root.Redirect)
+	if root.Component != "" {
+		t.Errorf("root component = %q, want empty", root.Component)
+	}
+	if root.Path != "system" {
+		t.Errorf("root path = %q, want system", root.Path)
 	}
 	if len(root.Children) != 1 {
 		t.Fatalf("root children length = %d, want 1", len(root.Children))
 	}
 
 	page := root.Children[0]
-	if page.Name != "UserIndex" {
-		t.Errorf("page name = %q, want UserIndex", page.Name)
+	if page.Kind != "page" {
+		t.Errorf("page kind = %q, want page", page.Kind)
 	}
 	if page.Component != "system/user/UserIndex" {
 		t.Errorf("page component = %q, want system/user/UserIndex", page.Component)
 	}
-	if !page.Meta.Cache {
+	if !page.Cache {
 		t.Error("page cache = false, want true")
 	}
 }

@@ -2,7 +2,7 @@
 
 [![star](https://gitee.com/TsMask/mask_api_gin/badge/star.svg?theme=dark)](https://gitee.com/TsMask/mask_api_gin/stargazers)
 ![Build Gin](https://img.shields.io/badge/Build-Gin-green.svg)
-![Release V0.7.2](https://img.shields.io/badge/Release-V0.7.2-orange.svg)
+![Release V0.7.3](https://img.shields.io/badge/Release-V0.7.3-orange.svg)
 ![License MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
 ## 介绍
@@ -23,6 +23,12 @@
 
 - `Node-Midwayjs` 仓库地址 => [mask_api_midwayjs](https://gitee.com/TsMask/mask_api_midwayjs)
 - `Go-Gin` 仓库地址 => [mask_api_gin](https://gitee.com/TsMask/mask_api_gin)
+
+## REST API 命名约定
+
+- 资源集合使用复数名词，例如 `/api/v1/system/notices`、`/api/v1/system/users`；集合内单个资源使用 `/:id`。
+- 复合资源优先按领域分层，例如 `/api/v1/system/dict/types`、`/api/v1/system/dict/datas`、`/api/v1/system/logs/login`、`/api/v1/system/logs/operation`、`/api/v1/job/logs`。
+- 单例资源使用单数，例如 `/api/v1/system/users/profile`、`/api/v1/monitor/system`；认证等动作型路径保持自然语义，例如 `/api/v1/auth/login`、`/api/v1/auth/logout`。
 
 ## 内置功能
 
