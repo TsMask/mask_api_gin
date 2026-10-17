@@ -139,7 +139,7 @@ func (s SysConfig) CheckValidateValueType(valueType, value string) error {
 func (s SysConfig) FindValueByKey(configKey string) string {
 	cacheKey := constants.CACHE_SYS_CONFIG + ":" + configKey
 	// 从缓存中读取
-	if cacheValue, err := cache.Get("", cacheKey); cacheValue != "" || err != nil {
+	if cacheValue, err := cache.Get("", cacheKey); cacheValue != "" && err == nil {
 		return cacheValue
 	}
 	// 无缓存时读取数据放入缓存中
