@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/base64"
 	"fmt"
 	"net/url"
 	"os"
@@ -27,34 +26,24 @@ type FileController struct{}
 
 // Download 下载文件
 //
-// GET /download/:file_path
+// GET /download
 func (s FileController) Download(c *gin.Context) {
-	filePath := c.Param("file_path")
-	if len(filePath) < 8 {
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: filePath not is base64 string"))
-		return
-	}
-	// base64解析出地址
-	decodedBytes, err := base64.StdEncoding.DecodeString(filePath)
-	if err != nil {
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "decode err: filePath not is base64 string"))
-		return
-	}
-	routerPath := string(decodedBytes)
-	if len(routerPath) > 500 {
-		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "file path too long"))
+	filePath := c.Query("file_path")
+	if len(filePath) == 0 || len(filePath) > 500 {
+		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: filePath must be set and not exceed 500 characters"))
 		return
 	}
 
-	if err := file.UploadAllowReadFilePath(routerPath); err != nil {
+	if err := file.UploadAllowReadFilePath(filePath); err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return
 	}
 
-	absPath := file.UploadFileAbsPath(routerPath)
+	absPath := file.UploadFileAbsPath(filePath)
 	headerRange := c.GetHeader("Range") // 断点续传
 
 	var result file.FileRange
+	var err error
 	if headerRange != "" {
 		start, end, rangeErr := file.ParseByteRange(headerRange)
 		if rangeErr != nil {
@@ -73,7 +62,7 @@ func (s FileController) Download(c *gin.Context) {
 	// 响应头
 	c.Writer.Header().Set("Accept-Ranges", "bytes")
 	c.Writer.Header().Set("Content-Type", "application/octet-stream")
-	c.Writer.Header().Set("Content-Disposition", `attachment; filename="`+url.QueryEscape(filepath.Base(routerPath))+`"`)
+	c.Writer.Header().Set("Content-Disposition", `attachment; filename="`+url.QueryEscape(filepath.Base(filePath))+`"`)
 
 	if headerRange != "" {
 		c.Writer.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", result.Start, result.End, result.Total))
@@ -196,7 +185,6 @@ func (s FileController) ChunkMerge(c *gin.Context) {
 	// 合并到 chunk 日期目录下
 	dst, err := file.FileConfig{
 		Dir:       filepath.Join(dir, constants.UPLOAD_CHUNK, datePath),
-		MaxSize:   file.UploadFileSize(),
 		WhiteExts: file.UploadWhiteList(),
 	}.ChunkMerge(
 		body.Identifier,

@@ -36,6 +36,6 @@ func Setup(router *gin.Engine) {
 		fileGroup.POST("/chunk-check", middleware.AuthorizeLogin(), file.ChunkCheck)
 		fileGroup.POST("/chunk-upload", middleware.AuthorizeLogin(), file.ChunkUpload)
 		fileGroup.POST("/chunk-merge", middleware.AuthorizeLogin(), file.ChunkMerge)
-		fileGroup.GET("/download/:file_path", middleware.AuthorizeLogin(), file.Download)
+		fileGroup.GET("/download", middleware.AuthorizeLogin(), file.Download)
 	}
 }

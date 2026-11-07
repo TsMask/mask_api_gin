@@ -19,7 +19,7 @@ import (
 // FileConfig 文件上传配置
 type FileConfig struct {
 	Dir        string   // 存储目录，必填
-	MaxSize    int      // 最大文件大小 (MB)，小于1默认1MB
+	MaxSize    int      // 单次上传文件大小 (MB)，小于1默认1MB
 	WhiteExts  []string // 扩展名白名单，如 [".jpg", ".png"]，为空则不限制
 	MaxNameLen int      // 文件名最大长度，0默认100
 }
@@ -75,7 +75,7 @@ func (u FileUpload) Save(cfg FileConfig) (string, error) {
 }
 
 // ChunkSave 校验并保存分片数据，存储为 {dir}/{id}/{index}。
-// 校验内容：分片大小不超过 MaxSize。
+// 校验内容：当前上传文件大小不超过 MaxSize。
 // Reader 优先：流式写入临时文件，超过限制自动清理；Data 模式全量写入。
 func (u FileUpload) ChunkSave(cfg FileConfig) error {
 	dst := filepath.Join(cfg.Dir, u.Id, u.Index)

@@ -27,7 +27,7 @@ staticFile:
 
 # 文件上传
 upload:
-  # 最大上传文件大小，默认为 10mb
+  # 单次上传文件大小，默认为 10MB
   fileSize: 10
   # 文件扩展名白名单
   whitelist:
@@ -96,6 +96,10 @@ cors:
   # 设置 Access-Control-Expose-Headers 的值
   exposeHeaders:
     - "X-RepeatSubmit-Reset"
+    - "Accept-Ranges"
+    - "Content-Disposition"
+    - "Content-Length"
+    - "Content-Range"
 
 # security 安全
 security:
