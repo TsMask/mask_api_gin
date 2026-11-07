@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"time"
@@ -17,14 +18,16 @@ import (
 
 // NewSysJob  服务层实例化
 var NewSysJob = &SysJob{
-	sysJobRepository:   repository.NewSysJob,
-	sysDictTypeService: systemService.NewSysDictType,
+	sysJobRepository:    repository.NewSysJob,
+	sysJobLogRepository: repository.NewSysJobLog,
+	sysDictTypeService:  systemService.NewSysDictType,
 }
 
 // SysJob 调度任务 服务层处理
 type SysJob struct {
-	sysJobRepository   *repository.SysJob         // 调度任务数据信息
-	sysDictTypeService *systemService.SysDictType // 字典类型服务
+	sysJobRepository    *repository.SysJob         // 调度任务数据信息
+	sysJobLogRepository *repository.SysJobLog      // 调度任务日志数据信息
+	sysDictTypeService  *systemService.SysDictType // 字典类型服务
 }
 
 // FindByPage 分页查询
@@ -179,6 +182,50 @@ func (s SysJob) deleteQueueJob(sysJob model.SysJob) bool {
 		return false
 	}
 	return queue.RemoveJob(fmt.Sprintf("%d", sysJob.ID))
+}
+
+// SaveJobLog 保存调度任务日志
+func (s SysJob) SaveJobLog(record cron.JobLogRecord) {
+	sysJob, ok := record.Data.(model.SysJob)
+	if !ok {
+		return
+	}
+
+	// 任务配置为不记录日志则跳过
+	if sysJob.JobSaveLog == "" || sysJob.JobSaveLog == constants.STATUS_NO {
+		return
+	}
+
+	// 结果信息 key 的名称
+	resultName := "failed"
+	if record.Status == constants.STATUS_YES {
+		resultName = "completed"
+	}
+
+	// 结果信息序列化字符串
+	jsonByte, _ := json.Marshal(map[string]any{
+		"cron":          sysJob.JobCron,
+		"invoke_target": sysJob.JobInvokeTarget,
+		"result":        resultName,
+		"message":       record.Result,
+	})
+	jobMsg := string(jsonByte)
+	if len(jobMsg) > 2048 {
+		jobMsg = jobMsg[:2048]
+	}
+
+	// 计算执行耗时并写入日志
+	duration := time.Since(time.UnixMilli(record.Timestamp))
+	s.sysJobLogRepository.Insert(model.SysJobLog{
+		JobName:         sysJob.JobName,
+		JobGroup:        sysJob.JobGroup,
+		JobInvokeTarget: sysJob.JobInvokeTarget,
+		JobTargetParams: sysJob.JobTargetParams,
+		LogStatus:       record.Status,
+		LogMsg:          jobMsg,
+		LogCostTime:     duration.Milliseconds(),
+		CreateTime:      time.Now().UnixMilli(),
+	})
 }
 
 // Reset 重置初始调度任务

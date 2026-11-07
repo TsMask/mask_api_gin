@@ -74,7 +74,6 @@ func RunServer(ctx context.Context) error {
 func modulesSetup(app *gin.Engine) {
 	// 注入操作日志与任务执行日志持久化钩子（须在路由注册、任务初始化之前）
 	system.RegisterOnOperationLog()
-	job.RegisterOnJobLog()
 
 	demo.Setup(app)    // 演示模块（可移除）
 	auth.Setup(app)    // 认证模块
