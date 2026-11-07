@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"time"
 
 	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/internal/shared/parse"
@@ -34,7 +35,7 @@ var sysUserSortMapping = map[string]string{
 // SelectByPage 分页查询集合
 func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64, error) {
 	tx := database.DB("").Model(&model.SysUser{})
-	tx = tx.Where("user_del = '0'")
+	tx = tx.Where("deleted_at = 0")
 	// 查询条件拼接
 	if v, ok := query["id"]; ok && v != "" {
 		tx = tx.Where("id = ?", v)
@@ -103,7 +104,7 @@ func (r SysUser) SelectByPage(query map[string]string, dataScopeSQL string) ([]m
 // Select 查询集合
 func (r SysUser) Select(sysUser model.SysUser) ([]model.SysUser, error) {
 	tx := database.DB("").Model(&model.SysUser{})
-	tx = tx.Where("user_del = '0'")
+	tx = tx.Where("deleted_at = 0")
 	// 查询条件拼接
 	if sysUser.UserName != "" {
 		tx = tx.Where("user_name like ?", sysUser.UserName+"%")
@@ -134,7 +135,7 @@ func (r SysUser) SelectByIds(userIds []int64) ([]model.SysUser, error) {
 	}
 	tx := database.DB("").Model(&model.SysUser{})
 	// 构建查询条件
-	tx = tx.Where("id in ? and user_del = '0'", userIds)
+	tx = tx.Where("id in ? and deleted_at = 0", userIds)
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
 		return rows, err
@@ -144,7 +145,6 @@ func (r SysUser) SelectByIds(userIds []int64) ([]model.SysUser, error) {
 
 // Insert 新增信息
 func (r SysUser) Insert(d *gorm.DB, sysUser model.SysUser) (int64, error) {
-	sysUser.UserDel = "0"
 	if d == nil {
 		d = database.DB("")
 	}
@@ -166,7 +166,7 @@ func (r SysUser) Update(d *gorm.DB, sysUser model.SysUser) (int64, error) {
 	tx := d.Model(&model.SysUser{})
 	// 构建查询条件
 	tx = tx.Where("id = ?", sysUser.ID)
-	tx = tx.Omit("id", "create_by", "create_time", "user_del")
+	tx = tx.Omit("id", "create_by", "create_time", "deleted_at", "deleted_by")
 	// 执行更新
 	if err := tx.Updates(sysUser).Error; err != nil {
 		return 0, err
@@ -175,7 +175,7 @@ func (r SysUser) Update(d *gorm.DB, sysUser model.SysUser) (int64, error) {
 }
 
 // DeleteByIds 批量删除信息
-func (r SysUser) DeleteByIds(d *gorm.DB, userIds []int64) (int64, error) {
+func (r SysUser) DeleteByIds(d *gorm.DB, userIds []int64, deletedBy string) (int64, error) {
 	if len(userIds) <= 0 {
 		return 0, nil
 	}
@@ -185,8 +185,13 @@ func (r SysUser) DeleteByIds(d *gorm.DB, userIds []int64) (int64, error) {
 	tx := d.Model(&model.SysUser{})
 	// 构建查询条件
 	tx = tx.Where("id in ?", userIds)
-	// 执行更新删除标记（软删除）
-	if err := tx.Update("user_del", "1").Error; err != nil {
+	updates := map[string]interface{}{
+		"deleted_at": time.Now().UnixMilli(),
+	}
+	if deletedBy != "" {
+		updates["deleted_by"] = deletedBy
+	}
+	if err := tx.Updates(updates).Error; err != nil {
 		return 0, err
 	}
 	return tx.RowsAffected, nil
@@ -195,7 +200,7 @@ func (r SysUser) DeleteByIds(d *gorm.DB, userIds []int64) (int64, error) {
 // CheckUnique 检查信息是否唯一
 func (r SysUser) CheckUnique(sysUser model.SysUser) (int64, error) {
 	tx := database.DB("").Model(&model.SysUser{})
-	tx = tx.Where("user_del = '0'")
+	tx = tx.Where("deleted_at = 0")
 	// 查询条件拼接
 	if sysUser.UserName != "" {
 		tx = tx.Where("user_name = ?", sysUser.UserName)
@@ -223,7 +228,7 @@ func (r SysUser) SelectByUserName(userName string) (model.SysUser, error) {
 	}
 	tx := database.DB("").Model(&model.SysUser{})
 	// 构建查询条件
-	tx = tx.Where("user_name = ? and user_del = '0'", userName)
+	tx = tx.Where("user_name = ? and deleted_at = 0", userName)
 	// 查询数据
 	if err := tx.Limit(1).Find(&item).Error; err != nil {
 		return item, err
@@ -239,7 +244,7 @@ func (r SysUser) SelectByPhone(phone string) (model.SysUser, error) {
 	}
 
 	tx := database.DB("").Model(&model.SysUser{})
-	tx = tx.Where("user_phone = ? and user_del = '0'", phone)
+	tx = tx.Where("user_phone = ? and deleted_at = 0", phone)
 	if err := tx.Limit(1).Find(&item).Error; err != nil {
 		return item, err
 	}
@@ -249,7 +254,7 @@ func (r SysUser) SelectByPhone(phone string) (model.SysUser, error) {
 // SelectAuthUsersByPage 分页查询集合By分配用户角色
 func (r SysUser) SelectAuthUsersByPage(query map[string]string, dataScopeSQL string) ([]model.SysUser, int64, error) {
 	tx := database.DB("").Model(&model.SysUser{})
-	tx = tx.Where("user_del = '0'")
+	tx = tx.Where("deleted_at = 0")
 	// 查询条件拼接
 	if v, ok := query["user_name"]; ok && v != "" {
 		tx = tx.Where("user_name like ?", v+"%")

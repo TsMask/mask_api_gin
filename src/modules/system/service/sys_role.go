@@ -153,7 +153,7 @@ func (r SysRole) Update(sysRole model.SysRole) int64 {
 }
 
 // DeleteByIds 批量删除信息
-func (r SysRole) DeleteByIds(roleIds []int64) (int64, error) {
+func (r SysRole) DeleteByIds(roleIds []int64, deletedBy string) (int64, error) {
 	// 检查是否存在
 	roles, err := r.sysRoleRepository.SelectByIds(roleIds)
 	if err != nil {
@@ -183,7 +183,7 @@ func (r SysRole) DeleteByIds(roleIds []int64) (int64, error) {
 		if _, err := r.sysRoleDeptRepository.DeleteByRoleIds(tx, roleIds); err != nil {
 			return err
 		}
-		affected, err := r.sysRoleRepository.DeleteByIds(tx, roleIds)
+		affected, err := r.sysRoleRepository.DeleteByIds(tx, roleIds, deletedBy)
 		rows = affected
 		return err
 	})

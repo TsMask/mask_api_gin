@@ -11,8 +11,7 @@ type SysNotice struct {
 	NoticeTitle   string `json:"notice_title" gorm:"column:notice_title" binding:"required"`     // 公告标题
 	NoticeType    string `json:"notice_type" gorm:"column:notice_type" binding:"required"`       // 公告类型（1通知 2公告）
 	NoticeContent string `json:"notice_content" gorm:"column:notice_content" binding:"required"` // 公告内容
-	NoticeStatus  string `json:"notice_status" gorm:"column:notice_status"`                      // 公告状态（0关闭 1正常）
-	NoticeDel     string `json:"-" gorm:"column:notice_del"`                                     // 删除标记（0存在 1删除）
+	NoticeStatus  string `json:"notice_status" gorm:"column:notice_status" binding:"required"`   // 公告状态（0关闭 1正常 2审核 3已删除）
 }
 
 // TableName 表名称

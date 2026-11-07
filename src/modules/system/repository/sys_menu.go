@@ -17,7 +17,6 @@ type SysMenu struct{}
 // Select 查询集合 userId为0是系统管理员
 func (r SysMenu) Select(sysMenu model.SysMenu, userId int64) ([]model.SysMenu, error) {
 	tx := database.DB("").Model(&model.SysMenu{})
-	tx = tx.Where("menu_del = '0'")
 	// 查询条件拼接
 	if sysMenu.MenuName != "" {
 		tx = tx.Where("menu_name like ?", sysMenu.MenuName+"%")
@@ -54,7 +53,7 @@ func (r SysMenu) SelectByIds(menuIds []int64) ([]model.SysMenu, error) {
 	}
 	tx := database.DB("").Model(&model.SysMenu{})
 	// 构建查询条件
-	tx = tx.Where("id in ? and menu_del = '0'", menuIds)
+	tx = tx.Where("id in ?", menuIds)
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
 		return rows, err
@@ -64,7 +63,6 @@ func (r SysMenu) SelectByIds(menuIds []int64) ([]model.SysMenu, error) {
 
 // Insert 新增信息
 func (r SysMenu) Insert(sysMenu model.SysMenu) (int64, error) {
-	sysMenu.MenuDel = "0"
 	if sysMenu.ID > 0 {
 		return 0, nil
 	}
@@ -85,7 +83,7 @@ func (r SysMenu) Update(sysMenu model.SysMenu) (int64, error) {
 	tx := database.DB("").Model(&model.SysMenu{})
 	// 构建查询条件
 	tx = tx.Where("id = ?", sysMenu.ID)
-	tx = tx.Omit("id", "create_by", "create_time", "menu_del")
+	tx = tx.Omit("id", "create_by", "create_time")
 	// 执行更新
 	if err := tx.Updates(sysMenu).Error; err != nil {
 		return 0, err
@@ -93,7 +91,7 @@ func (r SysMenu) Update(sysMenu model.SysMenu) (int64, error) {
 	return tx.RowsAffected, nil
 }
 
-// DeleteById 删除信息 返回受影响行数（软删除）
+// DeleteById 删除信息 返回受影响行数（物理删除）
 func (r SysMenu) DeleteById(d *gorm.DB, menuId int64) (int64, error) {
 	if menuId <= 0 {
 		return 0, nil
@@ -104,8 +102,7 @@ func (r SysMenu) DeleteById(d *gorm.DB, menuId int64) (int64, error) {
 	tx := d.Model(&model.SysMenu{})
 	// 构建查询条件
 	tx = tx.Where("id = ?", menuId)
-	// 执行更新删除标记
-	if err := tx.Update("menu_del", "1").Error; err != nil {
+	if err := tx.Delete(&model.SysMenu{}).Error; err != nil {
 		return 0, err
 	}
 	return tx.RowsAffected, nil
@@ -114,7 +111,6 @@ func (r SysMenu) DeleteById(d *gorm.DB, menuId int64) (int64, error) {
 // CheckUnique 检查信息是否唯一
 func (r SysMenu) CheckUnique(sysMenu model.SysMenu) (int64, error) {
 	tx := database.DB("").Model(&model.SysMenu{})
-	tx = tx.Where("menu_del = '0'")
 	// 查询条件拼接
 	if sysMenu.ParentId >= 0 {
 		tx = tx.Where("parent_id = ?", sysMenu.ParentId)
@@ -141,7 +137,6 @@ func (r SysMenu) CheckUniqueMenuPath(menuPath string, menuId int64) (int64, erro
 	}
 
 	tx := database.DB("").Model(&model.SysMenu{})
-	tx = tx.Where("menu_del = '0'")
 	tx = tx.Where("menu_type in ?", []string{constants.MENU_TYPE_DIR, constants.MENU_TYPE_MENU})
 	tx = tx.Where("menu_path = ?", menuPath)
 
@@ -159,7 +154,7 @@ func (r SysMenu) ExistChildrenByMenuIdAndStatus(menuId int64, menuStatus string)
 	}
 	tx := database.DB("").Model(&model.SysMenu{})
 	// 构建查询条件
-	tx = tx.Where("parent_id = ? and menu_del = '0'", menuId)
+	tx = tx.Where("parent_id = ?", menuId)
 	if menuStatus != "" {
 		tx = tx.Where("menu_status = ?", menuStatus)
 		tx = tx.Where("menu_type in ?", []string{constants.MENU_TYPE_DIR, constants.MENU_TYPE_MENU})
@@ -203,7 +198,6 @@ func (r SysMenu) SelectByRoleId(roleId int64, menuCheckStrictly bool) ([]int64, 
 	}
 
 	tx := database.DB("").Model(&model.SysMenu{})
-	tx = tx.Where("menu_del = '0'")
 	tx = tx.Where("id in (select menu_id from sys_role_menu where role_id = ?)", roleId)
 	// 父子互相关联显示，取所有子节点
 	if menuCheckStrictly {
@@ -229,7 +223,6 @@ func (r SysMenu) SelectTreeByUserId(userId int64) ([]model.SysMenu, error) {
 	}
 
 	tx := database.DB("").Model(&model.SysMenu{})
-	tx = tx.Where("menu_del = '0'")
 	// 管理员全部菜单
 	if userId == 0 {
 		tx = tx.Where("menu_type in ? and menu_status = '1'", []string{constants.MENU_TYPE_DIR, constants.MENU_TYPE_MENU})

@@ -144,7 +144,7 @@ func (s PasswordReset) findTarget(username string) (model.PasswordResetTarget, e
 		return model.PasswordResetTarget{}, fmt.Errorf("用户账号格式不正确")
 	}
 	user := s.sysUserService.FindByUserName(username)
-	if user.UserName != username || user.ID <= 0 || user.UserDel == constants.STATUS_YES || user.UserStatus == constants.STATUS_NO {
+	if user.UserName != username || user.ID <= 0 || user.DeletedAt > 0 || user.UserStatus == constants.STATUS_NO {
 		return model.PasswordResetTarget{}, fmt.Errorf("用户不存在或账号不可自助找回密码")
 	}
 	if regular.ValidEmail(user.UserEmail) {

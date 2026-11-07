@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/shared/logger"
 	"mask_api_gin/src/modules/system/model"
 	"mask_api_gin/src/modules/system/repository"
@@ -82,7 +83,7 @@ func (s SysNotice) Update(sysNotice model.SysNotice) int64 {
 }
 
 // DeleteByIds 批量删除信息
-func (s SysNotice) DeleteByIds(noticeIds []int64) (int64, error) {
+func (s SysNotice) DeleteByIds(noticeIds []int64, updateBy string) (int64, error) {
 	// 检查是否存在
 	notices, err := s.sysNoticeRepository.SelectByIds(noticeIds)
 	if err != nil {
@@ -91,18 +92,24 @@ func (s SysNotice) DeleteByIds(noticeIds []int64) (int64, error) {
 	if len(notices) <= 0 {
 		return 0, fmt.Errorf("没有权限访问公告信息数据！")
 	}
-	for _, notice := range notices {
-		// 检查是否为已删除
-		if notice.NoticeDel == "1" {
-			return 0, fmt.Errorf("ID:%d 公告信息已经删除！", notice.ID)
-		}
-	}
 	if len(notices) == len(noticeIds) {
-		rows, err := s.sysNoticeRepository.DeleteByIds(noticeIds)
+		deletableIds := make([]int64, 0)
+		for _, notice := range notices {
+			if notice.NoticeStatus != constants.NOTICE_STATUS_DELETED {
+				deletableIds = append(deletableIds, notice.ID)
+			}
+		}
+		if len(deletableIds) == 0 {
+			return 0, fmt.Errorf("公告已是已删除状态，无需重复删除")
+		}
+
+		rows, err := s.sysNoticeRepository.DeleteByIds(deletableIds, updateBy)
 		if err != nil {
 			return 0, err
 		}
-		return rows, nil
+		if rows == int64(len(deletableIds)) {
+			return rows, nil
+		}
 	}
 	return 0, fmt.Errorf("删除公告信息失败！")
 }

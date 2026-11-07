@@ -94,7 +94,7 @@ func (s Account) ByUsername(username, password string) (token.UserInfo, error) {
 	if sysUser.UserName != username {
 		return info, fmt.Errorf("user does not exist or password is incorrect")
 	}
-	if sysUser.UserDel == constants.STATUS_YES {
+	if sysUser.DeletedAt > 0 {
 		return info, fmt.Errorf("sorry, your account has been deleted. Sorry, your account has been deleted")
 	}
 	if sysUser.UserStatus == constants.STATUS_NO {
@@ -139,7 +139,7 @@ func (s Account) ByPhone(phone string) (token.UserInfo, error) {
 	if sysUser.UserPhone != phone || sysUser.ID <= 0 {
 		return info, fmt.Errorf("user does not exist")
 	}
-	if sysUser.UserDel == constants.STATUS_YES {
+	if sysUser.DeletedAt > 0 {
 		return info, fmt.Errorf("sorry, your account has been deleted. Sorry, your account has been deleted")
 	}
 	if sysUser.UserStatus == constants.STATUS_NO {
@@ -175,7 +175,7 @@ func (s Account) ByUserId(userId int64) (token.UserInfo, error) {
 	if sysUser.ID != userId {
 		return info, fmt.Errorf("user does not exist")
 	}
-	if sysUser.UserDel == constants.STATUS_YES {
+	if sysUser.DeletedAt > 0 {
 		return info, fmt.Errorf("sorry, your account has been deleted. Sorry, your account has been deleted")
 	}
 	if sysUser.UserStatus == constants.STATUS_NO {

@@ -21,7 +21,6 @@ type SysMenu struct {
 	MenuType      string `json:"menu_type" gorm:"column:menu_type" binding:"required"` // 菜单类型（D目录 M菜单 A权限）
 	MenuVisible   string `json:"menu_visible" gorm:"column:menu_visible"`              // 是否显示（0隐藏 1显示）
 	MenuStatus    string `json:"menu_status" gorm:"column:menu_status"`                // 菜单状态（0停用 1正常）
-	MenuDel       string `json:"-" gorm:"column:menu_del"`                             // 删除标记（0存在 1删除）
 
 	// ====== 非数据库字段属性 ======
 

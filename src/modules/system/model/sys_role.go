@@ -13,7 +13,8 @@ type SysRole struct {
 	RoleKey               string `json:"role_key" gorm:"column:role_key" binding:"required"`              // 角色键值
 	RoleSort              int64  `json:"role_sort" gorm:"column:role_sort"`                               // 显示顺序
 	RoleStatus            string `json:"role_status" gorm:"column:role_status"`                           // 角色状态（0停用 1正常）
-	RoleDel               string `json:"-" gorm:"column:role_del"`                                        // 删除标记（0存在 1删除）
+	DeletedAt             int64  `json:"-" gorm:"column:deleted_at"`                                      // 删除时间，0表示未删除
+	DeletedBy             string `json:"-" gorm:"column:deleted_by"`                                      // 删除人
 	RoleDataScope         string `json:"role_data_scope" gorm:"column:role_data_scope"`                   // 数据范围（1全部 2自定 3本部门 4本部门及以下 5仅本人）
 	RoleMenuCheckStrictly string `json:"role_menu_check_strictly" gorm:"column:role_menu_check_strictly"` // 菜单树选择项是否关联显示（0不关联 1互相）
 	RoleDeptCheckStrictly string `json:"role_dept_check_strictly" gorm:"column:role_dept_check_strictly"` // 部门树选择项是否关联显示（0不关联 1互相）

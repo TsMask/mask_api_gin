@@ -257,7 +257,7 @@ func (s SysUser) UpdateUserAndRolePost(sysUser model.SysUser) int64 {
 }
 
 // DeleteByIds 批量删除信息
-func (s SysUser) DeleteByIds(userIds []int64) (int64, error) {
+func (s SysUser) DeleteByIds(userIds []int64, deletedBy string) (int64, error) {
 	// 检查是否存在
 	users, err := s.sysUserRepository.SelectByIds(userIds)
 	if err != nil {
@@ -277,7 +277,7 @@ func (s SysUser) DeleteByIds(userIds []int64) (int64, error) {
 		if _, err := s.sysUserPostRepository.DeleteByUserIds(tx, userIds); err != nil {
 			return err
 		}
-		r, err := s.sysUserRepository.DeleteByIds(tx, userIds)
+		r, err := s.sysUserRepository.DeleteByIds(tx, userIds, deletedBy)
 		rows = r
 		return err
 	})

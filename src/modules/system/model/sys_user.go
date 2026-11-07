@@ -18,7 +18,8 @@ type SysUser struct {
 	UserLoginIp   string `json:"user_login_ip" gorm:"column:user_login_ip"`     // 最后登录IP
 	UserLoginTime int64  `json:"user_login_time" gorm:"column:user_login_time"` // 最后登录时间
 	UserStatus    string `json:"user_status" gorm:"column:user_status"`         // 账号状态（0停用 1正常）
-	UserDel       string `json:"-" gorm:"column:user_del"`                      // 删除标记（0存在 1删除）
+	DeletedAt     int64  `json:"-" gorm:"column:deleted_at"`                    // 删除时间，0表示未删除
+	DeletedBy     string `json:"-" gorm:"column:deleted_by"`                    // 删除人
 	DeptId        int64  `json:"dept_id" gorm:"column:dept_id"`                 // 部门ID
 
 	// ====== 非数据库字段属性 ======

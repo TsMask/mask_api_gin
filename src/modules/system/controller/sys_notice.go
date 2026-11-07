@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/internal/shared/parse"
 	"mask_api_gin/src/internal/web/reqctx"
 	"mask_api_gin/src/internal/web/resp"
@@ -96,12 +97,34 @@ func (s SysNoticeController) Edit(c *gin.Context) {
 		c.JSON(200, resp.ErrMsg("没有权限访问公告信息数据！"))
 		return
 	}
+	if body.NoticeStatus == constants.NOTICE_STATUS_DELETED {
+		c.JSON(200, resp.ErrMsg("公告状态不能选择已删除，请使用删除操作"))
+		return
+	}
+	if body.NoticeStatus != "0" && body.NoticeStatus != "1" && body.NoticeStatus != "2" {
+		c.JSON(200, resp.ErrMsg("公告状态只能是关闭、正常或审核"))
+		return
+	}
 
+	noticeChanged := noticeInfo.NoticeTitle != body.NoticeTitle ||
+		noticeInfo.NoticeType != body.NoticeType ||
+		noticeInfo.NoticeContent != body.NoticeContent ||
+		noticeInfo.NoticeStatus != body.NoticeStatus ||
+		noticeInfo.Remark != body.Remark
+	if !noticeChanged {
+		c.JSON(200, resp.Ok(nil))
+		return
+	}
+
+	noticeStatusUnchanged := noticeInfo.NoticeStatus == body.NoticeStatus
 	noticeInfo.NoticeTitle = body.NoticeTitle
 	noticeInfo.NoticeType = body.NoticeType
 	noticeInfo.NoticeContent = body.NoticeContent
 	noticeInfo.NoticeStatus = body.NoticeStatus
 	noticeInfo.Remark = body.Remark
+	if noticeStatusUnchanged {
+		noticeInfo.NoticeStatus = ""
+	}
 	noticeInfo.UpdateBy = reqctx.LoginUserToUserName(c)
 	rows := s.sysNoticeService.Update(noticeInfo)
 	if rows > 0 {
@@ -129,7 +152,7 @@ func (s SysNoticeController) Remove(c *gin.Context) {
 		ids = append(ids, parse.Number(v))
 	}
 
-	rows, err := s.sysNoticeService.DeleteByIds(ids)
+	rows, err := s.sysNoticeService.DeleteByIds(ids, reqctx.LoginUserToUserName(c))
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return

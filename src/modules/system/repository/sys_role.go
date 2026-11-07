@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"time"
 
 	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/modules/system/model"
@@ -30,7 +31,7 @@ var sysRoleSortMapping = map[string]string{
 // SelectByPage 分页查询集合
 func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64, error) {
 	tx := database.DB("").Model(&model.SysRole{})
-	tx = tx.Where("role_del = '0'")
+	tx = tx.Where("deleted_at = 0")
 	// 查询条件拼接
 	if v, ok := query["role_name"]; ok && v != "" {
 		tx = tx.Where("role_name like ?", v+"%")
@@ -94,7 +95,7 @@ func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64, 
 // Select 查询集合
 func (r SysRole) Select(sysRole model.SysRole) ([]model.SysRole, error) {
 	tx := database.DB("").Model(&model.SysRole{})
-	tx = tx.Where("role_del = '0'")
+	tx = tx.Where("deleted_at = 0")
 	// 查询条件拼接
 	if sysRole.RoleKey != "" {
 		tx = tx.Where("role_key like ?", sysRole.RoleKey+"%")
@@ -122,7 +123,7 @@ func (r SysRole) SelectByIds(roleIds []int64) ([]model.SysRole, error) {
 	}
 	tx := database.DB("").Model(&model.SysRole{})
 	// 构建查询条件
-	tx = tx.Where("id in ? and role_del = '0'", roleIds)
+	tx = tx.Where("id in ? and deleted_at = 0", roleIds)
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
 		return rows, err
@@ -132,7 +133,6 @@ func (r SysRole) SelectByIds(roleIds []int64) ([]model.SysRole, error) {
 
 // Insert 新增信息 返回新增数据ID
 func (r SysRole) Insert(d *gorm.DB, sysRole model.SysRole) (int64, error) {
-	sysRole.RoleDel = "0"
 	if d == nil {
 		d = database.DB("")
 	}
@@ -154,7 +154,7 @@ func (r SysRole) Update(d *gorm.DB, sysRole model.SysRole) (int64, error) {
 	tx := d.Model(&model.SysRole{})
 	// 构建查询条件
 	tx = tx.Where("id = ?", sysRole.ID)
-	tx = tx.Omit("id", "create_by", "create_time", "role_del")
+	tx = tx.Omit("id", "create_by", "create_time", "deleted_at", "deleted_by")
 	// 执行更新
 	if err := tx.Updates(sysRole).Error; err != nil {
 		return 0, err
@@ -163,7 +163,7 @@ func (r SysRole) Update(d *gorm.DB, sysRole model.SysRole) (int64, error) {
 }
 
 // DeleteByIds 批量删除信息 返回受影响行数（软删除）
-func (r SysRole) DeleteByIds(d *gorm.DB, roleIds []int64) (int64, error) {
+func (r SysRole) DeleteByIds(d *gorm.DB, roleIds []int64, deletedBy string) (int64, error) {
 	if len(roleIds) <= 0 {
 		return 0, nil
 	}
@@ -173,8 +173,13 @@ func (r SysRole) DeleteByIds(d *gorm.DB, roleIds []int64) (int64, error) {
 	tx := d.Model(&model.SysRole{})
 	// 构建查询条件
 	tx = tx.Where("id in ?", roleIds)
-	// 执行更新删除标记（软删除）
-	if err := tx.Update("role_del", "1").Error; err != nil {
+	updates := map[string]interface{}{
+		"deleted_at": time.Now().UnixMilli(),
+	}
+	if deletedBy != "" {
+		updates["deleted_by"] = deletedBy
+	}
+	if err := tx.Updates(updates).Error; err != nil {
 		return 0, err
 	}
 	return tx.RowsAffected, nil
@@ -183,7 +188,7 @@ func (r SysRole) DeleteByIds(d *gorm.DB, roleIds []int64) (int64, error) {
 // CheckUnique 检查信息是否唯一
 func (r SysRole) CheckUnique(sysRole model.SysRole) (int64, error) {
 	tx := database.DB("").Model(&model.SysRole{})
-	tx = tx.Where("role_del = '0'")
+	tx = tx.Where("deleted_at = 0")
 	// 查询条件拼接
 	if sysRole.RoleName != "" {
 		tx = tx.Where("role_name = ?", sysRole.RoleName)
@@ -212,7 +217,7 @@ func (r SysRole) SelectByUserId(userId int64) ([]model.SysRole, error) {
 		Distinct("r.*").
 		Joins("LEFT JOIN sys_user_role ur ON ur.role_id = r.id").
 		Joins("LEFT JOIN sys_user u ON u.id = ur.user_id").
-		Where("r.role_del = '0' AND u.user_del = '0' AND ur.user_id = ?", userId)
+		Where("r.deleted_at = 0 AND u.deleted_at = 0 AND ur.user_id = ?", userId)
 
 	// 查询数据
 	if err := tx.Find(&rows).Error; err != nil {
@@ -235,7 +240,7 @@ func (r SysRole) SelectByUserIds(userIds []int64) (map[int64][]model.SysRole, er
 	var rows []userRoleRow
 	tx := database.DB("").Table("sys_user_role ur").
 		Select("ur.user_id, r.*").
-		Joins("JOIN sys_role r ON r.id = ur.role_id AND r.role_del = '0'").
+		Joins("JOIN sys_role r ON r.id = ur.role_id AND r.deleted_at = 0").
 		Where("ur.user_id IN ?", userIds)
 	if err := tx.Find(&rows).Error; err != nil {
 		return result, err

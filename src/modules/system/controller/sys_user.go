@@ -313,7 +313,7 @@ func (s SysUserController) Remove(c *gin.Context) {
 		}
 	}
 
-	rows, err := s.sysUserService.DeleteByIds(ids)
+	rows, err := s.sysUserService.DeleteByIds(ids, reqctx.LoginUserToUserName(c))
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return

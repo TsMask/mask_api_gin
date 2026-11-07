@@ -203,7 +203,7 @@ func (s SysRoleController) Remove(c *gin.Context) {
 		}
 	}
 
-	rows, err := s.sysRoleService.DeleteByIds(ids)
+	rows, err := s.sysRoleService.DeleteByIds(ids, reqctx.LoginUserToUserName(c))
 	if err != nil {
 		c.JSON(200, resp.ErrMsg(err.Error()))
 		return

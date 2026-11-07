@@ -330,7 +330,7 @@ func (r SysDept) ExistUserByDeptId(deptId int64) (int64, error) {
 		return 0, nil
 	}
 	tx := database.DB("").Model(&model.SysUser{})
-	tx = tx.Where("user_del = '0' AND dept_id = ?", deptId)
+	tx = tx.Where("deleted_at = 0 AND dept_id = ?", deptId)
 
 	var count int64 = 0
 	if err := tx.Count(&count).Error; err != nil {
