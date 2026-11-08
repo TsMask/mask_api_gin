@@ -78,6 +78,16 @@ func (u FileUpload) Save(cfg FileConfig) (string, error) {
 // 校验内容：当前上传文件大小不超过 MaxSize。
 // Reader 优先：流式写入临时文件，超过限制自动清理；Data 模式全量写入。
 func (u FileUpload) ChunkSave(cfg FileConfig) error {
+	if !isSafePathSegment(u.Id) {
+		return fmt.Errorf("invalid chunk identifier")
+	}
+	if !isSafePathSegment(u.Index) {
+		return fmt.Errorf("invalid chunk index")
+	}
+	index, err := strconv.Atoi(u.Index)
+	if err != nil || index < 0 {
+		return fmt.Errorf("invalid chunk index")
+	}
 	dst := filepath.Join(cfg.Dir, u.Id, u.Index)
 	if u.Reader != nil {
 		return streamToPath(dst, u.Reader, cfg.maxSizeBytes())
@@ -95,6 +105,9 @@ func (c FileConfig) ChunkCheck(id, fileName string) ([]string, error) {
 	if err := checkNameAndExt(c, fileName); err != nil {
 		return nil, err
 	}
+	if !isSafePathSegment(id) {
+		return nil, fmt.Errorf("invalid chunk identifier")
+	}
 	return listRegularFiles(filepath.Join(c.Dir, id))
 }
 
@@ -103,6 +116,9 @@ func (c FileConfig) ChunkCheck(id, fileName string) ([]string, error) {
 func (c FileConfig) ChunkMerge(id string, fileName string) (string, error) {
 	if err := checkNameAndExt(c, fileName); err != nil {
 		return "", err
+	}
+	if !isSafePathSegment(id) {
+		return "", fmt.Errorf("invalid chunk identifier")
 	}
 	chunkDir := filepath.Join(c.Dir, id)
 	dst := genPath(c.Dir, fileName)
@@ -213,6 +229,12 @@ func checkNameAndExt(cfg FileConfig, name string) error {
 	return nil
 }
 
+// isSafePathSegment ensures a caller-provided value becomes exactly one path segment.
+func isSafePathSegment(value string) bool {
+	return value != "" && value != "." && value != ".." &&
+		!strings.ContainsAny(value, `/\`)
+}
+
 // streamToPath 从 Reader 流式写入目标路径，超过 limit 字节则报错并清理临时文件。
 // 使用临时文件 + rename 保证原子性。
 func streamToPath(dst string, src io.Reader, limit int64) error {
@@ -252,6 +274,11 @@ func mergeFiles(chunkDir, writePath string) error {
 	if err != nil {
 		return fmt.Errorf("read chunk dir: %w", err)
 	}
+	if len(names) == 0 {
+		return fmt.Errorf("no chunk files found in %s", chunkDir)
+	}
+
+	names = numericChunkNames(names)
 	if len(names) == 0 {
 		return fmt.Errorf("no chunk files found in %s", chunkDir)
 	}
@@ -296,11 +323,24 @@ func mergeFiles(chunkDir, writePath string) error {
 	return mergeErr
 }
 
+func numericChunkNames(names []string) []string {
+	numeric := make([]string, 0, len(names))
+	for _, name := range names {
+		if index, err := strconv.Atoi(name); err == nil && index >= 0 {
+			numeric = append(numeric, name)
+		}
+	}
+	return numeric
+}
+
 // listRegularFiles 列出目录下的常规文件名（不含子目录），按文件名排序
 func listRegularFiles(dirPath string) ([]string, error) {
 	names := make([]string, 0)
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return names, nil
+		}
 		return names, err
 	}
 	for _, e := range entries {
