@@ -97,6 +97,10 @@ func (s SysNoticeController) Edit(c *gin.Context) {
 		c.JSON(200, resp.ErrMsg("没有权限访问公告信息数据！"))
 		return
 	}
+	if noticeInfo.NoticeStatus == constants.NOTICE_STATUS_DELETED {
+		c.JSON(200, resp.ErrMsg("已删除公告不能修改！"))
+		return
+	}
 	if body.NoticeStatus == constants.NOTICE_STATUS_DELETED {
 		c.JSON(200, resp.ErrMsg("公告状态不能选择已删除，请使用删除操作"))
 		return

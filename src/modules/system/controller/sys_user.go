@@ -423,7 +423,7 @@ func (s SysUserController) Unlock(c *gin.Context) {
 		c.JSON(200, resp.OkMsg("unlock success"))
 		return
 	}
-	c.JSON(200, resp.ErrMsg("not found unlock user"))
+	c.JSON(200, resp.ErrMsg("not found lock"))
 }
 
 // Export 用户信息列表导出
