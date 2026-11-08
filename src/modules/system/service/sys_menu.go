@@ -133,15 +133,6 @@ func (s SysMenu) ExistChildrenByMenuIdAndStatus(menuId int64, status string) int
 	return rows
 }
 
-// ExistRoleByMenuId 菜单分配给的角色数量
-func (s SysMenu) ExistRoleByMenuId(menuId int64) int64 {
-	rows, err := s.sysRoleMenuRepository.ExistRoleByMenuId(menuId)
-	if err != nil {
-		logger.Errorf("query err => %v", err.Error())
-	}
-	return rows
-}
-
 // CheckUniqueParentIdByMenuName 检查同级下菜单名称是否唯一
 func (s SysMenu) CheckUniqueParentIdByMenuName(parentId int64, menuName string, menuId int64) bool {
 	uniqueId, err := s.sysMenuRepository.CheckUnique(model.SysMenu{

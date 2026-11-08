@@ -248,14 +248,6 @@ func (s SysMenuController) Remove(c *gin.Context) {
 		return
 	}
 
-	// 检查是否分配给角色
-	existRole := s.sysMenuService.ExistRoleByMenuId(id)
-	if existRole > 0 {
-		msg := fmt.Sprintf("不允许删除，菜单已分配给角色数：%d", existRole)
-		c.JSON(200, resp.ErrMsg(msg))
-		return
-	}
-
 	rows := s.sysMenuService.DeleteById(id)
 	if rows > 0 {
 		msg := fmt.Sprintf("删除成功：%d", rows)

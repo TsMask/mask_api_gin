@@ -199,13 +199,11 @@ func (r SysMenu) SelectByRoleId(roleId int64, menuCheckStrictly bool) ([]int64, 
 
 	tx := database.DB("").Model(&model.SysMenu{})
 	tx = tx.Where("id in (select menu_id from sys_role_menu where role_id = ?)", roleId)
-	// 父子互相关联显示，取所有子节点
+	// 父子互相关联显示时只返回叶子节点，父级状态由前端树推导
 	if menuCheckStrictly {
 		tx = tx.Where(`id not in (
-		select m.parent_id from sys_menu m
-		inner join sys_role_menu rm on m.id = rm.menu_id
-		and rm.role_id = ?
-		)`, roleId)
+		select m.parent_id from sys_menu m where m.parent_id <> 0
+		)`)
 	}
 
 	// 查询数据

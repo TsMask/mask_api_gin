@@ -13,21 +13,6 @@ var NewSysRoleMenu = &SysRoleMenu{}
 // SysRoleMenu 角色与菜单关联表 数据层处理
 type SysRoleMenu struct{}
 
-// ExistRoleByMenuId 存在角色使用数量By菜单
-func (r SysRoleMenu) ExistRoleByMenuId(menuId int64) (int64, error) {
-	if menuId <= 0 {
-		return 0, nil
-	}
-	tx := database.DB("").Model(&model.SysRoleMenu{})
-	tx = tx.Where("menu_id = ?", menuId)
-	// 查询数据
-	var count int64 = 0
-	if err := tx.Count(&count).Error; err != nil {
-		return count, err
-	}
-	return count, nil
-}
-
 // DeleteByRoleIds 批量删除关联By角色
 func (r SysRoleMenu) DeleteByRoleIds(d *gorm.DB, roleIds []int64) (int64, error) {
 	if len(roleIds) <= 0 {
