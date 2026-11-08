@@ -246,9 +246,11 @@ func (s SysRoleController) Status(c *gin.Context) {
 	}
 
 	// 更新状态不刷新缓存
-	role.RoleStatus = body.RoleStatus
-	role.UpdateBy = reqctx.LoginUserToUserName(c)
-	rows := s.sysRoleService.Update(role)
+	rows := s.sysRoleService.UpdateStatus(
+		body.RoleID,
+		body.RoleStatus,
+		reqctx.LoginUserToUserName(c),
+	)
 	if rows > 0 {
 		c.JSON(200, resp.Ok(nil))
 		return

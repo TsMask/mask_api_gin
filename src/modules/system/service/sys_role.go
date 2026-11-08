@@ -152,6 +152,23 @@ func (r SysRole) Update(sysRole model.SysRole) int64 {
 	return rows
 }
 
+// UpdateStatus 修改角色状态。状态切换不携带菜单组，不能走全量更新避免清空角色菜单。
+func (r SysRole) UpdateStatus(roleId int64, roleStatus string, updateBy string) int64 {
+	rows, err := r.sysRoleRepository.UpdateStatus(nil, roleId, roleStatus, updateBy)
+	if err != nil {
+		logger.Errorf("update status err => %v", err.Error())
+		return 0
+	}
+	if rows > 0 {
+		userIds, err := r.sysUserRoleRepository.SelectUserIdsByRoleIds([]int64{roleId})
+		if err != nil {
+			logger.Errorf("query err => %v", err.Error())
+		}
+		token.RemoveByUserIds(userIds)
+	}
+	return rows
+}
+
 // DeleteByIds 批量删除信息
 func (r SysRole) DeleteByIds(roleIds []int64, deletedBy string) (int64, error) {
 	// 检查是否存在
@@ -265,6 +282,13 @@ func (r SysRole) UpdateAndDataScope(sysRole model.SysRole) int64 {
 	})
 	if err != nil {
 		return 0
+	}
+	if rows > 0 {
+		userIds, err := r.sysUserRoleRepository.SelectUserIdsByRoleIds([]int64{sysRole.ID})
+		if err != nil {
+			logger.Errorf("query err => %v", err.Error())
+		}
+		token.RemoveByUserIds(userIds)
 	}
 	return rows
 }

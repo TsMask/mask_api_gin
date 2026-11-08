@@ -162,6 +162,25 @@ func (r SysRole) Update(d *gorm.DB, sysRole model.SysRole) (int64, error) {
 	return tx.RowsAffected, nil
 }
 
+// UpdateStatus 修改角色状态，避免状态切换走全量更新清空菜单权限
+func (r SysRole) UpdateStatus(d *gorm.DB, roleId int64, roleStatus string, updateBy string) (int64, error) {
+	if roleId <= 0 {
+		return 0, nil
+	}
+	if d == nil {
+		d = database.DB("")
+	}
+	updates := map[string]interface{}{
+		"role_status": roleStatus,
+		"update_by":   updateBy,
+		"update_time": time.Now().UnixMilli(),
+	}
+	tx := d.Model(&model.SysRole{}).
+		Where("id = ? and deleted_at = 0", roleId).
+		Updates(updates)
+	return tx.RowsAffected, tx.Error
+}
+
 // DeleteByIds 批量删除信息 返回受影响行数（软删除）
 func (r SysRole) DeleteByIds(d *gorm.DB, roleIds []int64, deletedBy string) (int64, error) {
 	if len(roleIds) <= 0 {
