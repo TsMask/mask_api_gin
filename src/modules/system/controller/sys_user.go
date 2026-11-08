@@ -40,7 +40,7 @@ type SysUserController struct {
 // GET /list
 func (s SysUserController) List(c *gin.Context) {
 	queryMap := reqctx.QueryMap(c)
-	dataScopeSQL := service.DataScopeSQL(c, "sys_user", "sys_user")
+	dataScopeSQL := service.UserVisibleSQL(c, "sys_user")
 	rows, total := s.sysUserService.FindByPage(queryMap, dataScopeSQL)
 	c.JSON(200, resp.OkData(map[string]any{"rows": rows, "total": total}))
 }
@@ -52,6 +52,10 @@ func (s SysUserController) Info(c *gin.Context) {
 	id := parse.Number(c.Param("id"))
 	if id < 0 {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id is empty"))
+		return
+	}
+	if config.IsSystemUser(id) && !config.IsSystemUser(reqctx.LoginUserToUserID(c)) {
+		c.JSON(200, resp.ErrMsg("没有权限访问用户数据！"))
 		return
 	}
 
@@ -432,7 +436,7 @@ func (s SysUserController) Unlock(c *gin.Context) {
 func (s SysUserController) Export(c *gin.Context) {
 	// 查询结果，根据查询条件结果，单页最大值限制
 	queryMap := reqctx.QueryMap(c)
-	dataScopeSQL := service.DataScopeSQL(c, "sys_user", "sys_user")
+	dataScopeSQL := service.UserVisibleSQL(c, "sys_user")
 	rows, total := s.sysUserService.FindByPage(queryMap, dataScopeSQL)
 	if total == 0 {
 		c.JSON(200, resp.ErrMsg("export data record as empty"))

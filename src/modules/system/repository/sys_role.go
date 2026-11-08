@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"mask_api_gin/src/internal/infra/database"
+	"mask_api_gin/src/internal/shared/constants"
 	"mask_api_gin/src/modules/system/model"
 
 	"gorm.io/gorm"
@@ -32,6 +33,7 @@ var sysRoleSortMapping = map[string]string{
 func (r SysRole) SelectByPage(query map[string]string) ([]model.SysRole, int64, error) {
 	tx := database.DB("").Model(&model.SysRole{})
 	tx = tx.Where("deleted_at = 0")
+	tx = tx.Where("id <> ?", constants.SYS_ROLE_SYSTEM_ID)
 	// 查询条件拼接
 	if v, ok := query["role_name"]; ok && v != "" {
 		tx = tx.Where("role_name like ?", v+"%")

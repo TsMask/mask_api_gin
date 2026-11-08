@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/spf13/pflag"
@@ -156,4 +157,21 @@ func IsSystemUser(userId int64) bool {
 		}
 	}
 	return false
+}
+
+// SystemUserIDs 系统管理员用户ID列表
+func SystemUserIDs() []int64 {
+	arr, ok := Get("systemUser").([]any)
+	if !ok {
+		return []int64{}
+	}
+	ids := make([]int64, 0, len(arr))
+	for _, v := range arr {
+		id, err := strconv.ParseInt(fmt.Sprint(v), 10, 64)
+		if err != nil || id <= 0 {
+			continue
+		}
+		ids = append(ids, id)
+	}
+	return ids
 }

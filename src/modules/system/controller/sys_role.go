@@ -48,6 +48,10 @@ func (s SysRoleController) Info(c *gin.Context) {
 		c.JSON(422, resp.CodeMsg(resp.CODE_PARAM_CHEACK, "bind err: id is empty"))
 		return
 	}
+	if id == constants.SYS_ROLE_SYSTEM_ID {
+		c.JSON(200, resp.ErrMsg("没有权限访问角色数据！"))
+		return
+	}
 
 	data := s.sysRoleService.FindById(id)
 	if data.ID == id {
@@ -318,7 +322,7 @@ func (s SysRoleController) UserAuthList(c *gin.Context) {
 	}
 
 	query := reqctx.QueryMap(c)
-	dataScopeSQL := service.DataScopeSQL(c, "sys_user", "sys_user")
+	dataScopeSQL := service.UserVisibleSQL(c, "sys_user")
 	rows, total := s.sysUserService.FindAuthUsersPage(query, dataScopeSQL)
 	c.JSON(200, resp.OkData(map[string]any{"rows": rows, "total": total}))
 }

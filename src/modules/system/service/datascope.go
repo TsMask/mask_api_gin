@@ -102,3 +102,26 @@ func DataScopeSQL(c *gin.Context, deptAlias string, userAlias string) string {
 	}
 	return dataScopeSQL
 }
+
+// UserVisibleSQL 登录用户信息-用户查询可见范围过滤SQL字符串
+func UserVisibleSQL(c *gin.Context, userAlias string) string {
+	dataScopeSQL := DataScopeSQL(c, userAlias, userAlias)
+	if config.IsSystemUser(reqctx.LoginUserToUserID(c)) {
+		return dataScopeSQL
+	}
+
+	hiddenUserIds := config.SystemUserIDs()
+	if len(hiddenUserIds) <= 0 {
+		return dataScopeSQL
+	}
+
+	values := make([]string, 0, len(hiddenUserIds))
+	for _, id := range hiddenUserIds {
+		values = append(values, fmt.Sprintf("%d", id))
+	}
+	hiddenSQL := fmt.Sprintf("%s.id not in (%s)", userAlias, strings.Join(values, ","))
+	if dataScopeSQL == "" {
+		return hiddenSQL
+	}
+	return fmt.Sprintf("(%s and %s)", dataScopeSQL, hiddenSQL)
+}
