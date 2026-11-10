@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "本地模式",
+      "name": "RunLocal",
       "type": "go",
       "request": "launch",
       "mode": "debug",
@@ -14,7 +14,7 @@
       "console": "integratedTerminal"
     },
     {
-      "name": "生产模式",
+      "name": "RunProd",
       "type": "go",
       "request": "launch",
       "mode": "debug",
