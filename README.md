@@ -11,7 +11,7 @@
 
 ## 项目文档
 
-- `Apifox` 提供mock服务和程序接口文档 => [接口文档](https://mask-api-midwayjs.apifox.cn/)
+- `Apifox` 提供mock服务和程序接口文档 => [接口文档](https://mask-api.apifox.cn/)
 - `Mask管理系统` 文档专栏，相关使用和开发升级文档。 => [专栏](https://juejin.cn/column/7188761626017792056/)
 
 ### 前端
