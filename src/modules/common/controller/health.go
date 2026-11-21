@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"mask_api_gin/src/internal/config"
 	"mask_api_gin/src/internal/infra/cache"
 	"mask_api_gin/src/internal/infra/database"
 	"mask_api_gin/src/internal/web/resp"
@@ -20,7 +21,11 @@ type HealthController struct{}
 
 // Live 仅表示进程可处理请求。
 func (s HealthController) Live(c *gin.Context) {
-	c.JSON(http.StatusOK, resp.OkData(gin.H{"status": "up"}))
+	c.JSON(http.StatusOK, resp.OkData(gin.H{
+		"status":  "up",
+		"version": config.Version,
+		"uptime":  int64(time.Since(config.RunTime()).Seconds()),
+	}))
 }
 
 // Ready 检查默认数据库与 Redis 是否可用。
@@ -51,5 +56,9 @@ func (s HealthController) Ready(c *gin.Context) {
 		c.JSON(http.StatusServiceUnavailable, resp.ErrMsg("cache unavailable"))
 		return
 	}
-	c.JSON(http.StatusOK, resp.OkData(gin.H{"status": "ready"}))
+	c.JSON(http.StatusOK, resp.OkData(gin.H{
+		"status":  "ready",
+		"version": config.Version,
+		"uptime":  int64(time.Since(config.RunTime()).Seconds()),
+	}))
 }
