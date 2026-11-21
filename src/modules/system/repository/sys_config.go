@@ -37,6 +37,9 @@ func (r SysConfig) SelectByPage(query map[string]string) ([]model.SysConfig, int
 	if v, ok := query["config_key"]; ok && v != "" {
 		tx = tx.Where("config_key like ?", v+"%")
 	}
+	if v, ok := query["config_status"]; ok && v != "" {
+		tx = tx.Where("config_status = ?", v)
+	}
 	if v, ok := query["create_time_begin"]; ok && v != "" {
 		if len(v) == 10 {
 			v = fmt.Sprintf("%s000", v)
